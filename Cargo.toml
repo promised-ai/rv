@@ -1,0 +1,10 @@
+[package]
+name = "rv"
+version = "0.0.0"
+authors = ["Baxter Eaves"]
+
+[dependencies]
+rand = "*"
+serde = "*"
+serde_derive = "*"
+special = { git = "https://github.com/BaxterEaves/special" }
