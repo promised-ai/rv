@@ -33,15 +33,14 @@ pub trait Rv {
     }
 }
 
-
 /// Trait identefying the support of the distribution
-pub trait Support : Rv {
+pub trait Support: Rv {
     /// Returns `true` if `x` is in the support of the `Rv`
     fn contains(&self, x: &Self::DatumType) -> bool;
 }
 
 /// Trait describing continuous probability distributions
-pub trait ContinuousDistr : Rv {
+pub trait ContinuousDistr: Rv {
     /// The value of the Probability Density Function (PDF) at `x`
     fn pdf(&self, x: &Self::DatumType) -> f64 {
         self.ln_pdf(x).exp()
@@ -53,17 +52,22 @@ pub trait ContinuousDistr : Rv {
     }
 }
 
-pub trait Cdf : ContinuousDistr {
+pub trait Cdf: ContinuousDistr {
     /// The value of the Cumulative Density Function at `x`
     fn cdf(&self, x: &Self::DatumType) -> f64;
 }
 
-pub trait InverseCdf : ContinuousDistr {
+pub trait InverseCdf: ContinuousDistr {
     /// The value of the `x` at the given probability in the CDF
     fn invcdf(&self, p: &Self::DatumType) -> Self::DatumType;
+
+    /// Alias for `invcdf`
+    fn quantile(&self, p: &Self::DatumType) -> Self::DatumType {
+        self.invcdf(p)
+    }
 }
 
-pub trait DiscreteDistr : Rv {
+pub trait DiscreteDistr: Rv {
     fn pmf(&self, x: &Self::DatumType) -> f64 {
         self.ln_pmf(x).exp()
     }
@@ -73,34 +77,34 @@ pub trait DiscreteDistr : Rv {
     }
 }
 
-pub trait Cmf : DiscreteDistr {
+pub trait Cmf: DiscreteDistr {
     fn cmf(&self, x: &Self::DatumType) -> f64;
 }
 
-pub trait Mean<M> : Rv {
+pub trait Mean<M>: Rv {
     fn mean(&self) -> Option<M>;
 }
 
-pub trait Median<M> : Rv {
+pub trait Median<M>: Rv {
     fn median(&self) -> Option<M>;
 }
 
-pub trait Mode : Rv {
+pub trait Mode: Rv {
     fn mode(&self) -> Option<Self::DatumType>;
 }
 
-pub trait Variance<V> : Rv {
+pub trait Variance<V>: Rv {
     fn variance(&self) -> Option<V>;
 }
 
-pub trait Entropy : Rv {
+pub trait Entropy: Rv {
     fn entropy(&self) -> f64;
 }
 
-pub trait Skewness : Rv {
+pub trait Skewness: Rv {
     fn skewness(&self) -> Option<f64>;
 }
 
-pub trait Kurtosis : Rv {
+pub trait Kurtosis: Rv {
     fn kurtosis(&self) -> Option<f64>;
 }

@@ -5,6 +5,7 @@ authors = ["Baxter Eaves"]
 
 [dependencies]
 rand = "*"
+assert = "*"
 serde = "*"
 serde_derive = "*"
 special = { git = "https://github.com/BaxterEaves/special" }

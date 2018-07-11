@@ -1,13 +1,14 @@
-
 extern crate rand;
 extern crate special;
 
-use self::rand::Rng;
 use self::rand::distributions::Uniform;
+use self::rand::Rng;
 use traits::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Bernoulli { p: f64 }
+pub struct Bernoulli {
+    p: f64,
+}
 
 impl Bernoulli {
     pub fn new(p: f64) -> Self {
@@ -63,7 +64,7 @@ impl Rv for Bernoulli {
 impl Support for Bernoulli {
     fn contains(&self, _x: &bool) -> bool {
         true
-    } 
+    }
 }
 
 impl DiscreteDistr for Bernoulli {
@@ -133,7 +134,7 @@ impl Entropy for Bernoulli {
 
 impl Skewness for Bernoulli {
     fn skewness(&self) -> Option<f64> {
-        Some((1.0 - 2.0 * self.p)/(self.p * self.q()).sqrt())
+        Some((1.0 - 2.0 * self.p) / (self.p * self.q()).sqrt())
     }
 }
 

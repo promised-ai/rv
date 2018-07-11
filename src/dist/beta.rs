@@ -1,10 +1,10 @@
 extern crate rand;
 extern crate special;
 
+use self::rand::distributions::Gamma;
 use self::rand::Rng;
 use self::special::Beta as SBeta;
 use self::special::Gamma as SGamma;
-use self::rand::distributions::Gamma;
 use traits::*;
 
 pub struct Beta {
@@ -14,7 +14,10 @@ pub struct Beta {
 
 impl Beta {
     pub fn new(alpha: f64, beta: f64) -> Self {
-        Beta { alpha: alpha, beta: beta }
+        Beta {
+            alpha: alpha,
+            beta: beta,
+        }
     }
 
     pub fn uniform() -> Self {
@@ -76,23 +79,23 @@ impl Mean<f64> for Beta {
 
 impl Mode for Beta {
     fn mode(&self) -> Option<f64> {
-       if self.beta > 1.0 {
-           if self.alpha > 1.0 {
+        if self.beta > 1.0 {
+            if self.alpha > 1.0 {
                 Some((self.alpha - 1.0) / (self.alpha + self.beta - 2.0))
-           } else if self.alpha == 1.0 {
-               Some(0.0)
-           } else {
-               None
-           }
-       } else if self.beta == 1.0 {
-           if self.alpha > 1.0 {
-               Some(1.0)
-           } else {
-               None
-           }
-       } else {
-           None
-       }
+            } else if self.alpha == 1.0 {
+                Some(0.0)
+            } else {
+                None
+            }
+        } else if self.beta == 1.0 {
+            if self.alpha > 1.0 {
+                Some(1.0)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 }
 
@@ -108,16 +111,15 @@ impl Entropy for Beta {
         let apb = self.alpha + self.beta;
         self.alpha.ln_beta(self.beta)
             - (self.alpha - 1.0) * self.alpha.digamma()
-            - (self.beta - 1.0) * self.beta.digamma()
-            + (apb + 2.0) * apb.digamma()
+            - (self.beta - 1.0) * self.beta.digamma() + (apb + 2.0) * apb.digamma()
     }
 }
 
 impl Skewness for Beta {
     fn skewness(&self) -> Option<f64> {
         let apb = self.alpha + self.beta;
-        let numer = 2.0*(self.beta - self.alpha) * (apb + 1.0).sqrt();
-        let denom = self.alpha*self.beta*(apb + 2.0)*(apb + 3.0);
+        let numer = 2.0 * (self.beta - self.alpha) * (apb + 1.0).sqrt();
+        let denom = self.alpha * self.beta * (apb + 2.0) * (apb + 3.0);
         Some(numer / denom)
     }
 }
@@ -127,7 +129,7 @@ impl Kurtosis for Beta {
         let apb = self.alpha + self.beta;
         let amb = self.alpha - self.beta;
         let atb = self.alpha * self.beta;
-        let numer = 6.0 * (amb * amb * (apb + 1.0) - atb*(apb + 2.0));
+        let numer = 6.0 * (amb * amb * (apb + 1.0) - atb * (apb + 2.0));
         let denom = atb * (apb + 2.0) * (apb + 3.0);
         Some(numer / denom)
     }
