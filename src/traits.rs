@@ -69,12 +69,12 @@ pub trait Cdf: Rv {
 }
 
 /// Has an inverse-CDF / quantile function
-pub trait InverseCdf: Rv {
+pub trait InverseCdf: Rv + Support {
     /// The value of the `x` at the given probability in the CDF
-    fn invcdf(&self, p: &Self::DatumType) -> Self::DatumType;
+    fn invcdf(&self, p: f64) -> Self::DatumType;
 
     /// Alias for `invcdf`
-    fn quantile(&self, p: &Self::DatumType) -> Self::DatumType {
+    fn quantile(&self, p: f64) -> Self::DatumType {
         self.invcdf(p)
     }
 }

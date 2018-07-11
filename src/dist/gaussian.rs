@@ -85,6 +85,16 @@ macro_rules! impl_traits {
             }
         }
 
+        impl InverseCdf for Gaussian<$kind> {
+            fn invcdf(&self, p: f64) -> $kind {
+                if (p <= 0.0) || (1.0 <= p) {
+                    panic!("P out of range");
+                }
+                let x = self.mu + self.sigma * SQRT_2 * (2.0 * p - 1.0).inv_erf();
+                x as $kind
+            }
+        }
+
         impl Mean<f64> for Gaussian<$kind> {
             fn mean(&self) -> Option<f64> {
                 Some(self.mu)
@@ -289,6 +299,24 @@ mod tests {
     fn cdf_value_at_neg_two() {
         let gauss = Gaussian::<f64>::standard();
         assert::close(gauss.cdf(&-2.0), 0.022750131948179195, TOL);
+    }
+
+    #[test]
+    fn quantile_at_one_half_should_be_mu() {
+        let mu = 1.2315;
+        let gauss = Gaussian::<f64>::new(mu, 1.0);
+        assert::close(gauss.quantile(0.5), mu, TOL);
+    }
+
+    #[test]
+    fn quantile_agree_with_cdf() {
+        let mut rng = rand::thread_rng();
+        let gauss = Gaussian::<f64>::standard();
+
+        gauss.sample(100, &mut rng).iter().for_each(|x| {
+            let p = gauss.cdf(x);
+            assert::close(gauss.quantile(p), *x, TOL);
+        })
     }
 
     #[test]
