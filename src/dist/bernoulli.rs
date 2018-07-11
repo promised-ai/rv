@@ -287,7 +287,7 @@ mod tests {
     }
 
     #[test]
-    fn pmf_of_1_should_be_p() {
+    fn pmf_of_true_should_be_p() {
         let b1: Bernoulli<bool> = Bernoulli::new(0.1);
         assert::close(b1.pmf(&true), 0.1, TOL);
 
@@ -296,7 +296,16 @@ mod tests {
     }
 
     #[test]
-    fn ln_pmf_of_1_should_be_ln_p() {
+    fn pmf_of_1_should_be_p() {
+        let b1: Bernoulli<u8> = Bernoulli::new(0.1);
+        assert::close(b1.pmf(&1), 0.1, TOL);
+
+        let b2: Bernoulli<i16> = Bernoulli::new(0.85);
+        assert::close(b2.pmf(&1), 0.85, TOL);
+    }
+
+    #[test]
+    fn ln_pmf_of_true_should_be_ln_p() {
         let b1: Bernoulli<bool> = Bernoulli::new(0.1);
         assert::close(b1.ln_pmf(&true), 0.1_f64.ln(), TOL);
 
@@ -305,7 +314,16 @@ mod tests {
     }
 
     #[test]
-    fn pmf_of_0_should_be_q() {
+    fn ln_pmf_of_1_should_be_ln_p() {
+        let b1: Bernoulli<usize> = Bernoulli::new(0.1);
+        assert::close(b1.ln_pmf(&1), 0.1_f64.ln(), TOL);
+
+        let b2: Bernoulli<i32> = Bernoulli::new(0.85);
+        assert::close(b2.ln_pmf(&1), 0.85_f64.ln(), TOL);
+    }
+
+    #[test]
+    fn pmf_of_false_should_be_q() {
         let b1: Bernoulli<bool> = Bernoulli::new(0.1);
         assert::close(b1.pmf(&false), 0.9, TOL);
 
@@ -314,7 +332,16 @@ mod tests {
     }
 
     #[test]
-    fn ln_pmf_of_0_should_be_ln_q() {
+    fn pmf_of_0_should_be_q() {
+        let b1: Bernoulli<u8> = Bernoulli::new(0.1);
+        assert::close(b1.pmf(&0), 0.9, TOL);
+
+        let b2: Bernoulli<u32> = Bernoulli::new(0.85);
+        assert::close(b2.pmf(&0), 0.15, TOL);
+    }
+
+    #[test]
+    fn ln_pmf_of_false_should_be_ln_q() {
         let b1: Bernoulli<bool> = Bernoulli::new(0.1);
         assert::close(b1.ln_pmf(&false), 0.9_f64.ln(), TOL);
 
@@ -323,11 +350,30 @@ mod tests {
     }
 
     #[test]
-    fn sample_should_draw_the_correct_number_of_samples() {
+    fn ln_pmf_of_zero_should_be_ln_q() {
+        let b1: Bernoulli<u8> = Bernoulli::new(0.1);
+        assert::close(b1.ln_pmf(&0), 0.9_f64.ln(), TOL);
+
+        let b2: Bernoulli<i16> = Bernoulli::new(0.85);
+        assert::close(b2.ln_pmf(&0), 0.15_f64.ln(), TOL);
+    }
+
+    #[test]
+    fn sample_bools_should_draw_the_correct_number_of_samples() {
         let mut rng = rand::thread_rng();
         let n = 103;
         let xs = Bernoulli::<bool>::uniform().sample(n, &mut rng);
         assert_eq!(xs.len(), n);
+    }
+
+    #[test]
+    fn sample_ints_should_draw_the_correct_number_of_samples() {
+        let mut rng = rand::thread_rng();
+        let n = 103;
+        let xs = Bernoulli::<i16>::uniform().sample(n, &mut rng);
+        assert_eq!(xs.len(), n);
+        // and they should all be 0 or 1
+        assert!(xs.iter().all(|&x| x == 0 || x == 1));
     }
 
     #[test]
@@ -338,15 +384,42 @@ mod tests {
     }
 
     #[test]
-    fn cmf_of_zero_is_q() {
+    fn contains_both_zero_and_one() {
+        let b: Bernoulli<i16> = Bernoulli::uniform();
+        assert!(b.contains(&0));
+        assert!(b.contains(&1));
+        assert!(!b.contains(&-1));
+        assert!(!b.contains(&2));
+    }
+
+    #[test]
+    fn cmf_of_false_is_q() {
         let b: Bernoulli<bool> = Bernoulli::new(0.1);
         assert::close(b.cdf(&false), 0.9, TOL);
     }
 
     #[test]
-    fn cmf_of_one_is_one() {
+    fn cmf_of_zero_is_q() {
+        let b: Bernoulli<i16> = Bernoulli::new(0.1);
+        assert::close(b.cdf(&0), 0.9, TOL);
+    }
+
+    #[test]
+    fn cmf_of_true_is_one() {
         let b: Bernoulli<bool> = Bernoulli::new(0.1);
         assert::close(b.cdf(&true), 1.0, TOL);
+    }
+
+    #[test]
+    fn cmf_of_one_is_one() {
+        let b: Bernoulli<u8> = Bernoulli::new(0.1);
+        assert::close(b.cdf(&1), 1.0, TOL);
+    }
+
+    #[test]
+    fn cmf_less_than_zero_is_zero() {
+        let b: Bernoulli<i16> = Bernoulli::new(0.1);
+        assert::close(b.cdf(&-1), 0.0, TOL);
     }
 
     #[test]
@@ -380,9 +453,21 @@ mod tests {
     }
 
     #[test]
-    fn mode_for_low_p_is_true() {
+    fn mode_for_low_p_is_false() {
         assert!(!Bernoulli::<bool>::new(0.4999).mode().unwrap());
         assert!(!Bernoulli::<bool>::new(0.2).mode().unwrap());
+    }
+
+    #[test]
+    fn mode_for_high_p_is_one() {
+        assert_eq!(Bernoulli::<u8>::new(0.5001).mode().unwrap(), 1);
+        assert_eq!(Bernoulli::<u8>::new(0.8).mode().unwrap(), 1);
+    }
+
+    #[test]
+    fn mode_for_low_p_is_zero() {
+        assert_eq!(Bernoulli::<u8>::new(0.4999).mode().unwrap(), 0);
+        assert_eq!(Bernoulli::<u8>::new(0.2).mode().unwrap(), 0);
     }
 
     #[test]
