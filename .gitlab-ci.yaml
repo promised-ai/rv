@@ -1,0 +1,11 @@
+image: "rustlang/rust:nightly"
+
+variables:
+  CARGO_HOME: $CI_PROJECT_DIR/cargo
+  RUST_BACKTRACE: 1
+
+test:cargo:
+  script:
+  - rustc --version && cargo --version  # Print version info for debugging
+  - time cargo test --jobs 1            # Run serial for more readable errors
+
