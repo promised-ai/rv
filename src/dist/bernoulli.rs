@@ -5,6 +5,7 @@ use self::rand::distributions::Uniform;
 use self::rand::Rng;
 use traits::*;
 
+/// Bernoulli distribution with success probability *p*
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Bernoulli {
     p: f64,
@@ -15,10 +16,12 @@ impl Bernoulli {
         Bernoulli { p: p }
     }
 
+    /// A Bernoulli distribution with a 50% chance of success
     pub fn uniform() -> Self {
         Bernoulli { p: 0.5 }
     }
 
+    /// The complement of `p`, i.e. `(1 - p)`.
     #[inline]
     pub fn q(&self) -> f64 {
         1.0 - self.p

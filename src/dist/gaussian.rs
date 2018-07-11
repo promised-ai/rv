@@ -8,9 +8,12 @@ use consts::*;
 use std::f64::consts::SQRT_2;
 use traits::*;
 
+/// Gaussian / Normal distribution, N(μ, σ)
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Gaussian {
+    /// mean of the distribution
     mu: f64,
+    /// Standard deviation
     sigma: f64,
 }
 
@@ -22,6 +25,7 @@ impl Gaussian {
         }
     }
 
+    /// Standard normal
     pub fn standard() -> Self {
         Gaussian::new(0.0, 1.0)
     }

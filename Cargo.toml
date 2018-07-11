@@ -1,8 +1,9 @@
 [package]
 name = "rv"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Baxter Eaves"]
 description = "Random variables"
+repository = "https://gitlab.com/baxe/rv"
 readme = "README.md"
 license = "MIT"
 license-file = "LICENSE.txt"
@@ -11,8 +12,10 @@ license-file = "LICENSE.txt"
 gitlab = { repository = "baxe/rv", branch = "master" }
 
 [dependencies]
-rand = ">=0.5.3"
-assert = ">=0.7.4"
-serde = ">=1.0.70"
-serde_derive = ">=1.0.70"
-special = ">=0.7.7"
+rand = "0.5.3"
+serde = "1.0.70"
+serde_derive = "1.0.70"
+special = "0.7.7"
+
+[dev-dependencies]
+assert = "0.7.4"

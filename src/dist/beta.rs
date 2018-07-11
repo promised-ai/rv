@@ -7,6 +7,7 @@ use self::special::Beta as SBeta;
 use self::special::Gamma as SGamma;
 use traits::*;
 
+/// Beta distribution, *Beta(α, β)*.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Beta {
     alpha: f64,
@@ -21,10 +22,13 @@ impl Beta {
         }
     }
 
+    /// Create a `Beta` distribution with even density over (0, 1).
     pub fn uniform() -> Self {
         Beta::new(1.0, 1.0)
     }
 
+    /// Create a `Beta` distribution with the Jeffrey's parameterization,
+    /// *Beta(0.5, 0.5)*.
     pub fn jeffreys() -> Self {
         Beta::new(0.5, 0.5)
     }
