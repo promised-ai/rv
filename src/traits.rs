@@ -52,12 +52,17 @@ pub trait ContinuousDistr: Rv {
     }
 }
 
-pub trait Cdf: ContinuousDistr {
+pub trait Cdf: Rv {
     /// The value of the Cumulative Density Function at `x`
     fn cdf(&self, x: &Self::DatumType) -> f64;
+
+    /// Survival function
+    fn sf(&self, x: &Self::DatumType) -> f64 {
+        1.0 - self.cdf(x)
+    }
 }
 
-pub trait InverseCdf: ContinuousDistr {
+pub trait InverseCdf: Rv {
     /// The value of the `x` at the given probability in the CDF
     fn invcdf(&self, p: &Self::DatumType) -> Self::DatumType;
 
@@ -75,10 +80,6 @@ pub trait DiscreteDistr: Rv {
     fn ln_pmf(&self, x: &Self::DatumType) -> f64 {
         self.ln_f(x) - self.ln_normalizer()
     }
-}
-
-pub trait Cmf: DiscreteDistr {
-    fn cmf(&self, x: &Self::DatumType) -> f64;
 }
 
 pub trait Mean<M>: Rv {
