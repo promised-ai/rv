@@ -2,6 +2,13 @@
 name = "rv"
 version = "0.1.0"
 authors = ["Baxter Eaves"]
+description = "Random variables"
+readme = "README.md"
+license = "MIT"
+license-file = "LICENSE.txt"
+
+[badges]
+gitlab = { repository = "baxe/rv", branch = "master" }
 
 [dependencies]
 rand = "*"
