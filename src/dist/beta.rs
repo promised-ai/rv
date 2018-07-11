@@ -7,6 +7,7 @@ use self::special::Beta as SBeta;
 use self::special::Gamma as SGamma;
 use traits::*;
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Beta {
     alpha: f64,
     beta: f64,
