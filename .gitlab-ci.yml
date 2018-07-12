@@ -1,11 +1,15 @@
 image: "rustlang/rust:nightly"
 
 variables:
-  CARGO_HOME: $CI_PROJECT_DIR/cargo
-  RUST_BACKTRACE: 1
+    CARGO_HOME: $CI_PROJECT_DIR/cargo
+    RUST_BACKTRACE: 1
+
+before_script:
+    - rustup component add rustfmt-preview
 
 test:cargo:
-  script:
-  - rustc --version && cargo --version  # Print version info for debugging
-  - time cargo test --jobs 1            # Run serial for more readable errors
+    script:
+        - rustc --version && cargo --version  # Print version info for debugging
+        - cargo fmt --all -- --check
+        - time cargo test --jobs 1            # Run serial for more readable errors
 
