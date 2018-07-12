@@ -122,13 +122,15 @@ macro_rules! impl_int_traits {
 
 macro_rules! impl_common_traits {
     ($kind:ty) => {
-        impl Mean<f64> for Bernoulli<$kind> {
+        impl Mean for Bernoulli<$kind> {
+            type MeanType = f64;
             fn mean(&self) -> Option<f64> {
                 Some(self.p)
             }
         }
 
-        impl Median<f64> for Bernoulli<$kind> {
+        impl Median for Bernoulli<$kind> {
+            type MedianType = f64;
             fn median(&self) -> Option<f64> {
                 let q = self.q();
                 if self.p < q {
@@ -140,7 +142,9 @@ macro_rules! impl_common_traits {
                 }
             }
         }
-        impl Variance<f64> for Bernoulli<$kind> {
+
+        impl Variance for Bernoulli<$kind> {
+            type VarianceType = f64;
             fn variance(&self) -> Option<f64> {
                 Some(self.p * (1.0 - self.p))
             }
@@ -431,13 +435,21 @@ mod tests {
     #[test]
     fn median_for_low_p_is_zero() {
         assert::close(Bernoulli::<bool>::new(0.1).median().unwrap(), 0.0, TOL);
-        assert::close(Bernoulli::<bool>::new(0.499).median().unwrap(), 0.0, TOL);
+        assert::close(
+            Bernoulli::<bool>::new(0.499).median().unwrap(),
+            0.0,
+            TOL,
+        );
     }
 
     #[test]
     fn median_for_high_p_is_one() {
         assert::close(Bernoulli::<bool>::new(0.9).median().unwrap(), 1.0, TOL);
-        assert::close(Bernoulli::<bool>::new(0.5001).median().unwrap(), 1.0, TOL);
+        assert::close(
+            Bernoulli::<bool>::new(0.5001).median().unwrap(),
+            1.0,
+            TOL,
+        );
     }
 
     #[test]
@@ -478,13 +490,25 @@ mod tests {
 
     #[test]
     fn variance_for_uniform() {
-        assert::close(Bernoulli::<bool>::uniform().variance().unwrap(), 0.25, TOL);
+        assert::close(
+            Bernoulli::<bool>::uniform().variance().unwrap(),
+            0.25,
+            TOL,
+        );
     }
 
     #[test]
     fn variance() {
-        assert::close(Bernoulli::<bool>::new(0.1).variance().unwrap(), 0.09, TOL);
-        assert::close(Bernoulli::<bool>::new(0.9).variance().unwrap(), 0.09, TOL);
+        assert::close(
+            Bernoulli::<bool>::new(0.1).variance().unwrap(),
+            0.09,
+            TOL,
+        );
+        assert::close(
+            Bernoulli::<bool>::new(0.9).variance().unwrap(),
+            0.09,
+            TOL,
+        );
     }
 
     #[test]

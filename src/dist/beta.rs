@@ -51,7 +51,8 @@ macro_rules! impl_traits {
             type DatumType = $kind;
 
             fn ln_f(&self, x: &$kind) -> f64 {
-                (self.alpha - 1.0) * (*x as f64).ln() + (self.beta - 1.0) * (1.0 - *x as f64).ln()
+                (self.alpha - 1.0) * (*x as f64).ln()
+                    + (self.beta - 1.0) * (1.0 - *x as f64).ln()
                     - self.alpha.ln_beta(self.beta)
             }
 
@@ -83,9 +84,10 @@ macro_rules! impl_traits {
 
         impl ContinuousDistr for Beta<$kind> {}
 
-        impl Mean<f64> for Beta<$kind> {
-            fn mean(&self) -> Option<f64> {
-                Some(self.alpha / (self.alpha + self.beta))
+        impl Mean for Beta<$kind> {
+            type MeanType = $kind;
+            fn mean(&self) -> Option<$kind> {
+                Some((self.alpha / (self.alpha + self.beta)) as $kind)
             }
         }
 
@@ -93,7 +95,8 @@ macro_rules! impl_traits {
             fn mode(&self) -> Option<$kind> {
                 if self.beta > 1.0 {
                     if self.alpha > 1.0 {
-                        let m: f64 = (self.alpha - 1.0) / (self.alpha + self.beta - 2.0);
+                        let m: f64 =
+                            (self.alpha - 1.0) / (self.alpha + self.beta - 2.0);
                         Some(m as $kind)
                     } else if self.alpha == 1.0 {
                         Some(0.0)
@@ -112,7 +115,9 @@ macro_rules! impl_traits {
             }
         }
 
-        impl Variance<f64> for Beta<$kind> {
+        impl Variance for Beta<$kind> {
+            type VarianceType = f64;
+
             fn variance(&self) -> Option<f64> {
                 let apb = self.alpha + self.beta;
                 Some(self.alpha * self.beta / (apb * apb * (apb + 1.0)))
@@ -124,7 +129,8 @@ macro_rules! impl_traits {
                 let apb = self.alpha + self.beta;
                 self.alpha.ln_beta(self.beta)
                     - (self.alpha - 1.0) * self.alpha.digamma()
-                    - (self.beta - 1.0) * self.beta.digamma() + (apb - 2.0) * apb.digamma()
+                    - (self.beta - 1.0) * self.beta.digamma()
+                    + (apb - 2.0) * apb.digamma()
             }
         }
 
@@ -230,7 +236,11 @@ mod tests {
 
     #[test]
     fn mean() {
-        assert::close(Beta::<f64>::new(1.0, 5.0).mean().unwrap(), 1.0 / 6.0, TOL);
+        assert::close(
+            Beta::<f64>::new(1.0, 5.0).mean().unwrap(),
+            1.0 / 6.0,
+            TOL,
+        );
     }
 
     #[test]

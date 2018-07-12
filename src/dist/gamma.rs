@@ -34,7 +34,8 @@ macro_rules! impl_traits {
             type DatumType = $kind;
             fn ln_f(&self, x: &$kind) -> f64 {
                 self.shape * self.rate.ln() - self.shape.ln_gamma().0
-                    + (self.shape - 1.0) * (*x as f64).ln() - (self.rate * *x as f64)
+                    + (self.shape - 1.0) * (*x as f64).ln()
+                    - (self.rate * *x as f64)
             }
 
             #[inline]
@@ -71,7 +72,8 @@ macro_rules! impl_traits {
             }
         }
 
-        impl Mean<$kind> for Gamma<$kind> {
+        impl Mean for Gamma<$kind> {
+            type MeanType = $kind;
             fn mean(&self) -> Option<$kind> {
                 Some((self.shape / self.rate) as $kind)
             }
@@ -88,7 +90,8 @@ macro_rules! impl_traits {
             }
         }
 
-        impl Variance<$kind> for Gamma<$kind> {
+        impl Variance for Gamma<$kind> {
+            type VarianceType = $kind;
             fn variance(&self) -> Option<$kind> {
                 Some((self.shape / self.rate.powi(2)) as $kind)
             }
@@ -157,7 +160,11 @@ mod tests {
     #[test]
     fn ln_pdf_hight_value() {
         let gam = Gamma::<f64>::new(1.2, 3.4);
-        assert::close(gam.ln_pdf(&0.35294117647058826), 0.14561383298422248, TOL);
+        assert::close(
+            gam.ln_pdf(&0.35294117647058826),
+            0.14561383298422248,
+            TOL,
+        );
     }
 
     #[test]
@@ -185,7 +192,11 @@ mod tests {
 
     #[test]
     fn variance() {
-        assert::close(Gamma::<f64>::new(2.0, 2.0).variance().unwrap(), 0.5, TOL);
+        assert::close(
+            Gamma::<f64>::new(2.0, 2.0).variance().unwrap(),
+            0.5,
+            TOL,
+        );
         assert::close(
             Gamma::<f64>::new(0.5, 2.0).variance().unwrap(),
             1.0 / 8.0,
@@ -195,16 +206,40 @@ mod tests {
 
     #[test]
     fn skewness() {
-        assert::close(Gamma::<f64>::new(4.0, 3.0).skewness().unwrap(), 1.0, TOL);
-        assert::close(Gamma::<f64>::new(16.0, 4.0).skewness().unwrap(), 0.5, TOL);
-        assert::close(Gamma::<f64>::new(16.0, 1.0).skewness().unwrap(), 0.5, TOL);
+        assert::close(
+            Gamma::<f64>::new(4.0, 3.0).skewness().unwrap(),
+            1.0,
+            TOL,
+        );
+        assert::close(
+            Gamma::<f64>::new(16.0, 4.0).skewness().unwrap(),
+            0.5,
+            TOL,
+        );
+        assert::close(
+            Gamma::<f64>::new(16.0, 1.0).skewness().unwrap(),
+            0.5,
+            TOL,
+        );
     }
 
     #[test]
     fn kurtosis() {
-        assert::close(Gamma::<f64>::new(6.0, 3.0).kurtosis().unwrap(), 1.0, TOL);
-        assert::close(Gamma::<f64>::new(6.0, 1.0).kurtosis().unwrap(), 1.0, TOL);
-        assert::close(Gamma::<f64>::new(12.0, 1.0).kurtosis().unwrap(), 0.5, TOL);
+        assert::close(
+            Gamma::<f64>::new(6.0, 3.0).kurtosis().unwrap(),
+            1.0,
+            TOL,
+        );
+        assert::close(
+            Gamma::<f64>::new(6.0, 1.0).kurtosis().unwrap(),
+            1.0,
+            TOL,
+        );
+        assert::close(
+            Gamma::<f64>::new(12.0, 1.0).kurtosis().unwrap(),
+            0.5,
+            TOL,
+        );
     }
 
     #[test]

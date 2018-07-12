@@ -33,7 +33,11 @@ pub trait Rv {
     fn draw<R: Rng>(&self, rng: &mut R) -> Self::DatumType;
 
     /// Multiple draws of the `Rv`
-    fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<Self::DatumType> {
+    fn sample<R: Rng>(
+        &self,
+        n: usize,
+        mut rng: &mut R,
+    ) -> Vec<Self::DatumType> {
         (0..n).map(|_| self.draw(&mut rng)).collect()
     }
 }
@@ -91,15 +95,17 @@ pub trait DiscreteDistr: Rv {
 }
 
 /// Defines the distribution mean
-pub trait Mean<M>: Rv {
+pub trait Mean: Rv {
+    type MeanType;
     /// Returns `None` if the mean is undefined
-    fn mean(&self) -> Option<M>;
+    fn mean(&self) -> Option<Self::MeanType>;
 }
 
 /// Defines the distribution median
-pub trait Median<M>: Rv {
+pub trait Median: Rv {
+    type MedianType;
     /// Returns `None` if the median is undefined
-    fn median(&self) -> Option<M>;
+    fn median(&self) -> Option<Self::MedianType>;
 }
 
 /// Defines the distribution mode
@@ -109,9 +115,10 @@ pub trait Mode: Rv {
 }
 
 /// Defines the distribution variance
-pub trait Variance<V>: Rv {
+pub trait Variance: Rv {
+    type VarianceType;
     /// Returns `None` if the variance is undefined
-    fn variance(&self) -> Option<V>;
+    fn variance(&self) -> Option<Self::VarianceType>;
 }
 
 /// Defines the distribution entropy
