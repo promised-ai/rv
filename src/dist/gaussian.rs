@@ -80,7 +80,8 @@ macro_rules! impl_traits {
 
         impl Cdf for Gaussian<$kind> {
             fn cdf(&self, x: &$kind) -> f64 {
-                let errf = ((*x as f64 - self.mu) / (self.sigma * SQRT_2)).erf();
+                let errf =
+                    ((*x as f64 - self.mu) / (self.sigma * SQRT_2)).erf();
                 0.5 * (1.0 + errf)
             }
         }
@@ -90,20 +91,23 @@ macro_rules! impl_traits {
                 if (p <= 0.0) || (1.0 <= p) {
                     panic!("P out of range");
                 }
-                let x = self.mu + self.sigma * SQRT_2 * (2.0 * p - 1.0).inv_erf();
+                let x =
+                    self.mu + self.sigma * SQRT_2 * (2.0 * p - 1.0).inv_erf();
                 x as $kind
             }
         }
 
-        impl Mean<f64> for Gaussian<$kind> {
-            fn mean(&self) -> Option<f64> {
-                Some(self.mu)
+        impl Mean for Gaussian<$kind> {
+            type MeanType = $kind;
+            fn mean(&self) -> Option<$kind> {
+                Some(self.mu as $kind)
             }
         }
 
-        impl Median<f64> for Gaussian<$kind> {
-            fn median(&self) -> Option<f64> {
-                Some(self.mu)
+        impl Median for Gaussian<$kind> {
+            type MedianType = $kind;
+            fn median(&self) -> Option<$kind> {
+                Some(self.mu as $kind)
             }
         }
 
@@ -113,7 +117,8 @@ macro_rules! impl_traits {
             }
         }
 
-        impl Variance<f64> for Gaussian<$kind> {
+        impl Variance for Gaussian<$kind> {
+            type VarianceType = f64;
             fn variance(&self) -> Option<f64> {
                 Some(self.sigma * self.sigma)
             }
