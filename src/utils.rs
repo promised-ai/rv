@@ -17,9 +17,29 @@ pub fn logsumexp(xs: &[f64]) -> f64 {
     }
 }
 
+/// Draw and index according to log domain weights
+///
 /// Draw a `usize` from the categorical distribution defined by `ln_weights`.
 /// Assumes that the sum of the weights is 0 (the sum of `exp(ln_weights)` is
 /// 1).
+///
+/// # Examples
+///
+/// ```rust
+/// extern crate rand;
+/// extern crate rv;
+///
+/// use rv::utils::ln_pflip;
+///
+/// let weights: Vec<f64> = vec![0.4, 0.2, 0.3, 0.1];
+/// let ln_weights: Vec<f64> = weights.iter().map(|&w| w.ln()).collect();
+///
+/// let xs = ln_pflip(&ln_weights, 100, &mut rand::thread_rng());
+///
+/// assert_eq!(xs.len(), 100);
+/// assert!(xs.iter().all(|&x| x <= 3));
+/// assert!(!xs.iter().any(|&x| x > 3));
+/// ```
 pub fn ln_pflip<R: Rng>(
     ln_weights: &[f64],
     n: usize,
@@ -32,7 +52,7 @@ pub fn ln_pflip<R: Rng>(
         cdf[i] += cdf[i - 1];
     }
 
-    (1..n)
+    (0..n)
         .map(|_| {
             let r = rng.sample(Open01);
             cdf.iter()
@@ -42,24 +62,40 @@ pub fn ln_pflip<R: Rng>(
         .collect()
 }
 
-pub fn argmax<T: PartialOrd>(xs: &[T]) -> usize {
+/// Indices of the largest element(s) in xs.
+///
+/// If there is more than one largest element, `argmax` returns the indices of
+/// all replicates.
+///
+/// # Examples
+///
+/// ```rust
+/// use rv::utils::argmax;
+///
+/// let xs: Vec<u8> = vec![1, 2, 3, 4, 5, 4, 5];
+/// let ys: Vec<u8> = vec![1, 2, 3, 4, 5, 4, 0];
+///
+/// assert_eq!(argmax(&xs), vec![4, 6]);
+/// assert_eq!(argmax(&ys), vec![4]);
+/// ```
+pub fn argmax<T: PartialOrd>(xs: &[T]) -> Vec<usize> {
     if xs.is_empty() {
-        panic!("Empty container");
-    }
-
-    if xs.len() == 1 {
-        0
+        vec![]
+    } else if xs.len() == 1 {
+        vec![0]
     } else {
         let mut maxval = &xs[0];
-        let mut max_ix: usize = 0;
+        let mut max_ixs: Vec<usize> = vec![0];
         for i in 1..xs.len() {
             let x = &xs[i];
             if x > maxval {
                 maxval = x;
-                max_ix = i;
+                max_ixs = vec![i];
+            } else if x == maxval {
+                max_ixs.push(i);
             }
         }
-        max_ix
+        max_ixs
     }
 }
 
@@ -69,6 +105,30 @@ mod tests {
     extern crate assert;
 
     const TOL: f64 = 1E-12;
+
+    #[test]
+    fn argmax_empty_is_empty() {
+        let xs: Vec<f64> = vec![];
+        assert_eq!(argmax(&xs), vec![]);
+    }
+
+    #[test]
+    fn argmax_single_elem_is_0() {
+        let xs: Vec<f64> = vec![1.0];
+        assert_eq!(argmax(&xs), vec![0]);
+    }
+
+    #[test]
+    fn argmax_unique_max() {
+        let xs: Vec<u8> = vec![1, 2, 3, 4, 5, 4, 3];
+        assert_eq!(argmax(&xs), vec![4]);
+    }
+
+    #[test]
+    fn argmax_repeated_max() {
+        let xs: Vec<u8> = vec![1, 2, 3, 4, 5, 4, 5];
+        assert_eq!(argmax(&xs), vec![4, 6]);
+    }
 
     #[test]
     fn logsumexp_on_vector_of_zeros() {
