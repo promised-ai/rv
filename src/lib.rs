@@ -4,3 +4,4 @@ extern crate serde_derive;
 pub mod consts;
 pub mod dist;
 pub mod traits;
+pub mod utils;
