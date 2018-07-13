@@ -133,3 +133,14 @@ pub trait Skewness: Rv {
 pub trait Kurtosis: Rv {
     fn kurtosis(&self) -> Option<f64>;
 }
+
+/// KL divergences
+pub trait KlDivergence: Rv {
+    /// The KL divergence, KL(P|Q) between this distribution, P, and another, Q
+    fn kl(&self, other: &Self) -> f64;
+
+    /// Symmetrised divergence, KL(P|Q) + KL(Q|P)
+    fn kl_sym(&self, other: &Self) -> f64 {
+        self.kl(&other) + other.kl(&self)
+    }
+}

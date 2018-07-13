@@ -122,6 +122,13 @@ macro_rules! impl_int_traits {
 
 macro_rules! impl_common_traits {
     ($kind:ty) => {
+        impl KlDivergence for Bernoulli<$kind> {
+            fn kl(&self, other: &Self) -> f64 {
+                self.p * (other.p.ln() - self.p.ln())
+                    + self.q() * (other.q().ln() - self.q().ln())
+            }
+        }
+
         impl Mean for Bernoulli<$kind> {
             type MeanType = f64;
             fn mean(&self) -> Option<f64> {
