@@ -12,6 +12,7 @@ license-file = "LICENSE.txt"
 gitlab = { repository = "baxe/rv", branch = "master" }
 
 [dependencies]
+num = "*"
 rand = "0.5.3"
 serde = "1.0.70"
 serde_derive = "1.0.70"
