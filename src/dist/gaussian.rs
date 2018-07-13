@@ -141,6 +141,21 @@ macro_rules! impl_traits {
                 Some(0.0)
             }
         }
+
+        impl KlDivergence for Gaussian<$kind> {
+            fn kl(&self, other: &Self) -> f64 {
+                let m1 = self.mu;
+                let m2 = other.mu;
+
+                let s1 = self.sigma;
+                let s2 = other.sigma;
+
+                let term1 = s2.ln() - s1.ln();
+                let term2 = (s1 * s1 + (m1 - m2) * (m1 - m2)) / (2.0 * s2 * s2);
+
+                term1 + term2 - 0.5
+            }
+        }
     };
 }
 
@@ -334,5 +349,19 @@ mod tests {
     fn entropy() {
         let gauss = Gaussian::<f64>::new(3.0, 12.3);
         assert::close(gauss.entropy(), 3.9285377955830447, TOL);
+    }
+
+    #[test]
+    fn kl_of_idential_dsitrbutions_should_be_zero() {
+        let gauss = Gaussian::<f32>::new(1.2, 3.4);
+        assert::close(gauss.kl(&gauss), 0.0, TOL);
+    }
+
+    #[test]
+    fn kl() {
+        let g1 = Gaussian::<f32>::new(1.0, 2.0);
+        let g2 = Gaussian::<f32>::new(2.0, 1.0);
+        let kl = 0.5_f64.ln() + 5.0 / 2.0 - 0.5;
+        assert::close(g1.kl(&g2), kl, TOL);
     }
 }
