@@ -3,12 +3,14 @@ extern crate special;
 
 use self::rand::distributions::Uniform;
 use self::rand::Rng;
+use suffstats::BernoulliSuffStat;
 use traits::*;
 
 /// Bernoulli distribution with success probability *p*
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Bernoulli {
-    p: f64,
+    /// Probability of a success (x=1)
+    pub p: f64,
 }
 
 impl Bernoulli {
@@ -109,6 +111,10 @@ macro_rules! impl_int_traits {
                     Some(1)
                 }
             }
+        }
+
+        impl HasSuffStat<$kind> for Bernoulli {
+            type Stat = BernoulliSuffStat;
         }
     };
 }
@@ -230,6 +236,10 @@ impl Mode<bool> for Bernoulli {
             Some(true)
         }
     }
+}
+
+impl HasSuffStat<bool> for Bernoulli {
+    type Stat = BernoulliSuffStat;
 }
 
 impl_int_traits!(u8);

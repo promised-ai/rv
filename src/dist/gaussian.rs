@@ -13,10 +13,10 @@ use traits::*;
 /// Gaussian / Normal distribution, N(μ, σ)
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Gaussian {
-    /// mean of the distribution
-    mu: f64,
+    /// Mean
+    pub mu: f64,
     /// Standard deviation
-    sigma: f64,
+    pub sigma: f64,
 }
 
 impl Gaussian {

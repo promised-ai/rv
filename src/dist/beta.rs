@@ -11,8 +11,8 @@ use traits::*;
 /// Beta distribution, *Beta(α, β)*.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Beta {
-    alpha: f64,
-    beta: f64,
+    pub alpha: f64,
+    pub beta: f64,
 }
 
 impl Beta {

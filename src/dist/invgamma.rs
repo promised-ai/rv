@@ -10,8 +10,8 @@ use traits::*;
 /// Inverse gamma distribution IG(α, β)
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct InvGamma {
-    shape: f64,
-    scale: f64,
+    pub shape: f64,
+    pub scale: f64,
 }
 
 impl InvGamma {

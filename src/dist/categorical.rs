@@ -18,7 +18,7 @@ impl<T> CategoricalDatum for T where
 /// Distribution over unordered values in [0, k)
 pub struct Categorical {
     // Use log weights instead to optimize for computation of ln_f
-    ln_weights: Vec<f64>,
+    pub ln_weights: Vec<f64>,
 }
 
 impl Categorical {
