@@ -7,17 +7,14 @@ use self::rand::Rng;
 /// Contains the minimal functionality that a random object must have to be
 /// useful: a function defining the un-normalized density/mass at a point,
 /// and functions to draw samples from the distribution.
-pub trait Rv {
-    /// The type of the data described by this `Rv`
-    type DatumType;
-
+pub trait Rv<X> {
     /// Un-normalized probability function
-    fn f(&self, x: &Self::DatumType) -> f64 {
+    fn f(&self, x: &X) -> f64 {
         self.ln_f(x).exp()
     }
 
     /// Un-normalized probability function
-    fn ln_f(&self, x: &Self::DatumType) -> f64;
+    fn ln_f(&self, x: &X) -> f64;
 
     /// The constant term in the PDF/PMF. Should not be a function of any of
     /// the parameters.
@@ -30,112 +27,105 @@ pub trait Rv {
     fn ln_normalizer(&self) -> f64;
 
     /// Single draw from the `Rv`
-    fn draw<R: Rng>(&self, rng: &mut R) -> Self::DatumType;
+    fn draw<R: Rng>(&self, rng: &mut R) -> X;
 
     /// Multiple draws of the `Rv`
-    fn sample<R: Rng>(
-        &self,
-        n: usize,
-        mut rng: &mut R,
-    ) -> Vec<Self::DatumType> {
+    fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<X> {
         (0..n).map(|_| self.draw(&mut rng)).collect()
     }
 }
 
 /// Identifies the support of the Rv
-pub trait Support: Rv {
+pub trait Support<X> {
     /// Returns `true` if `x` is in the support of the `Rv`
-    fn contains(&self, x: &Self::DatumType) -> bool;
+    fn contains(&self, x: &X) -> bool;
 }
 
 /// Is a continuous probability distributions
-pub trait ContinuousDistr: Rv {
+pub trait ContinuousDistr<X>: Rv<X> {
     /// The value of the Probability Density Function (PDF) at `x`
-    fn pdf(&self, x: &Self::DatumType) -> f64 {
+    fn pdf(&self, x: &X) -> f64 {
         self.ln_pdf(x).exp()
     }
 
     /// The value of the log Probability Density Function (PDF) at `x`
-    fn ln_pdf(&self, x: &Self::DatumType) -> f64 {
+    fn ln_pdf(&self, x: &X) -> f64 {
         self.ln_f(x) - self.ln_normalizer()
     }
 }
 
 /// Has a cumulative distribution function (CDF)
-pub trait Cdf: Rv {
+pub trait Cdf<X>: Rv<X> {
     /// The value of the Cumulative Density Function at `x`
-    fn cdf(&self, x: &Self::DatumType) -> f64;
+    fn cdf(&self, x: &X) -> f64;
 
     /// Survival function
-    fn sf(&self, x: &Self::DatumType) -> f64 {
+    fn sf(&self, x: &X) -> f64 {
         1.0 - self.cdf(x)
     }
 }
 
 /// Has an inverse-CDF / quantile function
-pub trait InverseCdf: Rv + Support {
+pub trait InverseCdf<X>: Rv<X> + Support<X> {
     /// The value of the `x` at the given probability in the CDF
-    fn invcdf(&self, p: f64) -> Self::DatumType;
+    fn invcdf(&self, p: f64) -> X;
 
     /// Alias for `invcdf`
-    fn quantile(&self, p: f64) -> Self::DatumType {
+    fn quantile(&self, p: f64) -> X {
         self.invcdf(p)
     }
 }
 
 /// Is a discrete probability distribution
-pub trait DiscreteDistr: Rv {
-    fn pmf(&self, x: &Self::DatumType) -> f64 {
+pub trait DiscreteDistr<X>: Rv<X> {
+    fn pmf(&self, x: &X) -> f64 {
         self.ln_pmf(x).exp()
     }
 
-    fn ln_pmf(&self, x: &Self::DatumType) -> f64 {
+    fn ln_pmf(&self, x: &X) -> f64 {
         self.ln_f(x) - self.ln_normalizer()
     }
 }
 
 /// Defines the distribution mean
-pub trait Mean: Rv {
-    type MeanType;
+pub trait Mean<X> {
     /// Returns `None` if the mean is undefined
-    fn mean(&self) -> Option<Self::MeanType>;
+    fn mean(&self) -> Option<X>;
 }
 
 /// Defines the distribution median
-pub trait Median: Rv {
-    type MedianType;
+pub trait Median<X> {
     /// Returns `None` if the median is undefined
-    fn median(&self) -> Option<Self::MedianType>;
+    fn median(&self) -> Option<X>;
 }
 
 /// Defines the distribution mode
-pub trait Mode: Rv {
+pub trait Mode<X> {
     /// Returns `None` if the mode is undefined or is not a single value
-    fn mode(&self) -> Option<Self::DatumType>;
+    fn mode(&self) -> Option<X>;
 }
 
 /// Defines the distribution variance
-pub trait Variance: Rv {
-    type VarianceType;
+pub trait Variance<X> {
     /// Returns `None` if the variance is undefined
-    fn variance(&self) -> Option<Self::VarianceType>;
+    fn variance(&self) -> Option<X>;
 }
 
 /// Defines the distribution entropy
-pub trait Entropy: Rv {
+pub trait Entropy {
     fn entropy(&self) -> f64;
 }
 
-pub trait Skewness: Rv {
+pub trait Skewness {
     fn skewness(&self) -> Option<f64>;
 }
 
-pub trait Kurtosis: Rv {
+pub trait Kurtosis {
     fn kurtosis(&self) -> Option<f64>;
 }
 
 /// KL divergences
-pub trait KlDivergence: Rv {
+pub trait KlDivergence {
     /// The KL divergence, KL(P|Q) between this distribution, P, and another, Q
     fn kl(&self, other: &Self) -> f64;
 
