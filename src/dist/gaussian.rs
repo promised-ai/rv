@@ -2,7 +2,6 @@ extern crate rand;
 extern crate special;
 
 use std::f64::consts::SQRT_2;
-use std::marker::PhantomData;
 
 use self::rand::distributions::Normal;
 use self::rand::Rng;
@@ -13,20 +12,18 @@ use traits::*;
 
 /// Gaussian / Normal distribution, N(μ, σ)
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Gaussian<T> {
+pub struct Gaussian {
     /// mean of the distribution
     mu: f64,
     /// Standard deviation
     sigma: f64,
-    _phantom: PhantomData<T>,
 }
 
-impl<T> Gaussian<T> {
+impl Gaussian {
     pub fn new(mu: f64, sigma: f64) -> Self {
         Gaussian {
             mu: mu,
             sigma: sigma,
-            _phantom: PhantomData,
         }
     }
 
@@ -36,7 +33,7 @@ impl<T> Gaussian<T> {
     }
 }
 
-impl<T> Default for Gaussian<T> {
+impl Default for Gaussian {
     fn default() -> Self {
         Gaussian::standard()
     }
@@ -44,8 +41,7 @@ impl<T> Default for Gaussian<T> {
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv for Gaussian<$kind> {
-            type DatumType = $kind;
+        impl Rv<$kind> for Gaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k = (*x as f64 - self.mu) / self.sigma;
                 -self.sigma.ln() - 0.5 * k * k
@@ -66,9 +62,9 @@ macro_rules! impl_traits {
             }
         }
 
-        impl ContinuousDistr for Gaussian<$kind> {}
+        impl ContinuousDistr<$kind> for Gaussian {}
 
-        impl Support for Gaussian<$kind> {
+        impl Support<$kind> for Gaussian {
             fn contains(&self, x: &$kind) -> bool {
                 if x.is_finite() {
                     true
@@ -78,7 +74,7 @@ macro_rules! impl_traits {
             }
         }
 
-        impl Cdf for Gaussian<$kind> {
+        impl Cdf<$kind> for Gaussian {
             fn cdf(&self, x: &$kind) -> f64 {
                 let errf =
                     ((*x as f64 - self.mu) / (self.sigma * SQRT_2)).erf();
@@ -86,7 +82,7 @@ macro_rules! impl_traits {
             }
         }
 
-        impl InverseCdf for Gaussian<$kind> {
+        impl InverseCdf<$kind> for Gaussian {
             fn invcdf(&self, p: f64) -> $kind {
                 if (p <= 0.0) || (1.0 <= p) {
                     panic!("P out of range");
@@ -97,66 +93,63 @@ macro_rules! impl_traits {
             }
         }
 
-        impl Mean for Gaussian<$kind> {
-            type MeanType = $kind;
+        impl Mean<$kind> for Gaussian {
             fn mean(&self) -> Option<$kind> {
                 Some(self.mu as $kind)
             }
         }
 
-        impl Median for Gaussian<$kind> {
-            type MedianType = $kind;
+        impl Median<$kind> for Gaussian {
             fn median(&self) -> Option<$kind> {
                 Some(self.mu as $kind)
             }
         }
 
-        impl Mode for Gaussian<$kind> {
+        impl Mode<$kind> for Gaussian {
             fn mode(&self) -> Option<$kind> {
                 Some(self.mu as $kind)
             }
         }
-
-        impl Variance for Gaussian<$kind> {
-            type VarianceType = f64;
-            fn variance(&self) -> Option<f64> {
-                Some(self.sigma * self.sigma)
-            }
-        }
-
-        impl Entropy for Gaussian<$kind> {
-            fn entropy(&self) -> f64 {
-                HALF_LOG_2PI_E + self.sigma.ln()
-            }
-        }
-
-        impl Skewness for Gaussian<$kind> {
-            fn skewness(&self) -> Option<f64> {
-                Some(0.0)
-            }
-        }
-
-        impl Kurtosis for Gaussian<$kind> {
-            fn kurtosis(&self) -> Option<f64> {
-                Some(0.0)
-            }
-        }
-
-        impl KlDivergence for Gaussian<$kind> {
-            fn kl(&self, other: &Self) -> f64 {
-                let m1 = self.mu;
-                let m2 = other.mu;
-
-                let s1 = self.sigma;
-                let s2 = other.sigma;
-
-                let term1 = s2.ln() - s1.ln();
-                let term2 = (s1 * s1 + (m1 - m2) * (m1 - m2)) / (2.0 * s2 * s2);
-
-                term1 + term2 - 0.5
-            }
-        }
     };
+}
+
+impl Variance<f64> for Gaussian {
+    fn variance(&self) -> Option<f64> {
+        Some(self.sigma * self.sigma)
+    }
+}
+
+impl Entropy for Gaussian {
+    fn entropy(&self) -> f64 {
+        HALF_LOG_2PI_E + self.sigma.ln()
+    }
+}
+
+impl Skewness for Gaussian {
+    fn skewness(&self) -> Option<f64> {
+        Some(0.0)
+    }
+}
+
+impl Kurtosis for Gaussian {
+    fn kurtosis(&self) -> Option<f64> {
+        Some(0.0)
+    }
+}
+
+impl KlDivergence for Gaussian {
+    fn kl(&self, other: &Self) -> f64 {
+        let m1 = self.mu;
+        let m2 = other.mu;
+
+        let s1 = self.sigma;
+        let s2 = other.sigma;
+
+        let term1 = s2.ln() - s1.ln();
+        let term2 = (s1 * s1 + (m1 - m2) * (m1 - m2)) / (2.0 * s2 * s2);
+
+        term1 + term2 - 0.5
+    }
 }
 
 impl_traits!(f32);
@@ -172,195 +165,198 @@ mod tests {
 
     #[test]
     fn new() {
-        let gauss = Gaussian::<f64>::new(1.2, 3.0);
+        let gauss = Gaussian::new(1.2, 3.0);
         assert::close(gauss.mu, 1.2, TOL);
         assert::close(gauss.sigma, 3.0, TOL);
     }
 
     #[test]
     fn standard() {
-        let gauss = Gaussian::<f64>::standard();
+        let gauss = Gaussian::standard();
         assert::close(gauss.mu, 0.0, TOL);
         assert::close(gauss.sigma, 1.0, TOL);
     }
 
     #[test]
     fn standard_gaussian_mean_should_be_zero() {
-        let gauss = Gaussian::<f64>::standard();
-        assert::close(gauss.mean().unwrap(), 0.0, TOL);
+        let mean: f64 = Gaussian::standard().mean().unwrap();
+        assert::close(mean, 0.0, TOL);
     }
 
     #[test]
     fn standard_gaussian_variance_should_be_one() {
-        let gauss = Gaussian::<f64>::standard();
-        assert::close(gauss.variance().unwrap(), 1.0, TOL);
+        assert::close(Gaussian::standard().variance().unwrap(), 1.0, TOL);
     }
 
     #[test]
     fn mean_should_be_mu() {
         let mu = 3.4;
-        let gauss = Gaussian::<f64>::new(mu, 0.5);
-        assert::close(gauss.mean().unwrap(), mu, TOL);
+        let mean: f64 = Gaussian::new(mu, 0.5).mean().unwrap();
+        assert::close(mean, mu, TOL);
     }
 
     #[test]
     fn median_should_be_mu() {
         let mu = 3.4;
-        let gauss = Gaussian::<f64>::new(mu, 0.5);
-        assert::close(gauss.median().unwrap(), mu, TOL);
+        let median: f64 = Gaussian::new(mu, 0.5).median().unwrap();
+        assert::close(median, mu, TOL);
     }
 
     #[test]
     fn mode_should_be_mu() {
         let mu = 3.4;
-        let gauss = Gaussian::<f64>::new(mu, 0.5);
-        assert::close(gauss.mode().unwrap(), mu, TOL);
+        let mode: f64 = Gaussian::new(mu, 0.5).mode().unwrap();
+        assert::close(mode, mu, TOL);
     }
 
     #[test]
     fn variance_should_be_sigma_squared() {
         let sigma = 0.5;
-        let gauss = Gaussian::<f64>::new(3.4, sigma);
+        let gauss = Gaussian::new(3.4, sigma);
         assert::close(gauss.variance().unwrap(), sigma * sigma, TOL);
     }
 
     #[test]
     fn draws_should_be_finite() {
         let mut rng = rand::thread_rng();
-        let gauss = Gaussian::<f64>::standard();
+        let gauss = Gaussian::standard();
         for _ in 0..100 {
-            assert!(gauss.draw(&mut rng).is_finite())
+            let x: f64 = gauss.draw(&mut rng);
+            assert!(x.is_finite())
         }
     }
 
     #[test]
     fn sample_length() {
         let mut rng = rand::thread_rng();
-        let gauss = Gaussian::<f64>::standard();
+        let gauss = Gaussian::standard();
         let xs: Vec<f64> = gauss.sample(10, &mut rng);
         assert_eq!(xs.len(), 10);
     }
 
     #[test]
     fn standard_ln_pdf_at_zero() {
-        let gauss = Gaussian::<f64>::standard();
-        assert::close(gauss.ln_pdf(&0.0), -0.91893853320467267, TOL);
+        let gauss = Gaussian::standard();
+        assert::close(gauss.ln_pdf(&0.0_f64), -0.91893853320467267, TOL);
     }
 
     #[test]
     fn standard_ln_pdf_off_zero() {
-        let gauss = Gaussian::<f64>::standard();
-        assert::close(gauss.ln_pdf(&2.1), -3.1239385332046727, TOL);
+        let gauss = Gaussian::standard();
+        assert::close(gauss.ln_pdf(&2.1_f64), -3.1239385332046727, TOL);
     }
 
     #[test]
     fn nonstandard_ln_pdf_on_mean() {
-        let gauss = Gaussian::<f64>::new(-1.2, 0.33);
-        assert::close(gauss.ln_pdf(&-1.2), 0.18972409131693846, TOL);
+        let gauss = Gaussian::new(-1.2, 0.33);
+        assert::close(gauss.ln_pdf(&-1.2_f64), 0.18972409131693846, TOL);
     }
 
     #[test]
     fn nonstandard_ln_pdf_off_mean() {
-        let gauss = Gaussian::<f64>::new(-1.2, 0.33);
-        assert::close(gauss.ln_pdf(&0.0), -6.4218461566169447, TOL);
+        let gauss = Gaussian::new(-1.2, 0.33);
+        assert::close(gauss.ln_pdf(&0.0_f32), -6.4218461566169447, TOL);
     }
 
     #[test]
     fn should_contain_finite_values() {
-        let gauss = Gaussian::<f64>::standard();
-        assert!(gauss.contains(&0.0));
-        assert!(gauss.contains(&10E8));
-        assert!(gauss.contains(&-10E8));
+        let gauss = Gaussian::standard();
+        assert!(gauss.contains(&0.0_f32));
+        assert!(gauss.contains(&10E8_f64));
+        assert!(gauss.contains(&-10E8_f64));
     }
 
     #[test]
     fn should_not_contain_nan() {
-        let gauss = Gaussian::<f64>::standard();
+        let gauss = Gaussian::standard();
         assert!(!gauss.contains(&f64::NAN));
     }
 
     #[test]
     fn should_not_contain_positive_or_negative_infinity() {
-        let gauss = Gaussian::<f64>::standard();
+        let gauss = Gaussian::standard();
         assert!(!gauss.contains(&f64::INFINITY));
         assert!(!gauss.contains(&f64::NEG_INFINITY));
     }
 
     #[test]
     fn skewness_should_be_zero() {
-        let gauss = Gaussian::<f64>::new(-12.3, 45.6);
+        let gauss = Gaussian::new(-12.3, 45.6);
         assert::close(gauss.skewness().unwrap(), 0.0, TOL);
     }
 
     #[test]
     fn kurtosis_should_be_zero() {
-        let gauss = Gaussian::<f64>::new(-12.3, 45.6);
+        let gauss = Gaussian::new(-12.3, 45.6);
         assert::close(gauss.skewness().unwrap(), 0.0, TOL);
     }
 
     #[test]
     fn cdf_at_mean_should_be_one_half() {
-        let mu1 = 2.3;
-        let gauss1 = Gaussian::<f64>::new(mu1, 0.2);
+        let mu1: f64 = 2.3;
+        let gauss1 = Gaussian::new(mu1, 0.2);
         assert::close(gauss1.cdf(&mu1), 0.5, TOL);
 
-        let mu2 = -8.0;
-        let gauss2 = Gaussian::<f64>::new(mu2, 100.0);
+        let mu2: f32 = -8.0;
+        let gauss2 = Gaussian::new(mu2.into(), 100.0);
         assert::close(gauss2.cdf(&mu2), 0.5, TOL);
     }
 
     #[test]
     fn cdf_value_at_one() {
-        let gauss = Gaussian::<f64>::standard();
-        assert::close(gauss.cdf(&1.0), 0.84134474606854293, TOL);
+        let gauss = Gaussian::standard();
+        assert::close(gauss.cdf(&1.0_f64), 0.84134474606854293, TOL);
     }
 
     #[test]
     fn cdf_value_at_neg_two() {
-        let gauss = Gaussian::<f64>::standard();
-        assert::close(gauss.cdf(&-2.0), 0.022750131948179195, TOL);
+        let gauss = Gaussian::standard();
+        assert::close(gauss.cdf(&-2.0_f64), 0.022750131948179195, TOL);
     }
 
     #[test]
     fn quantile_at_one_half_should_be_mu() {
         let mu = 1.2315;
-        let gauss = Gaussian::<f64>::new(mu, 1.0);
-        assert::close(gauss.quantile(0.5), mu, TOL);
+        let gauss = Gaussian::new(mu, 1.0);
+        let x: f64 = gauss.quantile(0.5);
+        assert::close(x, mu, TOL);
     }
 
     #[test]
     fn quantile_agree_with_cdf() {
         let mut rng = rand::thread_rng();
-        let gauss = Gaussian::<f64>::standard();
+        let gauss = Gaussian::standard();
+        let xs: Vec<f64> = gauss.sample(100, &mut rng);
 
-        gauss.sample(100, &mut rng).iter().for_each(|x| {
+        xs.iter().for_each(|x| {
             let p = gauss.cdf(x);
-            assert::close(gauss.quantile(p), *x, TOL);
+            let y: f64 = gauss.quantile(p);
+            assert::close(y, *x, TOL);
         })
     }
 
     #[test]
     fn standard_gaussian_entropy() {
-        let gauss = Gaussian::<f64>::standard();
+        let gauss = Gaussian::standard();
         assert::close(gauss.entropy(), 1.4189385332046727, TOL);
     }
 
     #[test]
     fn entropy() {
-        let gauss = Gaussian::<f64>::new(3.0, 12.3);
+        let gauss = Gaussian::new(3.0, 12.3);
         assert::close(gauss.entropy(), 3.9285377955830447, TOL);
     }
 
     #[test]
     fn kl_of_idential_dsitrbutions_should_be_zero() {
-        let gauss = Gaussian::<f32>::new(1.2, 3.4);
+        let gauss = Gaussian::new(1.2, 3.4);
         assert::close(gauss.kl(&gauss), 0.0, TOL);
     }
 
     #[test]
     fn kl() {
-        let g1 = Gaussian::<f32>::new(1.0, 2.0);
-        let g2 = Gaussian::<f32>::new(2.0, 1.0);
+        let g1 = Gaussian::new(1.0, 2.0);
+        let g2 = Gaussian::new(2.0, 1.0);
         let kl = 0.5_f64.ln() + 5.0 / 2.0 - 0.5;
         assert::close(g1.kl(&g2), kl, TOL);
     }

@@ -1,8 +1,6 @@
 extern crate rand;
 extern crate special;
 
-use std::marker::PhantomData;
-
 use self::rand::distributions::Gamma;
 use self::rand::Rng;
 use self::special::Beta as SBeta;
@@ -12,18 +10,16 @@ use traits::*;
 
 /// Beta distribution, *Beta(α, β)*.
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Beta<T> {
+pub struct Beta {
     alpha: f64,
     beta: f64,
-    _phantom: PhantomData<T>,
 }
 
-impl<T> Beta<T> {
+impl Beta {
     pub fn new(alpha: f64, beta: f64) -> Self {
         Beta {
             alpha: alpha,
             beta: beta,
-            _phantom: PhantomData,
         }
     }
 
@@ -39,7 +35,7 @@ impl<T> Beta<T> {
     }
 }
 
-impl<T> Default for Beta<T> {
+impl Default for Beta {
     fn default() -> Self {
         Beta::jeffreys()
     }
@@ -47,9 +43,7 @@ impl<T> Default for Beta<T> {
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv for Beta<$kind> {
-            type DatumType = $kind;
-
+        impl Rv<$kind> for Beta {
             fn ln_f(&self, x: &$kind) -> f64 {
                 (self.alpha - 1.0) * (*x as f64).ln()
                     + (self.beta - 1.0) * (1.0 - *x as f64).ln()
@@ -82,16 +76,15 @@ macro_rules! impl_traits {
             }
         }
 
-        impl ContinuousDistr for Beta<$kind> {}
+        impl ContinuousDistr<$kind> for Beta {}
 
-        impl Mean for Beta<$kind> {
-            type MeanType = $kind;
+        impl Mean<$kind> for Beta {
             fn mean(&self) -> Option<$kind> {
                 Some((self.alpha / (self.alpha + self.beta)) as $kind)
             }
         }
 
-        impl Mode for Beta<$kind> {
+        impl Mode<$kind> for Beta {
             fn mode(&self) -> Option<$kind> {
                 if self.beta > 1.0 {
                     if self.alpha > 1.0 {
@@ -114,46 +107,44 @@ macro_rules! impl_traits {
                 }
             }
         }
-
-        impl Variance for Beta<$kind> {
-            type VarianceType = f64;
-
-            fn variance(&self) -> Option<f64> {
-                let apb = self.alpha + self.beta;
-                Some(self.alpha * self.beta / (apb * apb * (apb + 1.0)))
-            }
-        }
-
-        impl Entropy for Beta<$kind> {
-            fn entropy(&self) -> f64 {
-                let apb = self.alpha + self.beta;
-                self.alpha.ln_beta(self.beta)
-                    - (self.alpha - 1.0) * self.alpha.digamma()
-                    - (self.beta - 1.0) * self.beta.digamma()
-                    + (apb - 2.0) * apb.digamma()
-            }
-        }
-
-        impl Skewness for Beta<$kind> {
-            fn skewness(&self) -> Option<f64> {
-                let apb = self.alpha + self.beta;
-                let numer = 2.0 * (self.beta - self.alpha) * (apb + 1.0).sqrt();
-                let denom = (apb + 2.0) * (self.alpha * self.beta).sqrt();
-                Some(numer / denom)
-            }
-        }
-
-        impl Kurtosis for Beta<$kind> {
-            fn kurtosis(&self) -> Option<f64> {
-                let apb = self.alpha + self.beta;
-                let amb = self.alpha - self.beta;
-                let atb = self.alpha * self.beta;
-                let numer = 6.0 * (amb * amb * (apb + 1.0) - atb * (apb + 2.0));
-                let denom = atb * (apb + 2.0) * (apb + 3.0);
-                Some(numer / denom)
-            }
-        }
     };
+}
+
+impl Variance<f64> for Beta {
+    fn variance(&self) -> Option<f64> {
+        let apb = self.alpha + self.beta;
+        Some(self.alpha * self.beta / (apb * apb * (apb + 1.0)))
+    }
+}
+
+impl Entropy for Beta {
+    fn entropy(&self) -> f64 {
+        let apb = self.alpha + self.beta;
+        self.alpha.ln_beta(self.beta)
+            - (self.alpha - 1.0) * self.alpha.digamma()
+            - (self.beta - 1.0) * self.beta.digamma()
+            + (apb - 2.0) * apb.digamma()
+    }
+}
+
+impl Skewness for Beta {
+    fn skewness(&self) -> Option<f64> {
+        let apb = self.alpha + self.beta;
+        let numer = 2.0 * (self.beta - self.alpha) * (apb + 1.0).sqrt();
+        let denom = (apb + 2.0) * (self.alpha * self.beta).sqrt();
+        Some(numer / denom)
+    }
+}
+
+impl Kurtosis for Beta {
+    fn kurtosis(&self) -> Option<f64> {
+        let apb = self.alpha + self.beta;
+        let amb = self.alpha - self.beta;
+        let atb = self.alpha * self.beta;
+        let numer = 6.0 * (amb * amb * (apb + 1.0) - atb * (apb + 2.0));
+        let denom = atb * (apb + 2.0) * (apb + 3.0);
+        Some(numer / denom)
+    }
 }
 
 impl_traits!(f32);
@@ -169,47 +160,47 @@ mod tests {
 
     #[test]
     fn new() {
-        let beta = Beta::<f64>::new(1.0, 2.0);
+        let beta = Beta::new(1.0, 2.0);
         assert::close(beta.alpha, 1.0, TOL);
         assert::close(beta.beta, 2.0, TOL);
     }
 
     #[test]
     fn uniform() {
-        let beta = Beta::<f64>::uniform();
+        let beta = Beta::uniform();
         assert::close(beta.alpha, 1.0, TOL);
         assert::close(beta.beta, 1.0, TOL);
     }
 
     #[test]
     fn jeffreys() {
-        let beta = Beta::<f64>::jeffreys();
+        let beta = Beta::jeffreys();
         assert::close(beta.alpha, 0.5, TOL);
         assert::close(beta.beta, 0.5, TOL);
     }
 
     #[test]
     fn ln_pdf_center_value() {
-        let beta = Beta::<f64>::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0);
         assert::close(beta.ln_pdf(&0.5), 0.28203506914240184, TOL);
     }
 
     #[test]
     fn ln_pdf_low_value() {
-        let beta = Beta::<f64>::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0);
         assert::close(beta.ln_pdf(&0.01), -0.99087958886522731, TOL);
     }
 
     #[test]
     fn ln_pdf_high_value() {
-        let beta = Beta::<f64>::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0);
         assert::close(beta.ln_pdf(&0.99), -3.2884395139325218, TOL);
     }
 
     #[test]
     fn draw_should_resturn_values_within_0_to_1() {
         let mut rng = rand::thread_rng();
-        let beta = Beta::<f64>::jeffreys();
+        let beta = Beta::jeffreys();
         for _ in 0..100 {
             let x = beta.draw(&mut rng);
             assert!(0.0 < x && x < 1.0);
@@ -219,94 +210,96 @@ mod tests {
     #[test]
     fn sample_returns_the_correct_number_draws() {
         let mut rng = rand::thread_rng();
-        let beta = Beta::<f64>::jeffreys();
-        let xs = beta.sample(103, &mut rng);
+        let beta = Beta::jeffreys();
+        let xs: Vec<f32> = beta.sample(103, &mut rng);
         assert_eq!(xs.len(), 103);
     }
 
     #[test]
     fn uniform_mean() {
-        assert::close(Beta::<f64>::uniform().mean().unwrap(), 0.5, TOL);
+        let mean: f64 = Beta::uniform().mean().unwrap();
+        assert::close(mean, 0.5, TOL);
     }
 
     #[test]
     fn jeffreys_mean() {
-        assert::close(Beta::<f64>::jeffreys().mean().unwrap(), 0.5, TOL);
+        let mean: f64 = Beta::jeffreys().mean().unwrap();
+        assert::close(mean, 0.5, TOL);
     }
 
     #[test]
     fn mean() {
-        assert::close(
-            Beta::<f64>::new(1.0, 5.0).mean().unwrap(),
-            1.0 / 6.0,
-            TOL,
-        );
+        let mean: f64 = Beta::new(1.0, 5.0).mean().unwrap();
+        assert::close(mean, 1.0 / 6.0, TOL);
     }
 
     #[test]
     fn variance() {
-        let beta = Beta::<f64>::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0);
         assert::close(beta.variance().unwrap(), 0.054421768707482991, TOL);
     }
 
     #[test]
     fn mode_for_alpha_and_beta_greater_than_one() {
-        let beta = Beta::<f64>::new(1.5, 2.0);
-        assert::close(beta.mode().unwrap(), 0.5 / 1.5, TOL);
+        let mode: f64 = Beta::new(1.5, 2.0).mode().unwrap();
+        assert::close(mode, 0.5 / 1.5, TOL);
     }
 
     #[test]
     fn mode_for_alpha_one_and_large_beta() {
-        let beta = Beta::<f64>::new(1.0, 2.0);
-        assert::close(beta.mode().unwrap(), 0.0, TOL);
+        let mode: f64 = Beta::new(1.0, 2.0).mode().unwrap();
+        assert::close(mode, 0.0, TOL);
     }
 
     #[test]
     fn mode_for_large_alpha_and_beta_one() {
-        let beta = Beta::<f64>::new(2.0, 1.0);
-        assert::close(beta.mode().unwrap(), 1.0, TOL);
+        let mode: f64 = Beta::new(2.0, 1.0).mode().unwrap();
+        assert::close(mode, 1.0, TOL);
     }
 
     #[test]
     fn mode_for_alpha_less_than_one_is_none() {
-        assert!(Beta::<f64>::new(0.99, 2.0).mode().is_none());
+        let mode_opt: Option<f64> = Beta::new(0.99, 2.0).mode();
+        assert!(mode_opt.is_none());
     }
 
     #[test]
     fn mode_for_beta_less_than_one_is_none() {
-        assert!(Beta::<f64>::new(2.0, 0.99).mode().is_none());
+        let mode_opt: Option<f64> = Beta::new(2.0, 0.99).mode();
+        assert!(mode_opt.is_none());
     }
 
     #[test]
     fn mode_for_alpha_and_beta_less_than_one_is_none() {
-        assert!(Beta::<f64>::new(0.99, 0.99).mode().is_none());
+        let mode_opt: Option<f64> = Beta::new(0.99, 0.99).mode();
+        assert!(mode_opt.is_none());
     }
 
     #[test]
     fn entropy() {
-        let beta = Beta::<f64>::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0);
         assert::close(beta.entropy(), -0.10805020110232236, TOL);
     }
 
     #[test]
     fn uniform_skewness_should_be_zero() {
-        assert::close(Beta::<f64>::uniform().skewness().unwrap(), 0.0, TOL);
+        assert::close(Beta::uniform().skewness().unwrap(), 0.0, TOL);
     }
 
     #[test]
     fn jeffreysf_skewness_should_be_zero() {
-        assert::close(Beta::<f64>::jeffreys().skewness().unwrap(), 0.0, TOL);
+        assert::close(Beta::jeffreys().skewness().unwrap(), 0.0, TOL);
     }
 
     #[test]
     fn skewness() {
-        let beta = Beta::<f64>::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0);
         assert::close(beta.skewness().unwrap(), 0.22268088570756162, TOL);
     }
 
     #[test]
     fn kurtosis() {
-        let beta = Beta::<f64>::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0);
         assert::close(beta.kurtosis().unwrap(), -0.8601398601398601, TOL);
     }
 }
