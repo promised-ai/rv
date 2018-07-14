@@ -10,8 +10,8 @@ use traits::*;
 /// Gamma distribution G(α, β)
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Gamma {
-    shape: f64,
-    rate: f64,
+    pub shape: f64,
+    pub rate: f64,
 }
 
 impl Gamma {

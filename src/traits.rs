@@ -134,3 +134,49 @@ pub trait KlDivergence {
         self.kl(&other) + other.kl(&self)
     }
 }
+
+/// The data for this distribution can be summarized by a statistic
+pub trait HasSuffStat<X> {
+    type Stat: SuffStat<X>;
+}
+
+/// Is a sufccicent statistic for a distribution
+pub trait SuffStat<X> {
+    fn from_vec(xs: &Vec<X>) -> Self;
+    fn observe(&mut self, x: &X);
+    fn forget(&mut self, x: &X);
+}
+
+pub enum DataOrSuffStat<'a, X, Fx>
+where
+    X: 'a,
+    Fx: 'a + HasSuffStat<X>,
+{
+    Data(&'a Vec<X>),
+    SuffStat(&'a Fx::Stat),
+}
+
+/// A prior on `Fx` that induces a posterior that is the same form as the prior
+pub trait ConjugatePrior<X, Fx>: Rv<Fx>
+where
+    Fx: Rv<X> + HasSuffStat<X>,
+{
+    /// Computes the posterior distribution from the data
+    fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self;
+
+    // Log marginal likelihood
+    fn ln_m(&self, x: &DataOrSuffStat<X, Fx>) -> f64;
+
+    // Log posterior predictive of y given x
+    fn ln_pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64;
+
+    /// Marginal likelihood of x
+    fn m(&self, x: &DataOrSuffStat<X, Fx>) -> f64 {
+        self.ln_m(x).exp()
+    }
+
+    /// Posterior Predictive distribution
+    fn pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64 {
+        self.ln_pp(&y, x).exp()
+    }
+}

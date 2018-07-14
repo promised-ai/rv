@@ -5,7 +5,6 @@ authors = ["Baxter Eaves"]
 description = "Random variables"
 repository = "https://gitlab.com/baxe/rv"
 readme = "README.md"
-license = "MIT"
 license-file = "LICENSE.txt"
 
 [badges]
