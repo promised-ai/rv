@@ -4,7 +4,8 @@ extern crate rv;
 
 use rand::Rng;
 use rv::data::BernoulliData;
-use rv::dist::Beta;
+use rv::dist::{Bernoulli, Beta};
+use rv::model::ConjugateModel;
 use rv::traits::*;
 
 fn main() {
@@ -30,4 +31,14 @@ fn main() {
         "Posterior mean: {} (should be close to 0.7)",
         posterior_mean
     );
+
+    // Samw thing, only using ConjugateModel
+    let mut model: ConjugateModel<bool, Bernoulli, Beta> =
+        ConjugateModel::new(Bernoulli::new(0.5), &prior);
+
+    flips.iter().for_each(|flip| model.observe(&flip));
+
+    // draw from the posterior predictive
+    let ys = model.sample(10, &mut rng);
+    println!("Posterior predictive samples: {:?}", ys);
 }

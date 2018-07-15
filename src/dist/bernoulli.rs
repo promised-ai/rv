@@ -116,6 +116,9 @@ macro_rules! impl_int_traits {
 
         impl HasSuffStat<$kind> for Bernoulli {
             type Stat = BernoulliSuffStat;
+            fn empty_suffstat(&self) -> Self::Stat {
+                BernoulliSuffStat::new()
+            }
         }
     };
 }
@@ -241,6 +244,9 @@ impl Mode<bool> for Bernoulli {
 
 impl HasSuffStat<bool> for Bernoulli {
     type Stat = BernoulliSuffStat;
+    fn empty_suffstat(&self) -> Self::Stat {
+        BernoulliSuffStat::new()
+    }
 }
 
 impl_int_traits!(u8);

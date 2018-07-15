@@ -70,6 +70,10 @@ impl Categorical {
     pub fn weights(&self) -> Vec<f64> {
         self.ln_weights.iter().map(|&w| w.exp()).collect()
     }
+
+    pub fn k(&self) -> usize {
+        self.ln_weights.len()
+    }
 }
 
 impl<X: CategoricalDatum> Rv<X> for Categorical {
@@ -126,6 +130,9 @@ impl Entropy for Categorical {
 
 impl<X: CategoricalDatum> HasSuffStat<X> for Categorical {
     type Stat = CategoricalSuffStat;
+    fn empty_suffstat(&self) -> Self::Stat {
+        CategoricalSuffStat::new(self.k())
+    }
 }
 
 #[cfg(test)]
