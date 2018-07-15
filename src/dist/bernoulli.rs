@@ -1,3 +1,4 @@
+//! Bernoulli distribution of x in {0, 1}
 extern crate rand;
 extern crate special;
 

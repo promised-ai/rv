@@ -1,3 +1,4 @@
+//! Inverse Gamma distribution over x in (0, ∞)
 extern crate rand;
 extern crate special;
 
