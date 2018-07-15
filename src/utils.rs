@@ -2,6 +2,7 @@ extern crate rand;
 
 use self::rand::distributions::Open01;
 use self::rand::Rng;
+use std::ops::AddAssign;
 
 /// Safely compute `log(sum(exp(xs))`
 pub fn logsumexp(xs: &[f64]) -> f64 {
@@ -17,7 +18,52 @@ pub fn logsumexp(xs: &[f64]) -> f64 {
     }
 }
 
-/// Draw and index according to log domain weights
+/// Cumulative sum of `xs`
+///
+/// # Example
+///
+/// ```rust
+/// # extern crate rv;
+/// # use rv::utils::cumsum;
+/// #
+/// let xs: Vec<i32> = vec![1, 1, 2, 1];
+/// assert_eq!(cumsum(&xs), vec![1, 2, 4, 5]);
+/// ```
+pub fn cumsum<T>(xs: &[T]) -> Vec<T>
+where
+    T: AddAssign + Clone,
+{
+    let mut summed: Vec<T> = xs.to_vec();
+    for i in 1..xs.len() {
+        summed[i] += summed[i - 1].clone();
+    }
+    summed
+}
+
+/// Draw `n` indices in proportion to their `weights`
+pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
+    if weights.is_empty() {
+        panic!("Empty container");
+    }
+    let ws: Vec<f64> = cumsum(weights);
+    let scale: f64 = *ws.last().unwrap();
+    let u = rand::distributions::Uniform::new(0.0, 1.0);
+
+    (0..n)
+        .map(|_| {
+            let r = rng.sample(u) * scale;
+            match ws.iter().position(|&w| w > r) {
+                Some(ix) => ix,
+                None => {
+                    let wsvec = weights.to_vec();
+                    panic!("Could not draw from {:?}", wsvec)
+                }
+            }
+        })
+        .collect()
+}
+
+/// Draw an index according to log-domain weights
 ///
 /// Draw a `usize` from the categorical distribution defined by `ln_weights`.
 /// Assumes that the sum of the weights is 0 (the sum of `exp(ln_weights)` is

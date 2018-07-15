@@ -1,3 +1,4 @@
+//! Gaussian/Normal distribution over x in (-∞, ∞)
 extern crate rand;
 extern crate special;
 

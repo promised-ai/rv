@@ -1,3 +1,4 @@
+//! Dirichlet and Symmetric Dirichlet distributions over simplexes
 extern crate rand;
 extern crate special;
 

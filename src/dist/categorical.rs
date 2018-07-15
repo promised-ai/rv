@@ -1,3 +1,4 @@
+//! Categorical distribution of x_k in {0, 1, ..., k-1}
 extern crate num;
 extern crate rand;
 

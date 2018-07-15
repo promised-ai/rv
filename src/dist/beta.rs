@@ -1,3 +1,4 @@
+//! Beta distribution over x in (0, 1)
 extern crate rand;
 extern crate special;
 
