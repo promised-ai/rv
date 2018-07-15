@@ -77,6 +77,13 @@ macro_rules! impl_traits {
             }
         }
 
+        impl Support<$kind> for Beta {
+            fn contains(&self, x: &$kind) -> bool {
+                let xf = *x as f64;
+                0.0 < xf && xf < 1.0
+            }
+        }
+
         impl ContinuousDistr<$kind> for Beta {}
 
         impl Mean<$kind> for Beta {

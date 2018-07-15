@@ -42,7 +42,7 @@ pub trait Support<X> {
 }
 
 /// Is a continuous probability distributions
-pub trait ContinuousDistr<X>: Rv<X> {
+pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
     /// The value of the Probability Density Function (PDF) at `x`
     fn pdf(&self, x: &X) -> f64 {
         self.ln_pdf(x).exp()
@@ -50,6 +50,9 @@ pub trait ContinuousDistr<X>: Rv<X> {
 
     /// The value of the log Probability Density Function (PDF) at `x`
     fn ln_pdf(&self, x: &X) -> f64 {
+        if !self.contains(&x) {
+            panic!("x not in support");
+        }
         self.ln_f(x) - self.ln_normalizer()
     }
 }
@@ -77,12 +80,15 @@ pub trait InverseCdf<X>: Rv<X> + Support<X> {
 }
 
 /// Is a discrete probability distribution
-pub trait DiscreteDistr<X>: Rv<X> {
+pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
     fn pmf(&self, x: &X) -> f64 {
         self.ln_pmf(x).exp()
     }
 
     fn ln_pmf(&self, x: &X) -> f64 {
+        if !self.contains(&x) {
+            panic!("x not in support");
+        }
         self.ln_f(x) - self.ln_normalizer()
     }
 }
