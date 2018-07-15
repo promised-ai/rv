@@ -140,6 +140,24 @@ impl Partition {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    /// Return the partition weights (normalized counts)
+    ///
+    /// # Example
+    ///
+    /// ``` rust
+    /// # extern crate rv;
+    /// # use rv::partition::Partition;
+    /// #
+    /// let part = Partition::from_z(vec![0, 1, 0, 2]).unwrap();
+    /// let weights = part.weights();
+    ///
+    /// assert_eq!(weights, vec![0.5, 0.25, 0.25]);
+    /// ```
+    pub fn weights(&self) -> Vec<f64> {
+        let n = self.len() as f64;
+        self.counts.iter().map(|&ct| (ct as f64) / n).collect()
+    }
 }
 
 #[cfg(test)]
