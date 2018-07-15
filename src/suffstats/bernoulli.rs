@@ -18,12 +18,6 @@ impl Default for BernoulliSuffStat {
 }
 
 impl SuffStat<bool> for BernoulliSuffStat {
-    fn from_vec(xs: &Vec<bool>) -> Self {
-        let mut stat = BernoulliSuffStat::new();
-        xs.iter().for_each(|x| stat.observe(x));
-        stat
-    }
-
     fn observe(&mut self, x: &bool) {
         self.n += 1;
         if *x {
@@ -42,12 +36,6 @@ impl SuffStat<bool> for BernoulliSuffStat {
 macro_rules! impl_int_traits {
     ($kind:ty) => {
         impl SuffStat<$kind> for BernoulliSuffStat {
-            fn from_vec(xs: &Vec<$kind>) -> Self {
-                let mut stat = BernoulliSuffStat::new();
-                xs.iter().for_each(|x| stat.observe(x));
-                stat
-            }
-
             fn observe(&mut self, x: &$kind) {
                 self.n += 1;
                 if *x == 1 {
@@ -86,14 +74,6 @@ mod tests {
         let stat = BernoulliSuffStat::new();
         assert_eq!(stat.n, 0);
         assert_eq!(stat.k, 0);
-    }
-
-    #[test]
-    fn from_vec() {
-        let xs: Vec<u8> = vec![0, 1, 1, 0, 1, 1];
-        let stat = BernoulliSuffStat::from_vec(&xs);
-        assert_eq!(stat.n, 6);
-        assert_eq!(stat.k, 4);
     }
 
     #[test]

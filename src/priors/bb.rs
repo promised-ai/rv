@@ -27,7 +27,8 @@ impl ConjugatePrior<bool, Bernoulli> for Beta {
     fn posterior(&self, x: &DataOrSuffStat<bool, Bernoulli>) -> Beta {
         let (n, k) = match x {
             DataOrSuffStat::Data(ref xs) => {
-                let stat = BernoulliSuffStat::from_vec(xs);
+                let mut stat = BernoulliSuffStat::new();
+                xs.iter().for_each(|x| stat.observe(x));
                 (stat.n, stat.k)
             }
             DataOrSuffStat::SuffStat(ref stat) => (stat.n, stat.k),

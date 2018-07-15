@@ -142,7 +142,6 @@ pub trait HasSuffStat<X> {
 
 /// Is a sufccicent statistic for a distribution
 pub trait SuffStat<X> {
-    fn from_vec(xs: &Vec<X>) -> Self;
     fn observe(&mut self, x: &X);
     fn forget(&mut self, x: &X);
 }
