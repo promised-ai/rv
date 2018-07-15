@@ -3,6 +3,7 @@ extern crate rand;
 
 use self::num::traits::FromPrimitive;
 use self::rand::Rng;
+use suffstats::CategoricalSuffStat;
 use traits::*;
 use utils::{argmax, ln_pflip, logsumexp};
 
@@ -63,53 +64,55 @@ impl Categorical {
         let lnp = (1.0 / k as f64).ln();
         Categorical::from_ln_weights(vec![lnp; k])
     }
+
+    /// Return the weights (`exp(ln_weights)`)
+    pub fn weights(&self) -> Vec<f64> {
+        self.ln_weights.iter().map(|&w| w.exp()).collect()
+    }
 }
 
-macro_rules! impl_traits {
-    ($kind:ty) => {
-        impl Rv<$kind> for Categorical {
-            fn ln_f(&self, x: &$kind) -> f64 {
-                let ix: usize = (*x).into();
-                self.ln_weights[ix]
-            }
+impl<X: CategoricalDatum> Rv<X> for Categorical {
+    fn ln_f(&self, x: &X) -> f64 {
+        let ix: usize = (*x).into();
+        self.ln_weights[ix]
+    }
 
-            fn ln_normalizer(&self) -> f64 {
-                0.0
-            }
+    fn ln_normalizer(&self) -> f64 {
+        0.0
+    }
 
-            fn draw<R: Rng>(&self, mut rng: &mut R) -> $kind {
-                let ix = ln_pflip(&self.ln_weights, 1, &mut rng)[0];
-                FromPrimitive::from_usize(ix).unwrap()
-            }
+    fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
+        let ix = ln_pflip(&self.ln_weights, 1, &mut rng)[0];
+        FromPrimitive::from_usize(ix).unwrap()
+    }
 
-            fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<$kind> {
-                ln_pflip(&self.ln_weights, n, &mut rng)
-                    .iter()
-                    .map(|&ix| FromPrimitive::from_usize(ix).unwrap())
-                    .collect()
-            }
+    fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<X> {
+        ln_pflip(&self.ln_weights, n, &mut rng)
+            .iter()
+            .map(|&ix| FromPrimitive::from_usize(ix).unwrap())
+            .collect()
+    }
+}
+
+impl<X: CategoricalDatum> Support<X> for Categorical {
+    fn contains(&self, x: &X) -> bool {
+        let ix: usize = (*x).into();
+        ix < self.ln_weights.len()
+    }
+}
+
+impl<X: CategoricalDatum> DiscreteDistr<X> for Categorical {}
+
+impl<X: CategoricalDatum> Mode<X> for Categorical {
+    fn mode(&self) -> Option<X> {
+        // FIXME: Return None if more than one max value
+        let max_ixs = argmax(&self.ln_weights);
+        if max_ixs.len() > 1 {
+            None
+        } else {
+            Some(FromPrimitive::from_usize(max_ixs[0]).unwrap())
         }
-
-        impl Support<$kind> for Categorical {
-            fn contains(&self, x: &$kind) -> bool {
-                (*x as usize) < self.ln_weights.len()
-            }
-        }
-
-        impl DiscreteDistr<$kind> for Categorical {}
-
-        impl Mode<$kind> for Categorical {
-            fn mode(&self) -> Option<$kind> {
-                // FIXME: Return None if more than one max value
-                let max_ixs = argmax(&self.ln_weights);
-                if max_ixs.len() > 1 {
-                    None
-                } else {
-                    Some(max_ixs[0] as $kind)
-                }
-            }
-        }
-    };
+    }
 }
 
 impl Entropy for Categorical {
@@ -120,9 +123,9 @@ impl Entropy for Categorical {
     }
 }
 
-impl_traits!(u8);
-impl_traits!(u16);
-impl_traits!(usize);
+impl<X: CategoricalDatum> HasSuffStat<X> for Categorical {
+    type Stat = CategoricalSuffStat;
+}
 
 #[cfg(test)]
 mod tests {
