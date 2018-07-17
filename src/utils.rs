@@ -66,8 +66,7 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 /// Draw an index according to log-domain weights
 ///
 /// Draw a `usize` from the categorical distribution defined by `ln_weights`.
-/// Assumes that the sum of the weights is 0 (the sum of `exp(ln_weights)` is
-/// 1).
+/// If `normed` is `true` then exp(`ln_weights`) is assumed to sum to 1.
 ///
 /// # Examples
 ///
@@ -80,7 +79,7 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 /// let weights: Vec<f64> = vec![0.4, 0.2, 0.3, 0.1];
 /// let ln_weights: Vec<f64> = weights.iter().map(|&w| w.ln()).collect();
 ///
-/// let xs = ln_pflip(&ln_weights, 100, &mut rand::thread_rng());
+/// let xs = ln_pflip(&ln_weights, 100, true, &mut rand::thread_rng());
 ///
 /// assert_eq!(xs.len(), 100);
 /// assert!(xs.iter().all(|&x| x <= 3));
@@ -89,9 +88,12 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 pub fn ln_pflip<R: Rng>(
     ln_weights: &[f64],
     n: usize,
+    normed: bool,
     rng: &mut R,
 ) -> Vec<usize> {
-    let mut cdf: Vec<f64> = ln_weights.iter().map(|w| w.exp()).collect();
+    let z = if normed { 0.0 } else { logsumexp(ln_weights) };
+
+    let mut cdf: Vec<f64> = ln_weights.iter().map(|w| (w - z).exp()).collect();
 
     // doing this instead of calling pflip shaves about 30% off the runtime.
     for i in 1..cdf.len() {

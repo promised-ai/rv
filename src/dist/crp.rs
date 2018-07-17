@@ -56,7 +56,7 @@ impl Rv<Partition> for Crp {
         for _ in 1..self.n {
             weights.push(self.alpha);
             let zi = pflip(&weights, 1, rng)[0];
-            z.push(k);
+            z.push(zi);
 
             if zi == k {
                 weights[zi] = 1.0;

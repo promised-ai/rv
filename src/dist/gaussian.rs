@@ -9,6 +9,7 @@ use self::rand::Rng;
 use self::special::Error;
 
 use consts::*;
+use suffstats::GaussianSuffStat;
 use traits::*;
 
 /// Gaussian / Normal distribution, N(μ, σ)
@@ -109,6 +110,13 @@ macro_rules! impl_traits {
         impl Mode<$kind> for Gaussian {
             fn mode(&self) -> Option<$kind> {
                 Some(self.mu as $kind)
+            }
+        }
+
+        impl HasSuffStat<$kind> for Gaussian {
+            type Stat = GaussianSuffStat;
+            fn empty_suffstat(&self) -> Self::Stat {
+                GaussianSuffStat::new()
             }
         }
     };

@@ -1,4 +1,4 @@
-//! Categorical distribution of x_k in {0, 1, ..., k-1}
+//! Categorical distribution of x<sub>k</sub> in {0, 1, ..., k-1}
 extern crate num;
 extern crate rand;
 
@@ -87,12 +87,12 @@ impl<X: CategoricalDatum> Rv<X> for Categorical {
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
-        let ix = ln_pflip(&self.ln_weights, 1, &mut rng)[0];
+        let ix = ln_pflip(&self.ln_weights, 1, true, &mut rng)[0];
         FromPrimitive::from_usize(ix).unwrap()
     }
 
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<X> {
-        ln_pflip(&self.ln_weights, n, &mut rng)
+        ln_pflip(&self.ln_weights, n, true, &mut rng)
             .iter()
             .map(|&ix| FromPrimitive::from_usize(ix).unwrap())
             .collect()
