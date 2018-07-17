@@ -1,5 +1,6 @@
 use std::io;
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Partition {
     /// The assignment of the n items to partitions 0, ..., k-1
     pub z: Vec<usize>,

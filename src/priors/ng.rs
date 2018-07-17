@@ -120,3 +120,63 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
         -HALF_LOG_2PI + lnz_m - lnz_n
     }
 }
+
+#[cfg(test)]
+mod tests {
+    extern crate assert;
+    use super::*;
+
+    const TOL: f64 = 1E-12;
+
+    #[test]
+    fn ln_z_all_ones() {
+        let z = ln_z(1.0, 1.0, 1.0);
+        assert::close(z, 1.83787706640935, TOL);
+    }
+
+    #[test]
+    fn ln_z_not_all_ones() {
+        let z = ln_z(1.2, 0.4, 5.2);
+        assert::close(z, 5.36972819068534, TOL);
+    }
+
+    #[test]
+    fn ln_marginal_likelihood_vec_data() {
+        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4);
+        let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
+        let x = DataOrSuffStat::Data(&data);
+        let m = ng.ln_m(&x);
+        assert::close(m, -7.69707018344038, TOL);
+    }
+
+    #[test]
+    fn ln_marginal_likelihood_suffstat() {
+        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4);
+        let mut stat = GaussianSuffStat::new();
+        stat.observe(&1.0);
+        stat.observe(&2.0);
+        stat.observe(&3.0);
+        stat.observe(&4.0);
+        let x = DataOrSuffStat::SuffStat(&stat);
+        let m = ng.ln_m(&x);
+        assert::close(m, -7.69707018344038, TOL);
+    }
+
+    #[test]
+    fn posterior_predictive_positive_value() {
+        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4);
+        let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
+        let x = DataOrSuffStat::Data(&data);
+        let pp = ng.ln_pp(&3.0, &x);
+        assert::close(pp, -1.28438638499611, TOL);
+    }
+
+    #[test]
+    fn posterior_predictive_negative_value() {
+        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4);
+        let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
+        let x = DataOrSuffStat::Data(&data);
+        let pp = ng.ln_pp(&-3.0, &x);
+        assert::close(pp, -6.1637698862186, TOL);
+    }
+}
