@@ -34,7 +34,7 @@ impl<'pr> Dpgmm<'pr> {
         let crp = Crp::new(alpha, n);
         let partition = crp.draw(&mut rng);
         let mut components: Vec<GaussComponent> = (0..partition.k())
-            .map(|_| ConjugateModel::new(Gaussian::default(), prior))
+            .map(|_| ConjugateModel::new(&Gaussian::default(), prior))
             .collect();
 
         xs.iter()
@@ -62,7 +62,7 @@ impl<'pr> Dpgmm<'pr> {
         let zi = self.partition.z[pos];
 
         let is_singleton = self.partition.counts[zi] == 1;
-        self.partition.remove(pos);
+        self.partition.remove(pos).expect("could not remove");
 
         // If x was in a component by itself, remove that component; otherwise
         // have that component forget it.
@@ -78,14 +78,14 @@ impl<'pr> Dpgmm<'pr> {
     fn insert(&mut self, x: f64, ix: usize, k: usize) {
         if k == self.partition.k() {
             let mut c: GaussComponent =
-                ConjugateModel::new(Gaussian::default(), &self.prior);
+                ConjugateModel::new(&Gaussian::default(), &self.prior);
             c.observe(&x);
             self.components.push(c);
         }
         self.components[k].observe(&x);
         self.xs.push(x);
         self.ixs.push(ix);
-        self.partition.append(k);
+        self.partition.append(k).expect("Could not append");
     }
 
     fn step<R: Rng>(&mut self, pos: usize, mut rng: &mut R) {
@@ -99,7 +99,7 @@ impl<'pr> Dpgmm<'pr> {
             .collect();
 
         let ctmp: GaussComponent<'pr> =
-            ConjugateModel::new(Gaussian::default(), &self.prior);
+            ConjugateModel::new(&Gaussian::default(), &self.prior);
 
         ln_weights.push(self.crp.alpha.ln() + ctmp.ln_pp(&x));
 

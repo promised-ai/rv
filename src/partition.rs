@@ -8,6 +8,12 @@ pub struct Partition {
     pub counts: Vec<usize>,
 }
 
+impl Default for Partition {
+    fn default() -> Self {
+        Partition::new()
+    }
+}
+
 impl Partition {
     /// Empty partition
     pub fn new() -> Partition {
@@ -42,10 +48,7 @@ impl Partition {
         z.iter().for_each(|&zi| counts[zi] += 1);
 
         if counts.iter().all(|&ct| ct > 0) {
-            let part = Partition {
-                z: z,
-                counts: counts,
-            };
+            let part = Partition { z, counts };
             Ok(part)
         } else {
             let err_kind = io::ErrorKind::InvalidInput;

@@ -105,7 +105,7 @@ pub fn ln_pflip<R: Rng>(
             let r = rng.sample(Open01);
             cdf.iter()
                 .position(|&w| w > r)
-                .expect(format!("Could not draw from {:?}", cdf).as_str())
+                .expect("Could not draw from ln_weights")
         })
         .collect()
 }
@@ -134,8 +134,7 @@ pub fn argmax<T: PartialOrd>(xs: &[T]) -> Vec<usize> {
     } else {
         let mut maxval = &xs[0];
         let mut max_ixs: Vec<usize> = vec![0];
-        for i in 1..xs.len() {
-            let x = &xs[i];
+        for (i, x) in xs.iter().enumerate().skip(1) {
             if x > maxval {
                 maxval = x;
                 max_ixs = vec![i];

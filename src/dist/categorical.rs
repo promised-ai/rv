@@ -44,7 +44,7 @@ impl Categorical {
     ///
     /// assert::close(cat.pmf(&0_u8), 0.4, 10E-12);
     /// ```
-    pub fn new(weights: &Vec<f64>) -> Self {
+    pub fn new(weights: &[f64]) -> Self {
         let ln_weights: Vec<f64> = weights.iter().map(|w| w.ln()).collect();
         let ln_norm = logsumexp(&ln_weights);
         let normed_weights =
@@ -55,9 +55,7 @@ impl Categorical {
     /// Build a Categorical distribution from normalized log weights
     pub fn from_ln_weights(ln_weights: Vec<f64>) -> Self {
         assert!(logsumexp(&ln_weights).abs() < 10E-12);
-        Categorical {
-            ln_weights: ln_weights,
-        }
+        Categorical { ln_weights }
     }
 
     /// Creates a Categorical distribution over [0, k) with uniform weights

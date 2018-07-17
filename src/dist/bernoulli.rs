@@ -4,6 +4,7 @@ extern crate special;
 
 use self::rand::distributions::Uniform;
 use self::rand::Rng;
+use std::f64;
 use suffstats::BernoulliSuffStat;
 use traits::*;
 
@@ -16,7 +17,7 @@ pub struct Bernoulli {
 
 impl Bernoulli {
     pub fn new(p: f64) -> Self {
-        Bernoulli { p: p }
+        Bernoulli { p }
     }
 
     /// A Bernoulli distribution with a 50% chance of success
@@ -106,7 +107,7 @@ macro_rules! impl_int_traits {
                 let q = self.q();
                 if self.p < q {
                     Some(0)
-                } else if self.p == q {
+                } else if (self.p - q).abs() < f64::EPSILON {
                     None
                 } else {
                     Some(1)
@@ -161,7 +162,7 @@ impl Median<f64> for Bernoulli {
         let q = self.q();
         if self.p < q {
             Some(0.0)
-        } else if self.p == q {
+        } else if (self.p - q) < f64::EPSILON {
             Some(0.5)
         } else {
             Some(1.0)
@@ -234,7 +235,7 @@ impl Mode<bool> for Bernoulli {
         let q = self.q();
         if self.p < q {
             Some(false)
-        } else if self.p == q {
+        } else if (self.p - q).abs() < f64::EPSILON {
             None
         } else {
             Some(true)

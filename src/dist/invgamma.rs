@@ -18,10 +18,7 @@ pub struct InvGamma {
 impl InvGamma {
     /// Create a new `Gamma` distribution with shape (α) and rate (β).
     pub fn new(shape: f64, scale: f64) -> Self {
-        InvGamma {
-            shape: shape,
-            scale: scale,
-        }
+        InvGamma { shape, scale }
     }
 }
 
@@ -29,7 +26,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for InvGamma {
             fn ln_f(&self, x: &$kind) -> f64 {
-                let xf = *x as f64;
+                let xf = f64::from(*x);
                 self.shape * self.scale.ln()
                     - self.shape.ln_gamma().0
                     - (self.shape + 1.0) * xf.ln()
@@ -56,17 +53,13 @@ macro_rules! impl_traits {
 
         impl Support<$kind> for InvGamma {
             fn contains(&self, x: &$kind) -> bool {
-                if x.is_finite() && *x > 0.0 {
-                    true
-                } else {
-                    false
-                }
+                x.is_finite() && *x > 0.0
             }
         }
 
         impl Cdf<$kind> for InvGamma {
             fn cdf(&self, x: &$kind) -> f64 {
-                1.0 - (self.scale / *x as f64).inc_gamma(self.shape)
+                1.0 - (self.scale / f64::from(*x)).inc_gamma(self.shape)
             }
         }
 
