@@ -18,10 +18,7 @@ pub struct Gamma {
 impl Gamma {
     /// Create a new `Gamma` distribution with shape (α) and rate (β).
     pub fn new(shape: f64, rate: f64) -> Self {
-        Gamma {
-            shape: shape,
-            rate: rate,
-        }
+        Gamma { shape, rate }
     }
 }
 
@@ -30,8 +27,8 @@ macro_rules! impl_traits {
         impl Rv<$kind> for Gamma {
             fn ln_f(&self, x: &$kind) -> f64 {
                 self.shape * self.rate.ln() - self.shape.ln_gamma().0
-                    + (self.shape - 1.0) * (*x as f64).ln()
-                    - (self.rate * *x as f64)
+                    + (self.shape - 1.0) * f64::from(*x).ln()
+                    - (self.rate * f64::from(*x))
             }
 
             #[inline]
@@ -54,17 +51,13 @@ macro_rules! impl_traits {
 
         impl Support<$kind> for Gamma {
             fn contains(&self, x: &$kind) -> bool {
-                if x.is_finite() && *x > 0.0 {
-                    true
-                } else {
-                    false
-                }
+                x.is_finite() && *x > 0.0
             }
         }
 
         impl Cdf<$kind> for Gamma {
             fn cdf(&self, x: &$kind) -> f64 {
-                (self.rate * (*x as f64)).inc_gamma(self.shape)
+                (self.rate * f64::from(*x)).inc_gamma(self.shape)
             }
         }
 

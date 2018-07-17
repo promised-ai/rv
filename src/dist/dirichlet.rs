@@ -17,7 +17,7 @@ pub struct Dirichlet {
 impl Dirichlet {
     /// Creates a `Dirichlet` with a given `alphas` vector
     pub fn new(alphas: Vec<f64>) -> Self {
-        Dirichlet { alphas: alphas }
+        Dirichlet { alphas }
     }
 
     /// Creates a `Dirichlet` where all alphas are identical

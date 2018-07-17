@@ -34,7 +34,7 @@ fn main() {
 
     // Samw thing, only using ConjugateModel
     let mut model: ConjugateModel<bool, Bernoulli, Beta> =
-        ConjugateModel::new(Bernoulli::new(0.5), &prior);
+        ConjugateModel::new(&Bernoulli::new(0.5), &prior);
 
     flips.iter().for_each(|flip| model.observe(&flip));
 

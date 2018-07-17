@@ -6,6 +6,7 @@ use self::rand::distributions::Gamma;
 use self::rand::Rng;
 use self::special::Beta as SBeta;
 use self::special::Gamma as SGamma;
+use std::f64;
 
 use traits::*;
 
@@ -18,10 +19,7 @@ pub struct Beta {
 
 impl Beta {
     pub fn new(alpha: f64, beta: f64) -> Self {
-        Beta {
-            alpha: alpha,
-            beta: beta,
-        }
+        Beta { alpha, beta }
     }
 
     /// Create a `Beta` distribution with even density over (0, 1).
@@ -46,8 +44,8 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Beta {
             fn ln_f(&self, x: &$kind) -> f64 {
-                (self.alpha - 1.0) * (*x as f64).ln()
-                    + (self.beta - 1.0) * (1.0 - *x as f64).ln()
+                (self.alpha - 1.0) * f64::from(*x).ln()
+                    + (self.beta - 1.0) * (1.0 - f64::from(*x)).ln()
                     - self.alpha.ln_beta(self.beta)
             }
 
@@ -79,7 +77,7 @@ macro_rules! impl_traits {
 
         impl Support<$kind> for Beta {
             fn contains(&self, x: &$kind) -> bool {
-                let xf = *x as f64;
+                let xf = f64::from(*x);
                 0.0 < xf && xf < 1.0
             }
         }
@@ -99,12 +97,12 @@ macro_rules! impl_traits {
                         let m: f64 =
                             (self.alpha - 1.0) / (self.alpha + self.beta - 2.0);
                         Some(m as $kind)
-                    } else if self.alpha == 1.0 {
+                    } else if (self.alpha - 1.0).abs() < f64::EPSILON {
                         Some(0.0)
                     } else {
                         None
                     }
-                } else if self.beta == 1.0 {
+                } else if (self.beta - 1.0).abs() < f64::EPSILON {
                     if self.alpha > 1.0 {
                         Some(1.0)
                     } else {

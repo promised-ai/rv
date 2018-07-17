@@ -31,7 +31,7 @@ macro_rules! impl_suffstat {
         // TODO: store in a more nuerically stable form
         impl SuffStat<$kind> for GaussianSuffStat {
             fn observe(&mut self, x: &$kind) {
-                let xf = *x as f64;
+                let xf = f64::from(*x);
                 self.n += 1;
                 self.sum_x += xf;
                 self.sum_x_sq += xf.powi(2);
@@ -39,7 +39,7 @@ macro_rules! impl_suffstat {
 
             fn forget(&mut self, x: &$kind) {
                 if self.n > 1 {
-                    let xf = *x as f64;
+                    let xf = f64::from(*x);
                     self.n -= 1;
                     self.sum_x -= xf;
                     self.sum_x_sq -= xf.powi(2);

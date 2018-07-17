@@ -23,10 +23,7 @@ pub struct Gaussian {
 
 impl Gaussian {
     pub fn new(mu: f64, sigma: f64) -> Self {
-        Gaussian {
-            mu: mu,
-            sigma: sigma,
-        }
+        Gaussian { mu, sigma }
     }
 
     /// Standard normal
@@ -45,7 +42,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Gaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
-                let k = (*x as f64 - self.mu) / self.sigma;
+                let k = (f64::from(*x) - self.mu) / self.sigma;
                 -self.sigma.ln() - 0.5 * k * k
             }
 
@@ -68,18 +65,14 @@ macro_rules! impl_traits {
 
         impl Support<$kind> for Gaussian {
             fn contains(&self, x: &$kind) -> bool {
-                if x.is_finite() {
-                    true
-                } else {
-                    false
-                }
+                x.is_finite()
             }
         }
 
         impl Cdf<$kind> for Gaussian {
             fn cdf(&self, x: &$kind) -> f64 {
                 let errf =
-                    ((*x as f64 - self.mu) / (self.sigma * SQRT_2)).erf();
+                    ((f64::from(*x) - self.mu) / (self.sigma * SQRT_2)).erf();
                 0.5 * (1.0 + errf)
             }
         }

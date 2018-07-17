@@ -24,17 +24,12 @@ pub struct NormalGamma {
 
 impl NormalGamma {
     pub fn new(m: f64, r: f64, s: f64, v: f64) -> Self {
-        NormalGamma {
-            m: m,
-            r: r,
-            s: s,
-            v: v,
-        }
+        NormalGamma { m, r, s, v }
     }
 
     fn posterior_from_stat(&self, stat: &GaussianSuffStat) -> Self {
-        let r = self.r + (stat.n as f64);
-        let v = self.v + (stat.n as f64);
+        let r = self.r + stat.n as f64;
+        let v = self.v + stat.n as f64;
         let m = (self.m * self.r + stat.sum_x) / r;
         let s = self.s + stat.sum_x_sq + self.r * self.m * self.m - r * m * m;
         NormalGamma::new(m, r, s, v)

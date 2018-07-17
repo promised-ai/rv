@@ -27,7 +27,7 @@ pub struct Crp {
 impl Crp {
     /// Create an empty `Crp` with parameter alpha
     pub fn new(alpha: f64, n: usize) -> Self {
-        Crp { alpha: alpha, n: n }
+        Crp { alpha, n }
     }
 }
 
@@ -71,10 +71,7 @@ impl Rv<Partition> for Crp {
         let counts: Vec<usize> =
             weights.iter().map(|w| (w + 0.5) as usize).collect();
 
-        Partition {
-            z: z,
-            counts: counts,
-        }
+        Partition { z, counts }
     }
 }
 

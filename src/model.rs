@@ -20,7 +20,7 @@ where
     Fx: Rv<X> + HasSuffStat<X>,
     Pr: 'pr + ConjugatePrior<X, Fx>,
 {
-    pub fn new(fx: Fx, pr: &'pr Pr) -> Self {
+    pub fn new(fx: &Fx, pr: &'pr Pr) -> Self {
         ConjugateModel {
             prior: pr,
             suffstat: fx.empty_suffstat(),
