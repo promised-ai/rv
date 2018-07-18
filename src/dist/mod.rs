@@ -8,6 +8,7 @@ pub mod gamma;
 pub mod gaussian;
 pub mod invgamma;
 pub mod laplace;
+pub mod normal_gamma;
 
 pub use self::bernoulli::Bernoulli;
 pub use self::beta::Beta;
@@ -19,3 +20,4 @@ pub use self::gamma::Gamma;
 pub use self::gaussian::Gaussian;
 pub use self::invgamma::InvGamma;
 pub use self::laplace::Laplace;
+pub use self::normal_gamma::NormalGamma;
