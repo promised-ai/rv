@@ -2,10 +2,9 @@ extern crate rand;
 extern crate rv;
 
 use rand::Rng;
-use rv::dist::{Crp, Gaussian};
+use rv::dist::{Crp, Gaussian, NormalGamma};
 use rv::model::ConjugateModel;
 use rv::partition::Partition;
-use rv::priors::ng::NormalGamma;
 use rv::traits::*;
 use rv::utils::ln_pflip;
 
