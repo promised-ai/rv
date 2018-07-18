@@ -74,6 +74,19 @@ macro_rules! impl_traits {
 
         impl ContinuousDistr<$kind> for Cauchy {}
 
+        impl Cdf<$kind> for Cauchy {
+            fn cdf(&self, x: &$kind) -> f64 {
+                PI.recip() * ((f64::from(*x) - self.loc) / self.scale).atan()
+                    + 0.5
+            }
+        }
+
+        impl InverseCdf<$kind> for Cauchy {
+            fn invcdf(&self, p: f64) -> $kind {
+                (self.loc + self.scale * (PI * (p - 0.5)).tan()) as $kind
+            }
+        }
+
         impl Median<$kind> for Cauchy {
             fn median(&self) -> Option<$kind> {
                 Some(self.loc as $kind)
@@ -115,6 +128,40 @@ mod tests {
     fn ln_pdf_loc_nonzero() {
         let c = Cauchy::new(1.2, 3.4);
         assert::close(c.ln_pdf(&0.2), -2.4514716152673368, TOL);
+    }
+
+    #[test]
+    fn cdf_at_loc() {
+        let c = Cauchy::new(1.2, 3.4);
+        assert::close(c.cdf(&1.2), 0.5, TOL);
+    }
+
+    #[test]
+    fn cdf_off_loc() {
+        let c = Cauchy::new(1.2, 3.4);
+        assert::close(c.cdf(&2.2), 0.59105300185574883, TOL);
+        assert::close(c.cdf(&0.2), 1.0 - 0.59105300185574883, TOL);
+    }
+
+    #[test]
+    fn inv_cdf_ident() {
+        let mut rng = rand::thread_rng();
+        let c = Cauchy::default();
+        for _ in 0..100 {
+            let x: f64 = c.draw(&mut rng);
+            let p: f64 = c.cdf(&x);
+            let y: f64 = c.invcdf(p);
+            assert::close(x, y, TOL);
+        }
+    }
+
+    #[test]
+    fn inv_cdf() {
+        let c = Cauchy::new(1.2, 3.4);
+        let lower: f64 = c.invcdf(0.4);
+        let upper: f64 = c.invcdf(0.6);
+        assert::close(lower, 0.095273032808118607, TOL);
+        assert::close(upper, 2.3047269671918813, TOL);
     }
 
     #[test]
