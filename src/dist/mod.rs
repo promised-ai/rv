@@ -7,6 +7,7 @@ pub mod dirichlet;
 pub mod gamma;
 pub mod gaussian;
 pub mod invgamma;
+pub mod laplace;
 
 pub use self::bernoulli::Bernoulli;
 pub use self::beta::Beta;
@@ -17,3 +18,4 @@ pub use self::dirichlet::Dirichlet;
 pub use self::gamma::Gamma;
 pub use self::gaussian::Gaussian;
 pub use self::invgamma::InvGamma;
+pub use self::laplace::Laplace;

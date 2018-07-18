@@ -151,7 +151,7 @@ mod tests {
             let x: f64 = c.draw(&mut rng);
             let p: f64 = c.cdf(&x);
             let y: f64 = c.invcdf(p);
-            assert::close(x, y, TOL);
+            assert::close(x, y, 1E-8); // allow a little more error
         }
     }
 
