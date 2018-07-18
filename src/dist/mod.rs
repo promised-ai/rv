@@ -1,6 +1,7 @@
 pub mod bernoulli;
 pub mod beta;
 pub mod categorical;
+pub mod cauchy;
 pub mod crp;
 pub mod dirichlet;
 pub mod gamma;
@@ -10,6 +11,7 @@ pub mod invgamma;
 pub use self::bernoulli::Bernoulli;
 pub use self::beta::Beta;
 pub use self::categorical::Categorical;
+pub use self::cauchy::Cauchy;
 pub use self::crp::Crp;
 pub use self::dirichlet::Dirichlet;
 pub use self::gamma::Gamma;
