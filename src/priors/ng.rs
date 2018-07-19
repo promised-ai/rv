@@ -33,7 +33,7 @@ fn posterior_from_stat(
     let v = ng.v + stat.n as f64;
     let m = (ng.m * ng.r + stat.sum_x) / r;
     let s = ng.s + stat.sum_x_sq + ng.r * ng.m * ng.m - r * m * m;
-    NormalGamma::new(m, r, s, v)
+    NormalGamma::new(m, r, s, v).expect("Invalid posterior params.")
 }
 
 impl ConjugatePrior<f64, Gaussian> for NormalGamma {
@@ -84,7 +84,7 @@ mod tests {
 
     #[test]
     fn ln_marginal_likelihood_vec_data() {
-        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4);
+        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4).unwrap();
         let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
         let x = DataOrSuffStat::Data(&data);
         let m = ng.ln_m(&x);
@@ -93,7 +93,7 @@ mod tests {
 
     #[test]
     fn ln_marginal_likelihood_suffstat() {
-        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4);
+        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4).unwrap();
         let mut stat = GaussianSuffStat::new();
         stat.observe(&1.0);
         stat.observe(&2.0);
@@ -106,7 +106,7 @@ mod tests {
 
     #[test]
     fn posterior_predictive_positive_value() {
-        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4);
+        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4).unwrap();
         let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
         let x = DataOrSuffStat::Data(&data);
         let pp = ng.ln_pp(&3.0, &x);
@@ -115,7 +115,7 @@ mod tests {
 
     #[test]
     fn posterior_predictive_negative_value() {
-        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4);
+        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4).unwrap();
         let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
         let x = DataOrSuffStat::Data(&data);
         let pp = ng.ln_pp(&-3.0, &x);

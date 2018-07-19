@@ -177,7 +177,7 @@ fn main() {
 
     // Parameters are more or less arbitrary. The only thing we need to worry
     // about is scale.
-    let prior = NormalGamma::new(0.0, 1.0, 1.0, 1.0);
+    let prior = NormalGamma::new(0.0, 1.0, 1.0, 1.0).unwrap();
 
     // Draw a DPGMM from the prior
     let mut dpgmm = Dpgmm::new(xs, &prior, 1.0, &mut rng);

@@ -3,6 +3,7 @@ extern crate rand;
 use self::rand::Rng;
 use consts::HALF_LOG_2PI;
 use dist::{Gamma, Gaussian};
+use std::io;
 use suffstats::GaussianSuffStat;
 use traits::*;
 
@@ -11,6 +12,7 @@ use traits::*;
 /// Given `x ~ N(μ, σ)`, the Normal Gamma prior implies that `μ ~ N(m, 1/(rρ))`
 /// and `ρ ~ Gamma(ν/2, s/2)`.
 pub struct NormalGamma {
+    // TODO: document parameters
     pub m: f64,
     pub r: f64,
     pub s: f64,
@@ -18,8 +20,23 @@ pub struct NormalGamma {
 }
 
 impl NormalGamma {
-    pub fn new(m: f64, r: f64, s: f64, v: f64) -> Self {
-        NormalGamma { m, r, s, v }
+    pub fn new(m: f64, r: f64, s: f64, v: f64) -> io::Result<Self> {
+        let m_ok = m.is_finite();
+        let r_ok = r > 0.0 && r.is_finite();
+        let s_ok = s > 0.0 && s.is_finite();
+        let v_ok = v > 0.0 && v.is_finite();
+        if !m_ok {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let err = io::Error::new(err_kind, "m must be finite");
+            Err(err)
+        } else if r_ok && s_ok && v_ok {
+            Ok(NormalGamma { m, r, s, v })
+        } else {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let msg = "r, s, and v must be finite and greater than zero";
+            let err = io::Error::new(err_kind, msg);
+            Err(err)
+        }
     }
 }
 
@@ -54,6 +71,8 @@ impl Rv<Gaussian> for NormalGamma {
 
 impl Support<Gaussian> for NormalGamma {
     fn contains(&self, x: &Gaussian) -> bool {
+        // NOTE: Could replace this with Gaussian::new(mu, sigma).is_ok(),
+        // but this is more explicit.
         x.mu.is_finite() && x.sigma > 0.0 && x.sigma.is_finite()
     }
 }
