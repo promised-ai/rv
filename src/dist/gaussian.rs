@@ -3,6 +3,7 @@ extern crate rand;
 extern crate special;
 
 use std::f64::consts::SQRT_2;
+use std::io;
 
 use self::rand::distributions::Normal;
 use self::rand::Rng;
@@ -13,6 +14,27 @@ use suffstats::GaussianSuffStat;
 use traits::*;
 
 /// Gaussian / Normal distribution, N(μ, σ)
+///
+/// # Examples
+///
+/// Compute the [KL Divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence)
+/// between two Gaussians.
+///
+/// ```
+/// # extern crate rv;
+/// use rv::prelude::*;
+///
+/// let gauss_1 = Gaussian::new(0.1, 2.3).unwrap();
+/// let gauss_2 = Gaussian::standard();
+///
+/// // KL is not symmetric
+/// let kl_12 = gauss_1.kl(&gauss_2);
+/// let kl_21 = gauss_2.kl(&gauss_1);
+///
+/// // ... but kl_sym is because it's the sum of KL(P|Q) and KL(Q|P)
+/// let kl_sym = gauss_1.kl_sym(&gauss_2);
+/// assert!((kl_sym - (kl_12 + kl_21)).abs() < 1E-12);
+/// ```
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Gaussian {
     /// Mean
@@ -22,13 +44,26 @@ pub struct Gaussian {
 }
 
 impl Gaussian {
-    pub fn new(mu: f64, sigma: f64) -> Self {
-        Gaussian { mu, sigma }
+    pub fn new(mu: f64, sigma: f64) -> io::Result<Self> {
+        let mu_ok = mu.is_finite();
+        let sigma_ok = sigma > 0.0 && sigma.is_finite();
+        if !mu_ok {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let err = io::Error::new(err_kind, "mu must be finite");
+            Err(err)
+        } else if !sigma_ok {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let msg = "sigma must be finite and greater than zero";
+            let err = io::Error::new(err_kind, msg);
+            Err(err)
+        } else {
+            Ok(Gaussian { mu, sigma })
+        }
     }
 
     /// Standard normal
     pub fn standard() -> Self {
-        Gaussian::new(0.0, 1.0)
+        Gaussian::new(0.0, 1.0).unwrap()
     }
 }
 
@@ -167,7 +202,7 @@ mod tests {
 
     #[test]
     fn new() {
-        let gauss = Gaussian::new(1.2, 3.0);
+        let gauss = Gaussian::new(1.2, 3.0).unwrap();
         assert::close(gauss.mu, 1.2, TOL);
         assert::close(gauss.sigma, 3.0, TOL);
     }
@@ -193,28 +228,28 @@ mod tests {
     #[test]
     fn mean_should_be_mu() {
         let mu = 3.4;
-        let mean: f64 = Gaussian::new(mu, 0.5).mean().unwrap();
+        let mean: f64 = Gaussian::new(mu, 0.5).unwrap().mean().unwrap();
         assert::close(mean, mu, TOL);
     }
 
     #[test]
     fn median_should_be_mu() {
         let mu = 3.4;
-        let median: f64 = Gaussian::new(mu, 0.5).median().unwrap();
+        let median: f64 = Gaussian::new(mu, 0.5).unwrap().median().unwrap();
         assert::close(median, mu, TOL);
     }
 
     #[test]
     fn mode_should_be_mu() {
         let mu = 3.4;
-        let mode: f64 = Gaussian::new(mu, 0.5).mode().unwrap();
+        let mode: f64 = Gaussian::new(mu, 0.5).unwrap().mode().unwrap();
         assert::close(mode, mu, TOL);
     }
 
     #[test]
     fn variance_should_be_sigma_squared() {
         let sigma = 0.5;
-        let gauss = Gaussian::new(3.4, sigma);
+        let gauss = Gaussian::new(3.4, sigma).unwrap();
         assert::close(gauss.variance().unwrap(), sigma * sigma, TOL);
     }
 
@@ -250,13 +285,13 @@ mod tests {
 
     #[test]
     fn nonstandard_ln_pdf_on_mean() {
-        let gauss = Gaussian::new(-1.2, 0.33);
+        let gauss = Gaussian::new(-1.2, 0.33).unwrap();
         assert::close(gauss.ln_pdf(&-1.2_f64), 0.18972409131693846, TOL);
     }
 
     #[test]
     fn nonstandard_ln_pdf_off_mean() {
-        let gauss = Gaussian::new(-1.2, 0.33);
+        let gauss = Gaussian::new(-1.2, 0.33).unwrap();
         assert::close(gauss.ln_pdf(&0.0_f32), -6.4218461566169447, TOL);
     }
 
@@ -283,24 +318,24 @@ mod tests {
 
     #[test]
     fn skewness_should_be_zero() {
-        let gauss = Gaussian::new(-12.3, 45.6);
+        let gauss = Gaussian::new(-12.3, 45.6).unwrap();
         assert::close(gauss.skewness().unwrap(), 0.0, TOL);
     }
 
     #[test]
     fn kurtosis_should_be_zero() {
-        let gauss = Gaussian::new(-12.3, 45.6);
+        let gauss = Gaussian::new(-12.3, 45.6).unwrap();
         assert::close(gauss.skewness().unwrap(), 0.0, TOL);
     }
 
     #[test]
     fn cdf_at_mean_should_be_one_half() {
         let mu1: f64 = 2.3;
-        let gauss1 = Gaussian::new(mu1, 0.2);
+        let gauss1 = Gaussian::new(mu1, 0.2).unwrap();
         assert::close(gauss1.cdf(&mu1), 0.5, TOL);
 
         let mu2: f32 = -8.0;
-        let gauss2 = Gaussian::new(mu2.into(), 100.0);
+        let gauss2 = Gaussian::new(mu2.into(), 100.0).unwrap();
         assert::close(gauss2.cdf(&mu2), 0.5, TOL);
     }
 
@@ -319,7 +354,7 @@ mod tests {
     #[test]
     fn quantile_at_one_half_should_be_mu() {
         let mu = 1.2315;
-        let gauss = Gaussian::new(mu, 1.0);
+        let gauss = Gaussian::new(mu, 1.0).unwrap();
         let x: f64 = gauss.quantile(0.5);
         assert::close(x, mu, TOL);
     }
@@ -345,20 +380,20 @@ mod tests {
 
     #[test]
     fn entropy() {
-        let gauss = Gaussian::new(3.0, 12.3);
+        let gauss = Gaussian::new(3.0, 12.3).unwrap();
         assert::close(gauss.entropy(), 3.9285377955830447, TOL);
     }
 
     #[test]
     fn kl_of_idential_dsitrbutions_should_be_zero() {
-        let gauss = Gaussian::new(1.2, 3.4);
+        let gauss = Gaussian::new(1.2, 3.4).unwrap();
         assert::close(gauss.kl(&gauss), 0.0, TOL);
     }
 
     #[test]
     fn kl() {
-        let g1 = Gaussian::new(1.0, 2.0);
-        let g2 = Gaussian::new(2.0, 1.0);
+        let g1 = Gaussian::new(1.0, 2.0).unwrap();
+        let g2 = Gaussian::new(2.0, 1.0).unwrap();
         let kl = 0.5_f64.ln() + 5.0 / 2.0 - 0.5;
         assert::close(g1.kl(&g2), kl, TOL);
     }

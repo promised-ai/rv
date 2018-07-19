@@ -4,6 +4,7 @@ extern crate rand;
 
 use self::num::traits::FromPrimitive;
 use self::rand::Rng;
+use std::io;
 use suffstats::CategoricalSuffStat;
 use traits::*;
 use utils::{argmax, ln_pflip, logsumexp};
@@ -36,7 +37,7 @@ impl Categorical {
     /// use rv::dist::Categorical;
     ///
     /// let weights: Vec<f64> = vec![4.0, 2.0, 3.0, 1.0];
-    /// let cat = Categorical::new(&weights);
+    /// let cat = Categorical::new(&weights).unwrap();
     ///
     /// assert!(cat.contains(&0_u8));
     /// assert!(cat.contains(&3_u8));
@@ -44,24 +45,35 @@ impl Categorical {
     ///
     /// assert::close(cat.pmf(&0_u8), 0.4, 10E-12);
     /// ```
-    pub fn new(weights: &[f64]) -> Self {
-        let ln_weights: Vec<f64> = weights.iter().map(|w| w.ln()).collect();
-        let ln_norm = logsumexp(&ln_weights);
-        let normed_weights =
-            ln_weights.iter().map(|lnw| lnw - ln_norm).collect();
-        Categorical::from_ln_weights(normed_weights)
+    pub fn new(weights: &[f64]) -> io::Result<Self> {
+        if weights.iter().any(|&w| !w.is_finite()) {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let err = io::Error::new(err_kind, "Weights must be finite");
+            Err(err)
+        } else {
+            let ln_weights: Vec<f64> = weights.iter().map(|w| w.ln()).collect();
+            let ln_norm = logsumexp(&ln_weights);
+            let normed_weights =
+                ln_weights.iter().map(|lnw| lnw - ln_norm).collect();
+            Categorical::from_ln_weights(normed_weights)
+        }
     }
 
     /// Build a Categorical distribution from normalized log weights
-    pub fn from_ln_weights(ln_weights: Vec<f64>) -> Self {
-        assert!(logsumexp(&ln_weights).abs() < 10E-12);
-        Categorical { ln_weights }
+    pub fn from_ln_weights(ln_weights: Vec<f64>) -> io::Result<Self> {
+        if logsumexp(&ln_weights).abs() < 10E-12 {
+            Ok(Categorical { ln_weights })
+        } else {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let err = io::Error::new(err_kind, "Weights not normalized");
+            Err(err)
+        }
     }
 
     /// Creates a Categorical distribution over [0, k) with uniform weights
     pub fn uniform(k: usize) -> Self {
         let lnp = (1.0 / k as f64).ln();
-        Categorical::from_ln_weights(vec![lnp; k])
+        Categorical::from_ln_weights(vec![lnp; k]).unwrap()
     }
 
     /// Return the weights (`exp(ln_weights)`)
@@ -144,7 +156,7 @@ mod tests {
     fn ln_weights_should_logsumexp_to_1() {
         // weights the def do not sum to 1
         let weights: Vec<f64> = vec![2.0, 1.0, 2.0, 3.0, 1.0];
-        let cat = Categorical::new(&weights);
+        let cat = Categorical::new(&weights).unwrap();
         assert::close(logsumexp(&cat.ln_weights), 0.0, TOL);
     }
 
@@ -161,7 +173,7 @@ mod tests {
 
     #[test]
     fn ln_f_should_be_ln_weight() {
-        let cat = Categorical::new(&vec![2.0, 1.0, 2.0, 4.0, 3.0]);
+        let cat = Categorical::new(&vec![2.0, 1.0, 2.0, 4.0, 3.0]).unwrap();
         assert::close(cat.ln_f(&0_u8), -1.791759469228055, TOL);
         assert::close(cat.ln_f(&1_u8), -2.4849066497880004, TOL);
         assert::close(cat.ln_f(&2_u8), -1.791759469228055, TOL);
@@ -171,7 +183,7 @@ mod tests {
 
     #[test]
     fn ln_pmf_should_be_ln_weight() {
-        let cat = Categorical::new(&vec![2.0, 1.0, 2.0, 4.0, 3.0]);
+        let cat = Categorical::new(&vec![2.0, 1.0, 2.0, 4.0, 3.0]).unwrap();
         assert::close(cat.ln_pmf(&0_u16), -1.791759469228055, TOL);
         assert::close(cat.ln_pmf(&1_u16), -2.4849066497880004, TOL);
         assert::close(cat.ln_pmf(&2_u16), -1.791759469228055, TOL);
@@ -220,7 +232,7 @@ mod tests {
 
     #[test]
     fn mode() {
-        let cat = Categorical::new(&vec![1.0, 2.0, 3.0, 1.0]);
+        let cat = Categorical::new(&vec![1.0, 2.0, 3.0, 1.0]).unwrap();
         let mode: usize = cat.mode().unwrap();
         assert_eq!(mode, 2);
     }

@@ -19,7 +19,7 @@ impl Rv<Bernoulli> for Beta {
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Bernoulli {
         let p: f64 = self.draw(&mut rng);
-        Bernoulli::new(p)
+        Bernoulli::new(p).expect("Failed to draw valid weight")
     }
 }
 
@@ -37,7 +37,7 @@ impl ConjugatePrior<bool, Bernoulli> for Beta {
         let a = self.alpha + k as f64;
         let b = self.beta + (n - k) as f64;
 
-        Beta::new(a, b)
+        Beta::new(a, b).expect("Invalid posterior parameters")
     }
 
     fn ln_m(&self, x: &DataOrSuffStat<bool, Bernoulli>) -> f64 {
@@ -69,7 +69,7 @@ mod tests {
         let data = vec![false, true, false, true, true];
         let xs = DataOrSuffStat::Data::<bool, Bernoulli>(&data);
 
-        let posterior = Beta::new(1.0, 1.0).posterior(&xs);
+        let posterior = Beta::new(1.0, 1.0).unwrap().posterior(&xs);
 
         assert::close(posterior.alpha, 4.0, TOL);
         assert::close(posterior.beta, 3.0, TOL);

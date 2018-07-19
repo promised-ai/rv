@@ -5,6 +5,7 @@ extern crate special;
 use self::rand::distributions;
 use self::rand::Rng;
 use self::special::Gamma as SGamma;
+use std::io;
 
 use traits::*;
 
@@ -17,8 +18,18 @@ pub struct Gamma {
 
 impl Gamma {
     /// Create a new `Gamma` distribution with shape (α) and rate (β).
-    pub fn new(shape: f64, rate: f64) -> Self {
-        Gamma { shape, rate }
+    pub fn new(shape: f64, rate: f64) -> io::Result<Self> {
+        let shape_ok = shape > 0.0 && shape.is_finite();
+        let rate_ok = rate > 0.0 && rate.is_finite();
+
+        if shape_ok && rate_ok {
+            Ok(Gamma { shape, rate })
+        } else {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let msg = "shape and rate must be finite and greater than 0";
+            let err = io::Error::new(err_kind, msg);
+            Err(err)
+        }
     }
 }
 
@@ -119,26 +130,26 @@ mod tests {
 
     #[test]
     fn new() {
-        let gam = Gamma::new(1.0, 2.0);
+        let gam = Gamma::new(1.0, 2.0).unwrap();
         assert::close(gam.shape, 1.0, TOL);
         assert::close(gam.rate, 2.0, TOL);
     }
 
     #[test]
     fn ln_pdf_low_value() {
-        let gam = Gamma::new(1.2, 3.4);
+        let gam = Gamma::new(1.2, 3.4).unwrap();
         assert::close(gam.ln_pdf(&0.1_f64), 0.75338758935104555, TOL);
     }
 
     #[test]
     fn ln_pdf_at_mean() {
-        let gam = Gamma::new(1.2, 3.4);
+        let gam = Gamma::new(1.2, 3.4).unwrap();
         assert::close(gam.ln_pdf(&100.0_f64), -337.52506135485254, TOL);
     }
 
     #[test]
     fn cdf() {
-        let gam = Gamma::new(1.2, 3.4);
+        let gam = Gamma::new(1.2, 3.4).unwrap();
         assert::close(gam.cdf(&0.5_f32), 0.75943654431805463, TOL);
         assert::close(
             gam.cdf(&0.35294117647058826_f64),
@@ -150,7 +161,7 @@ mod tests {
 
     #[test]
     fn ln_pdf_hight_value() {
-        let gam = Gamma::new(1.2, 3.4);
+        let gam = Gamma::new(1.2, 3.4).unwrap();
         assert::close(
             gam.ln_pdf(&0.35294117647058826_f64),
             0.14561383298422248,
@@ -160,10 +171,10 @@ mod tests {
 
     #[test]
     fn mean_should_be_ratio_of_params() {
-        let m1: f64 = Gamma::new(1.0, 2.0).mean().unwrap();
-        let m2: f64 = Gamma::new(1.0, 1.0).mean().unwrap();
-        let m3: f64 = Gamma::new(3.0, 1.0).mean().unwrap();
-        let m4: f64 = Gamma::new(0.3, 0.1).mean().unwrap();
+        let m1: f64 = Gamma::new(1.0, 2.0).unwrap().mean().unwrap();
+        let m2: f64 = Gamma::new(1.0, 1.0).unwrap().mean().unwrap();
+        let m3: f64 = Gamma::new(3.0, 1.0).unwrap().mean().unwrap();
+        let m4: f64 = Gamma::new(0.3, 0.1).unwrap().mean().unwrap();
         assert::close(m1, 0.5, TOL);
         assert::close(m2, 1.0, TOL);
         assert::close(m3, 3.0, TOL);
@@ -172,10 +183,10 @@ mod tests {
 
     #[test]
     fn mode_undefined_for_shape_less_than_one() {
-        let m1_opt: Option<f64> = Gamma::new(1.0, 2.0).mode();
-        let m2_opt: Option<f64> = Gamma::new(0.999, 2.0).mode();
-        let m3_opt: Option<f64> = Gamma::new(0.5, 2.0).mode();
-        let m4_opt: Option<f64> = Gamma::new(0.1, 2.0).mode();
+        let m1_opt: Option<f64> = Gamma::new(1.0, 2.0).unwrap().mode();
+        let m2_opt: Option<f64> = Gamma::new(0.999, 2.0).unwrap().mode();
+        let m3_opt: Option<f64> = Gamma::new(0.5, 2.0).unwrap().mode();
+        let m4_opt: Option<f64> = Gamma::new(0.1, 2.0).unwrap().mode();
         assert!(m1_opt.is_some());
         assert!(m2_opt.is_none());
         assert!(m3_opt.is_none());
@@ -184,9 +195,9 @@ mod tests {
 
     #[test]
     fn mode() {
-        let m1: f64 = Gamma::new(2.0, 2.0).mode().unwrap();
-        let m2: f64 = Gamma::new(1.0, 2.0).mode().unwrap();
-        let m3: f64 = Gamma::new(2.0, 1.0).mode().unwrap();
+        let m1: f64 = Gamma::new(2.0, 2.0).unwrap().mode().unwrap();
+        let m2: f64 = Gamma::new(1.0, 2.0).unwrap().mode().unwrap();
+        let m3: f64 = Gamma::new(2.0, 1.0).unwrap().mode().unwrap();
         assert::close(m1, 0.5, TOL);
         assert::close(m2, 0.0, TOL);
         assert::close(m3, 1.0, TOL);
@@ -194,28 +205,60 @@ mod tests {
 
     #[test]
     fn variance() {
-        assert::close(Gamma::new(2.0, 2.0).variance().unwrap(), 0.5, TOL);
-        assert::close(Gamma::new(0.5, 2.0).variance().unwrap(), 1.0 / 8.0, TOL);
+        assert::close(
+            Gamma::new(2.0, 2.0).unwrap().variance().unwrap(),
+            0.5,
+            TOL,
+        );
+        assert::close(
+            Gamma::new(0.5, 2.0).unwrap().variance().unwrap(),
+            1.0 / 8.0,
+            TOL,
+        );
     }
 
     #[test]
     fn skewness() {
-        assert::close(Gamma::new(4.0, 3.0).skewness().unwrap(), 1.0, TOL);
-        assert::close(Gamma::new(16.0, 4.0).skewness().unwrap(), 0.5, TOL);
-        assert::close(Gamma::new(16.0, 1.0).skewness().unwrap(), 0.5, TOL);
+        assert::close(
+            Gamma::new(4.0, 3.0).unwrap().skewness().unwrap(),
+            1.0,
+            TOL,
+        );
+        assert::close(
+            Gamma::new(16.0, 4.0).unwrap().skewness().unwrap(),
+            0.5,
+            TOL,
+        );
+        assert::close(
+            Gamma::new(16.0, 1.0).unwrap().skewness().unwrap(),
+            0.5,
+            TOL,
+        );
     }
 
     #[test]
     fn kurtosis() {
-        assert::close(Gamma::new(6.0, 3.0).kurtosis().unwrap(), 1.0, TOL);
-        assert::close(Gamma::new(6.0, 1.0).kurtosis().unwrap(), 1.0, TOL);
-        assert::close(Gamma::new(12.0, 1.0).kurtosis().unwrap(), 0.5, TOL);
+        assert::close(
+            Gamma::new(6.0, 3.0).unwrap().kurtosis().unwrap(),
+            1.0,
+            TOL,
+        );
+        assert::close(
+            Gamma::new(6.0, 1.0).unwrap().kurtosis().unwrap(),
+            1.0,
+            TOL,
+        );
+        assert::close(
+            Gamma::new(12.0, 1.0).unwrap().kurtosis().unwrap(),
+            0.5,
+            TOL,
+        );
     }
 
     #[test]
     fn entropy() {
-        let gam1 = Gamma::new(2.0, 1.0);
-        let gam2 = Gamma::new(1.2, 3.4);
+        let gam1 = Gamma::new(2.0, 1.0).unwrap();
+        let gam2 = Gamma::new(1.2, 3.4).unwrap();
         assert::close(gam1.entropy(), 1.5772156649015328, TOL);
         assert::close(gam2.entropy(), -0.05134154230699384, TOL);
     }

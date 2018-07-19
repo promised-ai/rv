@@ -5,6 +5,7 @@ use self::rand::distributions::Cauchy as RCauchy;
 use self::rand::Rng;
 use consts::LN_PI;
 use std::f64::consts::PI;
+use std::io;
 use traits::*;
 use utils::logsumexp;
 
@@ -15,7 +16,7 @@ use utils::logsumexp;
 /// # extern crate rv;
 /// use rv::prelude::*;
 ///
-/// let cauchy = Cauchy::new(1.2, 3.4);
+/// let cauchy = Cauchy::new(1.2, 3.4).expect("Invalid params");
 /// let ln_fx = cauchy.ln_pdf(&0.2_f64); // -2.4514716152673368
 ///
 /// assert!((ln_fx + 2.4514716152673368).abs() < 1E-12);
@@ -29,14 +30,27 @@ pub struct Cauchy {
 }
 
 impl Cauchy {
-    pub fn new(loc: f64, scale: f64) -> Self {
-        Cauchy { loc, scale }
+    pub fn new(loc: f64, scale: f64) -> io::Result<Self> {
+        let loc_ok = loc.is_finite();
+        let scale_ok = scale > 0.0 && scale.is_finite();
+        if loc_ok && scale_ok {
+            Ok(Cauchy { loc, scale })
+        } else if !loc_ok {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let err = io::Error::new(err_kind, "loc must be finite");
+            Err(err)
+        } else {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let msg = "scale must be finite and greater than zero";
+            let err = io::Error::new(err_kind, msg);
+            Err(err)
+        }
     }
 }
 
 impl Default for Cauchy {
     fn default() -> Self {
-        Cauchy::new(0.0, 1.0)
+        Cauchy::new(0.0, 1.0).unwrap()
     }
 }
 
@@ -120,25 +134,25 @@ mod tests {
 
     #[test]
     fn ln_pdf_loc_zero() {
-        let c = Cauchy::new(0.0, 1.0);
+        let c = Cauchy::new(0.0, 1.0).unwrap();
         assert::close(c.ln_pdf(&0.2), -1.1839505990026815, TOL);
     }
 
     #[test]
     fn ln_pdf_loc_nonzero() {
-        let c = Cauchy::new(1.2, 3.4);
+        let c = Cauchy::new(1.2, 3.4).unwrap();
         assert::close(c.ln_pdf(&0.2), -2.4514716152673368, TOL);
     }
 
     #[test]
     fn cdf_at_loc() {
-        let c = Cauchy::new(1.2, 3.4);
+        let c = Cauchy::new(1.2, 3.4).unwrap();
         assert::close(c.cdf(&1.2), 0.5, TOL);
     }
 
     #[test]
     fn cdf_off_loc() {
-        let c = Cauchy::new(1.2, 3.4);
+        let c = Cauchy::new(1.2, 3.4).unwrap();
         assert::close(c.cdf(&2.2), 0.59105300185574883, TOL);
         assert::close(c.cdf(&0.2), 1.0 - 0.59105300185574883, TOL);
     }
@@ -157,7 +171,7 @@ mod tests {
 
     #[test]
     fn inv_cdf() {
-        let c = Cauchy::new(1.2, 3.4);
+        let c = Cauchy::new(1.2, 3.4).unwrap();
         let lower: f64 = c.invcdf(0.4);
         let upper: f64 = c.invcdf(0.6);
         assert::close(lower, 0.095273032808118607, TOL);
@@ -166,13 +180,13 @@ mod tests {
 
     #[test]
     fn median_should_be_loc() {
-        let m: f64 = Cauchy::new(1.2, 3.4).median().unwrap();
+        let m: f64 = Cauchy::new(1.2, 3.4).unwrap().median().unwrap();
         assert::close(m, 1.2, TOL);
     }
 
     #[test]
     fn mode_should_be_loc() {
-        let m: f64 = Cauchy::new(-0.2, 3.4).median().unwrap();
+        let m: f64 = Cauchy::new(-0.2, 3.4).unwrap().median().unwrap();
         assert::close(m, -0.2, TOL);
     }
 
@@ -195,14 +209,14 @@ mod tests {
 
     #[test]
     fn entropy() {
-        let c = Cauchy::new(1.2, 3.4);
+        let c = Cauchy::new(1.2, 3.4).unwrap();
         assert::close(c.entropy(), 3.7547996785914064, TOL);
     }
 
     #[test]
     fn loc_does_not_affect_entropy() {
-        let c1 = Cauchy::new(1.2, 3.4);
-        let c2 = Cauchy::new(-99999.9, 3.4);
+        let c1 = Cauchy::new(1.2, 3.4).unwrap();
+        let c2 = Cauchy::new(-99999.9, 3.4).unwrap();
         assert::close(c1.entropy(), c2.entropy(), TOL);
     }
 }

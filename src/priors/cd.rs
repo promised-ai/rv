@@ -21,7 +21,7 @@ impl Rv<Categorical> for Dirichlet {
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Categorical {
         let weights: Vec<f64> = self.draw(&mut rng);
-        Categorical::new(&weights)
+        Categorical::new(&weights).expect("Invalid draw")
     }
 }
 
@@ -50,7 +50,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
             .map(|(&a, &ct)| a + ct)
             .collect();
 
-        Dirichlet::new(alphas)
+        Dirichlet::new(alphas).unwrap()
     }
 
     fn ln_m(&self, x: &CategoricalData<X>) -> f64 {
