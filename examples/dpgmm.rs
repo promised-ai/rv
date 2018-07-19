@@ -169,8 +169,10 @@ fn main() {
 
     // Generate 100 data from two Gaussians. The Gaussians are far enought apart
     // that the DPGMM should separate them.
-    let mut xs: Vec<f64> = Gaussian::new(-3.0, 1.0).sample(50, &mut rng);
-    let mut ys: Vec<f64> = Gaussian::new(3.0, 1.0).sample(50, &mut rng);
+    let mut xs: Vec<f64> =
+        Gaussian::new(-3.0, 1.0).unwrap().sample(50, &mut rng);
+    let mut ys: Vec<f64> =
+        Gaussian::new(3.0, 1.0).unwrap().sample(50, &mut rng);
     xs.append(&mut ys);
 
     // Parameters are more or less arbitrary. The only thing we need to worry

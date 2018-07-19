@@ -31,11 +31,11 @@ pub struct Cauchy {
 
 impl Cauchy {
     pub fn new(loc: f64, scale: f64) -> io::Result<Self> {
-        let loc_good = loc.is_finite();
-        let scale_good = scale > 0.0 && scale.is_finite();
-        if loc_good && scale_good {
+        let loc_ok = loc.is_finite();
+        let scale_ok = scale > 0.0 && scale.is_finite();
+        if loc_ok && scale_ok {
             Ok(Cauchy { loc, scale })
-        } else if !loc_good {
+        } else if !loc_ok {
             let err_kind = io::ErrorKind::InvalidInput;
             let err = io::Error::new(err_kind, "loc must be finite");
             Err(err)

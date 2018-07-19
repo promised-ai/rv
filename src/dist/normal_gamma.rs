@@ -29,7 +29,7 @@ impl Rv<Gaussian> for NormalGamma {
         let lnf_rho =
             Gamma::new(self.v / 2.0, self.s / 2.0).unwrap().ln_f(&rho);
         let prior_sigma = (self.r * rho).recip().sqrt();
-        let lnf_mu = Gaussian::new(self.m, prior_sigma).ln_f(&x.mu);
+        let lnf_mu = Gaussian::new(self.m, prior_sigma).unwrap().ln_f(&x.mu);
         lnf_rho + lnf_mu
     }
 
@@ -38,13 +38,17 @@ impl Rv<Gaussian> for NormalGamma {
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
+        // NOTE: The parameter errors in this fn shouldn't happen if the prior
+        // parameters are valid.
         let rho: f64 = Gamma::new(self.v / 2.0, self.s / 2.0)
-            .unwrap()
+            .expect("Invalid σ posterior params")
             .draw(&mut rng);
         let post_sigma: f64 = (self.r * rho).recip().sqrt();
-        let mu: f64 = Gaussian::new(self.m, post_sigma).draw(&mut rng);
+        let mu: f64 = Gaussian::new(self.m, post_sigma)
+            .expect("Invalid μ posterior params")
+            .draw(&mut rng);
 
-        Gaussian::new(mu, rho.sqrt().recip())
+        Gaussian::new(mu, rho.sqrt().recip()).expect("Invalid params")
     }
 }
 
