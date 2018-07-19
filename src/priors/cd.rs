@@ -50,7 +50,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
             .map(|(&a, &ct)| a + ct)
             .collect();
 
-        Dirichlet::new(alphas)
+        Dirichlet::new(alphas).unwrap()
     }
 
     fn ln_m(&self, x: &CategoricalData<X>) -> f64 {

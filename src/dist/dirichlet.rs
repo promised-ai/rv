@@ -5,6 +5,7 @@ extern crate special;
 use self::rand::distributions::Gamma as RGamma;
 use self::rand::Rng;
 use self::special::Gamma as SGamma;
+use std::io;
 
 use traits::*;
 
@@ -16,8 +17,15 @@ pub struct Dirichlet {
 
 impl Dirichlet {
     /// Creates a `Dirichlet` with a given `alphas` vector
-    pub fn new(alphas: Vec<f64>) -> Self {
-        Dirichlet { alphas }
+    pub fn new(alphas: Vec<f64>) -> io::Result<Self> {
+        if alphas.iter().any(|&a| !(a > 0.0 && a.is_finite())) {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let msg = "All alphas must be finite and greater than zero";
+            let err = io::Error::new(err_kind, msg);
+            Err(err)
+        } else {
+            Ok(Dirichlet { alphas })
+        }
     }
 
     /// Creates a `Dirichlet` where all alphas are identical
@@ -32,7 +40,7 @@ impl Dirichlet {
     /// assert_eq!(dir.alphas, vec![1.0, 1.0, 1.0, 1.0]);
     /// ```
     pub fn symmetric(alpha: f64, k: usize) -> Self {
-        Dirichlet::new(vec![alpha; k])
+        Dirichlet::new(vec![alpha; k]).unwrap()
     }
 
     /// Creates a `Dirichlet` with all alphas = 0.5 (Feffreys prior)
@@ -47,7 +55,7 @@ impl Dirichlet {
     /// assert_eq!(dir.alphas, vec![0.5, 0.5, 0.5]);
     /// ```
     pub fn jeffreys(k: usize) -> Self {
-        Dirichlet::new(vec![0.5; k])
+        Dirichlet::new(vec![0.5; k]).unwrap()
     }
 
     /// The length of `alphas` / the number of categories
@@ -178,7 +186,7 @@ mod tests {
 
     #[test]
     fn log_pdf() {
-        let dir = Dirichlet::new(vec![1.0, 2.0, 3.0]);
+        let dir = Dirichlet::new(vec![1.0, 2.0, 3.0]).unwrap();
         assert::close(
             dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
             1.5040773967762737,
