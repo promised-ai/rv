@@ -21,7 +21,7 @@ impl Rv<Categorical> for Dirichlet {
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Categorical {
         let weights: Vec<f64> = self.draw(&mut rng);
-        Categorical::new(&weights)
+        Categorical::new(&weights).expect("Invalid draw")
     }
 }
 

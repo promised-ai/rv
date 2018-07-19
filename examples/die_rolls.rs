@@ -10,7 +10,7 @@ fn main() {
     let mut rng = rand::thread_rng();
 
     // Roll a die (0...5) that comes up 5 half the time
-    let ctgrl = Categorical::new(&vec![1.0, 1.0, 1.0, 1.0, 1.0, 5.0]);
+    let ctgrl = Categorical::new(&vec![1.0, 1.0, 1.0, 1.0, 1.0, 5.0]).unwrap();
     let rolls: Vec<u8> = ctgrl.sample(1000, &mut rng);
 
     // Use the Jeffreys prior of Dir(1/2, ..., 1/2)
