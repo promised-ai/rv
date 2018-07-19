@@ -5,10 +5,21 @@ extern crate special;
 use self::rand::distributions::Uniform;
 use self::rand::Rng;
 use std::f64;
+use std::io;
 use suffstats::BernoulliSuffStat;
 use traits::*;
 
 /// Bernoulli distribution with success probability *p*
+///
+/// # Examples
+///
+/// ```
+/// # extern crate rv;
+/// use rv::prelude::*;
+///
+/// let b = Bernoulli::new(0.75).unwrap();
+/// assert!((b.pmf(&true) - 0.75).abs() < 1E-12);
+/// ```
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Bernoulli {
     /// Probability of a success (x=1)
@@ -16,13 +27,19 @@ pub struct Bernoulli {
 }
 
 impl Bernoulli {
-    pub fn new(p: f64) -> Self {
-        Bernoulli { p }
+    pub fn new(p: f64) -> io::Result<Self> {
+        if p.is_finite() && 0.0 < p && p < 1.0 {
+            Ok(Bernoulli { p })
+        } else {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let err = io::Error::new(err_kind, "p must be in [0, 1]");
+            Err(err)
+        }
     }
 
     /// A Bernoulli distribution with a 50% chance of success
     pub fn uniform() -> Self {
-        Bernoulli::new(0.5)
+        Bernoulli::new(0.5).unwrap()
     }
 
     /// The complement of `p`, i.e. `(1 - p)`.
@@ -266,13 +283,28 @@ impl_int_traits!(isize);
 mod tests {
     extern crate assert;
     use super::*;
+    use std::f64;
 
     const TOL: f64 = 1E-12;
 
     #[test]
     fn new() {
-        let b: Bernoulli = Bernoulli::new(0.1);
+        let b: Bernoulli = Bernoulli::new(0.1).unwrap();
         assert::close(b.p, 0.1, TOL);
+    }
+
+    #[test]
+    fn new_should_reject_oob_p() {
+        assert!(Bernoulli::new(0.0).is_err());
+        assert!(Bernoulli::new(1.0).is_err());
+        assert!(Bernoulli::new(-0.001).is_err());
+        assert!(Bernoulli::new(1.001).is_err());
+    }
+
+    #[test]
+    fn new_should_reject_non_finite_p() {
+        assert!(Bernoulli::new(f64::NAN).is_err());
+        assert!(Bernoulli::new(f64::INFINITY).is_err());
     }
 
     #[test]
@@ -283,79 +315,79 @@ mod tests {
 
     #[test]
     fn q_should_be_the_compliment_of_p() {
-        let b: Bernoulli = Bernoulli::new(0.1);
+        let b: Bernoulli = Bernoulli::new(0.1).unwrap();
         assert::close(b.q(), 0.9, TOL);
     }
 
     #[test]
     fn pmf_of_true_should_be_p() {
-        let b1: Bernoulli = Bernoulli::new(0.1);
+        let b1: Bernoulli = Bernoulli::new(0.1).unwrap();
         assert::close(b1.pmf(&true), 0.1, TOL);
 
-        let b2: Bernoulli = Bernoulli::new(0.85);
+        let b2: Bernoulli = Bernoulli::new(0.85).unwrap();
         assert::close(b2.pmf(&true), 0.85, TOL);
     }
 
     #[test]
     fn pmf_of_1_should_be_p() {
-        let b1: Bernoulli = Bernoulli::new(0.1);
+        let b1: Bernoulli = Bernoulli::new(0.1).unwrap();
         assert::close(b1.pmf(&1_u8), 0.1, TOL);
 
-        let b2: Bernoulli = Bernoulli::new(0.85);
+        let b2: Bernoulli = Bernoulli::new(0.85).unwrap();
         assert::close(b2.pmf(&1_i16), 0.85, TOL);
     }
 
     #[test]
     fn ln_pmf_of_true_should_be_ln_p() {
-        let b1 = Bernoulli::new(0.1);
+        let b1 = Bernoulli::new(0.1).unwrap();
         assert::close(b1.ln_pmf(&true), 0.1_f64.ln(), TOL);
 
-        let b2 = Bernoulli::new(0.85);
+        let b2 = Bernoulli::new(0.85).unwrap();
         assert::close(b2.ln_pmf(&true), 0.85_f64.ln(), TOL);
     }
 
     #[test]
     fn ln_pmf_of_1_should_be_ln_p() {
-        let b1 = Bernoulli::new(0.1);
+        let b1 = Bernoulli::new(0.1).unwrap();
         assert::close(b1.ln_pmf(&1_usize), 0.1_f64.ln(), TOL);
 
-        let b2 = Bernoulli::new(0.85);
+        let b2 = Bernoulli::new(0.85).unwrap();
         assert::close(b2.ln_pmf(&1_i32), 0.85_f64.ln(), TOL);
     }
 
     #[test]
     fn pmf_of_false_should_be_q() {
-        let b1 = Bernoulli::new(0.1);
+        let b1 = Bernoulli::new(0.1).unwrap();
         assert::close(b1.pmf(&false), 0.9, TOL);
 
-        let b2 = Bernoulli::new(0.85);
+        let b2 = Bernoulli::new(0.85).unwrap();
         assert::close(b2.pmf(&false), 0.15, TOL);
     }
 
     #[test]
     fn pmf_of_0_should_be_q() {
-        let b1 = Bernoulli::new(0.1);
+        let b1 = Bernoulli::new(0.1).unwrap();
         assert::close(b1.pmf(&0_u8), 0.9, TOL);
 
-        let b2 = Bernoulli::new(0.85);
+        let b2 = Bernoulli::new(0.85).unwrap();
         assert::close(b2.pmf(&0_u32), 0.15, TOL);
     }
 
     #[test]
     fn ln_pmf_of_false_should_be_ln_q() {
-        let b1 = Bernoulli::new(0.1);
+        let b1 = Bernoulli::new(0.1).unwrap();
         assert::close(b1.ln_pmf(&false), 0.9_f64.ln(), TOL);
 
-        let b2 = Bernoulli::new(0.85);
+        let b2 = Bernoulli::new(0.85).unwrap();
         assert::close(b2.ln_pmf(&false), 0.15_f64.ln(), TOL);
     }
 
     #[test]
     fn ln_pmf_of_zero_should_be_ln_q() {
-        let b1 = Bernoulli::new(0.1);
+        let b1 = Bernoulli::new(0.1).unwrap();
         assert::close(b1.ln_pmf(&0_u8), 0.9_f64.ln(), TOL);
 
-        let b2 = Bernoulli::new(0.85);
+        let b2 = Bernoulli::new(0.85).unwrap();
         assert::close(b2.ln_pmf(&0_i16), 0.15_f64.ln(), TOL);
     }
 
@@ -395,93 +427,101 @@ mod tests {
 
     #[test]
     fn cmf_of_false_is_q() {
-        let b = Bernoulli::new(0.1);
+        let b = Bernoulli::new(0.1).unwrap();
         assert::close(b.cdf(&false), 0.9, TOL);
     }
 
     #[test]
     fn cmf_of_zero_is_q() {
-        let b = Bernoulli::new(0.1);
+        let b = Bernoulli::new(0.1).unwrap();
         assert::close(b.cdf(&0_i16), 0.9, TOL);
     }
 
     #[test]
     fn cmf_of_true_is_one() {
-        let b = Bernoulli::new(0.1);
+        let b = Bernoulli::new(0.1).unwrap();
         assert::close(b.cdf(&true), 1.0, TOL);
     }
 
     #[test]
     fn cmf_of_one_is_one() {
-        let b = Bernoulli::new(0.1);
+        let b = Bernoulli::new(0.1).unwrap();
         assert::close(b.cdf(&1_u8), 1.0, TOL);
     }
 
     #[test]
     fn cmf_less_than_zero_is_zero() {
-        let b = Bernoulli::new(0.1);
+        let b = Bernoulli::new(0.1).unwrap();
         assert::close(b.cdf(&-1_i16), 0.0, TOL);
     }
 
     #[test]
     fn mean_is_p() {
-        assert::close(Bernoulli::new(0.1).mean().unwrap(), 0.1, TOL);
-        assert::close(Bernoulli::new(0.7).mean().unwrap(), 0.7, TOL);
+        assert::close(Bernoulli::new(0.1).unwrap().mean().unwrap(), 0.1, TOL);
+        assert::close(Bernoulli::new(0.7).unwrap().mean().unwrap(), 0.7, TOL);
     }
 
     #[test]
     fn median_for_low_p_is_zero() {
-        assert::close(Bernoulli::new(0.1).median().unwrap(), 0.0, TOL);
-        assert::close(Bernoulli::new(0.499).median().unwrap(), 0.0, TOL);
+        assert::close(Bernoulli::new(0.1).unwrap().median().unwrap(), 0.0, TOL);
+        assert::close(
+            Bernoulli::new(0.499).unwrap().median().unwrap(),
+            0.0,
+            TOL,
+        );
     }
 
     #[test]
     fn median_for_high_p_is_one() {
-        assert::close(Bernoulli::new(0.9).median().unwrap(), 1.0, TOL);
-        assert::close(Bernoulli::new(0.5001).median().unwrap(), 1.0, TOL);
+        assert::close(Bernoulli::new(0.9).unwrap().median().unwrap(), 1.0, TOL);
+        assert::close(
+            Bernoulli::new(0.5001).unwrap().median().unwrap(),
+            1.0,
+            TOL,
+        );
     }
 
     #[test]
     fn median_for_p_one_half_is_one_half() {
-        assert::close(Bernoulli::new(0.5).median().unwrap(), 0.5, TOL);
+        assert::close(Bernoulli::new(0.5).unwrap().median().unwrap(), 0.5, TOL);
         assert::close(Bernoulli::uniform().median().unwrap(), 0.5, TOL);
     }
 
     #[test]
     fn mode_for_high_p_is_true() {
-        let m1: bool = Bernoulli::new(0.5001).mode().unwrap();
-        let m2: bool = Bernoulli::new(0.8).mode().unwrap();
+        let m1: bool = Bernoulli::new(0.5001).unwrap().mode().unwrap();
+        let m2: bool = Bernoulli::new(0.8).unwrap().mode().unwrap();
         assert!(m1);
         assert!(m2);
     }
 
     #[test]
     fn mode_for_low_p_is_false() {
-        let m1: bool = Bernoulli::new(0.4999).mode().unwrap();
-        let m2: bool = Bernoulli::new(0.2).mode().unwrap();
+        let m1: bool = Bernoulli::new(0.4999).unwrap().mode().unwrap();
+        let m2: bool = Bernoulli::new(0.2).unwrap().mode().unwrap();
         assert!(!m1);
         assert!(!m2);
     }
 
     #[test]
     fn mode_for_high_p_is_one() {
-        let m1: u8 = Bernoulli::new(0.5001).mode().unwrap();
-        let m2: u16 = Bernoulli::new(0.8).mode().unwrap();
+        let m1: u8 = Bernoulli::new(0.5001).unwrap().mode().unwrap();
+        let m2: u16 = Bernoulli::new(0.8).unwrap().mode().unwrap();
         assert_eq!(m1, 1);
         assert_eq!(m2, 1);
     }
 
     #[test]
     fn mode_for_low_p_is_zero() {
-        let m1: u8 = Bernoulli::new(0.4999).mode().unwrap();
-        let m2: u8 = Bernoulli::new(0.2).mode().unwrap();
+        let m1: u8 = Bernoulli::new(0.4999).unwrap().mode().unwrap();
+        let m2: u8 = Bernoulli::new(0.2).unwrap().mode().unwrap();
         assert_eq!(m1, 0);
         assert_eq!(m2, 0);
     }
 
     #[test]
     fn mode_for_even_p_is_none() {
-        let m1: Option<bool> = Bernoulli::new(0.5).mode();
+        let m1: Option<bool> = Bernoulli::new(0.5).unwrap().mode();
         let m2: Option<u8> = Bernoulli::uniform().mode();
         assert!(m1.is_none());
         assert!(m2.is_none());
@@ -494,14 +534,22 @@ mod tests {
 
     #[test]
     fn variance() {
-        assert::close(Bernoulli::new(0.1).variance().unwrap(), 0.09, TOL);
-        assert::close(Bernoulli::new(0.9).variance().unwrap(), 0.09, TOL);
+        assert::close(
+            Bernoulli::new(0.1).unwrap().variance().unwrap(),
+            0.09,
+            TOL,
+        );
+        assert::close(
+            Bernoulli::new(0.9).unwrap().variance().unwrap(),
+            0.09,
+            TOL,
+        );
     }
 
     #[test]
     fn entropy() {
-        let b1 = Bernoulli::new(0.1);
-        let b2 = Bernoulli::new(0.9);
+        let b1 = Bernoulli::new(0.1).unwrap();
+        let b2 = Bernoulli::new(0.9).unwrap();
         assert::close(b1.entropy(), 0.3250829733914482, TOL);
         assert::close(b2.entropy(), 0.3250829733914482, TOL);
     }
@@ -520,7 +568,7 @@ mod tests {
 
     #[test]
     fn skewness() {
-        let b = Bernoulli::new(0.3);
+        let b = Bernoulli::new(0.3).unwrap();
         assert::close(b.skewness().unwrap(), 0.8728715609439696, TOL);
     }
 

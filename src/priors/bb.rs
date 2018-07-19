@@ -19,7 +19,7 @@ impl Rv<Bernoulli> for Beta {
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Bernoulli {
         let p: f64 = self.draw(&mut rng);
-        Bernoulli::new(p)
+        Bernoulli::new(p).expect("Failed to draw valid weight")
     }
 }
 
