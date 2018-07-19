@@ -7,6 +7,7 @@ use self::rand::Rng;
 use self::special::Beta as SBeta;
 use self::special::Gamma as SGamma;
 use std::f64;
+use std::io;
 
 use traits::*;
 
@@ -18,19 +19,29 @@ pub struct Beta {
 }
 
 impl Beta {
-    pub fn new(alpha: f64, beta: f64) -> Self {
-        Beta { alpha, beta }
+    pub fn new(alpha: f64, beta: f64) -> io::Result<Self> {
+        let alpha_good = alpha > 0.0 && alpha.is_finite();
+        let beta_good = beta > 0.0 && beta.is_finite();
+
+        if alpha_good && beta_good {
+            Ok(Beta { alpha, beta })
+        } else {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let msg = "α and β must be finite and greater than 0";
+            let err = io::Error::new(err_kind, msg);
+            Err(err)
+        }
     }
 
     /// Create a `Beta` distribution with even density over (0, 1).
     pub fn uniform() -> Self {
-        Beta::new(1.0, 1.0)
+        Beta::new(1.0, 1.0).unwrap()
     }
 
     /// Create a `Beta` distribution with the Jeffrey's parameterization,
     /// *Beta(0.5, 0.5)*.
     pub fn jeffreys() -> Self {
-        Beta::new(0.5, 0.5)
+        Beta::new(0.5, 0.5).unwrap()
     }
 }
 
@@ -166,7 +177,7 @@ mod tests {
 
     #[test]
     fn new() {
-        let beta = Beta::new(1.0, 2.0);
+        let beta = Beta::new(1.0, 2.0).unwrap();
         assert::close(beta.alpha, 1.0, TOL);
         assert::close(beta.beta, 2.0, TOL);
     }
@@ -187,19 +198,19 @@ mod tests {
 
     #[test]
     fn ln_pdf_center_value() {
-        let beta = Beta::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0).unwrap();
         assert::close(beta.ln_pdf(&0.5), 0.28203506914240184, TOL);
     }
 
     #[test]
     fn ln_pdf_low_value() {
-        let beta = Beta::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0).unwrap();
         assert::close(beta.ln_pdf(&0.01), -0.99087958886522731, TOL);
     }
 
     #[test]
     fn ln_pdf_high_value() {
-        let beta = Beta::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0).unwrap();
         assert::close(beta.ln_pdf(&0.99), -3.2884395139325218, TOL);
     }
 
@@ -235,55 +246,55 @@ mod tests {
 
     #[test]
     fn mean() {
-        let mean: f64 = Beta::new(1.0, 5.0).mean().unwrap();
+        let mean: f64 = Beta::new(1.0, 5.0).unwrap().mean().unwrap();
         assert::close(mean, 1.0 / 6.0, TOL);
     }
 
     #[test]
     fn variance() {
-        let beta = Beta::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0).unwrap();
         assert::close(beta.variance().unwrap(), 0.054421768707482991, TOL);
     }
 
     #[test]
     fn mode_for_alpha_and_beta_greater_than_one() {
-        let mode: f64 = Beta::new(1.5, 2.0).mode().unwrap();
+        let mode: f64 = Beta::new(1.5, 2.0).unwrap().mode().unwrap();
         assert::close(mode, 0.5 / 1.5, TOL);
     }
 
     #[test]
     fn mode_for_alpha_one_and_large_beta() {
-        let mode: f64 = Beta::new(1.0, 2.0).mode().unwrap();
+        let mode: f64 = Beta::new(1.0, 2.0).unwrap().mode().unwrap();
         assert::close(mode, 0.0, TOL);
     }
 
     #[test]
     fn mode_for_large_alpha_and_beta_one() {
-        let mode: f64 = Beta::new(2.0, 1.0).mode().unwrap();
+        let mode: f64 = Beta::new(2.0, 1.0).unwrap().mode().unwrap();
         assert::close(mode, 1.0, TOL);
     }
 
     #[test]
     fn mode_for_alpha_less_than_one_is_none() {
-        let mode_opt: Option<f64> = Beta::new(0.99, 2.0).mode();
+        let mode_opt: Option<f64> = Beta::new(0.99, 2.0).unwrap().mode();
         assert!(mode_opt.is_none());
     }
 
     #[test]
     fn mode_for_beta_less_than_one_is_none() {
-        let mode_opt: Option<f64> = Beta::new(2.0, 0.99).mode();
+        let mode_opt: Option<f64> = Beta::new(2.0, 0.99).unwrap().mode();
         assert!(mode_opt.is_none());
     }
 
     #[test]
     fn mode_for_alpha_and_beta_less_than_one_is_none() {
-        let mode_opt: Option<f64> = Beta::new(0.99, 0.99).mode();
+        let mode_opt: Option<f64> = Beta::new(0.99, 0.99).unwrap().mode();
         assert!(mode_opt.is_none());
     }
 
     #[test]
     fn entropy() {
-        let beta = Beta::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0).unwrap();
         assert::close(beta.entropy(), -0.10805020110232236, TOL);
     }
 
@@ -299,13 +310,13 @@ mod tests {
 
     #[test]
     fn skewness() {
-        let beta = Beta::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0).unwrap();
         assert::close(beta.skewness().unwrap(), 0.22268088570756162, TOL);
     }
 
     #[test]
     fn kurtosis() {
-        let beta = Beta::new(1.5, 2.0);
+        let beta = Beta::new(1.5, 2.0).unwrap();
         assert::close(beta.kurtosis().unwrap(), -0.8601398601398601, TOL);
     }
 }
