@@ -5,6 +5,7 @@ extern crate special;
 use self::rand::distributions;
 use self::rand::Rng;
 use self::special::Gamma as SGamma;
+use std::io;
 
 use traits::*;
 
@@ -17,8 +18,17 @@ pub struct InvGamma {
 
 impl InvGamma {
     /// Create a new `Gamma` distribution with shape (α) and rate (β).
-    pub fn new(shape: f64, scale: f64) -> Self {
-        InvGamma { shape, scale }
+    pub fn new(shape: f64, scale: f64) -> io::Result<Self> {
+        let shape_ok = shape > 0.0 && shape.is_finite();
+        let scale_ok = scale > 0.0 && scale.is_finite();
+        if shape_ok && scale_ok {
+            Ok(InvGamma { shape, scale })
+        } else {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let msg = "shape and scale must be finite and greater than 0";
+            let err = io::Error::new(err_kind, msg);
+            Err(err)
+        }
     }
 }
 
@@ -135,22 +145,22 @@ mod tests {
 
     #[test]
     fn new() {
-        let ig = InvGamma::new(1.0, 2.0);
+        let ig = InvGamma::new(1.0, 2.0).unwrap();
         assert::close(ig.shape, 1.0, TOL);
         assert::close(ig.scale, 2.0, TOL);
     }
 
     #[test]
     fn mean() {
-        let mean: f64 = InvGamma::new(1.2, 3.4).mean().unwrap();
+        let mean: f64 = InvGamma::new(1.2, 3.4).unwrap().mean().unwrap();
         assert::close(mean, 17.000000000000004, TOL);
     }
 
     #[test]
     fn mean_undefined_for_shape_leq_1() {
-        let m1_opt: Option<f64> = InvGamma::new(1.001, 3.4).mean();
-        let m2_opt: Option<f64> = InvGamma::new(1.0, 3.4).mean();
-        let m3_opt: Option<f64> = InvGamma::new(0.1, 3.4).mean();
+        let m1_opt: Option<f64> = InvGamma::new(1.001, 3.4).unwrap().mean();
+        let m2_opt: Option<f64> = InvGamma::new(1.0, 3.4).unwrap().mean();
+        let m3_opt: Option<f64> = InvGamma::new(0.1, 3.4).unwrap().mean();
         assert!(m1_opt.is_some());
         assert!(m2_opt.is_none());
         assert!(m3_opt.is_none());
@@ -158,46 +168,46 @@ mod tests {
 
     #[test]
     fn mode() {
-        let m1: f64 = InvGamma::new(2.0, 3.0).mode().unwrap();
-        let m2: f64 = InvGamma::new(3.0, 2.0).mode().unwrap();
+        let m1: f64 = InvGamma::new(2.0, 3.0).unwrap().mode().unwrap();
+        let m2: f64 = InvGamma::new(3.0, 2.0).unwrap().mode().unwrap();
         assert::close(m1, 1.0, TOL);
         assert::close(m2, 0.5, TOL);
     }
 
     #[test]
     fn variance() {
-        let ig = InvGamma::new(2.3, 4.5);
+        let ig = InvGamma::new(2.3, 4.5).unwrap();
         assert::close(ig.variance().unwrap(), 39.940828402366897, TOL);
     }
 
     #[test]
     fn variance_undefined_for_shape_leq_2() {
-        assert!(InvGamma::new(2.001, 3.4).variance().is_some());
-        assert!(InvGamma::new(2.0, 3.4).variance().is_none());
-        assert!(InvGamma::new(0.1, 3.4).variance().is_none());
+        assert!(InvGamma::new(2.001, 3.4).unwrap().variance().is_some());
+        assert!(InvGamma::new(2.0, 3.4).unwrap().variance().is_none());
+        assert!(InvGamma::new(0.1, 3.4).unwrap().variance().is_none());
     }
 
     #[test]
     fn ln_pdf_low_value() {
-        let ig = InvGamma::new(3.0, 2.0);
+        let ig = InvGamma::new(3.0, 2.0).unwrap();
         assert::close(ig.ln_pdf(&0.1_f64), -9.4033652669039274, TOL);
     }
 
     #[test]
     fn ln_pdf_at_mean() {
-        let ig = InvGamma::new(3.0, 2.0);
+        let ig = InvGamma::new(3.0, 2.0).unwrap();
         assert::close(ig.ln_pdf(&1.0_f64), -0.61370563888010954, TOL);
     }
 
     #[test]
     fn ln_pdf_at_mode() {
-        let ig = InvGamma::new(3.0, 2.0);
+        let ig = InvGamma::new(3.0, 2.0).unwrap();
         assert::close(ig.ln_pdf(&0.5_f64), 0.15888308335967161, TOL);
     }
 
     #[test]
     fn ln_pdf_at_mode_should_be_higest() {
-        let ig = InvGamma::new(3.0, 2.0);
+        let ig = InvGamma::new(3.0, 2.0).unwrap();
         let x: f64 = ig.mode().unwrap();
         let delta = 1E-6;
 
@@ -211,30 +221,30 @@ mod tests {
 
     #[test]
     fn does_not_contain_negative_values() {
-        assert!(!InvGamma::new(1.0, 1.0).contains(&-0.000001_f64));
-        assert!(!InvGamma::new(1.0, 1.0).contains(&-1.0_f64));
+        assert!(!InvGamma::new(1.0, 1.0).unwrap().contains(&-0.000001_f64));
+        assert!(!InvGamma::new(1.0, 1.0).unwrap().contains(&-1.0_f64));
     }
 
     #[test]
     fn does_not_contain_zero() {
-        assert!(!InvGamma::new(1.0, 1.0).contains(&0.0_f32));
+        assert!(!InvGamma::new(1.0, 1.0).unwrap().contains(&0.0_f32));
     }
 
     #[test]
     fn contains_positive_values() {
-        assert!(InvGamma::new(1.0, 1.0).contains(&0.000001_f64));
-        assert!(InvGamma::new(1.0, 1.0).contains(&1.0_f64));
+        assert!(InvGamma::new(1.0, 1.0).unwrap().contains(&0.000001_f64));
+        assert!(InvGamma::new(1.0, 1.0).unwrap().contains(&1.0_f64));
     }
 
     #[test]
     fn does_not_contain_infinity() {
-        assert!(!InvGamma::new(1.0, 1.0).contains(&f64::INFINITY));
+        assert!(!InvGamma::new(1.0, 1.0).unwrap().contains(&f64::INFINITY));
     }
 
     #[test]
     fn sample_return_correct_number_of_draws() {
         let mut rng = rand::thread_rng();
-        let ig = InvGamma::new(3.0, 2.0);
+        let ig = InvGamma::new(3.0, 2.0).unwrap();
         let xs: Vec<f64> = ig.sample(103, &mut rng);
         assert_eq!(xs.len(), 103);
     }
@@ -242,7 +252,7 @@ mod tests {
     #[test]
     fn draw_always_returns_results_in_support() {
         let mut rng = rand::thread_rng();
-        let ig = InvGamma::new(3.0, 2.0);
+        let ig = InvGamma::new(3.0, 2.0).unwrap();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
             assert!(x > 0.0 and x.is_finite());
@@ -251,39 +261,39 @@ mod tests {
 
     #[test]
     fn cdf_at_1() {
-        let ig = InvGamma::new(1.2, 3.4);
+        let ig = InvGamma::new(1.2, 3.4).unwrap();
         assert::close(ig.cdf(&1.0), 0.048714368540659622, TOL);
     }
 
     #[test]
     fn cdf_at_mean() {
-        let ig = InvGamma::new(1.2, 3.4);
+        let ig = InvGamma::new(1.2, 3.4).unwrap();
         assert::close(ig.cdf(&17.0), 0.88185118032427523, TOL);
     }
 
     #[test]
     fn skewness() {
-        let ig = InvGamma::new(5.2, 2.4);
+        let ig = InvGamma::new(5.2, 2.4).unwrap();
         assert::close(ig.skewness().unwrap(), 3.2524625127269666, TOL);
     }
 
     #[test]
     fn skewness_undefined_for_alpha_leq_3() {
-        assert!(InvGamma::new(3.001, 3.4).skewness().is_some());
-        assert!(InvGamma::new(3.0, 3.4).skewness().is_none());
-        assert!(InvGamma::new(0.1, 3.4).skewness().is_none());
+        assert!(InvGamma::new(3.001, 3.4).unwrap().skewness().is_some());
+        assert!(InvGamma::new(3.0, 3.4).unwrap().skewness().is_none());
+        assert!(InvGamma::new(0.1, 3.4).unwrap().skewness().is_none());
     }
 
     #[test]
     fn kurtosis() {
-        let ig = InvGamma::new(5.2, 2.4);
+        let ig = InvGamma::new(5.2, 2.4).unwrap();
         assert::close(ig.kurtosis().unwrap(), 34.090909090909086, TOL);
     }
 
     #[test]
     fn kurtosis_undefined_for_alpha_leq_4() {
-        assert!(InvGamma::new(4.001, 3.4).kurtosis().is_some());
-        assert!(InvGamma::new(4.0, 3.4).kurtosis().is_none());
-        assert!(InvGamma::new(0.1, 3.4).kurtosis().is_none());
+        assert!(InvGamma::new(4.001, 3.4).unwrap().kurtosis().is_some());
+        assert!(InvGamma::new(4.0, 3.4).unwrap().kurtosis().is_none());
+        assert!(InvGamma::new(0.1, 3.4).unwrap().kurtosis().is_none());
     }
 }
