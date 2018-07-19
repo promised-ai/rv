@@ -13,10 +13,27 @@ extern crate special;
 use self::rand::Rng;
 use self::special::Gamma as SGamma;
 use partition::Partition;
+use std::io;
 use traits::*;
 use utils::pflip;
 
 /// Chinese Restaurant Process
+///
+/// # Example
+///
+/// ```
+/// # extern crate rv;
+/// extern crate rand;
+///
+/// use::rv::prelude::*;
+///
+/// let mut rng = rand::thread_rng();
+///
+/// let crp = Crp::new(1.0, 10).expect("Invalid parameters");
+/// let partition = crp.draw(&mut rng);
+///
+/// assert_eq!(partition.len(), 10);
+/// ```
 pub struct Crp {
     /// Discount parameter
     pub alpha: f64,
@@ -26,8 +43,22 @@ pub struct Crp {
 
 impl Crp {
     /// Create an empty `Crp` with parameter alpha
-    pub fn new(alpha: f64, n: usize) -> Self {
-        Crp { alpha, n }
+    pub fn new(alpha: f64, n: usize) -> io::Result<Self> {
+        let alpha_ok = alpha > 0.0 && alpha.is_finite();
+        let n_ok = n > 0;
+        if !alpha_ok {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let msg = "α must be greater than zero and finite";
+            let err = io::Error::new(err_kind, msg);
+            Err(err)
+        } else if !n_ok {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let msg = "n must be greater than zero";
+            let err = io::Error::new(err_kind, msg);
+            Err(err)
+        } else {
+            Ok(Crp { alpha, n })
+        }
     }
 }
 
@@ -91,8 +122,10 @@ mod tests {
 
     #[test]
     fn new() {
-        let crp = Crp::new(1.2, 808);
+        let crp = Crp::new(1.2, 808).unwrap();
         assert::close(crp.alpha, 1.2, TOL);
         assert_eq!(crp.n, 808);
     }
+
+    // TODO: More tests!
 }

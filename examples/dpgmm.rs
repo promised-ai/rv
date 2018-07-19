@@ -40,7 +40,7 @@ impl<'pr> Dpgmm<'pr> {
         let n = xs.len();
 
         // Partition prior
-        let crp = Crp::new(alpha, n);
+        let crp = Crp::new(alpha, n).expect("Invalid params");
 
         // Initial partition drawn from the prior
         let partition = crp.draw(&mut rng);
