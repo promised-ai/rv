@@ -77,6 +77,12 @@ pub trait InverseCdf<X>: Rv<X> + Support<X> {
     fn quantile(&self, p: f64) -> X {
         self.invcdf(p)
     }
+
+    /// Interval containting `p` proportion for the probability
+    fn interval(&self, p: f64) -> (X, X) {
+        let pt = (1.0 - p) / 2.0;
+        (self.quantile(pt), self.quantile(p + pt))
+    }
 }
 
 /// Is a discrete probability distribution
