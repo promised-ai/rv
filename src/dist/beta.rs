@@ -20,10 +20,10 @@ pub struct Beta {
 
 impl Beta {
     pub fn new(alpha: f64, beta: f64) -> io::Result<Self> {
-        let alpha_good = alpha > 0.0 && alpha.is_finite();
-        let beta_good = beta > 0.0 && beta.is_finite();
+        let alpha_ok = alpha > 0.0 && alpha.is_finite();
+        let beta_ok = beta > 0.0 && beta.is_finite();
 
-        if alpha_good && beta_good {
+        if alpha_ok && beta_ok {
             Ok(Beta { alpha, beta })
         } else {
             let err_kind = io::ErrorKind::InvalidInput;

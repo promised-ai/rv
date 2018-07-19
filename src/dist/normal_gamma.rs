@@ -26,7 +26,8 @@ impl NormalGamma {
 impl Rv<Gaussian> for NormalGamma {
     fn ln_f(&self, x: &Gaussian) -> f64 {
         let rho = x.sigma.powi(2).recip();
-        let lnf_rho = Gamma::new(self.v / 2.0, self.s / 2.0).ln_f(&rho);
+        let lnf_rho =
+            Gamma::new(self.v / 2.0, self.s / 2.0).unwrap().ln_f(&rho);
         let prior_sigma = (self.r * rho).recip().sqrt();
         let lnf_mu = Gaussian::new(self.m, prior_sigma).ln_f(&x.mu);
         lnf_rho + lnf_mu
@@ -37,7 +38,9 @@ impl Rv<Gaussian> for NormalGamma {
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
-        let rho: f64 = Gamma::new(self.v / 2.0, self.s / 2.0).draw(&mut rng);
+        let rho: f64 = Gamma::new(self.v / 2.0, self.s / 2.0)
+            .unwrap()
+            .draw(&mut rng);
         let post_sigma: f64 = (self.r * rho).recip().sqrt();
         let mu: f64 = Gaussian::new(self.m, post_sigma).draw(&mut rng);
 
