@@ -5,9 +5,7 @@ use self::rand::Rng;
 use self::special::Gamma as SGamma;
 
 use data::CategoricalData;
-use dist::categorical::CategoricalDatum;
-use dist::{Categorical, Dirichlet};
-use suffstats::CategoricalSuffStat;
+use dist::{Categorical, CategoricalDatum, CategoricalSuffStat, Dirichlet};
 use traits::*;
 
 impl Rv<Categorical> for Dirichlet {

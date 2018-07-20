@@ -1,17 +1,18 @@
-pub mod bernoulli;
-pub mod beta;
-pub mod categorical;
-pub mod cauchy;
-pub mod crp;
-pub mod dirichlet;
-pub mod exponential;
-pub mod gamma;
-pub mod gaussian;
-pub mod invgamma;
-pub mod laplace;
-pub mod normal_gamma;
-pub mod poisson;
-pub mod uniform;
+mod bernoulli;
+mod beta;
+mod categorical;
+mod cauchy;
+mod crp;
+mod dirichlet;
+mod exponential;
+mod gamma;
+mod gaussian;
+mod invgamma;
+mod laplace;
+mod normal_gamma;
+mod poisson;
+mod suffstats;
+mod uniform;
 
 pub use self::bernoulli::Bernoulli;
 pub use self::beta::Beta;
@@ -26,4 +27,19 @@ pub use self::invgamma::InvGamma;
 pub use self::laplace::Laplace;
 pub use self::normal_gamma::NormalGamma;
 pub use self::poisson::Poisson;
+pub use self::suffstats::{
+    BernoulliSuffStat, CategoricalSuffStat, GaussianSuffStat,
+};
 pub use self::uniform::Uniform;
+
+extern crate num;
+use self::num::traits::FromPrimitive;
+
+pub trait CategoricalDatum:
+    Sized + Into<usize> + Sync + Copy + FromPrimitive
+{
+}
+
+impl<T> CategoricalDatum for T where
+    T: Clone + Into<usize> + Sync + Copy + FromPrimitive
+{}

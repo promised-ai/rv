@@ -46,7 +46,6 @@ pub mod dist;
 pub mod model;
 pub mod partition;
 pub mod prelude;
-pub mod priors;
-pub mod suffstats;
+mod priors;
 pub mod traits;
 pub mod utils;
