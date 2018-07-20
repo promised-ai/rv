@@ -1,3 +1,4 @@
+//! A common conjugate prior for Gaussians
 extern crate rand;
 
 use self::rand::Rng;
