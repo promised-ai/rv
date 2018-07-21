@@ -4,8 +4,7 @@ extern crate rand;
 
 use self::num::traits::FromPrimitive;
 use self::rand::Rng;
-use dist::CategoricalDatum;
-use dist::CategoricalSuffStat;
+use data::{CategoricalDatum, CategoricalSuffStat};
 use std::io;
 use traits::*;
 use utils::{argmax, ln_pflip, logsumexp};

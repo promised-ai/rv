@@ -2,8 +2,8 @@
 extern crate rand;
 extern crate rv;
 
-use rv::data::CategoricalData;
 use rv::dist::{Categorical, Dirichlet};
+use rv::prelude::CategoricalData;
 use rv::traits::*;
 
 fn main() {

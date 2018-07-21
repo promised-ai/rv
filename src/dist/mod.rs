@@ -11,7 +11,6 @@ mod invgamma;
 mod laplace;
 mod normal_gamma;
 mod poisson;
-mod suffstats;
 mod uniform;
 
 pub use self::bernoulli::Bernoulli;
@@ -27,19 +26,4 @@ pub use self::invgamma::InvGamma;
 pub use self::laplace::Laplace;
 pub use self::normal_gamma::NormalGamma;
 pub use self::poisson::Poisson;
-pub use self::suffstats::{
-    BernoulliSuffStat, CategoricalSuffStat, GaussianSuffStat,
-};
 pub use self::uniform::Uniform;
-
-extern crate num;
-use self::num::traits::FromPrimitive;
-
-pub trait CategoricalDatum:
-    Sized + Into<usize> + Sync + Copy + FromPrimitive
-{
-}
-
-impl<T> CategoricalDatum for T where
-    T: Clone + Into<usize> + Sync + Copy + FromPrimitive
-{}

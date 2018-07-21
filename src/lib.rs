@@ -11,9 +11,7 @@
 //! extern crate rv;
 //!
 //! use rand::Rng;
-//! use rv::data::BernoulliData;
-//! use rv::dist::Beta;
-//! use rv::traits::*;
+//! use rv::prelude::*;
 //!
 //! fn main() {
 //!     let mut rng = rand::thread_rng();

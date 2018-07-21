@@ -10,7 +10,7 @@ use self::rand::Rng;
 use self::special::Error;
 
 use consts::*;
-use dist::GaussianSuffStat;
+use data::GaussianSuffStat;
 use traits::*;
 
 /// Gaussian / Normal distribution, N(μ, σ)

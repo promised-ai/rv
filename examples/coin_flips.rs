@@ -3,9 +3,9 @@ extern crate rand;
 extern crate rv;
 
 use rand::Rng;
-use rv::data::BernoulliData;
 use rv::dist::{Bernoulli, Beta};
 use rv::model::ConjugateModel;
+use rv::prelude::BernoulliData;
 use rv::traits::*;
 
 fn main() {

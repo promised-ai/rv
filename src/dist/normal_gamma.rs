@@ -3,7 +3,8 @@ extern crate rand;
 
 use self::rand::Rng;
 use consts::HALF_LOG_2PI;
-use dist::{Gamma, Gaussian, GaussianSuffStat};
+use data::GaussianSuffStat;
+use dist::{Gamma, Gaussian};
 use std::io;
 use traits::*;
 
