@@ -4,10 +4,9 @@ extern crate special;
 use self::rand::Rng;
 use self::special::Gamma as SGamma;
 
-use data::CategoricalData;
-use dist::categorical::CategoricalDatum;
+use data::{CategoricalDatum, CategoricalSuffStat};
 use dist::{Categorical, Dirichlet};
-use suffstats::CategoricalSuffStat;
+use prelude::CategoricalData;
 use traits::*;
 
 impl Rv<Categorical> for Dirichlet {

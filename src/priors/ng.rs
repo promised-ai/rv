@@ -5,8 +5,8 @@ use std::f64::consts::LN_2;
 use self::special::Gamma as SGamma;
 
 use consts::*;
+use data::GaussianSuffStat;
 use dist::{Gaussian, NormalGamma};
-use suffstats::GaussianSuffStat;
 use traits::*;
 
 fn extract_stat(x: &DataOrSuffStat<f64, Gaussian>) -> GaussianSuffStat {

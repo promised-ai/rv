@@ -11,9 +11,7 @@
 //! extern crate rv;
 //!
 //! use rand::Rng;
-//! use rv::data::BernoulliData;
-//! use rv::dist::Beta;
-//! use rv::traits::*;
+//! use rv::prelude::*;
 //!
 //! fn main() {
 //!     let mut rng = rand::thread_rng();
@@ -46,7 +44,6 @@ pub mod dist;
 pub mod model;
 pub mod partition;
 pub mod prelude;
-pub mod priors;
-pub mod suffstats;
+mod priors;
 pub mod traits;
 pub mod utils;

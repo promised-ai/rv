@@ -3,9 +3,9 @@ extern crate rand;
 
 use self::rand::Rng;
 use consts::HALF_LOG_2PI;
+use data::GaussianSuffStat;
 use dist::{Gamma, Gaussian};
 use std::io;
-use suffstats::GaussianSuffStat;
 use traits::*;
 
 /// Prior for Gaussian

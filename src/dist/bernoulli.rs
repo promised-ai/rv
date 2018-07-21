@@ -4,9 +4,9 @@ extern crate special;
 
 use self::rand::distributions::Uniform;
 use self::rand::Rng;
+use data::BernoulliSuffStat;
 use std::f64;
 use std::io;
-use suffstats::BernoulliSuffStat;
 use traits::*;
 
 /// Bernoulli distribution with success probability *p*

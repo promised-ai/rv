@@ -4,8 +4,8 @@ extern crate special;
 use self::rand::Rng;
 use self::special::Beta as SBeta;
 
+use data::BernoulliSuffStat;
 use dist::{Bernoulli, Beta};
-use suffstats::BernoulliSuffStat;
 use traits::*;
 
 impl Rv<Bernoulli> for Beta {

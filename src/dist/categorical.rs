@@ -4,19 +4,10 @@ extern crate rand;
 
 use self::num::traits::FromPrimitive;
 use self::rand::Rng;
+use data::{CategoricalDatum, CategoricalSuffStat};
 use std::io;
-use suffstats::CategoricalSuffStat;
 use traits::*;
 use utils::{argmax, ln_pflip, logsumexp};
-
-pub trait CategoricalDatum:
-    Sized + Into<usize> + Sync + Copy + FromPrimitive
-{
-}
-
-impl<T> CategoricalDatum for T where
-    T: Clone + Into<usize> + Sync + Copy + FromPrimitive
-{}
 
 /// Distribution over unordered values in [0, k)
 pub struct Categorical {
