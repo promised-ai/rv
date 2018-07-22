@@ -4,9 +4,9 @@ extern crate rv;
 
 use rand::Rng;
 use rv::dist::{Bernoulli, Beta};
-use rv::model::ConjugateModel;
 use rv::prelude::BernoulliData;
 use rv::traits::*;
+use rv::ConjugateModel;
 
 fn main() {
     let u = rand::distributions::Open01;
@@ -36,7 +36,8 @@ fn main() {
     let mut model: ConjugateModel<bool, Bernoulli, Beta> =
         ConjugateModel::new(&Bernoulli::uniform(), &prior);
 
-    flips.iter().for_each(|flip| model.observe(&flip));
+    // Show the data to to the model
+    model.observe_many(&flips);
 
     // draw from the posterior predictive
     let ys = model.sample(10, &mut rng);

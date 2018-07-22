@@ -157,6 +157,9 @@ pub trait HasSuffStat<X> {
 pub trait SuffStat<X> {
     fn observe(&mut self, x: &X);
     fn forget(&mut self, x: &X);
+    fn observe_many(&mut self, xs: &Vec<X>) {
+        xs.iter().for_each(|x| self.observe(x));
+    }
 }
 
 pub enum DataOrSuffStat<'a, X, Fx>

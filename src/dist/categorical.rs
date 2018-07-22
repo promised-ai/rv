@@ -5,9 +5,9 @@ extern crate rand;
 use self::num::traits::FromPrimitive;
 use self::rand::Rng;
 use data::{CategoricalDatum, CategoricalSuffStat};
+use misc::{argmax, ln_pflip, logsumexp};
 use std::io;
 use traits::*;
-use utils::{argmax, ln_pflip, logsumexp};
 
 /// Distribution over unordered values in [0, k)
 pub struct Categorical {

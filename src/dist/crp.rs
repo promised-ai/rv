@@ -12,10 +12,10 @@ extern crate special;
 
 use self::rand::Rng;
 use self::special::Gamma as SGamma;
-use partition::Partition;
+use data::Partition;
+use misc::pflip;
 use std::io;
 use traits::*;
-use utils::pflip;
 
 /// Chinese Restaurant Process
 ///

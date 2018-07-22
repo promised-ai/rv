@@ -24,7 +24,7 @@ pub fn logsumexp(xs: &[f64]) -> f64 {
 ///
 /// ```rust
 /// # extern crate rv;
-/// # use rv::utils::cumsum;
+/// # use rv::misc::cumsum;
 /// #
 /// let xs: Vec<i32> = vec![1, 1, 2, 1];
 /// assert_eq!(cumsum(&xs), vec![1, 2, 4, 5]);
@@ -74,7 +74,7 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 /// extern crate rand;
 /// extern crate rv;
 ///
-/// use rv::utils::ln_pflip;
+/// use rv::misc::ln_pflip;
 ///
 /// let weights: Vec<f64> = vec![0.4, 0.2, 0.3, 0.1];
 /// let ln_weights: Vec<f64> = weights.iter().map(|&w| w.ln()).collect();
@@ -118,7 +118,7 @@ pub fn ln_pflip<R: Rng>(
 /// # Examples
 ///
 /// ```rust
-/// use rv::utils::argmax;
+/// use rv::misc::argmax;
 ///
 /// let xs: Vec<u8> = vec![1, 2, 3, 4, 5, 4, 5];
 /// let ys: Vec<u8> = vec![1, 2, 3, 4, 5, 4, 0];

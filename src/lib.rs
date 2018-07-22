@@ -41,9 +41,10 @@ extern crate serde_derive;
 pub mod consts;
 pub mod data;
 pub mod dist;
-pub mod model;
-pub mod partition;
+pub mod misc;
+mod model;
 pub mod prelude;
 mod priors;
 pub mod traits;
-pub mod utils;
+
+pub use model::ConjugateModel;
