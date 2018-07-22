@@ -12,6 +12,7 @@ mod invgamma;
 mod laplace;
 mod normal_gamma;
 mod poisson;
+mod students_t;
 mod uniform;
 
 pub use self::bernoulli::Bernoulli;
@@ -28,4 +29,5 @@ pub use self::invgamma::InvGamma;
 pub use self::laplace::Laplace;
 pub use self::normal_gamma::NormalGamma;
 pub use self::poisson::Poisson;
+pub use self::students_t::StudentsT;
 pub use self::uniform::Uniform;
