@@ -1,15 +1,5 @@
-extern crate num;
-use self::num::traits::FromPrimitive;
+use data::CategoricalDatum;
 use traits::SuffStat;
-
-pub trait CategoricalDatum:
-    Sized + Into<usize> + Sync + Copy + FromPrimitive
-{
-}
-
-impl<T> CategoricalDatum for T where
-    T: Clone + Into<usize> + Sync + Copy + FromPrimitive
-{}
 
 // Bernoulli
 // ---------

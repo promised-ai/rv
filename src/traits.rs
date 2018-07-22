@@ -1,6 +1,7 @@
 extern crate rand;
 
 use self::rand::Rng;
+use data::DataOrSuffStat;
 
 /// Random variable
 ///
@@ -9,11 +10,32 @@ use self::rand::Rng;
 /// and functions to draw samples from the distribution.
 pub trait Rv<X> {
     /// Un-normalized probability function
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rv::dist::Gaussian;
+    /// use rv::traits::Rv;
+    ///
+    /// let g = Gaussian::standard();
+    /// assert!(g.f(&0.0_f64) > g.f(&0.1_f64));
+    /// assert!(g.f(&0.0_f64) > g.f(&-0.1_f64));
+    /// ```
     fn f(&self, x: &X) -> f64 {
         self.ln_f(x).exp()
     }
 
     /// Un-normalized probability function
+    /// # Example
+    ///
+    /// ```
+    /// use rv::dist::Gaussian;
+    /// use rv::traits::Rv;
+    ///
+    /// let g = Gaussian::standard();
+    /// assert!(g.ln_f(&0.0_f64) > g.ln_f(&0.1_f64));
+    /// assert!(g.ln_f(&0.0_f64) > g.ln_f(&-0.1_f64));
+    /// ```
     fn ln_f(&self, x: &X) -> f64;
 
     /// The constant term in the PDF/PMF. Should not be a function of any of
@@ -38,6 +60,20 @@ pub trait Rv<X> {
 /// Identifies the support of the Rv
 pub trait Support<X> {
     /// Returns `true` if `x` is in the support of the `Rv`
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rv::dist::Uniform;
+    /// use rv::traits::Support;
+    ///
+    /// // Create uniform with support on the interval [0, 1]
+    /// let u = Uniform::new(0.0, 1.0).unwrap();
+    ///
+    /// assert!(u.contains(&0.5_f64));
+    /// assert!(!u.contains(&-0.1_f64));
+    /// assert!(!u.contains(&1.1_f64));
+    /// ```
     fn contains(&self, x: &X) -> bool;
 }
 
@@ -157,15 +193,9 @@ pub trait HasSuffStat<X> {
 pub trait SuffStat<X> {
     fn observe(&mut self, x: &X);
     fn forget(&mut self, x: &X);
-}
-
-pub enum DataOrSuffStat<'a, X, Fx>
-where
-    X: 'a,
-    Fx: 'a + HasSuffStat<X>,
-{
-    Data(&'a Vec<X>),
-    SuffStat(&'a Fx::Stat),
+    fn observe_many(&mut self, xs: &Vec<X>) {
+        xs.iter().for_each(|x| self.observe(x));
+    }
 }
 
 /// A prior on `Fx` that induces a posterior that is the same form as the prior

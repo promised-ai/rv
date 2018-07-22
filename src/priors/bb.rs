@@ -4,7 +4,7 @@ extern crate special;
 use self::rand::Rng;
 use self::special::Beta as SBeta;
 
-use data::BernoulliSuffStat;
+use data::{BernoulliSuffStat, DataOrSuffStat};
 use dist::{Bernoulli, Beta};
 use traits::*;
 

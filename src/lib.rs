@@ -29,7 +29,7 @@
 //!     // Generate the posterior distributoin P(θ|x); the distribution of
 //!     // probable coin weights
 //!     let posterior: Beta = prior.posterior(&obs);
-//!     
+//!
 //!     // What is the probability that the next flip would come up heads
 //!     // (true) given the observed flips (posterior predictive)?
 //!     let p_heads = prior.pp(&true, &obs);
@@ -41,9 +41,10 @@ extern crate serde_derive;
 pub mod consts;
 pub mod data;
 pub mod dist;
-pub mod model;
-pub mod partition;
+pub mod misc;
+mod model;
 pub mod prelude;
 mod priors;
 pub mod traits;
-pub mod utils;
+
+pub use model::ConjugateModel;

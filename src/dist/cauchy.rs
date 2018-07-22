@@ -4,10 +4,10 @@ extern crate rand;
 use self::rand::distributions::Cauchy as RCauchy;
 use self::rand::Rng;
 use consts::LN_PI;
+use misc::logsumexp;
 use std::f64::consts::PI;
 use std::io;
 use traits::*;
-use utils::logsumexp;
 
 /// Cauchy distribution over x in (-∞, ∞)
 ///

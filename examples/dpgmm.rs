@@ -2,11 +2,11 @@ extern crate rand;
 extern crate rv;
 
 use rand::Rng;
+use rv::data::Partition;
 use rv::dist::{Crp, Gaussian, NormalGamma};
-use rv::model::ConjugateModel;
-use rv::partition::Partition;
+use rv::misc::ln_pflip;
 use rv::traits::*;
-use rv::utils::ln_pflip;
+use rv::ConjugateModel;
 
 // Save keystrokes!
 type GaussComponent<'pr> = ConjugateModel<'pr, f64, Gaussian, NormalGamma>;

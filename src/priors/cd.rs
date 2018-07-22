@@ -4,7 +4,7 @@ extern crate special;
 use self::rand::Rng;
 use self::special::Gamma as SGamma;
 
-use data::{CategoricalDatum, CategoricalSuffStat};
+use data::{CategoricalDatum, CategoricalSuffStat, DataOrSuffStat};
 use dist::{Categorical, Dirichlet};
 use prelude::CategoricalData;
 use traits::*;
