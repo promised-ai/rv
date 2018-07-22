@@ -39,7 +39,8 @@ fn extract_stat<X: CategoricalDatum>(
 }
 
 impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
-    fn posterior(&self, x: &CategoricalData<X>) -> Dirichlet {
+    type Posterior = Self;
+    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
         let stat = extract_stat(self.k(), x);
 
         let alphas: Vec<f64> = self

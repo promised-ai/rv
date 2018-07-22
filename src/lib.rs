@@ -35,6 +35,7 @@
 //!     let p_heads = prior.pp(&true, &obs);
 //! }
 //! ```
+#![feature(associated_type_defaults)]
 #[macro_use]
 extern crate serde_derive;
 

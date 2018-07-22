@@ -203,16 +203,10 @@ pub trait ConjugatePrior<X, Fx>: Rv<Fx>
 where
     Fx: Rv<X> + HasSuffStat<X>,
 {
-    // TODO: Might it make sense to add an associated type `Posterior`, in the
-    // event that the posterior is slightly different? For performance reasons
-    // we might want the prior to be a SymmetricDirichlet type, which would
-    // only have to store one parameter and wouldn't have to iterate over a
-    // vetor multiple times to compute likelihoods. The posterior would also
-    // be Dirichlet, but it wouldn't have such a computationally convenient
-    // form.
+    type Posterior: Rv<Fx>;
 
     /// Computes the posterior distribution from the data
-    fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self;
+    fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
 
     // Log marginal likelihood
     fn ln_m(&self, x: &DataOrSuffStat<X, Fx>) -> f64;

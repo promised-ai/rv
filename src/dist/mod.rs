@@ -21,7 +21,7 @@ pub use self::categorical::Categorical;
 pub use self::cauchy::Cauchy;
 pub use self::chi_squared::ChiSquared;
 pub use self::crp::Crp;
-pub use self::dirichlet::Dirichlet;
+pub use self::dirichlet::{Dirichlet, SymmetricDirichlet};
 pub use self::exponential::Exponential;
 pub use self::gamma::Gamma;
 pub use self::gaussian::Gaussian;

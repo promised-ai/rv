@@ -24,7 +24,8 @@ impl Rv<Bernoulli> for Beta {
 }
 
 impl ConjugatePrior<bool, Bernoulli> for Beta {
-    fn posterior(&self, x: &DataOrSuffStat<bool, Bernoulli>) -> Beta {
+    type Posterior = Self;
+    fn posterior(&self, x: &DataOrSuffStat<bool, Bernoulli>) -> Self {
         let (n, k) = match x {
             DataOrSuffStat::Data(ref xs) => {
                 let mut stat = BernoulliSuffStat::new();
