@@ -1,6 +1,7 @@
 extern crate rand;
 
 use self::rand::Rng;
+use data::DataOrSuffStat;
 use std::marker::PhantomData;
 use traits::*;
 
