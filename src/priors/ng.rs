@@ -37,7 +37,8 @@ fn posterior_from_stat(
 }
 
 impl ConjugatePrior<f64, Gaussian> for NormalGamma {
-    fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> NormalGamma {
+    type Posterior = Self;
+    fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
         let stat = extract_stat(&x);
         posterior_from_stat(&self, &stat)
     }

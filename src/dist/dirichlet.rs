@@ -9,6 +9,66 @@ use std::io;
 
 use traits::*;
 
+/// Symmetric Dirichlet distribution where all alphas are the same.
+///
+/// `SymmetricDirichlet { alpha, k }` is mathematicall equivalent to
+/// `Dirichlet { alphas: vec![alpha; k] }`. This version has some extra
+/// optimizations to seep up computing the PDF and drawing random vectors.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SymmetricDirichlet {
+    pub alpha: f64,
+    pub k: usize,
+}
+
+impl SymmetricDirichlet {
+    pub fn new(alpha: f64, k: usize) -> io::Result<Self> {
+        let k_ok = k > 0;
+        let alpha_ok = alpha > 0.0 && alpha.is_finite();
+
+        if !k_ok {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let err = io::Error::new(err_kind, "k must be greater than zero");
+            Err(err)
+        } else if !alpha_ok {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let msg = "Alpha must be finite and greater than zero";
+            let err = io::Error::new(err_kind, msg);
+            Err(err)
+        } else {
+            Ok(SymmetricDirichlet { alpha, k })
+        }
+    }
+
+    pub fn jeffreys(k: usize) -> io::Result<Self> {
+        SymmetricDirichlet::new(0.5, k)
+    }
+}
+
+impl Rv<Vec<f64>> for SymmetricDirichlet {
+    fn draw<R: Rng>(&self, rng: &mut R) -> Vec<f64> {
+        let g = RGamma::new(self.alpha, 1.0);
+        let xs: Vec<f64> = (0..self.k).map(|_| rng.sample(g)).collect();
+        let z = xs.iter().fold(0.0, |acc, x| acc + x);
+        xs.iter().map(|x| x / z).collect()
+    }
+
+    fn ln_normalizer(&self) -> f64 {
+        0.0
+    }
+
+    fn ln_f(&self, x: &Vec<f64>) -> f64 {
+        let kf = self.k as f64;
+        let sum_ln_gamma = self.alpha.ln_gamma().0 * kf;
+        let ln_gamma_sum = (self.alpha * f64::from(kf)).ln_gamma().0;
+
+        let am1 = self.alpha - 1.0;
+        let term = x.iter().fold(0.0, |acc, &xi| acc + am1 * xi.ln());
+
+        term - (sum_ln_gamma - ln_gamma_sum)
+    }
+}
+
+/// Dirichlet distribution over points on the k-simplex
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Dirichlet {
     /// A `Vec` of real numbers in (0, ∞)
@@ -61,6 +121,19 @@ impl Dirichlet {
     /// The length of `alphas` / the number of categories
     pub fn k(&self) -> usize {
         self.alphas.len()
+    }
+}
+
+impl ContinuousDistr<Vec<f64>> for SymmetricDirichlet {}
+
+impl Support<Vec<f64>> for SymmetricDirichlet {
+    fn contains(&self, x: &Vec<f64>) -> bool {
+        if x.len() != self.k {
+            false
+        } else {
+            let sum = x.iter().fold(0.0, |acc, &xi| acc + xi);
+            x.iter().all(|&xi| xi > 0.0) && (1.0 - sum).abs() < 1E-12
+        }
     }
 }
 
@@ -123,74 +196,120 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    #[test]
-    fn properly_sized_points_on_simplex_should_be_in_support() {
-        let dir = Dirichlet::symmetric(1.0, 4);
-        assert!(dir.contains(&vec![0.25, 0.25, 0.25, 0.25]));
-        assert!(dir.contains(&vec![0.1, 0.2, 0.3, 0.4]));
-    }
+    mod dir {
+        use super::*;
 
-    #[test]
-    fn improperly_sized_points_should_not_be_in_support() {
-        let dir = Dirichlet::symmetric(1.0, 3);
-        assert!(!dir.contains(&vec![0.25, 0.25, 0.25, 0.25]));
-        assert!(!dir.contains(&vec![0.1, 0.2, 0.7, 0.4]));
-    }
+        #[test]
+        fn properly_sized_points_on_simplex_should_be_in_support() {
+            let dir = Dirichlet::symmetric(1.0, 4);
+            assert!(dir.contains(&vec![0.25, 0.25, 0.25, 0.25]));
+            assert!(dir.contains(&vec![0.1, 0.2, 0.3, 0.4]));
+        }
 
-    #[test]
-    fn properly_sized_points_off_simplex_should_not_be_in_support() {
-        let dir = Dirichlet::symmetric(1.0, 4);
-        assert!(!dir.contains(&vec![0.25, 0.25, 0.26, 0.25]));
-        assert!(!dir.contains(&vec![0.1, 0.3, 0.3, 0.4]));
-    }
+        #[test]
+        fn improperly_sized_points_should_not_be_in_support() {
+            let dir = Dirichlet::symmetric(1.0, 3);
+            assert!(!dir.contains(&vec![0.25, 0.25, 0.25, 0.25]));
+            assert!(!dir.contains(&vec![0.1, 0.2, 0.7, 0.4]));
+        }
 
-    #[test]
-    fn draws_should_be_in_support() {
-        let mut rng = rand::thread_rng();
-        // Small alphas gives us more variability in the simplex, and more
-        // variability gives us a beter test.
-        let dir = Dirichlet::jeffreys(10);
-        for _ in 0..100 {
-            let x = dir.draw(&mut rng);
-            assert!(dir.contains(&x));
+        #[test]
+        fn properly_sized_points_off_simplex_should_not_be_in_support() {
+            let dir = Dirichlet::symmetric(1.0, 4);
+            assert!(!dir.contains(&vec![0.25, 0.25, 0.26, 0.25]));
+            assert!(!dir.contains(&vec![0.1, 0.3, 0.3, 0.4]));
+        }
+
+        #[test]
+        fn draws_should_be_in_support() {
+            let mut rng = rand::thread_rng();
+            // Small alphas gives us more variability in the simplex, and more
+            // variability gives us a beter test.
+            let dir = Dirichlet::jeffreys(10);
+            for _ in 0..100 {
+                let x = dir.draw(&mut rng);
+                assert!(dir.contains(&x));
+            }
+        }
+
+        #[test]
+        fn sample_should_return_the_proper_number_of_draws() {
+            let mut rng = rand::thread_rng();
+            let dir = Dirichlet::jeffreys(3);
+            let xs: Vec<Vec<f64>> = dir.sample(88, &mut rng);
+            assert_eq!(xs.len(), 88);
+        }
+
+        #[test]
+        fn log_pdf_symemtric() {
+            let dir = Dirichlet::symmetric(1.0, 3);
+            assert::close(
+                dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
+                0.69314718055994529,
+                TOL,
+            );
+        }
+
+        #[test]
+        fn log_pdf_jeffreys() {
+            let dir = Dirichlet::jeffreys(3);
+            assert::close(
+                dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
+                -0.084598117749354218,
+                TOL,
+            );
+        }
+
+        #[test]
+        fn log_pdf() {
+            let dir = Dirichlet::new(vec![1.0, 2.0, 3.0]).unwrap();
+            assert::close(
+                dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
+                1.5040773967762737,
+                TOL,
+            );
         }
     }
 
-    #[test]
-    fn sample_should_return_the_proper_number_of_draws() {
-        let mut rng = rand::thread_rng();
-        let dir = Dirichlet::jeffreys(3);
-        let xs: Vec<Vec<f64>> = dir.sample(88, &mut rng);
-        assert_eq!(xs.len(), 88);
-    }
+    mod symdir {
+        use super::*;
 
-    #[test]
-    fn log_pdf_symemtric() {
-        let dir = Dirichlet::symmetric(1.0, 3);
-        assert::close(
-            dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
-            0.69314718055994529,
-            TOL,
-        );
-    }
+        #[test]
+        fn sample_should_return_the_proper_number_of_draws() {
+            let mut rng = rand::thread_rng();
+            let symdir = SymmetricDirichlet::jeffreys(3).unwrap();
+            let xs: Vec<Vec<f64>> = symdir.sample(88, &mut rng);
+            assert_eq!(xs.len(), 88);
+        }
 
-    #[test]
-    fn log_pdf_jeffreys() {
-        let dir = Dirichlet::jeffreys(3);
-        assert::close(
-            dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
-            -0.084598117749354218,
-            TOL,
-        );
-    }
+        #[test]
+        fn log_pdf_jeffreys() {
+            let symdir = SymmetricDirichlet::jeffreys(3).unwrap();
+            assert::close(
+                symdir.ln_pdf(&vec![0.2, 0.3, 0.5]),
+                -0.084598117749354218,
+                TOL,
+            );
+        }
 
-    #[test]
-    fn log_pdf() {
-        let dir = Dirichlet::new(vec![1.0, 2.0, 3.0]).unwrap();
-        assert::close(
-            dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
-            1.5040773967762737,
-            TOL,
-        );
+        #[test]
+        fn properly_sized_points_off_simplex_should_not_be_in_support() {
+            let symdir = SymmetricDirichlet::new(1.0, 4).unwrap();
+            assert!(!symdir.contains(&vec![0.25, 0.25, 0.26, 0.25]));
+            assert!(!symdir.contains(&vec![0.1, 0.3, 0.3, 0.4]));
+        }
+
+        #[test]
+        fn draws_should_be_in_support() {
+            let mut rng = rand::thread_rng();
+            // Small alphas gives us more variability in the simplex, and more
+            // variability gives us a beter test.
+            let symdir = SymmetricDirichlet::jeffreys(10).unwrap();
+            for _ in 0..100 {
+                let x = symdir.draw(&mut rng);
+                assert!(symdir.contains(&x));
+            }
+        }
+
     }
 }

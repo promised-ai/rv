@@ -84,7 +84,7 @@ where
     ///
     /// assert_eq!(post, Beta { alpha: 3.0, beta: 5.0 });
     /// ```
-    pub fn posterior(&self) -> Pr {
+    pub fn posterior(&self) -> Pr::Posterior {
         self.prior.posterior(&self.obs())
     }
 
