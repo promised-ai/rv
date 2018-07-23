@@ -3,7 +3,7 @@ extern crate rand;
 extern crate rv;
 
 use rv::data::DataOrSuffStat;
-use rv::dist::{Categorical, Dirichlet};
+use rv::dist::{Categorical, SymmetricDirichlet};
 use rv::prelude::CategoricalData;
 use rv::traits::*;
 
@@ -15,7 +15,7 @@ fn main() {
     let rolls: Vec<u8> = ctgrl.sample(1000, &mut rng);
 
     // Use the Jeffreys prior of Dir(1/2, ..., 1/2)
-    let prior = Dirichlet::jeffreys(6);
+    let prior = SymmetricDirichlet::jeffreys(6).unwrap();
     let obs: CategoricalData<u8> = DataOrSuffStat::Data(&rolls);
 
     // Log marginal likelihood of the observed rolls
