@@ -3,6 +3,7 @@ extern crate rand;
 use self::rand::Rng;
 use data::DataOrSuffStat;
 use std::marker::PhantomData;
+use std::sync::Arc;
 use traits::*;
 
 /// A wrapper for a complete conjugate model
@@ -12,22 +13,22 @@ use traits::*;
 /// `X`: The type of the data/observations to be modeled
 /// `Fx`: The type of the likelihood, *f(x|θ)*
 /// `Pr`: The type of the prior on the parameters of `Fx`, π(θ)
-pub struct ConjugateModel<'pr, X, Fx, Pr>
+pub struct ConjugateModel<X, Fx, Pr>
 where
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: 'pr + ConjugatePrior<X, Fx>,
+    Pr: ConjugatePrior<X, Fx>,
 {
-    /// Reference to an `Rv` implementing `ConjugatePrior` for `Fx`
-    prior: &'pr Pr,
+    /// Pointer to an `Rv` implementing `ConjugatePrior` for `Fx`
+    prior: Arc<Pr>,
     /// A `SuffStat` for `Fx`
     suffstat: Fx::Stat,
     _phantom: PhantomData<X>,
 }
 
-impl<'pr, X, Fx, Pr> ConjugateModel<'pr, X, Fx, Pr>
+impl<X, Fx, Pr> ConjugateModel<X, Fx, Pr>
 where
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: 'pr + ConjugatePrior<X, Fx>,
+    Pr: ConjugatePrior<X, Fx>,
 {
     /// Create a new conjugate model
     ///
@@ -39,14 +40,15 @@ where
     ///
     /// ```
     /// # extern crate rv;
+    /// use std::sync::Arc;
     /// use rv::prelude::*;
     /// use rv::ConjugateModel;
     ///
-    /// let pr = Beta::jeffreys();
+    /// let pr = Arc::new(Beta::jeffreys());
     /// let fx = Bernoulli::uniform();
-    /// let model = ConjugateModel::<bool, Bernoulli, Beta>::new(&fx, &pr);
+    /// let model = ConjugateModel::<bool, Bernoulli, Beta>::new(&fx, pr);
     /// ```
-    pub fn new(fx: &Fx, pr: &'pr Pr) -> Self {
+    pub fn new(fx: &Fx, pr: Arc<Pr>) -> Self {
         ConjugateModel {
             prior: pr,
             suffstat: fx.empty_suffstat(),
@@ -69,14 +71,15 @@ where
     ///
     /// ```
     /// # extern crate rv;
+    /// use std::sync::Arc;
     /// use rv::prelude::*;
     /// use rv::ConjugateModel;
     ///
     /// let flips: Vec<bool> = vec![true, false, true, false, false, false];
     ///
-    /// let pr = Beta::new(1.0, 1.0).unwrap();
+    /// let pr = Arc::new(Beta::new(1.0, 1.0).unwrap());
     /// let fx = Bernoulli::uniform();
-    /// let mut model = ConjugateModel::<bool, Bernoulli, Beta>::new(&fx, &pr);
+    /// let mut model = ConjugateModel::<bool, Bernoulli, Beta>::new(&fx, pr);
     ///
     /// model.observe_many(&flips);
     ///
@@ -94,10 +97,10 @@ where
     }
 }
 
-impl<'pr, X, Fx, Pr> SuffStat<X> for ConjugateModel<'pr, X, Fx, Pr>
+impl<X, Fx, Pr> SuffStat<X> for ConjugateModel<X, Fx, Pr>
 where
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: 'pr + ConjugatePrior<X, Fx>,
+    Pr: ConjugatePrior<X, Fx>,
 {
     fn observe(&mut self, x: &X) {
         self.suffstat.observe(&x);
@@ -108,10 +111,10 @@ where
     }
 }
 
-impl<'pr, X, Fx, Pr> Rv<X> for ConjugateModel<'pr, X, Fx, Pr>
+impl<X, Fx, Pr> Rv<X> for ConjugateModel<X, Fx, Pr>
 where
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: 'pr + ConjugatePrior<X, Fx>,
+    Pr: ConjugatePrior<X, Fx>,
 {
     fn ln_f(&self, x: &X) -> f64 {
         self.prior.ln_pp(&x, &self.obs())

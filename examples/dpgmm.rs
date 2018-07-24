@@ -7,12 +7,13 @@ use rv::dist::{Crp, Gaussian, NormalGamma};
 use rv::misc::ln_pflip;
 use rv::traits::*;
 use rv::ConjugateModel;
+use std::sync::Arc;
 
 // Save keystrokes!
-type GaussComponent<'pr> = ConjugateModel<'pr, f64, Gaussian, NormalGamma>;
+type GaussComponent = ConjugateModel<f64, Gaussian, NormalGamma>;
 
 // Infinite mixture (CRP) model of univariate Gaussians
-struct Dpgmm<'pr> {
+struct Dpgmm {
     // The data
     xs: Vec<f64>,
     // Keeps track of the data IDs as they're removed and replaced
@@ -24,16 +25,16 @@ struct Dpgmm<'pr> {
     // The Prior on each of the components. Component means are from a Gaussian
     // (Normal) distribution, and the precisions (reciprocal of the variance)
     // is from a gamma distribution.
-    prior: &'pr NormalGamma,
+    prior: Arc<NormalGamma>,
     // A vector of univariate normals with the conjugate Normal Gamma prior.
-    components: Vec<GaussComponent<'pr>>,
+    components: Vec<GaussComponent>,
 }
 
-impl<'pr> Dpgmm<'pr> {
+impl Dpgmm {
     // Draws a Dpgmm from the prior
     fn new<R: Rng>(
         xs: Vec<f64>,
-        prior: &'pr NormalGamma,
+        prior: NormalGamma,
         alpha: f64,
         mut rng: &mut R,
     ) -> Self {
@@ -45,10 +46,15 @@ impl<'pr> Dpgmm<'pr> {
         // Initial partition drawn from the prior
         let partition = crp.draw(&mut rng);
 
+        // Put the prior in a reference counter
+        let prior_arc = Arc::new(prior);
+
         // Create an empty component for each partition. Gaussian::default()
         // is used as a template; The parameters don't matter.
         let mut components: Vec<GaussComponent> = (0..partition.k())
-            .map(|_| ConjugateModel::new(&Gaussian::default(), prior))
+            .map(|_| {
+                ConjugateModel::new(&Gaussian::default(), prior_arc.clone())
+            })
             .collect();
 
         // Given the data to their respective components by having them observe
@@ -62,7 +68,7 @@ impl<'pr> Dpgmm<'pr> {
             ixs: (0..n).collect(),
             crp: crp,
             partition: partition,
-            prior: &prior,
+            prior: prior_arc,
             components: components,
         }
     }
@@ -105,8 +111,8 @@ impl<'pr> Dpgmm<'pr> {
             .map(|(&w, cj)| (w as f64).ln() + cj.ln_pp(&x))  // nk * p(xi|xk)
             .collect();
 
-        let mut ctmp: GaussComponent<'pr> =
-            ConjugateModel::new(&Gaussian::default(), &self.prior);
+        let mut ctmp: GaussComponent =
+            ConjugateModel::new(&Gaussian::default(), self.prior.clone());
 
         // probability of being in a new category -- α * p(xi)
         ln_weights.push(self.crp.alpha.ln() + ctmp.ln_pp(&x));
@@ -180,7 +186,7 @@ fn main() {
     let prior = NormalGamma::new(0.0, 1.0, 1.0, 1.0).unwrap();
 
     // Draw a DPGMM from the prior
-    let mut dpgmm = Dpgmm::new(xs, &prior, 1.0, &mut rng);
+    let mut dpgmm = Dpgmm::new(xs, prior, 1.0, &mut rng);
 
     // .. and run it
     dpgmm.run(200, &mut rng);

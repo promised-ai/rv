@@ -8,6 +8,7 @@ use rv::dist::{Bernoulli, Beta};
 use rv::prelude::BernoulliData;
 use rv::traits::*;
 use rv::ConjugateModel;
+use std::sync::Arc;
 
 fn main() {
     let u = rand::distributions::Open01;
@@ -35,7 +36,7 @@ fn main() {
 
     // Samw thing, only using ConjugateModel
     let mut model: ConjugateModel<bool, Bernoulli, Beta> =
-        ConjugateModel::new(&Bernoulli::uniform(), &prior);
+        ConjugateModel::new(&Bernoulli::uniform(), Arc::new(prior));
 
     // Show the data to to the model
     model.observe_many(&flips);
