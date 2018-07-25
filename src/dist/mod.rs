@@ -1,3 +1,12 @@
+//! # Probability distributions
+//!
+//! The distributions fall into three categories:
+//!
+//! 1. **Discrete** distributions assign probability to countable values.
+//! 2. **Continuous** distributions assign probability to uncountable values
+//!    on a continuum.
+//! 3. **Prior** distributions assign probability to other probability
+//!    distributions.
 mod bernoulli;
 mod beta;
 mod categorical;

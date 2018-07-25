@@ -10,7 +10,7 @@ use std::io;
 
 use traits::*;
 
-/// Χ</sup>2</sup> distribution G(α, β)
+/// Χ<sup>2</sup> distribution G(α, β)
 ///
 /// # Example
 ///

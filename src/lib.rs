@@ -2,7 +2,7 @@
 //!
 //! # Examples
 //!
-//! For more examples, make sure to check out the `examples` directory.
+//! For more examples, check out the `examples` directory.
 //!
 //! ## Conjugate analysis of coin flips
 //!
@@ -26,7 +26,7 @@
 //!     // Bernoulli trials.
 //!     let obs: BernoulliData<bool> = DataOrSuffStat::Data(&flips);
 //!
-//!     // Generate the posterior distributoin P(θ|x); the distribution of
+//!     // Generate the posterior distribution P(θ|x); the distribution of
 //!     // probable coin weights
 //!     let posterior: Beta = prior.posterior(&obs);
 //!

@@ -1,3 +1,4 @@
+//! Data utilities
 mod partition;
 mod suffstat;
 
@@ -10,7 +11,8 @@ extern crate num;
 use self::num::traits::FromPrimitive;
 use traits::HasSuffStat;
 
-/// The trait that data must implement to work in a `Categorical` distribution
+/// The trait that data must implemented by all data used with the
+/// `Categorical` distribution
 pub trait CategoricalDatum:
     Sized + Into<usize> + Sync + Copy + FromPrimitive
 {
@@ -26,6 +28,8 @@ where
     X: 'a,
     Fx: 'a + HasSuffStat<X>,
 {
+    /// A `Vec` of raw data
     Data(&'a Vec<X>),
+    /// A sufficient statistic
     SuffStat(&'a Fx::Stat),
 }

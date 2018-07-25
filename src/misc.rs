@@ -1,3 +1,4 @@
+//! Random utilities
 extern crate rand;
 
 use self::rand::distributions::Open01;
