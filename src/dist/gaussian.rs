@@ -82,7 +82,7 @@ macro_rules! impl_traits {
             }
 
             fn ln_normalizer(&self) -> f64 {
-                HALF_LOG_2PI
+                HALF_LN_2PI
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -158,7 +158,7 @@ impl Variance<f64> for Gaussian {
 
 impl Entropy for Gaussian {
     fn entropy(&self) -> f64 {
-        HALF_LOG_2PI_E + self.sigma.ln()
+        HALF_LN_2PI_E + self.sigma.ln()
     }
 }
 

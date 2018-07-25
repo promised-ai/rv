@@ -2,7 +2,7 @@
 extern crate rand;
 
 use self::rand::Rng;
-use consts::HALF_LOG_2PI;
+use consts::HALF_LN_2PI;
 use data::GaussianSuffStat;
 use dist::{Gamma, Gaussian};
 use std::io;
@@ -52,7 +52,7 @@ impl Rv<Gaussian> for NormalGamma {
     }
 
     fn ln_normalizer(&self) -> f64 {
-        HALF_LOG_2PI
+        HALF_LN_2PI
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {

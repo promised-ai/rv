@@ -21,7 +21,7 @@ fn extract_stat(x: &DataOrSuffStat<f64, Gaussian>) -> GaussianSuffStat {
 }
 
 fn ln_z(r: f64, s: f64, v: f64) -> f64 {
-    (v + 1.0) / 2.0 * LN_2 + HALF_LOG_PI - 0.5 * r.ln() - (v / 2.0) * s.ln()
+    (v + 1.0) / 2.0 * LN_2 + HALF_LN_PI - 0.5 * r.ln() - (v / 2.0) * s.ln()
         + (v / 2.0).ln_gamma().0
 }
 
@@ -48,7 +48,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
         let post = posterior_from_stat(&self, &stat);
         let lnz_0 = ln_z(self.r, self.s, self.v);
         let lnz_n = ln_z(post.r, post.s, post.v);
-        -(stat.n as f64) * HALF_LOG_2PI + lnz_n - lnz_0
+        -(stat.n as f64) * HALF_LN_2PI + lnz_n - lnz_0
     }
 
     fn ln_pp(&self, y: &f64, x: &DataOrSuffStat<f64, Gaussian>) -> f64 {
@@ -60,7 +60,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
         let lnz_n = ln_z(post_n.r, post_n.s, post_n.v);
         let lnz_m = ln_z(post_m.r, post_m.s, post_m.v);
 
-        -HALF_LOG_2PI + lnz_m - lnz_n
+        -HALF_LN_2PI + lnz_m - lnz_n
     }
 }
 
