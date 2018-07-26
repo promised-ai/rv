@@ -140,8 +140,11 @@ impl<X: CategoricalDatum> HasSuffStat<X> for Categorical {
 mod tests {
     use super::*;
     extern crate assert;
+    use misc::x2_test;
 
     const TOL: f64 = 1E-12;
+    const N_TRIES: usize = 5;
+    const X2_PVAL: f64 = 0.2;
 
     #[test]
     fn ln_weights_should_logsumexp_to_1() {
@@ -226,5 +229,25 @@ mod tests {
         let cat = Categorical::new(&vec![1.0, 2.0, 3.0, 1.0]).unwrap();
         let mode: usize = cat.mode().unwrap();
         assert_eq!(mode, 2);
+    }
+
+    #[test]
+    fn draw_test() {
+        let mut rng = rand::thread_rng();
+        let cat = Categorical::new(&vec![1.0, 2.0, 3.0, 4.0]).unwrap();
+        let ps: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4];
+
+        let passes = (0..N_TRIES).fold(0, |acc, _| {
+            let mut f_obs: Vec<u32> = vec![0; 4];
+            let xs: Vec<usize> = cat.sample(1000, &mut rng);
+            xs.iter().for_each(|&x| f_obs[x] += 1);
+            let (_, p) = x2_test(&f_obs, &ps);
+            if p > X2_PVAL {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+        assert!(passes > 0);
     }
 }

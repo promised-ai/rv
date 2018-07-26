@@ -283,9 +283,12 @@ impl_int_traits!(isize);
 mod tests {
     extern crate assert;
     use super::*;
+    use misc::x2_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;
+    const N_TRIES: usize = 5;
+    const X2_PVAL: f64 = 0.2;
 
     #[test]
     fn new() {
@@ -576,5 +579,25 @@ mod tests {
     fn uniform_kurtosis() {
         let b = Bernoulli::uniform();
         assert::close(b.kurtosis().unwrap(), -2.0, TOL);
+    }
+
+    #[test]
+    fn draw_test() {
+        let mut rng = rand::thread_rng();
+        let b = Bernoulli::new(0.7).unwrap();
+        let ps: Vec<f64> = vec![0.3, 0.7];
+
+        let passes = (0..N_TRIES).fold(0, |acc, _| {
+            let mut f_obs: Vec<u32> = vec![0, 0];
+            let xs: Vec<usize> = b.sample(1000, &mut rng);
+            xs.iter().for_each(|&x| f_obs[x] += 1);
+            let (_, p) = x2_test(&f_obs, &ps);
+            if p > X2_PVAL {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+        assert!(passes > 0);
     }
 }

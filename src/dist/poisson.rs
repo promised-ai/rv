@@ -71,8 +71,9 @@ macro_rules! impl_traits {
         }
 
         impl Support<$kind> for Poisson {
+            #[allow(unused_comparisons)]
             fn contains(&self, x: &$kind) -> bool {
-                *x > 0
+                *x >= 0
             }
         }
 
@@ -118,9 +119,12 @@ impl_traits!(u32);
 mod tests {
     extern crate assert;
     use super::*;
+    use misc::x2_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;
+    const N_TRIES: usize = 5;
+    const X2_PVAL: f64 = 0.2;
 
     #[test]
     fn new() {
@@ -197,5 +201,31 @@ mod tests {
     fn kurtosis() {
         let k = Poisson::new(5.3).unwrap().kurtosis().unwrap();
         assert::close(k, 0.18867924528301888, TOL);
+    }
+
+    #[test]
+    fn draw_test() {
+        let mut rng = rand::thread_rng();
+        let pois = Poisson::new(2.0).unwrap();
+
+        // How many bins do we need?
+        let k: usize = (0..100)
+            .position(|x| pois.pmf(&(x as u32)) < f64::EPSILON)
+            .unwrap_or(99) + 1;
+
+        let ps: Vec<f64> = (0..k).map(|x| pois.pmf(&(x as u32))).collect();
+
+        let passes = (0..N_TRIES).fold(0, |acc, _| {
+            let mut f_obs: Vec<u32> = vec![0; k];
+            let xs: Vec<u32> = pois.sample(1000, &mut rng);
+            xs.iter().for_each(|&x| f_obs[x as usize] += 1);
+            let (_, p) = x2_test(&f_obs, &ps);
+            if p > X2_PVAL {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+        assert!(passes > 0);
     }
 }
