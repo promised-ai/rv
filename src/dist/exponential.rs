@@ -142,9 +142,12 @@ impl_traits!(f32);
 mod tests {
     extern crate assert;
     use super::*;
+    use misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;
+    const KS_PVAL: f64 = 0.2;
+    const N_TRIES: usize = 5;
 
     #[test]
     fn new() {
@@ -231,5 +234,24 @@ mod tests {
         let q75: f64 = expon.quantile(0.75);
         assert::close(q25, 0.19178804830118726, TOL);
         assert::close(q75, 0.92419624074659368, TOL);
+    }
+
+    #[test]
+    fn draw_test() {
+        let mut rng = rand::thread_rng();
+        let expon = Exponential::new(1.5).unwrap();
+        let cdf = |x: f64| expon.cdf(&x);
+
+        // test is flaky, try a few times
+        let passes = (0..N_TRIES).fold(0, |acc, _| {
+            let xs: Vec<f64> = expon.sample(1000, &mut rng);
+            let (_, p) = ks_test(&xs, cdf);
+            if p > KS_PVAL {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+        assert!(passes > 0);
     }
 }

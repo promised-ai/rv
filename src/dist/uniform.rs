@@ -163,8 +163,11 @@ impl_traits!(f32);
 mod tests {
     extern crate assert;
     use super::*;
+    use misc::ks_test;
 
     const TOL: f64 = 1E-12;
+    const KS_PVAL: f64 = 0.2;
+    const N_TRIES: usize = 5;
 
     #[test]
     fn new() {
@@ -244,5 +247,24 @@ mod tests {
             let y: f64 = u.invcdf(cdf);
             assert::close(x, y, 1E-8);
         }
+    }
+
+    #[test]
+    fn draw_test() {
+        let mut rng = rand::thread_rng();
+        let u = Uniform::new(1.2, 3.4).unwrap();
+        let cdf = |x: f64| u.cdf(&x);
+
+        // test is flaky, try a few times
+        let passes = (0..N_TRIES).fold(0, |acc, _| {
+            let xs: Vec<f64> = u.sample(1000, &mut rng);
+            let (_, p) = ks_test(&xs, cdf);
+            if p > KS_PVAL {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+        assert!(passes > 0);
     }
 }

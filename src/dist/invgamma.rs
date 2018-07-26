@@ -139,9 +139,12 @@ impl_traits!(f64);
 mod tests {
     extern crate assert;
     use super::*;
+    use misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;
+    const KS_PVAL: f64 = 0.2;
+    const N_TRIES: usize = 5;
 
     #[test]
     fn new() {
@@ -295,5 +298,25 @@ mod tests {
         assert!(InvGamma::new(4.001, 3.4).unwrap().kurtosis().is_some());
         assert!(InvGamma::new(4.0, 3.4).unwrap().kurtosis().is_none());
         assert!(InvGamma::new(0.1, 3.4).unwrap().kurtosis().is_none());
+    }
+
+    #[test]
+    fn draw_test() {
+        let mut rng = rand::thread_rng();
+        let ig = InvGamma::new(1.2, 3.4).unwrap();
+        let cdf = |x: f64| ig.cdf(&x);
+
+        // test is flaky, try a few times
+        let passes = (0..N_TRIES).fold(0, |acc, _| {
+            let xs: Vec<f64> = ig.sample(1000, &mut rng);
+            let (_, p) = ks_test(&xs, cdf);
+            if p > KS_PVAL {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+
+        assert!(passes > 0);
     }
 }

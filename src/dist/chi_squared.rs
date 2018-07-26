@@ -117,9 +117,12 @@ impl_traits!(f32);
 mod tests {
     extern crate assert;
     use super::*;
+    use misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;
+    const KS_PVAL: f64 = 0.2;
+    const N_TRIES: usize = 5;
 
     #[test]
     fn new() {
@@ -178,5 +181,24 @@ mod tests {
     fn skewness() {
         let s = ChiSquared::new(2.5).unwrap().skewness().unwrap();
         assert::close(s, 1.7888543819998317, TOL);
+    }
+
+    #[test]
+    fn draw_test() {
+        let mut rng = rand::thread_rng();
+        let x2 = ChiSquared::new(2.5).unwrap();
+        let cdf = |x: f64| x2.cdf(&x);
+
+        // test is flaky, try a few times
+        let passes = (0..N_TRIES).fold(0, |acc, _| {
+            let xs: Vec<f64> = x2.sample(1000, &mut rng);
+            let (_, p) = ks_test(&xs, cdf);
+            if p > KS_PVAL {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+        assert!(passes > 0);
     }
 }
