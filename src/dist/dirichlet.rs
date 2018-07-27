@@ -306,7 +306,7 @@ mod tests {
             // variability gives us a beter test.
             let symdir = SymmetricDirichlet::jeffreys(10).unwrap();
             for _ in 0..100 {
-                let x = symdir.draw(&mut rng);
+                let x: Vec<f64> = symdir.draw(&mut rng);
                 assert!(symdir.contains(&x));
             }
         }
