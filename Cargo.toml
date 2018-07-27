@@ -1,6 +1,6 @@
 [package]
 name = "rv"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Baxter Eaves"]
 description = "Random variables"
 repository = "https://gitlab.com/baxe/rv"
@@ -10,7 +10,7 @@ keywords = ["Probability", "Statistics", "Bayesian", "Machine-learning"]
 categories = ["science"]
 
 [badges]
-gitlab = { repository = "https://gitlab.com/baxe/rv", branch = "master" }
+gitlab = { repository = "baxe/rv", branch = "master" }
 
 [dependencies]
 num = "0.2.0"
