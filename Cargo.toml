@@ -1,14 +1,16 @@
 [package]
 name = "rv"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Baxter Eaves"]
 description = "Random variables"
 repository = "https://gitlab.com/baxe/rv"
 readme = "README.md"
-license-file = "LICENSE.txt"
+license = "MIT"
+keywords = ["Probability", "Statistics", "Bayesian", "Machine-learning"]
+categories = ["science"]
 
 [badges]
-gitlab = { repository = "baxe/rv", branch = "master" }
+gitlab = { repository = "https://gitlab.com/baxe/rv", branch = "master" }
 
 [dependencies]
 num = "0.2.0"
