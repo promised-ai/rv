@@ -34,6 +34,7 @@ use traits::*;
 ///
 /// assert_eq!(partition.len(), 10);
 /// ```
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Crp {
     /// Discount parameter
     pub alpha: f64,

@@ -1,5 +1,43 @@
 //! Provides random variables for probabilistic modeling.
 //!
+//! The [`dist`] module provides a number of probability distributions with
+//! various traits implemented in the [`traits`] module. You can do all the
+//! standard probability distribution stuff like evaluate the PDF/PMF and draw
+//! values of different types.
+//!
+//! The [`prelude`] module provides all the distributions, all the traits, and
+//! creates a few useful type aliases.
+//!
+//! # Design
+//!
+//! Random variables are designed to be flexible. For example, we don't just
+//! want a `Beta` distribution that works with `f64`; we want it to work with a
+//! bunch of things
+//!
+//! ```
+//! extern crate rand;
+//! extern crate rv;
+//!
+//! use rv::prelude::*;
+//!
+//! // Beta(0.5, 0.5)
+//! let beta = Beta::jeffreys();
+//!
+//! let mut rng = rand::thread_rng();
+//!
+//! // 100 f64 weights in (0, 1)
+//! let f64s: Vec<f64> = beta.sample(100, &mut rng);
+//! let pdf_x = beta.ln_pdf(&f64s[42]);
+//!
+//! // 100 f32 weights in (0, 1)
+//! let f32s: Vec<f32> = beta.sample(100, &mut rng);
+//! let pdf_y = beta.ln_pdf(&f32s[42]);
+//!
+//! // 100 Bernoulli distributions -- Beta is a prior on the weight
+//! let berns: Vec<Bernoulli> = beta.sample(100, &mut rng);
+//! let pdf_bern = beta.ln_pdf(&berns[42]);
+//! ```
+//!
 //! # Examples
 //!
 //! For more examples, check out the `examples` directory.

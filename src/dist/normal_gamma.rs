@@ -12,6 +12,7 @@ use traits::*;
 ///
 /// Given `x ~ N(μ, σ)`, the Normal Gamma prior implies that `μ ~ N(m, 1/(rρ))`
 /// and `ρ ~ Gamma(ν/2, s/2)`.
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct NormalGamma {
     // TODO: document parameters
     pub m: f64,
