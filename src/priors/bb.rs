@@ -23,6 +23,14 @@ impl Rv<Bernoulli> for Beta {
     }
 }
 
+impl Support<Bernoulli> for Beta {
+    fn contains(&self, x: &Bernoulli) -> bool {
+        0.0 < x.p && x.p < 1.0
+    }
+}
+
+impl ContinuousDistr<Bernoulli> for Beta {}
+
 impl ConjugatePrior<bool, Bernoulli> for Beta {
     type Posterior = Self;
     fn posterior(&self, x: &DataOrSuffStat<bool, Bernoulli>) -> Self {

@@ -1,3 +1,4 @@
+//! Re-imports for convenience
 #[doc(no_inline)]
 pub use data::DataOrSuffStat;
 #[doc(no_inline)]

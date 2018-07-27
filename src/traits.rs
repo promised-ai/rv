@@ -1,3 +1,4 @@
+//! Trait definitions
 extern crate rand;
 
 use self::rand::Rng;
@@ -260,6 +261,10 @@ pub trait InverseCdf<X>: Rv<X> + Support<X> {
 pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
     /// Probability mass function (PMF) at `x`
     ///
+    /// # Panics
+    ///
+    /// If `x` is not supported
+    ///
     /// # Example
     ///
     /// The probability of a fair coin coming up heads in 0.5
@@ -277,7 +282,25 @@ pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
         self.ln_pmf(x).exp()
     }
 
-    // Natural logarithm of the probability mass function (PMF)
+    /// Natural logarithm of the probability mass function (PMF)
+    ///
+    /// # Panics
+    ///
+    /// If `x` is not supported
+    ///
+    /// # Example
+    ///
+    /// The probability of a fair coin coming up heads in 0.5
+    ///
+    /// ```
+    /// use rv::dist::Bernoulli;
+    /// use rv::traits::DiscreteDistr;
+    ///
+    /// // Fair coin (p = 0.5)
+    /// let b = Bernoulli::uniform();
+    ///
+    /// assert!( (b.ln_pmf(&true) - 0.5_f64.ln()).abs() < 1E-12);
+    /// ```
     fn ln_pmf(&self, x: &X) -> f64 {
         if !self.contains(&x) {
             panic!("x not in support");
@@ -312,6 +335,7 @@ pub trait Variance<X> {
 
 /// Defines the distribution entropy
 pub trait Entropy {
+    /// The entropy, *H(X)*
     fn entropy(&self) -> f64;
 }
 
@@ -326,9 +350,45 @@ pub trait Kurtosis {
 /// KL divergences
 pub trait KlDivergence {
     /// The KL divergence, KL(P|Q) between this distribution, P, and another, Q
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rv::dist::Gaussian;
+    /// use rv::traits::KlDivergence;
+    ///
+    /// let g1 = Gaussian::new(1.0, 1.0).unwrap();
+    /// let g2 = Gaussian::new(-1.0, 2.0).unwrap();
+    ///
+    /// let kl_self = g1.kl(&g1);
+    /// let kl_other = g1.kl(&g2);
+    ///
+    /// // KL(P|P) = 0
+    /// assert!( kl_self < 1E-12 );
+    ///
+    /// // KL(P|Q) > 0 if P ≠ Q
+    /// assert!( kl_self < kl_other );
+    /// ```
     fn kl(&self, other: &Self) -> f64;
 
     /// Symmetrised divergence, KL(P|Q) + KL(Q|P)
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rv::dist::Gaussian;
+    /// use rv::traits::KlDivergence;
+    ///
+    /// let g1 = Gaussian::new(1.0, 1.0).unwrap();
+    /// let g2 = Gaussian::new(-1.0, 2.0).unwrap();
+    ///
+    /// let kl_12 = g1.kl(&g2);
+    /// let kl_21 = g2.kl(&g1);
+    ///
+    /// let kl_sym = g1.kl_sym(&g2);
+    ///
+    /// assert!( (kl_12 + kl_21 - kl_sym).abs() < 1E-10 );
+    /// ```
     fn kl_sym(&self, other: &Self) -> f64 {
         self.kl(&other) + other.kl(&self)
     }
@@ -342,6 +402,28 @@ pub trait HasSuffStat<X> {
 
 /// Is a [sufficient statistic](https://en.wikipedia.org/wiki/Sufficient_statistic) for a
 /// distribution.
+///
+/// # Example
+///
+/// ```
+/// use rv::data::BernoulliSuffStat;
+/// use rv::traits::SuffStat;
+///
+/// // Bernoulli sufficient statistics are the number of observations, n, and
+/// // the number of successes, k.
+/// let mut stat = BernoulliSuffStat::new();
+///
+/// assert!(stat.n == 0 && stat.k == 0);
+///
+/// stat.observe(&true);  // observe `true`
+/// assert!(stat.n == 1 && stat.k == 1);
+///
+/// stat.observe(&false);  // observe `false`
+/// assert!(stat.n == 2 && stat.k == 1);
+///
+/// stat.forget_many(&vec![false, true]);  // forget `true` and `false`
+/// assert!(stat.n == 0 && stat.k == 0);
+/// ```
 pub trait SuffStat<X> {
     /// Assimilate the datum `x` into the statistic
     fn observe(&mut self, x: &X);
@@ -370,10 +452,10 @@ where
     /// Computes the posterior distribution from the data
     fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
 
-    // Log marginal likelihood
+    /// Log marginal likelihood
     fn ln_m(&self, x: &DataOrSuffStat<X, Fx>) -> f64;
 
-    // Log posterior predictive of y given x
+    /// Log posterior predictive of y given x
     fn ln_pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64;
 
     /// Marginal likelihood of x
