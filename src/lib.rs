@@ -74,6 +74,7 @@
 //! }
 //! ```
 #![feature(associated_type_defaults)]
+#![feature(test)]
 #[macro_use]
 extern crate serde_derive;
 
