@@ -50,6 +50,7 @@ use traits::*;
 /// // decomposition.
 /// assert!(mat.cholesky().is_some());
 /// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MvGaussian {
     // Mean vector
     pub mu: DVector<f64>,
@@ -209,7 +210,6 @@ mod tests {
         match mvg {
             Err(err) => {
                 let msg = err.get_ref().unwrap().description();
-                println!("++{}", msg);
                 assert!(msg.contains("square"));
             }
             Ok(..) => panic!("Should've failed"),
