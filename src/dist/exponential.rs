@@ -22,7 +22,8 @@ use traits::*;
 /// let expon = Exponential::new(1.5).unwrap();
 /// let interval: (f64, f64) = expon.interval(0.5);  // (0.19, 0.92)
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Exponential {
     /// λ > 0, rate or inverse scale
     pub rate: f64,

@@ -11,7 +11,8 @@ use std::io;
 use traits::*;
 
 /// Student's T distribution
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct StudentsT {
     /// Degrees of freedom, ν, in (0, ∞)
     pub v: f64,

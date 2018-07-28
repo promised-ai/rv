@@ -14,7 +14,8 @@ use traits::*;
 /// `SymmetricDirichlet { alpha, k }` is mathematicall equivalent to
 /// `Dirichlet { alphas: vec![alpha; k] }`. This version has some extra
 /// optimizations to seep up computing the PDF and drawing random vectors.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SymmetricDirichlet {
     pub alpha: f64,
     pub k: usize,
@@ -69,7 +70,8 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
 }
 
 /// Dirichlet distribution over points on the k-simplex
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Dirichlet {
     /// A `Vec` of real numbers in (0, ∞)
     pub alphas: Vec<f64>,

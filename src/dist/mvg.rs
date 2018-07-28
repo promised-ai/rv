@@ -50,7 +50,8 @@ use traits::*;
 /// // decomposition.
 /// assert!(mat.cholesky().is_some());
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct MvGaussian {
     // Mean vector
     pub mu: DVector<f64>,

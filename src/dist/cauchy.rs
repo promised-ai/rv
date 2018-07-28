@@ -21,7 +21,8 @@ use traits::*;
 ///
 /// assert!((ln_fx + 2.4514716152673368).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Cauchy {
     /// location, x<sub>0</sub>, in (-∞, ∞)
     pub loc: f64,

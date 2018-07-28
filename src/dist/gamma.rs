@@ -10,7 +10,8 @@ use std::io;
 use traits::*;
 
 /// Gamma distribution G(α, β)
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gamma {
     pub shape: f64,
     pub rate: f64,

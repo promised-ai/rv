@@ -75,6 +75,8 @@
 //! ```
 #![feature(associated_type_defaults)]
 #![feature(test)]
+
+#[cfg(feature = "serde_support")]
 #[macro_use]
 extern crate serde_derive;
 

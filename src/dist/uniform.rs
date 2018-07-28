@@ -25,7 +25,8 @@ use traits::*;
 /// assert!((u.cdf(&3.0_f64) - y(3.0)).abs() < 1E-12);
 /// assert!((u.cdf(&3.2_f64) - y(3.2)).abs() < 1E-12);
 /// ```
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Uniform {
     pub a: f64,
     pub b: f64,

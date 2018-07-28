@@ -20,7 +20,8 @@ use traits::*;
 ///
 /// let x2 = ChiSquared::new(2.0).unwrap();
 /// ```
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct ChiSquared {
     /// Degrees of freedom in (0, ∞)
     pub k: f64,
