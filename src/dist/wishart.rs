@@ -11,7 +11,8 @@ use traits::*;
 
 /// Inverse Wishart distribution, W<sup>-1</sup>(**Ψ**,ν) over positive definite
 /// matrices.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct InvWishart {
     /// p-dimensional Scale Matrix, **Ψ**
     pub scale: DMatrix<f64>,

@@ -10,7 +10,8 @@ use std::io;
 use traits::*;
 
 /// Inverse gamma distribution IG(α, β)
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(serialize, deserialize))]
 pub struct InvGamma {
     pub shape: f64,
     pub scale: f64,

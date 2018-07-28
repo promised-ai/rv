@@ -23,7 +23,8 @@ use traits::*;
 /// let xs: Vec<f64> = laplace.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100);
 /// ```
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Laplace {
     /// Location in (-∞, ∞)
     mu: f64,

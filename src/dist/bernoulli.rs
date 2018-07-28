@@ -20,7 +20,8 @@ use traits::*;
 /// let b = Bernoulli::new(0.75).unwrap();
 /// assert!((b.pmf(&true) - 0.75).abs() < 1E-12);
 /// ```
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Bernoulli {
     /// Probability of a success (x=1)
     pub p: f64,

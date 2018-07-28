@@ -35,7 +35,8 @@ use traits::*;
 /// let kl_sym = gauss_1.kl_sym(&gauss_2);
 /// assert!((kl_sym - (kl_12 + kl_21)).abs() < 1E-12);
 /// ```
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gaussian {
     /// Mean
     pub mu: f64,

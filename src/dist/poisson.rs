@@ -29,7 +29,8 @@ use traits::*;
 /// let xs: Vec<u32> = pois.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Poisson {
     pub rate: f64,
 }

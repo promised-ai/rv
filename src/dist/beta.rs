@@ -12,7 +12,8 @@ use std::io;
 use traits::*;
 
 /// Beta distribution, *Beta(α, β)*.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Beta {
     pub alpha: f64,
     pub beta: f64,

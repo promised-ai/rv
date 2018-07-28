@@ -3,6 +3,8 @@ use traits::SuffStat;
 
 // Bernoulli
 // ---------
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct BernoulliSuffStat {
     pub n: usize,
     pub k: usize,
@@ -69,7 +71,8 @@ impl_bernoulli_suffstat!(isize);
 
 // Categorical
 // -----------
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct CategoricalSuffStat {
     pub n: usize,
     pub counts: Vec<f64>,
@@ -100,7 +103,8 @@ impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
 
 // Gaussian
 // --------
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct GaussianSuffStat {
     /// Number of observations
     pub n: usize,
