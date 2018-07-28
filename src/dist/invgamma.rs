@@ -11,7 +11,7 @@ use traits::*;
 
 /// Inverse gamma distribution IG(α, β)
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde_support", derive(serialize, deserialize))]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct InvGamma {
     pub shape: f64,
     pub scale: f64,

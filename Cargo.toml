@@ -10,7 +10,7 @@ keywords = ["Probability", "Statistics", "Bayesian", "Machine-learning"]
 categories = ["science"]
 
 [features]
-serde_support = ["serde", "serde_derive"]
+serde_support = ["serde", "serde_derive", "nalgebra/serde-serialize"]
 
 [badges]
 gitlab = { repository = "baxe/rv", branch = "master" }
@@ -19,7 +19,7 @@ gitlab = { repository = "baxe/rv", branch = "master" }
 num = "0.2.0"
 rand = "0.5.3"
 special = "0.7.8"
-nalgebra = {version = "0.16.0", features = ["serde-serialize"]}
+nalgebra = "0.16.0"
 
 serde = {version = "1.0.70", optional = true}
 serde_derive = {version = "1.0.70", optional = true}
