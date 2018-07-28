@@ -1,6 +1,6 @@
 [package]
 name = "rv"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Baxter Eaves"]
 description = "Random variables"
 repository = "https://gitlab.com/baxe/rv"
