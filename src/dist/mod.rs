@@ -24,6 +24,7 @@ mod normal_gamma;
 mod poisson;
 mod students_t;
 mod uniform;
+mod wishart;
 
 pub use self::bernoulli::Bernoulli;
 pub use self::beta::Beta;
@@ -42,3 +43,4 @@ pub use self::normal_gamma::NormalGamma;
 pub use self::poisson::Poisson;
 pub use self::students_t::StudentsT;
 pub use self::uniform::Uniform;
+pub use self::wishart::InvWishart;

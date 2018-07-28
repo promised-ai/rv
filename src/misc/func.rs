@@ -1,7 +1,10 @@
 extern crate rand;
+extern crate special;
 
 use self::rand::distributions::Open01;
 use self::rand::Rng;
+use self::special::Gamma;
+use consts::LN_PI;
 use std::ops::AddAssign;
 
 /// Safely compute `log(sum(exp(xs))`
@@ -146,6 +149,28 @@ pub fn argmax<T: PartialOrd>(xs: &[T]) -> Vec<usize> {
     }
 }
 
+/// Natural logarithm of the multivariate gamma function, *ln Γ<sub>p</sub>(a)*.
+///
+/// # Arguments
+///
+/// * `p` - Positive integer degrees of freedom
+/// * `a` - The number for which to compute the multivariate gamma
+pub fn lnmv_gamma(p: usize, a: f64) -> f64 {
+    let pf = p as f64;
+    let a0 = pf * (pf - 1.0) / 4.0 * LN_PI;
+    (1..=p).fold(a0, |acc, j| acc + (a + (1.0 - j as f64) / 2.0).ln_gamma().0)
+}
+
+/// Multivariate gamma function, *Γ<sub>p</sub>(a)*.
+///
+/// # Arguments
+///
+/// * `p` - Positive integer degrees of freedom
+/// * `a` - The number for which to compute the multivariate gamma
+pub fn mvgamma(p: usize, a: f64) -> f64 {
+    lnmv_gamma(p, a).exp()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -209,4 +234,11 @@ mod tests {
         logsumexp(&xs);
     }
 
+    #[test]
+    fn lnmv_gamma_values() {
+        assert::close(lnmv_gamma(1, 1.0), 0.0, TOL);
+        assert::close(lnmv_gamma(1, 12.0), 17.502307845873887, TOL);
+        assert::close(lnmv_gamma(3, 12.0), 50.615815724290741, TOL);
+        assert::close(lnmv_gamma(3, 8.23), 25.709195968438628, TOL);
+    }
 }
