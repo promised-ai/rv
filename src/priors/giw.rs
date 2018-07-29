@@ -34,11 +34,16 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for GaussianInvWishart {
     type Posterior = GaussianInvWishart;
 
     fn posterior(&self, x: &MvgData) -> GaussianInvWishart {
+        if x.n() == 0 {
+            return self.clone();
+        }
+
+        let nf = x.n() as f64;
         let stat = extract_stat(&x);
 
         let xbar = &stat.sum_x / stat.n as f64;
-        let diff = xbar - &self.mu;
-        let s = &stat.sum_x_sq; // FIXME: wrong
+        let diff = &xbar - &self.mu;
+        let s = &stat.sum_x_sq - nf * (&xbar * &xbar.transpose());
 
         let kn = self.k + stat.n as f64;
         let vn = self.df + stat.n;
@@ -47,7 +52,8 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for GaussianInvWishart {
             + s
             + (self.k * stat.n as f64) / kn * &diff * &diff.transpose();
 
-        GaussianInvWishart::new(mn, kn, vn, sn).unwrap()
+        GaussianInvWishart::new(mn, kn, vn, sn)
+            .expect("Invalid posterior parameters")
     }
 
     fn ln_m(&self, x: &MvgData) -> f64 {
@@ -76,5 +82,71 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for GaussianInvWishart {
         let d: f64 = self.mu.len() as f64;
 
         zm - zn - d / 2.0 * LN_2PI
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    extern crate assert;
+
+    const TOL: f64 = 1E-12;
+
+    // fn giw_fxtr() -> GaussianInvWishart {
+    //     let muv = vec![-1.124144348216312, 1.48969760778546];
+    //     let scalev = vec![
+    //         0.226836817541677,
+    //         -0.0200753958619398,
+    //         -0.0200753958619398,
+    //         0.217753683861863,
+    //     ];
+
+    //     let mu = DVector::<f64>::from_column_slice(2, &muv);
+    //     let scale = DMatrix::<f64>::from_row_slice(2, 2, &scalev);
+
+    //     GaussianInvWishart::new(mu, 1.0, 2, scale).unwrap()
+    // }
+
+    fn obs_fxtr() -> MvGaussianSuffStat {
+        let x0v = vec![3.57839693972576, 0.725404224946106];
+        let x1v = vec![2.76943702988488, -0.0630548731896562];
+        let x2v = vec![-1.34988694015652, 0.714742903826096];
+        let x3v = vec![3.03492346633185, -0.204966058299775];
+
+        let x0 = DVector::<f64>::from_column_slice(2, &x0v);
+        let x1 = DVector::<f64>::from_column_slice(2, &x1v);
+        let x2 = DVector::<f64>::from_column_slice(2, &x2v);
+        let x3 = DVector::<f64>::from_column_slice(2, &x3v);
+
+        let mut stat = MvGaussianSuffStat::new(1);
+
+        stat.observe(&x0);
+        stat.observe(&x1);
+        stat.observe(&x2);
+        stat.observe(&x3);
+
+        stat
+    }
+
+    #[test]
+    fn ln_z_identity() {
+        let z1 = ln_z(1.0, 2, &DMatrix::identity(2, 2));
+        assert::close(z1, 4.3689013133786361, TOL);
+    }
+
+    #[test]
+    fn ln_m_identity() {
+        let giw = GaussianInvWishart::new(
+            DVector::zeros(2),
+            1.0,
+            2,
+            DMatrix::identity(2, 2),
+        ).unwrap();
+        let obs = obs_fxtr();
+        let data: MvgData = DataOrSuffStat::SuffStat(&obs);
+
+        let pp = giw.ln_m(&data);
+
+        assert::close(pp, -16.3923777220275, TOL);
     }
 }

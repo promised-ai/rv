@@ -204,8 +204,13 @@ impl SuffStat<DVector<f64>> for MvGaussianSuffStat {
 
     fn observe(&mut self, x: &DVector<f64>) {
         self.n += 1;
-        self.sum_x += x;
-        self.sum_x_sq += x * x.transpose();
+        if self.n == 1 {
+            self.sum_x = x.clone();
+            self.sum_x_sq = x * x.transpose();
+        } else {
+            self.sum_x += x;
+            self.sum_x_sq += x * x.transpose();
+        }
     }
 
     fn forget(&mut self, x: &DVector<f64>) {
