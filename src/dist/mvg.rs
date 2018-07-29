@@ -3,6 +3,7 @@ extern crate rand;
 
 use self::nalgebra::{DMatrix, DVector};
 use self::rand::Rng;
+use data::MvGaussianSuffStat;
 use std::f64::consts::{E, PI};
 use std::io;
 use traits::*;
@@ -93,8 +94,8 @@ impl MvGaussian {
 
 impl Rv<DVector<f64>> for MvGaussian {
     fn ln_f(&self, x: &DVector<f64>) -> f64 {
-        let diff = x - self.mu.clone();
-        let det: f64 = (2.0 * PI * self.cov.clone()).determinant();
+        let diff = x - &self.mu;
+        let det: f64 = (2.0 * PI * &self.cov).determinant();
         let inv = self
             .cov
             .clone()
@@ -153,7 +154,13 @@ impl Variance<DMatrix<f64>> for MvGaussian {
 
 impl Entropy for MvGaussian {
     fn entropy(&self) -> f64 {
-        0.5 * (2.0 * PI * E * self.cov.clone()).determinant().ln()
+        0.5 * (2.0 * PI * E * &self.cov).determinant().ln()
+    }
+}
+impl HasSuffStat<DVector<f64>> for MvGaussian {
+    type Stat = MvGaussianSuffStat;
+    fn empty_suffstat(&self) -> Self::Stat {
+        MvGaussianSuffStat::new(self.mu.len())
     }
 }
 

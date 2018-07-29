@@ -1,3 +1,6 @@
+extern crate nalgebra;
+
+use self::nalgebra::{DMatrix, DVector};
 use data::CategoricalDatum;
 use traits::SuffStat;
 
@@ -23,6 +26,10 @@ impl Default for BernoulliSuffStat {
 }
 
 impl SuffStat<bool> for BernoulliSuffStat {
+    fn n(&self) -> usize {
+        self.n
+    }
+
     fn observe(&mut self, x: &bool) {
         self.n += 1;
         if *x {
@@ -41,6 +48,10 @@ impl SuffStat<bool> for BernoulliSuffStat {
 macro_rules! impl_bernoulli_suffstat {
     ($kind:ty) => {
         impl SuffStat<$kind> for BernoulliSuffStat {
+            fn n(&self) -> usize {
+                self.n
+            }
+
             fn observe(&mut self, x: &$kind) {
                 self.n += 1;
                 if *x == 1 {
@@ -88,6 +99,10 @@ impl CategoricalSuffStat {
 }
 
 impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
+    fn n(&self) -> usize {
+        self.n
+    }
+
     fn observe(&mut self, x: &X) {
         let ix: usize = (*x).into();
         self.n += 1;
@@ -134,6 +149,10 @@ macro_rules! impl_gaussian_suffstat {
     ($kind:ty) => {
         // TODO: store in a more nuerically stable form
         impl SuffStat<$kind> for GaussianSuffStat {
+            fn n(&self) -> usize {
+                self.n
+            }
+
             fn observe(&mut self, x: &$kind) {
                 let xf = f64::from(*x);
                 self.n += 1;
@@ -159,6 +178,53 @@ macro_rules! impl_gaussian_suffstat {
 
 impl_gaussian_suffstat!(f32);
 impl_gaussian_suffstat!(f64);
+
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub struct MvGaussianSuffStat {
+    pub n: usize,
+    pub sum_x: DVector<f64>,
+    pub sum_x_sq: DMatrix<f64>,
+}
+
+impl MvGaussianSuffStat {
+    pub fn new(dims: usize) -> Self {
+        MvGaussianSuffStat {
+            n: 0,
+            sum_x: DVector::zeros(dims),
+            sum_x_sq: DMatrix::zeros(dims, dims),
+        }
+    }
+}
+
+impl SuffStat<DVector<f64>> for MvGaussianSuffStat {
+    fn n(&self) -> usize {
+        self.n
+    }
+
+    fn observe(&mut self, x: &DVector<f64>) {
+        self.n += 1;
+        if self.n == 1 {
+            self.sum_x = x.clone();
+            self.sum_x_sq = x * x.transpose();
+        } else {
+            self.sum_x += x;
+            self.sum_x_sq += x * x.transpose();
+        }
+    }
+
+    fn forget(&mut self, x: &DVector<f64>) {
+        self.n -= 1;
+        if self.n > 0 {
+            self.sum_x -= x;
+            self.sum_x_sq -= x * x.transpose();
+        } else {
+            let dims = self.sum_x.len();
+            self.sum_x = DVector::zeros(dims);
+            self.sum_x_sq = DMatrix::zeros(dims, dims);
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

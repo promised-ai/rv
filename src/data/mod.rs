@@ -6,10 +6,11 @@ pub use self::partition::Partition;
 pub use self::suffstat::BernoulliSuffStat;
 pub use self::suffstat::CategoricalSuffStat;
 pub use self::suffstat::GaussianSuffStat;
+pub use self::suffstat::MvGaussianSuffStat;
 
 extern crate num;
 use self::num::traits::FromPrimitive;
-use traits::HasSuffStat;
+use traits::{HasSuffStat, SuffStat};
 
 /// The trait that data must implemented by all data used with the
 /// `Categorical` distribution
@@ -32,4 +33,18 @@ where
     Data(&'a Vec<X>),
     /// A sufficient statistic
     SuffStat(&'a Fx::Stat),
+}
+
+impl<'a, X, Fx> DataOrSuffStat<'a, X, Fx>
+where
+    X: 'a,
+    Fx: 'a + HasSuffStat<X>,
+{
+    /// Get the number of observations
+    pub fn n(&self) -> usize {
+        match &self {
+            DataOrSuffStat::Data(data) => data.len(),
+            DataOrSuffStat::SuffStat(s) => s.n(),
+        }
+    }
 }
