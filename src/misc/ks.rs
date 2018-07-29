@@ -31,8 +31,8 @@
 /// let (_, p_laplace) = ks_test(&xs, laplace_cdf);
 /// assert!(p_laplace < 0.05);
 /// ```
-pub fn ks_test<F: Fn(f64) -> f64>(xs: &Vec<f64>, cdf: F) -> (f64, f64) {
-    let mut xs_r: Vec<f64> = xs.clone().to_vec();
+pub fn ks_test<F: Fn(f64) -> f64>(xs: &[f64], cdf: F) -> (f64, f64) {
+    let mut xs_r: Vec<f64> = xs.to_vec();
     xs_r.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
 
     let n: f64 = xs_r.len() as f64;
@@ -49,7 +49,7 @@ pub fn ks_test<F: Fn(f64) -> f64>(xs: &Vec<f64>, cdf: F) -> (f64, f64) {
     (d, p)
 }
 
-fn mmul(xs: &Vec<Vec<f64>>, ys: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+fn mmul(xs: &[Vec<f64>], ys: &[Vec<f64>]) -> Vec<Vec<f64>> {
     let m = xs.len();
     let mut zs = vec![vec![0.0; m]; m];
     for i in 0..m {
@@ -93,7 +93,7 @@ fn ks_cdf(n: usize, d: f64) -> f64 {
     let nf = n as f64;
     let s: f64 = d * d * nf;
     if s > 7.24 || (s > 3.76 && n > 99) {
-        1.0 - 2.0 * (-(2.000071 + 0.331 / nf.sqrt() + 1.409 / nf) * s).exp()
+        1.0 - 2.0 * (-(2.000_071 + 0.331 / nf.sqrt() + 1.409 / nf) * s).exp()
     } else {
         let k: usize = ((nf * d) as usize) + 1;
         let m: usize = 2 * k - 1;
