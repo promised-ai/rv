@@ -66,7 +66,8 @@ macro_rules! impl_traits {
                 -logsumexp(&vec![ln_scale, term])
             }
 
-            fn ln_normalizer(&self) -> f64 {
+            #[inline]
+            fn ln_normalizer() -> f64 {
                 LN_PI
             }
 

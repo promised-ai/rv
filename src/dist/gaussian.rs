@@ -82,7 +82,8 @@ macro_rules! impl_traits {
                 -self.sigma.ln() - 0.5 * k * k
             }
 
-            fn ln_normalizer(&self) -> f64 {
+            #[inline]
+            fn ln_normalizer() -> f64 {
                 HALF_LN_2PI
             }
 

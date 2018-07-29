@@ -13,7 +13,8 @@ impl Rv<Bernoulli> for Beta {
         self.ln_f(&x.p)
     }
 
-    fn ln_normalizer(&self) -> f64 {
+    #[inline]
+    fn ln_normalizer() -> f64 {
         0.0
     }
 

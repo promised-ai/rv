@@ -71,7 +71,8 @@ macro_rules! impl_int_traits {
                 self.f(x).ln()
             }
 
-            fn ln_normalizer(&self) -> f64 {
+            #[inline]
+            fn ln_normalizer() -> f64 {
                 0.0
             }
 
@@ -207,7 +208,8 @@ impl Rv<bool> for Bernoulli {
         self.f(x).ln()
     }
 
-    fn ln_normalizer(&self) -> f64 {
+    #[inline]
+    fn ln_normalizer() -> f64 {
         0.0
     }
 
