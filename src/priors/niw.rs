@@ -3,7 +3,7 @@ extern crate nalgebra;
 use self::nalgebra::{DMatrix, DVector};
 use consts::LN_2PI;
 use data::{DataOrSuffStat, MvGaussianSuffStat};
-use dist::{GaussianInvWishart, MvGaussian};
+use dist::{MvGaussian, NormalInvWishart};
 use misc::lnmv_gamma;
 use std::f64::consts::{LN_2, PI};
 use traits::{ConjugatePrior, SuffStat};
@@ -30,10 +30,10 @@ fn ln_z(k: f64, df: usize, scale: &DMatrix<f64>) -> f64 {
         - v2 * scale.clone().determinant().ln()
 }
 
-impl ConjugatePrior<DVector<f64>, MvGaussian> for GaussianInvWishart {
-    type Posterior = GaussianInvWishart;
+impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
+    type Posterior = NormalInvWishart;
 
-    fn posterior(&self, x: &MvgData) -> GaussianInvWishart {
+    fn posterior(&self, x: &MvgData) -> NormalInvWishart {
         if x.n() == 0 {
             return self.clone();
         }
@@ -52,7 +52,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for GaussianInvWishart {
             + s
             + (self.k * stat.n as f64) / kn * &diff * &diff.transpose();
 
-        GaussianInvWishart::new(mn, kn, vn, sn)
+        NormalInvWishart::new(mn, kn, vn, sn)
             .expect("Invalid posterior parameters")
     }
 
@@ -92,7 +92,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    // fn giw_fxtr() -> GaussianInvWishart {
+    // fn niw_fxtr() -> NormalInvWishart {
     //     let muv = vec![-1.124144348216312, 1.48969760778546];
     //     let scalev = vec![
     //         0.226836817541677,
@@ -104,7 +104,7 @@ mod tests {
     //     let mu = DVector::<f64>::from_column_slice(2, &muv);
     //     let scale = DMatrix::<f64>::from_row_slice(2, 2, &scalev);
 
-    //     GaussianInvWishart::new(mu, 1.0, 2, scale).unwrap()
+    //     NormalInvWishart::new(mu, 1.0, 2, scale).unwrap()
     // }
 
     fn obs_fxtr() -> MvGaussianSuffStat {
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn ln_m_identity() {
-        let giw = GaussianInvWishart::new(
+        let niw = NormalInvWishart::new(
             DVector::zeros(2),
             1.0,
             2,
@@ -145,7 +145,7 @@ mod tests {
         let obs = obs_fxtr();
         let data: MvgData = DataOrSuffStat::SuffStat(&obs);
 
-        let pp = giw.ln_m(&data);
+        let pp = niw.ln_m(&data);
 
         assert::close(pp, -16.3923777220275, TOL);
     }

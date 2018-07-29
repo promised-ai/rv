@@ -10,7 +10,7 @@ use traits::*;
 /// Common conjugate prior on the μ and Σ parameters in the Multivariate
 /// Gaussian, Ν(μ, Σ)
 ///
-/// Ν(μ, Σ) ~ GIW(μ<sub>0</sub>, κ<sub>0</sub>, ν, Ψ) implies
+/// Ν(μ, Σ) ~ NIW(μ<sub>0</sub>, κ<sub>0</sub>, ν, Ψ) implies
 /// μ ~ N(μ<sub>0</sub>, Σ/k<sub>0</sub>) and
 /// Σ ~ W<sup>-1</sup>(Ψ, ν)
 ///
@@ -31,15 +31,15 @@ use traits::*;
 /// let df = 3;
 /// let scale = DMatrix::identity(3, 3);
 ///
-/// let giw = GaussianInvWishart::new(mu, k, df, scale).unwrap();
+/// let niw = NormalInvWishart::new(mu, k, df, scale).unwrap();
 ///
 /// let mut rng = rand::thread_rng();
 ///
-/// let mvg: MvGaussian = giw.draw(&mut rng);
+/// let mvg: MvGaussian = niw.draw(&mut rng);
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct GaussianInvWishart {
+pub struct NormalInvWishart {
     /// The mean of μ, μ<sub>0</sub>
     pub mu: DVector<f64>,
     /// A scale factor on Σ, κ<sub>0</sub>
@@ -50,8 +50,8 @@ pub struct GaussianInvWishart {
     pub scale: DMatrix<f64>,
 }
 
-impl GaussianInvWishart {
-    /// Create a new `GaussianInvWishart` distribution
+impl NormalInvWishart {
+    /// Create a new `NormalInvWishart` distribution
     pub fn new(
         mu: DVector<f64>,
         k: f64,
@@ -75,14 +75,14 @@ impl GaussianInvWishart {
 
         match err {
             Some(msg) => Err(io::Error::new(io::ErrorKind::InvalidInput, msg)),
-            None => Ok(GaussianInvWishart { mu, k, df, scale }),
+            None => Ok(NormalInvWishart { mu, k, df, scale }),
         }
     }
 }
 
 // TODO: We might be able to make things faster by storing the InvWishart
 // because each time we create it, it clones and validates the parameters.
-impl Rv<MvGaussian> for GaussianInvWishart {
+impl Rv<MvGaussian> for NormalInvWishart {
     fn ln_f(&self, x: &MvGaussian) -> f64 {
         let m = self.mu.clone();
         let sigma = x.cov.clone() / self.k;
@@ -107,11 +107,11 @@ impl Rv<MvGaussian> for GaussianInvWishart {
     }
 }
 
-impl Support<MvGaussian> for GaussianInvWishart {
+impl Support<MvGaussian> for NormalInvWishart {
     fn contains(&self, x: &MvGaussian) -> bool {
         let p = self.mu.len();
         x.mu.len() == p && x.cov.clone().cholesky().is_some()
     }
 }
 
-impl ContinuousDistr<MvGaussian> for GaussianInvWishart {}
+impl ContinuousDistr<MvGaussian> for NormalInvWishart {}
