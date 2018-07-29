@@ -85,7 +85,8 @@ impl<X: CategoricalDatum> Rv<X> for Categorical {
         self.ln_weights[ix]
     }
 
-    fn ln_normalizer(&self) -> f64 {
+    #[inline]
+    fn ln_normalizer() -> f64 {
         0.0
     }
 

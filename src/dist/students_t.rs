@@ -43,7 +43,8 @@ macro_rules! impl_traits {
                 zterm + xterm
             }
 
-            fn ln_normalizer(&self) -> f64 {
+            #[inline]
+            fn ln_normalizer() -> f64 {
                 0.0
             }
 

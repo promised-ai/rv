@@ -91,7 +91,8 @@ impl Rv<MvGaussian> for NormalInvWishart {
         mvg.ln_f(&x.mu) + iw.ln_f(&x.cov)
     }
 
-    fn ln_normalizer(&self) -> f64 {
+    #[inline]
+    fn ln_normalizer() -> f64 {
         0.0
     }
 

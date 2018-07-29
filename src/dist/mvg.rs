@@ -105,7 +105,8 @@ impl Rv<DVector<f64>> for MvGaussian {
         -0.5 * det.ln() - term
     }
 
-    fn ln_normalizer(&self) -> f64 {
+    #[inline]
+    fn ln_normalizer() -> f64 {
         0.0
     }
 

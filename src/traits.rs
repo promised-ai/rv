@@ -42,13 +42,13 @@ pub trait Rv<X> {
 
     /// The constant term in the PDF/PMF. Should not be a function of any of
     /// the parameters.
-    fn normalizer(&self) -> f64 {
-        self.ln_normalizer().exp()
+    fn normalizer() -> f64 {
+        Self::ln_normalizer().exp()
     }
 
     /// The log of the constant term in the PDF/PMF. Should not be a function of
     /// any of the parameters.
-    fn ln_normalizer(&self) -> f64;
+    fn ln_normalizer() -> f64;
 
     /// Single draw from the `Rv`
     ///
@@ -176,7 +176,7 @@ pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
         if !self.contains(&x) {
             panic!("x not in support");
         }
-        self.ln_f(x) - self.ln_normalizer()
+        self.ln_f(x) - Self::ln_normalizer()
     }
 }
 
@@ -305,7 +305,7 @@ pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
         if !self.contains(&x) {
             panic!("x not in support");
         }
-        self.ln_f(x) - self.ln_normalizer()
+        self.ln_f(x) - Self::ln_normalizer()
     }
 }
 

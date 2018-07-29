@@ -53,7 +53,8 @@ impl Rv<Gaussian> for NormalGamma {
         lnf_rho + lnf_mu
     }
 
-    fn ln_normalizer(&self) -> f64 {
+    #[inline]
+    fn ln_normalizer() -> f64 {
         HALF_LN_2PI
     }
 

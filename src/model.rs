@@ -125,7 +125,7 @@ where
     }
 
     #[inline]
-    fn ln_normalizer(&self) -> f64 {
+    fn ln_normalizer() -> f64 {
         0.0
     }
 

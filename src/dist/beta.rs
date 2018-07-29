@@ -82,7 +82,7 @@ macro_rules! impl_traits {
             }
 
             #[inline]
-            fn ln_normalizer(&self) -> f64 {
+            fn ln_normalizer() -> f64 {
                 0.0
             }
         }

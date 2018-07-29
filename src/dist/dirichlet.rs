@@ -53,7 +53,8 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
         xs.iter().map(|x| x / z).collect()
     }
 
-    fn ln_normalizer(&self) -> f64 {
+    #[inline]
+    fn ln_normalizer() -> f64 {
         0.0
     }
 
@@ -152,7 +153,8 @@ impl Rv<Vec<f64>> for Dirichlet {
         xs.iter().map(|x| x / z).collect()
     }
 
-    fn ln_normalizer(&self) -> f64 {
+    #[inline]
+    fn ln_normalizer() -> f64 {
         0.0
     }
 

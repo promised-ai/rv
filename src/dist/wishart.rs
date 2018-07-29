@@ -67,7 +67,8 @@ impl Rv<DMatrix<f64>> for InvWishart {
         det_s - denom + det_x + numer
     }
 
-    fn ln_normalizer(&self) -> f64 {
+    #[inline]
+    fn ln_normalizer() -> f64 {
         0.0
     }
 

@@ -14,7 +14,8 @@ impl Rv<Categorical> for SymmetricDirichlet {
         self.ln_f(&x.weights())
     }
 
-    fn ln_normalizer(&self) -> f64 {
+    #[inline]
+    fn ln_normalizer() -> f64 {
         0.0
     }
 
@@ -66,7 +67,8 @@ impl Rv<Categorical> for Dirichlet {
         self.ln_f(&x.weights())
     }
 
-    fn ln_normalizer(&self) -> f64 {
+    #[inline]
+    fn ln_normalizer() -> f64 {
         0.0
     }
 
