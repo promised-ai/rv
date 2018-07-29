@@ -57,12 +57,12 @@ impl Rv<DMatrix<f64>> for InvWishart {
         let pf = p as f64;
         let v = self.df as f64;
 
-        let det_s: f64 = v * 0.5 * self.scale.clone().determinant().ln();
+        let det_s: f64 = v * 0.5 * &self.scale.determinant().ln();
         let det_x: f64 = -(v + pf + 1.0) * 0.5 * x.determinant().ln();
 
         let denom: f64 = v * pf * 0.5 * LN_2 + lnmv_gamma(p, 0.5 * v);
-        let numer: f64 = -0.5
-            * (self.scale.clone() * x.clone().try_inverse().unwrap()).trace();
+        let numer: f64 =
+            -0.5 * (&self.scale * x.clone().try_inverse().unwrap()).trace();
 
         det_s - denom + det_x + numer
     }
@@ -97,7 +97,7 @@ impl Mean<DMatrix<f64>> for InvWishart {
     fn mean(&self) -> Option<DMatrix<f64>> {
         let p = self.scale.nrows();
         if self.df > p + 1 {
-            Some(self.scale.clone() / (self.df - p - 1) as f64)
+            Some(&self.scale / (self.df - p - 1) as f64)
         } else {
             None
         }
@@ -107,7 +107,7 @@ impl Mean<DMatrix<f64>> for InvWishart {
 impl Mode<DMatrix<f64>> for InvWishart {
     fn mode(&self) -> Option<DMatrix<f64>> {
         let p = self.scale.nrows();
-        Some(self.scale.clone() / (self.df + p + 1) as f64)
+        Some(&self.scale / (self.df + p + 1) as f64)
     }
 }
 

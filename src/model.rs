@@ -102,6 +102,10 @@ where
     Fx: Rv<X> + HasSuffStat<X>,
     Pr: ConjugatePrior<X, Fx>,
 {
+    fn n(&self) -> usize {
+        self.suffstat.n()
+    }
+
     fn observe(&mut self, x: &X) {
         self.suffstat.observe(&x);
     }

@@ -425,6 +425,9 @@ pub trait HasSuffStat<X> {
 /// assert!(stat.n == 0 && stat.k == 0);
 /// ```
 pub trait SuffStat<X> {
+    /// Returns the number of observations
+    fn n(&self) -> usize;
+
     /// Assimilate the datum `x` into the statistic
     fn observe(&mut self, x: &X);
 
