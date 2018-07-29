@@ -435,12 +435,12 @@ pub trait SuffStat<X> {
     fn forget(&mut self, x: &X);
 
     /// Assimilate several observations
-    fn observe_many(&mut self, xs: &Vec<X>) {
+    fn observe_many(&mut self, xs: &[X]) {
         xs.iter().for_each(|x| self.observe(x));
     }
 
     /// Forget several observations
-    fn forget_many(&mut self, xs: &Vec<X>) {
+    fn forget_many(&mut self, xs: &[X]) {
         xs.iter().for_each(|x| self.forget(x));
     }
 }

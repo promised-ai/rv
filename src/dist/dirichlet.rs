@@ -60,7 +60,7 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
     fn ln_f(&self, x: &Vec<f64>) -> f64 {
         let kf = self.k as f64;
         let sum_ln_gamma = self.alpha.ln_gamma().0 * kf;
-        let ln_gamma_sum = (self.alpha * f64::from(kf)).ln_gamma().0;
+        let ln_gamma_sum = (self.alpha * kf).ln_gamma().0;
 
         let am1 = self.alpha - 1.0;
         let term = x.iter().fold(0.0, |acc, &xi| acc + am1 * xi.ln());

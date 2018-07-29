@@ -63,7 +63,7 @@ macro_rules! impl_traits {
                 let term = ln_scale
                     + 2.0 * ((f64::from(*x) - self.loc).abs().ln() - ln_scale);
                 // TODO: make a logaddexp method for two floats
-                -logsumexp(&vec![ln_scale, term])
+                -logsumexp(&[ln_scale, term])
             }
 
             fn ln_normalizer(&self) -> f64 {

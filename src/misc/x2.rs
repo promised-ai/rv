@@ -21,7 +21,7 @@ use self::special::Gamma;
 /// let (stat, p) = x2_test(&f_obs, &ps);
 /// assert!(p > 0.05);
 /// ```
-pub fn x2_test(f_obs: &Vec<u32>, ps: &Vec<f64>) -> (f64, f64) {
+pub fn x2_test(f_obs: &[u32], ps: &[f64]) -> (f64, f64) {
     let k = f_obs.len();
     let nf = f_obs.iter().fold(0, |acc, ct| acc + ct) as f64;
     let x2 = nf * f_obs.iter().zip(ps.iter()).fold(0.0, |acc, (&o, &p)| {

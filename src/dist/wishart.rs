@@ -57,7 +57,7 @@ impl Rv<DMatrix<f64>> for InvWishart {
         let pf = p as f64;
         let v = self.df as f64;
 
-        let det_s: f64 = v * 0.5 * &self.scale.determinant().ln();
+        let det_s: f64 = v * 0.5 * self.scale.determinant().ln();
         let det_x: f64 = -(v + pf + 1.0) * 0.5 * x.determinant().ln();
 
         let denom: f64 = v * pf * 0.5 * LN_2 + lnmv_gamma(p, 0.5 * v);
