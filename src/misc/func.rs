@@ -62,8 +62,7 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
                     panic!("Could not draw from {:?}", wsvec)
                 }
             }
-        })
-        .collect()
+        }).collect()
 }
 
 /// Draw an index according to log-domain weights
@@ -109,8 +108,7 @@ pub fn ln_pflip<R: Rng>(
             cdf.iter()
                 .position(|&w| w > r)
                 .expect("Could not draw from ln_weights")
-        })
-        .collect()
+        }).collect()
 }
 
 /// Indices of the largest element(s) in xs.
