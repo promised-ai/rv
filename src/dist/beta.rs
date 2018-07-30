@@ -77,8 +77,7 @@ macro_rules! impl_traits {
                         let a = rng.sample(ga);
                         let b = rng.sample(gb);
                         (a / (a + b)) as $kind
-                    })
-                    .collect()
+                    }).collect()
             }
 
             #[inline]

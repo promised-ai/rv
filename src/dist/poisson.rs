@@ -212,7 +212,8 @@ mod tests {
         // How many bins do we need?
         let k: usize = (0..100)
             .position(|x| pois.pmf(&(x as u32)) < f64::EPSILON)
-            .unwrap_or(99) + 1;
+            .unwrap_or(99)
+            + 1;
 
         let ps: Vec<f64> = (0..k).map(|x| pois.pmf(&(x as u32))).collect();
 

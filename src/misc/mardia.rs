@@ -91,8 +91,7 @@ mod test {
             .map(|(&x, &y)| {
                 let xyv = vec![x, y];
                 DVector::from_row_slice(2, &xyv)
-            })
-            .collect();
+            }).collect();
         let (pa, pb) = mardia(&xys);
         assert!(pa < MARDIA_PVAL && pb < MARDIA_PVAL);
     }

@@ -54,8 +54,7 @@ impl Dpgmm {
         let mut components: Vec<GaussComponent> = (0..partition.k())
             .map(|_| {
                 ConjugateModel::new(&Gaussian::default(), prior_arc.clone())
-            })
-            .collect();
+            }).collect();
 
         // Given the data to their respective components by having them observe
         // their data.
