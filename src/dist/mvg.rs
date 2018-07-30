@@ -170,8 +170,13 @@ mod tests {
     extern crate assert;
     extern crate test;
     use super::*;
+    use dist::Gaussian;
+    use misc::{ks_test, mardia};
 
     const TOL: f64 = 1E-12;
+    const NTRIES: usize = 5;
+    const KS_PVAL: f64 = 0.2;
+    const MARDIA_PVAL: f64 = 0.2;
 
     #[test]
     fn new() {
@@ -326,6 +331,80 @@ mod tests {
         let mu = DVector::<f64>::from_column_slice(3, &vec![0.5, 3.1, -6.2]);
         let mvg = MvGaussian::new(mu, cov).unwrap();
         assert::close(mvg.entropy(), 4.0915350538112305, TOL);
+    }
+
+    #[test]
+    fn standard_draw_marginals() {
+        let mut rng = rand::thread_rng();
+        let mvg = MvGaussian::standard(2).unwrap();
+
+        let g = Gaussian::standard();
+        let cdf = |x: f64| g.cdf(&x);
+
+        let passed = (0..NTRIES).fold(false, |acc, _| {
+            if acc {
+                acc
+            } else {
+                let xys = mvg.sample(500, &mut rng);
+                let xs: Vec<f64> = xys.iter().map(|xy| xy[0].clone()).collect();
+                let ys: Vec<f64> = xys.iter().map(|xy| xy[1].clone()).collect();
+
+                let (_, px) = ks_test(&xs, cdf);
+                let (_, py) = ks_test(&ys, cdf);
+                px > KS_PVAL && py > KS_PVAL
+            }
+        });
+
+        assert!(passed);
+    }
+
+    #[test]
+    fn standard_draw_mardia() {
+        let mut rng = rand::thread_rng();
+        let mvg = MvGaussian::standard(4).unwrap();
+
+        let passed = (0..NTRIES).fold(false, |acc, _| {
+            if acc {
+                acc
+            } else {
+                let xys = mvg.sample(500, &mut rng);
+                let (pa, pb) = mardia(&xys);
+                pa > MARDIA_PVAL && pb > MARDIA_PVAL
+            }
+        });
+
+        assert!(passed);
+    }
+
+    #[test]
+    fn nonstandard_draw_mardia() {
+        let mut rng = rand::thread_rng();
+        let cov_vals = vec![
+            1.01742788,
+            0.36586652,
+            -0.65620486,
+            0.36586652,
+            1.00564553,
+            -0.42597261,
+            -0.65620486,
+            -0.42597261,
+            1.27247972,
+        ];
+        let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
+        let mu = DVector::<f64>::from_column_slice(3, &vec![0.5, 3.1, -6.2]);
+        let mvg = MvGaussian::new(mu, cov).unwrap();
+
+        let passed = (0..NTRIES).fold(false, |acc, _| {
+            if acc {
+                acc
+            } else {
+                let xys = mvg.sample(500, &mut rng);
+                let (pa, pb) = mardia(&xys);
+                pa > MARDIA_PVAL && pb > MARDIA_PVAL
+            }
+        });
+
+        assert!(passed);
     }
 
     #[bench]
