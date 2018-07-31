@@ -38,7 +38,7 @@ let pdf_bern = beta.ln_pdf(&berns[42]);
 
 1. Please create an issue before starting any work. We're far from stable, so
    we might actually be working on what you want, or we might be working on
-   something that will change the you might implement it.
+   something that will change the way you might implement it.
 2. If you plan on implementing a new distribution, implement at least `Rv`,
    `Support`, and either `ContinuousDistr` or `DiscreteDistr`. Of course, more
    is better!
