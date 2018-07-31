@@ -17,6 +17,7 @@ fn extract_stat(x: &DataOrSuffStat<f64, Gaussian>) -> GaussianSuffStat {
             xs.iter().for_each(|y| stat.observe(y));
             stat
         }
+        DataOrSuffStat::None => GaussianSuffStat::new(),
     }
 }
 

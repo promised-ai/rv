@@ -9,11 +9,20 @@ use std::io;
 
 use traits::*;
 
-/// Inverse gamma distribution IG(α, β)
+/// [Inverse gamma distribution](https://en.wikipedia.org/wiki/Inverse-gamma_distribution)
+/// IG(α, β) over x in (0, ∞).
+///
+/// ```math
+///             β^α
+/// f(x|α, β) = ----  x^(-α-1) e^(-β/x)
+///             Γ(α)
+/// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct InvGamma {
+    // shape parameter, α
     pub shape: f64,
+    // scale parameter, β
     pub scale: f64,
 }
 

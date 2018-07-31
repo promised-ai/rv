@@ -7,7 +7,8 @@ use std::io;
 
 use traits::*;
 
-/// Continuous uniform distribution, U(a, b) on the interval x in [a, b]
+/// [Continuous uniform distribution](https://en.wikipedia.org/wiki/Uniform_distribution_(continuous)),
+/// U(a, b) on the interval x in [a, b]
 ///
 /// # Example
 ///

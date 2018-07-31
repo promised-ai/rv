@@ -9,7 +9,8 @@ use self::rand::Rng;
 
 use traits::*;
 
-/// Exponential distribution, Exp(λ) over x in [0, ∞)
+/// [Exponential distribution](https://en.wikipedia.org/wiki/Exponential_distribution),
+/// Exp(λ) over x in [0, ∞).
 ///
 /// # Examples
 ///

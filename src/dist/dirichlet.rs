@@ -9,7 +9,8 @@ use std::io;
 
 use traits::*;
 
-/// Symmetric Dirichlet distribution where all alphas are the same.
+/// Symmetric [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
+/// where all alphas are the same.
 ///
 /// `SymmetricDirichlet { alpha, k }` is mathematicall equivalent to
 /// `Dirichlet { alphas: vec![alpha; k] }`. This version has some extra
@@ -70,7 +71,8 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
     }
 }
 
-/// Dirichlet distribution over points on the k-simplex
+/// [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
+/// over points on the k-simplex.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Dirichlet {

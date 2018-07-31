@@ -9,9 +9,10 @@ use std::f64;
 use std::io;
 use traits::*;
 
-/// Bernoulli distribution with success probability *p*
+/// [Bernoulli distribution](https://en.wikipedia.org/wiki/Bernoulli_distribution)
+/// with success probability *p*
 ///
-/// # Examples
+/// # Example
 ///
 /// ```
 /// # extern crate rv;

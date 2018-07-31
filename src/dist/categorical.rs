@@ -9,7 +9,8 @@ use misc::{argmax, ln_pflip, logsumexp};
 use std::io;
 use traits::*;
 
-/// Distribution over unordered values in [0, k)
+/// [Categorical distribution](https://en.wikipedia.org/wiki/Categorical_distribution)
+/// over unordered values in [0, k).
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Categorical {

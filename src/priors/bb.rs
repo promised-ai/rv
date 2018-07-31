@@ -42,6 +42,7 @@ impl ConjugatePrior<bool, Bernoulli> for Beta {
                 (stat.n, stat.k)
             }
             DataOrSuffStat::SuffStat(ref stat) => (stat.n, stat.k),
+            DataOrSuffStat::None => (0, 0),
         };
 
         let a = self.alpha + k as f64;

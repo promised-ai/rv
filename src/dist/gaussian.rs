@@ -13,7 +13,8 @@ use consts::*;
 use data::GaussianSuffStat;
 use traits::*;
 
-/// Gaussian / Normal distribution, N(μ, σ)
+/// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
+/// N(μ, σ) over real values.
 ///
 /// # Examples
 ///

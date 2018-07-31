@@ -10,15 +10,15 @@ use traits::{ConjugatePrior, SuffStat};
 
 type MvgData<'a> = DataOrSuffStat<'a, DVector<f64>, MvGaussian>;
 
-fn extract_stat(xs: &MvgData) -> MvGaussianSuffStat {
+fn extract_stat(xs: &MvgData, dims: usize) -> MvGaussianSuffStat {
     match xs {
         DataOrSuffStat::Data(data) => {
-            let dims = data[0].len();
             let mut stat = MvGaussianSuffStat::new(dims);
             stat.observe_many(&data);
             stat
         }
         DataOrSuffStat::SuffStat(ref stat) => (*stat).clone(),
+        DataOrSuffStat::None => MvGaussianSuffStat::new(dims),
     }
 }
 
@@ -39,7 +39,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         }
 
         let nf = x.n() as f64;
-        let stat = extract_stat(&x);
+        let stat = extract_stat(&x, self.mu.len());
 
         let xbar = &stat.sum_x / stat.n as f64;
         let diff = &xbar - &self.mu;

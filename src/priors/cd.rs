@@ -89,6 +89,7 @@ fn extract_stat<X: CategoricalDatum>(
             xs.iter().for_each(|y| stat.observe(y));
             stat
         }
+        DataOrSuffStat::None => CategoricalSuffStat::new(k),
     }
 }
 

@@ -33,6 +33,8 @@ where
     Data(&'a Vec<X>),
     /// A sufficient statistic
     SuffStat(&'a Fx::Stat),
+    /// No data
+    None,
 }
 
 impl<'a, X, Fx> DataOrSuffStat<'a, X, Fx>
@@ -45,6 +47,7 @@ where
         match &self {
             DataOrSuffStat::Data(data) => data.len(),
             DataOrSuffStat::SuffStat(s) => s.n(),
+            DataOrSuffStat::None => 0,
         }
     }
 }
