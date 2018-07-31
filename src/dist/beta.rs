@@ -27,7 +27,7 @@ use traits::*;
 ///
 /// // The posterior predictive probability that a coin will come up heads given
 /// // no new observations.
-/// let p_prior_heads = beta.pp(&true, &DataOrSuffStat::Data(&vec![])); // 0.5
+/// let p_prior_heads = beta.pp(&true, &DataOrSuffStat::None); // 0.5
 /// assert!((p_prior_heads - 0.5).abs() < 1E-12);
 ///
 /// // Five Bernoulli trials. We flipped a coin five times and it came up head
