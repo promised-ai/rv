@@ -9,8 +9,8 @@ use std::f64::consts::LN_2;
 use std::io;
 use traits::*;
 
-/// Inverse Wishart distribution, W<sup>-1</sup>(**Ψ**,ν) over positive definite
-/// matrices.
+/// [Inverse Wishart distribution](https://en.wikipedia.org/wiki/Inverse-Wishart_distribution),
+/// W<sup>-1</sup>(**Ψ**,ν) over positive definite matrices.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct InvWishart {

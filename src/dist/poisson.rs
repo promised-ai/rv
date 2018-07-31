@@ -8,7 +8,8 @@ use self::special::Gamma as SGamma;
 use std::io;
 use traits::*;
 
-/// Possion distribution on unisgned integers
+/// [Possion distribution](https://en.wikipedia.org/wiki/Poisson_distribution)
+/// over x in {0, 1, ... }.
 ///
 /// # Example
 ///

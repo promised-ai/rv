@@ -11,7 +11,34 @@ use std::io;
 
 use traits::*;
 
-/// Beta distribution, *Beta(α, β)*.
+/// [Beta distribution](https://en.wikipedia.org/wiki/Beta_distribution),
+/// Beta(α, β) over x in (0, 1).
+///
+/// # Examples
+///
+/// Beta as a conjugate prior for Bernoulli
+///
+/// ```
+/// # extern crate rv;
+/// use rv::prelude::*;
+///
+/// // A prior that encodes our strong belief that coins are fair:
+/// let beta = Beta::new(5.0, 5.0).unwrap();
+///
+/// // The posterior predictive probability that a coin will come up heads given
+/// // no new observations.
+/// let p_prior_heads = beta.pp(&true, &DataOrSuffStat::Data(&vec![])); // 0.5
+/// assert!((p_prior_heads - 0.5).abs() < 1E-12);
+///
+/// // Five Bernoulli trials. We flipped a coin five times and it came up head
+/// // four times.
+/// let flips = vec![true, true, false, true, true];
+///
+/// // The posterior predictive probability that a coin will come up heads given
+/// // the five flips we just saw.
+/// let p_pred_heads = beta.pp(&true, &DataOrSuffStat::Data(&flips)); // 9/15
+/// assert!((p_pred_heads - 3.0/5.0).abs() < 1E-12);
+/// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Beta {

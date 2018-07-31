@@ -6,7 +6,8 @@ use std::f64::consts::{FRAC_1_SQRT_2, LN_2, E};
 use std::io;
 use traits::*;
 
-/// Laplace, or double exponential, distribution
+/// [Laplace](https://en.wikipedia.org/wiki/Laplace_distribution), or double
+/// exponential, distribution over x in (-∞, ∞).
 ///
 /// # Example
 ///

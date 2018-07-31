@@ -10,7 +10,8 @@ use std::io;
 
 use traits::*;
 
-/// Student's T distribution
+/// [Student's T distribution](https://en.wikipedia.org/wiki/Student%27s_t-distribution)
+/// over x in (-∞, ∞).
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct StudentsT {

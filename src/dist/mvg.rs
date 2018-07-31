@@ -8,7 +8,8 @@ use std::f64::consts::{E, PI};
 use std::io;
 use traits::*;
 
-/// Multivariate Gaussian/Normal Distribution, 𝒩(μ, Σ)
+/// [Multivariate Gaussian/Normal Distribution](https://en.wikipedia.org/wiki/Multivariate_normal_distribution),
+/// 𝒩(μ, Σ).
 ///
 /// # Example
 ///

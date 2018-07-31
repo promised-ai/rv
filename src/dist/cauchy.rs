@@ -9,7 +9,8 @@ use std::f64::consts::PI;
 use std::io;
 use traits::*;
 
-/// Cauchy distribution over x in (-∞, ∞)
+/// [Cauchy distribution](https://en.wikipedia.org/wiki/Cauchy_distribution)
+/// over x in (-∞, ∞).
 ///
 /// # Example
 /// ```

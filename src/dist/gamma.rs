@@ -9,7 +9,17 @@ use std::io;
 
 use traits::*;
 
-/// Gamma distribution G(α, β)
+/// [Gamma distribution](https://en.wikipedia.org/wiki/Gamma_distribution) G(α, β)
+/// over x in (0, ∞).
+///
+/// **NOTE**: The gamma distribution is parameterized in terms of shape, α, and
+/// rate, β.
+///
+/// ```math
+///             β^α
+/// f(x|α, β) = ----  x^(α-1) e^(-βx)
+///             Γ(α)
+/// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gamma {

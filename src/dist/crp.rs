@@ -17,7 +17,8 @@ use misc::pflip;
 use std::io;
 use traits::*;
 
-/// Chinese Restaurant Process
+/// [Chinese Restaurant Process](https://en.wikipedia.org/wiki/Chinese_restaurant_process),
+/// a distribution over partitions.
 ///
 /// # Example
 ///

@@ -10,7 +10,8 @@ use std::io;
 
 use traits::*;
 
-/// Χ<sup>2</sup> distribution Χ<sup>2</sup>(k)
+/// [Χ<sup>2</sup> distribution](https://en.wikipedia.org/wiki/Chi-squared_distribution)
+/// Χ<sup>2</sup>(k).
 ///
 /// # Example
 ///
