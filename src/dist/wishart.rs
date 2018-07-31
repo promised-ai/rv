@@ -14,21 +14,21 @@ use traits::*;
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct InvWishart {
-    /// p-dimensional Scale Matrix, **Ψ**
-    pub scale: DMatrix<f64>,
+    /// p-dimensional inverse scale matrix, **Ψ**
+    pub inv_scale: DMatrix<f64>,
     // Degrees of freedom, ν > p - 1
     pub df: usize,
 }
 
 impl InvWishart {
     /// Create an Inverse Wishart distribution, W<sup>-1</sup>(**Ψ**,ν) with
-    /// p-by-p scale matrix, **Ψ**, and degrees of freedom, ν > p - 1.
-    pub fn new(scale: DMatrix<f64>, df: usize) -> io::Result<Self> {
-        let err: Option<&str> = if !scale.is_square() {
+    /// p-by-p inverse scale matrix, **Ψ**, and degrees of freedom, ν > p - 1.
+    pub fn new(inv_scale: DMatrix<f64>, df: usize) -> io::Result<Self> {
+        let err: Option<&str> = if !inv_scale.is_square() {
             Some("scale matrix not square")
-        } else if (df as usize) < scale.nrows() {
+        } else if (df as usize) < inv_scale.nrows() {
             Some("df too low, must be >= ndims")
-        } else if scale.clone().cholesky().is_none() {
+        } else if inv_scale.clone().cholesky().is_none() {
             // TODO: no clone
             Some("scale matrix not positive definite")
         } else {
@@ -37,7 +37,7 @@ impl InvWishart {
 
         match err {
             Some(msg) => Err(io::Error::new(io::ErrorKind::InvalidInput, msg)),
-            None => Ok(InvWishart { scale, df }),
+            None => Ok(InvWishart { inv_scale, df }),
         }
     }
 
@@ -45,7 +45,7 @@ impl InvWishart {
     /// p)
     pub fn identity(dims: usize) -> Self {
         InvWishart {
-            scale: DMatrix::identity(dims, dims),
+            inv_scale: DMatrix::identity(dims, dims),
             df: dims,
         }
     }
@@ -53,16 +53,16 @@ impl InvWishart {
 
 impl Rv<DMatrix<f64>> for InvWishart {
     fn ln_f(&self, x: &DMatrix<f64>) -> f64 {
-        let p = self.scale.nrows();
+        let p = self.inv_scale.nrows();
         let pf = p as f64;
         let v = self.df as f64;
 
-        let det_s: f64 = v * 0.5 * self.scale.determinant().ln();
+        let det_s: f64 = v * 0.5 * self.inv_scale.determinant().ln();
         let det_x: f64 = -(v + pf + 1.0) * 0.5 * x.determinant().ln();
 
         let denom: f64 = v * pf * 0.5 * LN_2 + lnmv_gamma(p, 0.5 * v);
         let numer: f64 =
-            -0.5 * (&self.scale * x.clone().try_inverse().unwrap()).trace();
+            -0.5 * (&self.inv_scale * x.clone().try_inverse().unwrap()).trace();
 
         det_s - denom + det_x + numer
     }
@@ -76,13 +76,29 @@ impl Rv<DMatrix<f64>> for InvWishart {
     // algorithm, but it's more complicated to implement, so standby.
     // See https://www.math.wustl.edu/~sawyer/hmhandouts/Wishart.pdf  for more
     fn draw<R: Rng>(&self, mut rng: &mut R) -> DMatrix<f64> {
-        let p = self.scale.nrows();
-        let mvg =
-            MvGaussian::new(DVector::zeros(p), self.scale.clone()).unwrap();
+        let p = self.inv_scale.nrows();
+        let scale = self.inv_scale.clone().try_inverse().unwrap();
+        let mvg = MvGaussian::new(DVector::zeros(p), scale).unwrap();
         let xs = mvg.sample(self.df, &mut rng);
-        xs.iter().fold(DMatrix::<f64>::zeros(p, p), |acc, x| {
+        let y = xs.iter().fold(DMatrix::<f64>::zeros(p, p), |acc, x| {
             acc + x * x.transpose()
-        })
+        });
+        y.try_inverse().unwrap()
+    }
+
+    fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<DMatrix<f64>> {
+        let p = self.inv_scale.nrows();
+        let scale = self.inv_scale.clone().try_inverse().unwrap();
+        let mvg = MvGaussian::new(DVector::zeros(p), scale).unwrap();
+        (0..n)
+            .map(|_| {
+                let xs = mvg.sample(self.df, &mut rng);
+                let y =
+                    xs.iter().fold(DMatrix::<f64>::zeros(p, p), |acc, x| {
+                        acc + x * x.transpose()
+                    });
+                y.try_inverse().unwrap()
+            }).collect()
     }
 }
 
@@ -96,9 +112,9 @@ impl ContinuousDistr<DMatrix<f64>> for InvWishart {}
 
 impl Mean<DMatrix<f64>> for InvWishart {
     fn mean(&self) -> Option<DMatrix<f64>> {
-        let p = self.scale.nrows();
+        let p = self.inv_scale.nrows();
         if self.df > p + 1 {
-            Some(&self.scale / (self.df - p - 1) as f64)
+            Some(&self.inv_scale / (self.df - p - 1) as f64)
         } else {
             None
         }
@@ -107,8 +123,8 @@ impl Mean<DMatrix<f64>> for InvWishart {
 
 impl Mode<DMatrix<f64>> for InvWishart {
     fn mode(&self) -> Option<DMatrix<f64>> {
-        let p = self.scale.nrows();
-        Some(&self.scale / (self.df + p + 1) as f64)
+        let p = self.inv_scale.nrows();
+        Some(&self.inv_scale / (self.df + p + 1) as f64)
     }
 }
 
@@ -122,10 +138,10 @@ mod tests {
 
     #[test]
     fn new_should_reject_df_too_low() {
-        let scale = DMatrix::identity(4, 4);
-        assert!(InvWishart::new(scale.clone(), 4).is_ok());
-        assert!(InvWishart::new(scale.clone(), 5).is_ok());
-        match InvWishart::new(scale.clone(), 3) {
+        let inv_scale = DMatrix::identity(4, 4);
+        assert!(InvWishart::new(inv_scale.clone(), 4).is_ok());
+        assert!(InvWishart::new(inv_scale.clone(), 5).is_ok());
+        match InvWishart::new(inv_scale.clone(), 3) {
             Err(err) => {
                 let msg = err.get_ref().unwrap().description();
                 assert!(msg.contains("df too low"));
@@ -136,8 +152,8 @@ mod tests {
 
     #[test]
     fn new_should_reject_non_square_scale() {
-        let scale = DMatrix::identity(4, 3);
-        match InvWishart::new(scale, 5) {
+        let inv_scale = DMatrix::identity(4, 3);
+        match InvWishart::new(inv_scale, 5) {
             Err(err) => {
                 let msg = err.get_ref().unwrap().description();
                 assert!(msg.contains("square"));
@@ -180,10 +196,38 @@ mod tests {
             0.98443641,
             1.21050189,
         ];
-        let scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
-        let iw = InvWishart::new(scale, 5).unwrap();
+        let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
+        let iw = InvWishart::new(inv_scale, 5).unwrap();
         let x = DMatrix::<f64>::identity(4, 4);
         assert::close(iw.ln_f(&x), -18.939673925150899, TOL)
+    }
+
+    #[test]
+    fn draws_should_be_positive_definite() {
+        let mut rng = rand::thread_rng();
+        let slice = vec![
+            1.10576891,
+            -0.20160336,
+            0.09378834,
+            -0.19339029,
+            -0.20160336,
+            0.66794786,
+            -0.46020905,
+            -0.62806951,
+            0.09378834,
+            -0.46020905,
+            1.15263284,
+            0.98443641,
+            -0.19339029,
+            -0.62806951,
+            0.98443641,
+            1.21050189,
+        ];
+        let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
+        let iw = InvWishart::new(inv_scale, 5).unwrap();
+        for x in iw.sample(100, &mut rng) {
+            assert!(x.cholesky().is_some());
+        }
     }
 
     // XXX: I've been using scipy distributionst to check my answers, but it
@@ -212,9 +256,9 @@ mod tests {
             0.98443641,
             1.21050189,
         ];
-        let scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
-        let x = scale.clone();
-        let iw = InvWishart::new(scale, 5).unwrap();
+        let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
+        let x = inv_scale.clone();
+        let iw = InvWishart::new(inv_scale, 5).unwrap();
         assert::close(iw.ln_f(&x), -6.187876016819759, TOL)
     }
 
