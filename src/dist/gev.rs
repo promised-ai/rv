@@ -24,7 +24,7 @@ use traits::*;
 ///        ⎱ e^{(μ - x) / σ}              if ξ = 0
 /// ```
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde_support", dervive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct GEV {
     /// location
     pub location: f64,
