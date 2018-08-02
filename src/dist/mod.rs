@@ -1,4 +1,4 @@
-//! # Probability distributions
+//! Probability distributions
 //!
 //! The distributions fall into three categories:
 //!
