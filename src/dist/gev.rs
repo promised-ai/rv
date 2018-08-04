@@ -42,11 +42,7 @@ impl Gev {
         let shape_ok = shape.is_finite();
 
         if scale_ok && loc_ok && shape_ok {
-            Ok(Gev {
-                loc,
-                scale,
-                shape,
-            })
+            Ok(Gev { loc, scale, shape })
         } else {
             let err_kind = io::ErrorKind::InvalidInput;
             let msg = "location, shape, and scale must all be finite and scale must be greater than zero.";
@@ -68,8 +64,7 @@ macro_rules! impl_traits {
     ($kind: ty) => {
         impl Rv<$kind> for Gev {
             fn ln_f(&self, x: &$kind) -> f64 {
-                let tv =
-                    t(self.loc, self.shape, self.scale, f64::from(*x));
+                let tv = t(self.loc, self.shape, self.scale, f64::from(*x));
                 -self.scale.ln() + (self.shape + 1.0) * tv.ln() - tv
             }
 
@@ -98,14 +93,12 @@ macro_rules! impl_traits {
             fn contains(&self, x: &$kind) -> bool {
                 if self.shape > 0.0 {
                     x.is_finite()
-                        && f64::from(*x)
-                            >= self.loc - self.scale / self.shape
+                        && f64::from(*x) >= self.loc - self.scale / self.shape
                 } else if self.shape == 0.0 {
                     x.is_finite()
                 } else {
                     x.is_finite()
-                        && f64::from(*x)
-                            <= self.loc - self.scale / self.shape
+                        && f64::from(*x) <= self.loc - self.scale / self.shape
                 }
             }
         }
@@ -154,9 +147,7 @@ macro_rules! impl_traits {
         impl Median<$kind> for Gev {
             fn median(&self) -> Option<$kind> {
                 if self.shape == 0.0 {
-                    Some(
-                        (self.loc - self.scale * consts::LN_LN_2) as $kind,
-                    )
+                    Some((self.loc - self.scale * consts::LN_LN_2) as $kind)
                 } else {
                     Some(
                         (self.loc
