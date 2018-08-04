@@ -12,7 +12,7 @@ use std::io;
 use traits::*;
 
 /// [Generalized Extreme Value Distribution](https://en.wikipedia.org/wiki/Generalized_extreme_value_distribution)
-/// GEV(μ, σ, ξ) where the parameters are
+/// Gev(μ, σ, ξ) where the parameters are
 /// μ is location
 /// σ is the scale
 /// ξ is the shape
@@ -25,25 +25,25 @@ use traits::*;
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct GEV {
+pub struct Gev {
     /// location
-    pub location: f64,
+    pub loc: f64,
     /// scale
     pub scale: f64,
     /// shape
     pub shape: f64,
 }
 
-impl GEV {
-    /// Create a new `GEV` distribution with location, scale, and shape.
-    pub fn new(location: f64, scale: f64, shape: f64) -> io::Result<Self> {
+impl Gev {
+    /// Create a new `Gev` distribution with location, scale, and shape.
+    pub fn new(loc: f64, scale: f64, shape: f64) -> io::Result<Self> {
         let scale_ok = scale > 0.0 && scale.is_finite();
-        let location_ok = location.is_finite();
+        let loc_ok = loc.is_finite();
         let shape_ok = shape.is_finite();
 
-        if scale_ok && location_ok && shape_ok {
-            Ok(GEV {
-                location,
+        if scale_ok && loc_ok && shape_ok {
+            Ok(Gev {
+                loc,
                 scale,
                 shape,
             })
@@ -56,20 +56,20 @@ impl GEV {
     }
 }
 
-fn t(location: f64, shape: f64, scale: f64, x: f64) -> f64 {
+fn t(loc: f64, shape: f64, scale: f64, x: f64) -> f64 {
     if shape == 0.0 {
-        ((location - x) / scale).exp()
+        ((loc - x) / scale).exp()
     } else {
-        (1.0 + shape * (x - location) / scale).powf(-1.0 / shape)
+        (1.0 + shape * (x - loc) / scale).powf(-1.0 / shape)
     }
 }
 
 macro_rules! impl_traits {
     ($kind: ty) => {
-        impl Rv<$kind> for GEV {
+        impl Rv<$kind> for Gev {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let tv =
-                    t(self.location, self.shape, self.scale, f64::from(*x));
+                    t(self.loc, self.shape, self.scale, f64::from(*x));
                 -self.scale.ln() + (self.shape + 1.0) * tv.ln() - tv
             }
 
@@ -83,48 +83,44 @@ macro_rules! impl_traits {
                 let u: f64 = uni.draw(rng);
                 let lnu = -u.ln();
                 if self.shape == 0.0 {
-                    (self.location - self.scale * lnu.ln()) as $kind
+                    (self.loc - self.scale * lnu.ln()) as $kind
                 } else {
-                    (self.location
+                    (self.loc
                         + self.scale * (lnu.powf(-self.shape) - 1.0)
                             / self.shape) as $kind
                 }
             }
-
-            fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                (0..n).map(|_| self.draw(rng)).collect()
-            }
         }
 
-        impl ContinuousDistr<$kind> for GEV {}
+        impl ContinuousDistr<$kind> for Gev {}
 
-        impl Support<$kind> for GEV {
+        impl Support<$kind> for Gev {
             fn contains(&self, x: &$kind) -> bool {
                 if self.shape > 0.0 {
                     x.is_finite()
                         && f64::from(*x)
-                            >= self.location - self.scale / self.shape
+                            >= self.loc - self.scale / self.shape
                 } else if self.shape == 0.0 {
                     x.is_finite()
                 } else {
                     x.is_finite()
                         && f64::from(*x)
-                            <= self.location - self.scale / self.shape
+                            <= self.loc - self.scale / self.shape
                 }
             }
         }
 
-        impl Cdf<$kind> for GEV {
+        impl Cdf<$kind> for Gev {
             fn cdf(&self, x: &$kind) -> f64 {
-                (-t(self.location, self.shape, self.scale, f64::from(*x))).exp()
+                (-t(self.loc, self.shape, self.scale, f64::from(*x))).exp()
             }
         }
 
-        impl Mean<$kind> for GEV {
+        impl Mean<$kind> for Gev {
             fn mean(&self) -> Option<$kind> {
                 if self.shape == 0.0 {
                     Some(
-                        (self.location + self.scale * consts::EULER_MASCERONI)
+                        (self.loc + self.scale * consts::EULER_MASCERONI)
                             as $kind,
                     )
                 } else if self.shape >= 1.0 {
@@ -132,20 +128,20 @@ macro_rules! impl_traits {
                 } else {
                     let g1 = (1.0 - self.shape).gamma();
                     Some(
-                        (self.location + self.scale * (g1 - 1.0) / self.shape)
+                        (self.loc + self.scale * (g1 - 1.0) / self.shape)
                             as $kind,
                     )
                 }
             }
         }
 
-        impl Mode<$kind> for GEV {
+        impl Mode<$kind> for Gev {
             fn mode(&self) -> Option<$kind> {
                 if self.shape == 0.0 {
-                    Some(self.location as $kind)
+                    Some(self.loc as $kind)
                 } else {
                     Some(
-                        (self.location
+                        (self.loc
                             + (self.scale
                                 * (1.0 + self.shape).powf(-self.shape)
                                 - 1.0)
@@ -155,15 +151,15 @@ macro_rules! impl_traits {
             }
         }
 
-        impl Median<$kind> for GEV {
+        impl Median<$kind> for Gev {
             fn median(&self) -> Option<$kind> {
                 if self.shape == 0.0 {
                     Some(
-                        (self.location - self.scale * consts::LN_LN_2) as $kind,
+                        (self.loc - self.scale * consts::LN_LN_2) as $kind,
                     )
                 } else {
                     Some(
-                        (self.location
+                        (self.loc
                             + self.scale * (LN_2.powf(-self.shape) - 1.0)
                                 / self.shape) as $kind,
                     )
@@ -173,7 +169,7 @@ macro_rules! impl_traits {
     };
 }
 
-impl Variance<f64> for GEV {
+impl Variance<f64> for Gev {
     fn variance(&self) -> Option<f64> {
         if self.shape == 0.0 {
             Some(self.scale * self.scale * PI * PI / 6.0)
@@ -190,7 +186,7 @@ impl Variance<f64> for GEV {
     }
 }
 
-impl Entropy for GEV {
+impl Entropy for Gev {
     fn entropy(&self) -> f64 {
         self.scale.ln()
             + consts::EULER_MASCERONI * self.shape
@@ -222,15 +218,15 @@ mod tests {
 
     #[test]
     fn new() {
-        let gev = GEV::new(0.0, 1.0, 0.0).unwrap();
-        assert::close(gev.location, 0.0, TOL);
+        let gev = Gev::new(0.0, 1.0, 0.0).unwrap();
+        assert::close(gev.loc, 0.0, TOL);
         assert::close(gev.scale, 1.0, TOL);
         assert::close(gev.shape, 0.0, TOL);
     }
 
     #[test]
     fn ln_pdf_0() {
-        let gev = GEV::new(0.0, 1.0, 0.0).unwrap();
+        let gev = Gev::new(0.0, 1.0, 0.0).unwrap();
         let xs: Vec<f64> = linspace(-10.0, 10.0, 50);
 
         let this_ln_pdf: Vec<f64> = xs.iter().map(|x| gev.ln_f(x)).collect();
@@ -292,7 +288,7 @@ mod tests {
 
     #[test]
     fn ln_pdf_one_half() {
-        let gev = GEV::new(0.0, 1.0, 0.5).unwrap();
+        let gev = Gev::new(0.0, 1.0, 0.5).unwrap();
         let xs: Vec<f64> = linspace(-1.9, 10.0, 50);
 
         let this_ln_pdf: Vec<f64> = xs.iter().map(|x| gev.ln_f(x)).collect();
@@ -354,7 +350,7 @@ mod tests {
 
     #[test]
     fn ln_pdf_minus_one_half() {
-        let gev = GEV::new(0.0, 1.0, -0.5).unwrap();
+        let gev = Gev::new(0.0, 1.0, -0.5).unwrap();
         let xs: Vec<f64> = linspace(-10.0, 1.9, 50);
 
         let this_ln_pdf: Vec<f64> = xs.iter().map(|x| gev.ln_f(x)).collect();
@@ -416,9 +412,9 @@ mod tests {
 
     #[test]
     fn cdf() {
-        let gev_a = GEV::new(0.0, 1.0, 0.0).unwrap();
-        let gev_b = GEV::new(0.0, 1.0, 0.5).unwrap();
-        let gev_c = GEV::new(0.0, 1.0, -0.5).unwrap();
+        let gev_a = Gev::new(0.0, 1.0, 0.0).unwrap();
+        let gev_b = Gev::new(0.0, 1.0, 0.5).unwrap();
+        let gev_c = Gev::new(0.0, 1.0, -0.5).unwrap();
 
         assert::close(gev_a.cdf(&0.0), 0.36787944117144233, TOL);
         assert::close(gev_a.cdf(&2.0), 0.87342301849311665, TOL);
@@ -435,9 +431,9 @@ mod tests {
 
     #[test]
     fn entropy() {
-        let gev_a = GEV::new(0.0, 1.0, 0.0).unwrap();
-        let gev_b = GEV::new(0.0, 1.0, 0.5).unwrap();
-        let gev_c = GEV::new(0.0, 1.0, -0.5).unwrap();
+        let gev_a = Gev::new(0.0, 1.0, 0.0).unwrap();
+        let gev_b = Gev::new(0.0, 1.0, 0.5).unwrap();
+        let gev_c = Gev::new(0.0, 1.0, -0.5).unwrap();
 
         assert::close(gev_a.entropy(), 1.5772156649015328, TOL);
         assert::close(gev_b.entropy(), 1.8658234973522994, TOL);
@@ -447,7 +443,7 @@ mod tests {
     #[test]
     fn draw_0() {
         let mut rng = rand::thread_rng();
-        let gev = GEV::new(0.0, 1.0, 0.0).unwrap();
+        let gev = Gev::new(0.0, 1.0, 0.0).unwrap();
         let cdf = |x: f64| gev.cdf(&x);
 
         let passes = (0..N_TRIES).fold(0, |acc, _| {
@@ -466,7 +462,7 @@ mod tests {
     #[test]
     fn draw_one_half() {
         let mut rng = rand::thread_rng();
-        let gev = GEV::new(0.0, 1.0, 0.5).unwrap();
+        let gev = Gev::new(0.0, 1.0, 0.5).unwrap();
         let cdf = |x: f64| gev.cdf(&x);
 
         let passes = (0..N_TRIES).fold(0, |acc, _| {
@@ -485,7 +481,7 @@ mod tests {
     #[test]
     fn draw_negative_one_half() {
         let mut rng = rand::thread_rng();
-        let gev = GEV::new(0.0, 1.0, -0.5).unwrap();
+        let gev = Gev::new(0.0, 1.0, -0.5).unwrap();
         let cdf = |x: f64| gev.cdf(&x);
 
         let passes = (0..N_TRIES).fold(0, |acc, _| {
@@ -503,9 +499,9 @@ mod tests {
 
     #[test]
     fn mode() {
-        let m1: f64 = GEV::new(0.0, 1.0, 0.0).unwrap().mode().unwrap();
-        let m2: f64 = GEV::new(0.0, 1.0, 0.5).unwrap().mode().unwrap();
-        let m3: f64 = GEV::new(0.0, 1.0, -0.5).unwrap().mode().unwrap();
+        let m1: f64 = Gev::new(0.0, 1.0, 0.0).unwrap().mode().unwrap();
+        let m2: f64 = Gev::new(0.0, 1.0, 0.5).unwrap().mode().unwrap();
+        let m3: f64 = Gev::new(0.0, 1.0, -0.5).unwrap().mode().unwrap();
 
         assert::close(m1, 0.0, TOL);
         assert::close(
@@ -522,9 +518,9 @@ mod tests {
 
     #[test]
     fn median() {
-        let m1: f64 = GEV::new(0.0, 1.0, 0.0).unwrap().median().unwrap();
-        let m2: f64 = GEV::new(0.0, 1.0, 0.5).unwrap().median().unwrap();
-        let m3: f64 = GEV::new(0.0, 1.0, -0.5).unwrap().median().unwrap();
+        let m1: f64 = Gev::new(0.0, 1.0, 0.0).unwrap().median().unwrap();
+        let m2: f64 = Gev::new(0.0, 1.0, 0.5).unwrap().median().unwrap();
+        let m3: f64 = Gev::new(0.0, 1.0, -0.5).unwrap().median().unwrap();
 
         assert::close(
             m1,
@@ -545,9 +541,9 @@ mod tests {
 
     #[test]
     fn variance() {
-        let m1: f64 = GEV::new(0.0, 1.0, 0.0).unwrap().variance().unwrap();
-        let m2: f64 = GEV::new(0.0, 1.0, 0.5).unwrap().variance().unwrap();
-        let m3: f64 = GEV::new(0.0, 1.0, -0.5).unwrap().variance().unwrap();
+        let m1: f64 = Gev::new(0.0, 1.0, 0.0).unwrap().variance().unwrap();
+        let m2: f64 = Gev::new(0.0, 1.0, 0.5).unwrap().variance().unwrap();
+        let m3: f64 = Gev::new(0.0, 1.0, -0.5).unwrap().variance().unwrap();
 
         assert::close(
             m1,
@@ -565,7 +561,7 @@ mod tests {
     #[bench]
     fn bench_draw_0(b: &mut Bencher) {
         let mut rng = rand::thread_rng();
-        let gev = GEV::new(0.0, 1.0, 0.0).unwrap();
+        let gev = Gev::new(0.0, 1.0, 0.0).unwrap();
         b.iter(|| {
             let _sample: f64 = gev.draw(&mut rng);
         });
@@ -574,7 +570,7 @@ mod tests {
     #[bench]
     fn bench_draw_one_half(b: &mut Bencher) {
         let mut rng = rand::thread_rng();
-        let gev = GEV::new(0.0, 1.0, 0.5).unwrap();
+        let gev = Gev::new(0.0, 1.0, 0.5).unwrap();
         b.iter(|| {
             let _sample: f64 = gev.draw(&mut rng);
         });
@@ -583,7 +579,7 @@ mod tests {
     #[bench]
     fn bench_draw_negative_one_half(b: &mut Bencher) {
         let mut rng = rand::thread_rng();
-        let gev = GEV::new(0.0, 1.0, -0.5).unwrap();
+        let gev = Gev::new(0.0, 1.0, -0.5).unwrap();
         b.iter(|| {
             let _sample: f64 = gev.draw(&mut rng);
         });

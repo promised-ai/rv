@@ -38,7 +38,7 @@ pub use self::dirichlet::{Dirichlet, SymmetricDirichlet};
 pub use self::exponential::Exponential;
 pub use self::gamma::Gamma;
 pub use self::gaussian::Gaussian;
-pub use self::gev::GEV;
+pub use self::gev::Gev;
 pub use self::invgamma::InvGamma;
 pub use self::laplace::Laplace;
 pub use self::mvg::MvGaussian;
