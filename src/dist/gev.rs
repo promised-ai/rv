@@ -68,11 +68,6 @@ macro_rules! impl_traits {
                 -self.scale.ln() + (self.shape + 1.0) * tv.ln() - tv
             }
 
-            #[inline]
-            fn ln_normalizer() -> f64 {
-                0.0
-            }
-
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let uni = dist::Uniform::new(0.0, 1.0).unwrap();
                 let u: f64 = uni.draw(rng);

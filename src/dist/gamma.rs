@@ -53,11 +53,6 @@ macro_rules! impl_traits {
                     - (self.rate * f64::from(*x))
             }
 
-            #[inline]
-            fn ln_normalizer() -> f64 {
-                0.0
-            }
-
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let g = distributions::Gamma::new(self.shape, 1.0 / self.rate);
                 rng.sample(g) as $kind

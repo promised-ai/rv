@@ -66,12 +66,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Laplace {
             fn ln_f(&self, x: &$kind) -> f64 {
-                -(f64::from(*x) - self.mu).abs() / self.b - self.b.ln()
-            }
-
-            #[inline]
-            fn ln_normalizer() -> f64 {
-                LN_2
+                -(f64::from(*x) - self.mu).abs() / self.b - self.b.ln() - LN_2
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {

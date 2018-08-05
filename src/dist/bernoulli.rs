@@ -72,11 +72,6 @@ macro_rules! impl_int_traits {
                 self.f(x).ln()
             }
 
-            #[inline]
-            fn ln_normalizer() -> f64 {
-                0.0
-            }
-
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let u = Uniform::new(0.0, 1.0);
                 if rng.sample(u) < self.p {
@@ -207,11 +202,6 @@ impl Rv<bool> for Bernoulli {
 
     fn ln_f(&self, x: &bool) -> f64 {
         self.f(x).ln()
-    }
-
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
     }
 
     fn draw<R: Rng>(&self, rng: &mut R) -> bool {

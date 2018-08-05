@@ -54,11 +54,6 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
         xs.iter().map(|x| x / z).collect()
     }
 
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
-    }
-
     fn ln_f(&self, x: &Vec<f64>) -> f64 {
         let kf = self.k as f64;
         let sum_ln_gamma = self.alpha.ln_gamma().0 * kf;
@@ -153,11 +148,6 @@ impl Rv<Vec<f64>> for Dirichlet {
         let xs: Vec<f64> = gammas.iter().map(|g| rng.sample(g)).collect();
         let z = xs.iter().fold(0.0, |acc, x| acc + x);
         xs.iter().map(|x| x / z).collect()
-    }
-
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
     }
 
     fn ln_f(&self, x: &Vec<f64>) -> f64 {

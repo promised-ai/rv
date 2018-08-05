@@ -50,12 +50,7 @@ impl Rv<Gaussian> for NormalGamma {
             Gamma::new(self.v / 2.0, self.s / 2.0).unwrap().ln_f(&rho);
         let prior_sigma = (self.r * rho).recip().sqrt();
         let lnf_mu = Gaussian::new(self.m, prior_sigma).unwrap().ln_f(&x.mu);
-        lnf_rho + lnf_mu
-    }
-
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        HALF_LN_2PI
+        lnf_rho + lnf_mu - HALF_LN_2PI
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {

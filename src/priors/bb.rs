@@ -13,11 +13,6 @@ impl Rv<Bernoulli> for Beta {
         self.ln_f(&x.p)
     }
 
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
-    }
-
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Bernoulli {
         let p: f64 = self.draw(&mut rng);
         Bernoulli::new(p).expect("Failed to draw valid weight")

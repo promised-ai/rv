@@ -14,11 +14,6 @@ impl Rv<Categorical> for SymmetricDirichlet {
         self.ln_f(&x.weights())
     }
 
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
-    }
-
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Categorical {
         let weights: Vec<f64> = self.draw(&mut rng);
         Categorical::new(&weights).expect("Invalid draw")
@@ -65,11 +60,6 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
 impl Rv<Categorical> for Dirichlet {
     fn ln_f(&self, x: &Categorical) -> f64 {
         self.ln_f(&x.weights())
-    }
-
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Categorical {

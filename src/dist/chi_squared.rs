@@ -50,11 +50,6 @@ macro_rules! impl_traits {
                 (k2 - 1.0) * xf.ln() - xf / 2.0 - k2 * LN_2 - k2.ln_gamma().0
             }
 
-            #[inline]
-            fn ln_normalizer() -> f64 {
-                0.0
-            }
-
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let x2 = distributions::ChiSquared::new(self.k);
                 rng.sample(x2) as $kind

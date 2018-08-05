@@ -44,11 +44,6 @@ macro_rules! impl_traits {
                 zterm + xterm
             }
 
-            #[inline]
-            fn ln_normalizer() -> f64 {
-                0.0
-            }
-
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let t = distributions::StudentT::new(self.v);
                 rng.sample(t) as $kind

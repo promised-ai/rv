@@ -56,11 +56,6 @@ macro_rules! impl_traits {
                 kf * self.rate.ln() - self.rate - (kf + 1.0).ln_gamma().0
             }
 
-            #[inline]
-            fn ln_normalizer() -> f64 {
-                0.0
-            }
-
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let pois = RPossion::new(self.rate);
                 rng.sample(pois) as $kind

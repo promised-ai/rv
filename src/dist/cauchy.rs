@@ -64,12 +64,7 @@ macro_rules! impl_traits {
                 let term = ln_scale
                     + 2.0 * ((f64::from(*x) - self.loc).abs().ln() - ln_scale);
                 // TODO: make a logaddexp method for two floats
-                -logsumexp(&[ln_scale, term])
-            }
-
-            #[inline]
-            fn ln_normalizer() -> f64 {
-                LN_PI
+                -logsumexp(&[ln_scale, term]) - LN_PI
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {

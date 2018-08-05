@@ -67,11 +67,6 @@ impl Rv<DMatrix<f64>> for InvWishart {
         det_s - denom + det_x + numer
     }
 
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
-    }
-
     // XXX: The complexity of this is O(df * dims^2). There is a O(dims^2)
     // algorithm, but it's more complicated to implement, so standby.
     // See https://www.math.wustl.edu/~sawyer/hmhandouts/Wishart.pdf  for more

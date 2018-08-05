@@ -91,11 +91,6 @@ impl Rv<MvGaussian> for NormalInvWishart {
         mvg.ln_f(&x.mu) + iw.ln_f(&x.cov)
     }
 
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
-    }
-
     fn draw<R: Rng>(&self, mut rng: &mut R) -> MvGaussian {
         let iw = InvWishart::new(self.scale.clone(), self.df).unwrap();
         let sigma = iw.draw(&mut rng);

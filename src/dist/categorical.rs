@@ -86,11 +86,6 @@ impl<X: CategoricalDatum> Rv<X> for Categorical {
         self.ln_weights[ix]
     }
 
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
-    }
-
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
         let ix = ln_pflip(&self.ln_weights, 1, true, &mut rng)[0];
         FromPrimitive::from_usize(ix).unwrap()
