@@ -2,7 +2,7 @@
 extern crate rand;
 
 use self::rand::Rng;
-use std::f64::consts::{FRAC_1_SQRT_2, LN_2, E};
+use std::f64::consts::{E, FRAC_1_SQRT_2, LN_2};
 use std::io;
 use traits::*;
 
