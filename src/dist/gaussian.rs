@@ -80,12 +80,7 @@ macro_rules! impl_traits {
         impl Rv<$kind> for Gaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k = (f64::from(*x) - self.mu) / self.sigma;
-                -self.sigma.ln() - 0.5 * k * k
-            }
-
-            #[inline]
-            fn ln_normalizer() -> f64 {
-                HALF_LN_2PI
+                -self.sigma.ln() - 0.5 * k * k - HALF_LN_2PI
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {

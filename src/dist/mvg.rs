@@ -106,11 +106,6 @@ impl Rv<DVector<f64>> for MvGaussian {
         -0.5 * det.ln() - term
     }
 
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
-    }
-
     fn draw<R: Rng>(&self, rng: &mut R) -> DVector<f64> {
         let dims = self.mu.len();
         let norm = rand::distributions::Normal::new(0.0, 1.0);

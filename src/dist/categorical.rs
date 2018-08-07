@@ -86,11 +86,6 @@ impl<X: CategoricalDatum> Rv<X> for Categorical {
         self.ln_weights[ix]
     }
 
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
-    }
-
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
         let ix = ln_pflip(&self.ln_weights, 1, true, &mut rng)[0];
         FromPrimitive::from_usize(ix).unwrap()
@@ -137,6 +132,15 @@ impl<X: CategoricalDatum> HasSuffStat<X> for Categorical {
     type Stat = CategoricalSuffStat;
     fn empty_suffstat(&self) -> Self::Stat {
         CategoricalSuffStat::new(self.k())
+    }
+}
+
+impl KlDivergence for Categorical {
+    fn kl(&self, other: &Self) -> f64 {
+        self.ln_weights
+            .iter()
+            .zip(other.ln_weights.iter())
+            .fold(0.0, |acc, (&ws, &wo)| acc + ws.exp() * (ws - wo))
     }
 }
 
@@ -253,5 +257,19 @@ mod tests {
             }
         });
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn kl() {
+        let cat1 = Categorical::new(&vec![
+            0.2280317, 0.1506706, 0.33620052, 0.13911904, 0.14597815,
+        ]).unwrap();
+        let cat2 = Categorical::new(&vec![
+            0.30050657, 0.04237857, 0.20973238, 0.32858568, 0.1187968,
+        ]).unwrap();
+
+        // Allow extra error for the normalization
+        assert::close(cat1.kl(&cat2), 0.1973394327976612, 1E-7);
+        assert::close(cat2.kl(&cat1), 0.18814408198625582, 1E-7);
     }
 }

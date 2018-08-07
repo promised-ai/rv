@@ -124,11 +124,6 @@ where
         self.prior.ln_pp(&x, &self.obs())
     }
 
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
-    }
-
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
         let post = self.posterior();
         let fx: Fx = post.draw(&mut rng);

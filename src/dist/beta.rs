@@ -106,11 +106,6 @@ macro_rules! impl_traits {
                         (a / (a + b)) as $kind
                     }).collect()
             }
-
-            #[inline]
-            fn ln_normalizer() -> f64 {
-                0.0
-            }
         }
 
         impl Support<$kind> for Beta {

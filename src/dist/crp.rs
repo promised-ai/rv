@@ -76,11 +76,6 @@ impl Rv<Partition> for Crp {
             - (x.len() as f64 + self.alpha).ln_gamma().0
     }
 
-    #[inline]
-    fn ln_normalizer() -> f64 {
-        0.0
-    }
-
     fn draw<R: Rng>(&self, rng: &mut R) -> Partition {
         let mut k = 1;
         let mut weights: Vec<f64> = vec![1.0];

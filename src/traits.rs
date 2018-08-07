@@ -10,7 +10,7 @@ use data::DataOrSuffStat;
 /// useful: a function defining the un-normalized density/mass at a point,
 /// and functions to draw samples from the distribution.
 pub trait Rv<X> {
-    /// Un-normalized probability function
+    /// Probability function
     ///
     /// # Example
     ///
@@ -26,7 +26,7 @@ pub trait Rv<X> {
         self.ln_f(x).exp()
     }
 
-    /// Un-normalized probability function
+    /// Probability function
     ///
     /// # Example
     ///
@@ -39,16 +39,6 @@ pub trait Rv<X> {
     /// assert!(g.ln_f(&0.0_f64) > g.ln_f(&-0.1_f64));
     /// ```
     fn ln_f(&self, x: &X) -> f64;
-
-    /// The constant term in the PDF/PMF. Should not be a function of any of
-    /// the parameters.
-    fn normalizer() -> f64 {
-        Self::ln_normalizer().exp()
-    }
-
-    /// The log of the constant term in the PDF/PMF. Should not be a function of
-    /// any of the parameters.
-    fn ln_normalizer() -> f64;
 
     /// Single draw from the `Rv`
     ///
@@ -176,7 +166,7 @@ pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
         if !self.contains(&x) {
             panic!("x not in support");
         }
-        self.ln_f(x) - Self::ln_normalizer()
+        self.ln_f(x)
     }
 }
 
@@ -305,7 +295,7 @@ pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
         if !self.contains(&x) {
             panic!("x not in support");
         }
-        self.ln_f(x) - Self::ln_normalizer()
+        self.ln_f(x)
     }
 }
 
