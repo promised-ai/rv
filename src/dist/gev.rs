@@ -191,12 +191,8 @@ mod tests {
     use self::test::Bencher;
     use super::*;
     use misc::ks_test;
+    use misc::linspace;
     use std::f64;
-
-    fn linspace(start: f64, stop: f64, num: i32) -> Vec<f64> {
-        let step = (stop - start) / f64::from(num - 1);
-        (0..num).map(|i| start + f64::from(i) * step).collect()
-    }
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
