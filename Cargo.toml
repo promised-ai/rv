@@ -1,7 +1,7 @@
 [package]
 name = "rv"
 version = "0.3.1"
-authors = ["Baxter Eaves"]
+authors = ["Baxter Eaves", "Michael Schmidt"]
 description = "Random variables"
 repository = "https://gitlab.com/baxe/rv"
 readme = "README.md"
