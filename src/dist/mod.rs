@@ -9,6 +9,7 @@
 //!    distributions.
 mod bernoulli;
 mod beta;
+mod beta_binom;
 mod binomial;
 mod categorical;
 mod cauchy;
@@ -33,6 +34,7 @@ mod wishart;
 
 pub use self::bernoulli::Bernoulli;
 pub use self::beta::Beta;
+pub use self::beta_binom::BetaBinomial;
 pub use self::binomial::Binomial;
 pub use self::categorical::Categorical;
 pub use self::cauchy::Cauchy;
