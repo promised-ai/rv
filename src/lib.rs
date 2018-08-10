@@ -74,6 +74,7 @@
 //! }
 //! ```
 #![feature(associated_type_defaults)]
+#![feature(stmt_expr_attributes)]
 #![feature(test)]
 
 #[cfg(feature = "serde_support")]

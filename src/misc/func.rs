@@ -7,6 +7,19 @@ use self::special::Gamma;
 use consts::LN_PI;
 use std::ops::AddAssign;
 
+/// Natural logarithm of binomial coefficent, ln nCk
+///
+/// # Example
+///
+/// ```rust
+/// use rv::misc::ln_binom;
+///
+/// assert!((ln_binom(4.0, 2.0) - 6.0_f64.ln()) < 1E-12);
+/// ```
+pub fn ln_binom(n: f64, k: f64) -> f64 {
+    (n + 1.0).ln_gamma().0 - (k + 1.0).ln_gamma().0 - (n - k + 1.0).ln_gamma().0
+}
+
 /// Safely compute `log(sum(exp(xs))`
 pub fn logsumexp(xs: &[f64]) -> f64 {
     if xs.is_empty() {

@@ -9,6 +9,7 @@
 //!    distributions.
 mod bernoulli;
 mod beta;
+mod binomial;
 mod categorical;
 mod cauchy;
 mod chi_squared;
@@ -32,6 +33,7 @@ mod wishart;
 
 pub use self::bernoulli::Bernoulli;
 pub use self::beta::Beta;
+pub use self::binomial::Binomial;
 pub use self::categorical::Categorical;
 pub use self::cauchy::Cauchy;
 pub use self::chi_squared::ChiSquared;
