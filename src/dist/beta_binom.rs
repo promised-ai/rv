@@ -11,6 +11,24 @@ use traits::*;
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// over k in {0, ..., n}
+///
+/// # Example
+///
+/// ```
+/// use std::f64;
+/// use rv::prelude::*;
+///
+/// let a = 3.0;
+/// let b = 2.0;
+/// let n = 20;
+///
+/// let beta = Beta::new(a, b).unwrap();
+/// let beta_binom = BetaBinomial::new(n, a, b).unwrap();
+///
+/// let beta_mean: f64 = beta.mean().unwrap();
+/// let beta_binom_mean: f64 = beta_binom.mean().unwrap();
+/// assert!( (beta_mean * f64::from(n) - beta_binom_mean).abs() < 1E-12 );
+/// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct BetaBinomial {
@@ -118,3 +136,20 @@ impl_int_traits!(i8);
 impl_int_traits!(i16);
 impl_int_traits!(i32);
 impl_int_traits!(i64);
+
+#[cfg(test)]
+mod tests {
+    extern crate assert;
+    use super::*;
+    use std::f64;
+
+    const TOL: f64 = 1E-12;
+
+    #[test]
+    fn new() {
+        let beta_binom = BetaBinomial::new(10, 0.1, 0.2).unwrap();
+        assert_eq!(beta_binom.n, 10);
+        assert::close(beta_binom.alpha, 0.1, TOL);
+        assert::close(beta_binom.beta, 0.2, TOL);
+    }
+}
