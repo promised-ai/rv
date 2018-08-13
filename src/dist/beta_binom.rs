@@ -152,4 +152,16 @@ mod tests {
         assert::close(beta_binom.alpha, 0.1, TOL);
         assert::close(beta_binom.beta, 0.2, TOL);
     }
+
+    #[test]
+    fn pmf() {
+        let beta_binom = BetaBinomial::new(10, 0.5, 2.0).unwrap();
+        // Values from wolfram alpha
+        let target = vec![
+            0.387765, 0.176257, 0.118973, 0.0881283, 0.0674732, 0.0520508,
+            0.039761, 0.0295368, 0.020768, 0.0130762, 0.00621118,
+        ];
+        let pmfs: Vec<f64> = (0..=10).map(|k| beta_binom.pmf(&k)).collect();
+        assert::close(pmfs, target, 1E-6);
+    }
 }
