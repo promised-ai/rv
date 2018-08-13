@@ -56,14 +56,16 @@ macro_rules! impl_int_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let nf = self.n as f64;
                 let xf = *x as f64;
-                let bin_coeff = if self.n <= 17 { // TODO make this dynamic
+                let bin_coeff = if *x == 0 || xf == nf {
+                    0.0
+                } else if self.n <= 17 { // TODO make this dynamic
                     (choose(self.n, *x as u64) as f64).ln()
                 } else {
                     // Use stirling's approximation for log(choose(n, k))
                     nf * nf.ln() - xf * xf.ln() - (nf - xf) * (nf - xf).ln() + 0.5 * (nf.ln() - xf.ln() - (nf - xf).ln() - consts::LN_2PI)
                 };
 
-                bin_coeff * self.p.ln() * xf + (self.q()).ln() * (nf - xf)
+                bin_coeff + self.p.ln() * xf + (self.q()).ln() * (nf - xf)
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -172,8 +174,8 @@ mod tests {
     }
 
     #[test]
-    fn draw_test() {
-        let k = 256;
+    fn draw_test_low() {
+        let k = 5;
         let mut rng = rand::thread_rng();
         let b: Binomial = Binomial::new(0.5, k).unwrap();
         let ps: Vec<f64> = (0..k+1).map(|x| b.pmf(&(x as u32))).collect();
@@ -182,8 +184,8 @@ mod tests {
             let mut f_obs: Vec<u32> = vec![0; (k + 1) as usize];
             let xs: Vec<u32> = b.sample(1000, &mut rng);
             xs.iter().for_each(|&x| f_obs[x as usize] += 1);
-            println!("{:#?}", xs);
             println!("{:#?}", f_obs);
+            println!("{:#?}", ps);
 
             let (_, p) =  x2_test(f_obs.as_slice(), ps.as_slice());
 
@@ -196,4 +198,33 @@ mod tests {
 
         assert!(passes > 0);
     }
+
+    #[test]
+    fn draw_test_high() {
+        let k = 200;
+        let mut rng = rand::thread_rng();
+        let b: Binomial = Binomial::new(0.5, k).unwrap();
+        let ps: Vec<f64> = (0..k+1).map(|x| b.pmf(&(x as u32))).collect();
+
+        let passes = (0..N_TRIES).fold(0, |acc, _| {
+            let mut f_obs: Vec<u32> = vec![0; (k + 1) as usize];
+            let xs: Vec<u32> = b.sample(1000, &mut rng);
+            xs.iter().for_each(|&x| f_obs[x as usize] += 1);
+            println!("{:#?}", f_obs);
+            println!("{:#?}", ps);
+
+            let (_, p) =  x2_test(f_obs.as_slice(), ps.as_slice());
+
+            if p > X2_PVAL {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+
+        assert!(passes > 0);
+    }
+
+
+
 }
