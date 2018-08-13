@@ -16,10 +16,10 @@ serde_support = ["serde", "serde_derive", "nalgebra/serde-serialize"]
 gitlab = { repository = "baxe/rv", branch = "master" }
 
 [dependencies]
+nalgebra = "0.16.0"
 num = "0.2.0"
 rand = "0.5.3"
 special = "0.7.8"
-nalgebra = "0.16.0"
 
 serde = {version = "1.0.70", optional = true}
 serde_derive = {version = "1.0.70", optional = true}
