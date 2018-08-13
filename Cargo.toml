@@ -17,7 +17,7 @@ gitlab = { repository = "baxe/rv", branch = "master" }
 
 [dependencies]
 num = "0.2.0"
-rand = "0.5.3"
+rand = "0.5.5"
 special = "0.7.8"
 nalgebra = "0.16.0"
 
