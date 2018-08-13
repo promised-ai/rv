@@ -3,25 +3,24 @@ extern crate rand;
 extern crate special;
 
 use self::rand::Rng;
-use dist::Bernoulli;
-use misc::{ln_binom, ln_pflip};
+use misc::ln_binom;
 use std::f64;
 use std::io;
 use traits::*;
 
-/// [Binomial distribution](https://en.wikipedia.org/wiki/Binomial_distribution)
+/// [Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// with success probability *p*
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Binomial {
     /// Total number of trials
-    pub n: u32,
-    /// Probability of a success (x=1)
+    pub n: u64,
+    /// Probability of a success
     pub p: f64,
 }
 
 impl Binomial {
-    pub fn new(n: u32, p: f64) -> io::Result<Self> {
+    pub fn new(n: u64, p: f64) -> io::Result<Self> {
         let p_ok = p.is_finite() && 0.0 < p && p < 1.0;
         let n_ok = n > 0;
         if !p_ok {
@@ -38,7 +37,7 @@ impl Binomial {
     }
 
     /// A Binomial distribution with a 50% chance of success
-    pub fn uniform(n: u32) -> Self {
+    pub fn uniform(n: u64) -> Self {
         Binomial::new(n, 0.5).unwrap()
     }
 
@@ -53,28 +52,18 @@ macro_rules! impl_int_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Binomial {
             fn ln_f(&self, k: &$kind) -> f64 {
-                let nf = f64::from(self.n);
+                let nf = self.n as f64;
                 let kf = *k as f64;
                 ln_binom(nf, kf) + self.p.ln() * kf + self.q().ln() * (nf - kf)
             }
 
-            fn draw<R: Rng>(&self, mut rng: &mut R) -> $kind {
+            // XXX: Opportunity for optimization in `sample`. Sometime in the
+            // future, we should do some criterion benchmarks to test when it
+            // is faster to draw using alias tables or some other method.
+            fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 // TODO: This is really awful.
-                Bernoulli::new(self.p)
-                    .unwrap()
-                    .sample(self.n as usize, &mut rng)
-                    .iter()
-                    .fold(0, |acc, x: &$kind| acc + x)
-            }
-
-            fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<$kind> {
-                let ln_weights: Vec<f64> =
-                    (0..=self.n).map(|x| self.ln_f(&x)).collect();
-
-                ln_pflip(&ln_weights, n, true, &mut rng)
-                    .iter()
-                    .map(|k| *k as $kind)
-                    .collect()
+                let b = rand::distributions::Binomial::new(self.n, self.p);
+                rng.sample(b) as $kind
             }
         }
 
