@@ -62,7 +62,7 @@ macro_rules! impl_traits {
         }
 
         impl Support<$kind> for ChiSquared {
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 *x > 0.0 && x.is_finite()
             }
         }

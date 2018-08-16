@@ -96,11 +96,11 @@ pub trait Support<X> {
     /// // Create uniform with support on the interval [0, 1]
     /// let u = Uniform::new(0.0, 1.0).unwrap();
     ///
-    /// assert!(u.contains(&0.5_f64));
-    /// assert!(!u.contains(&-0.1_f64));
-    /// assert!(!u.contains(&1.1_f64));
+    /// assert!(u.supports(&0.5_f64));
+    /// assert!(!u.supports(&-0.1_f64));
+    /// assert!(!u.supports(&1.1_f64));
     /// ```
-    fn contains(&self, x: &X) -> bool;
+    fn supports(&self, x: &X) -> bool;
 }
 
 /// Is a continuous probability distributions
@@ -163,7 +163,7 @@ pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
     /// assert!((lnf_low - lnf_high).abs() < 1E-12);
     /// ```
     fn ln_pdf(&self, x: &X) -> f64 {
-        if !self.contains(&x) {
+        if !self.supports(&x) {
             panic!("x not in support");
         }
         self.ln_f(x)
@@ -292,7 +292,7 @@ pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
     /// assert!( (b.ln_pmf(&true) - 0.5_f64.ln()).abs() < 1E-12);
     /// ```
     fn ln_pmf(&self, x: &X) -> f64 {
-        if !self.contains(&x) {
+        if !self.supports(&x) {
             panic!("x not in support");
         }
         self.ln_f(x)

@@ -20,7 +20,7 @@ impl Rv<Bernoulli> for Beta {
 }
 
 impl Support<Bernoulli> for Beta {
-    fn contains(&self, x: &Bernoulli) -> bool {
+    fn supports(&self, x: &Bernoulli) -> bool {
         0.0 < x.p && x.p < 1.0
     }
 }

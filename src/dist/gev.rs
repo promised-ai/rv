@@ -85,7 +85,7 @@ macro_rules! impl_traits {
         impl ContinuousDistr<$kind> for Gev {}
 
         impl Support<$kind> for Gev {
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 if self.shape > 0.0 {
                     x.is_finite()
                         && f64::from(*x) >= self.loc - self.scale / self.shape

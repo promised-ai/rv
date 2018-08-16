@@ -106,7 +106,7 @@ impl Rv<Partition> for Crp {
 
 impl Support<Partition> for Crp {
     #[inline]
-    fn contains(&self, _x: &Partition) -> bool {
+    fn supports(&self, _x: &Partition) -> bool {
         true
     }
 }

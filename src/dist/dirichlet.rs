@@ -127,7 +127,7 @@ impl Dirichlet {
 impl ContinuousDistr<Vec<f64>> for SymmetricDirichlet {}
 
 impl Support<Vec<f64>> for SymmetricDirichlet {
-    fn contains(&self, x: &Vec<f64>) -> bool {
+    fn supports(&self, x: &Vec<f64>) -> bool {
         if x.len() != self.k {
             false
         } else {
@@ -175,7 +175,7 @@ impl Rv<Vec<f64>> for Dirichlet {
 impl ContinuousDistr<Vec<f64>> for Dirichlet {}
 
 impl Support<Vec<f64>> for Dirichlet {
-    fn contains(&self, x: &Vec<f64>) -> bool {
+    fn supports(&self, x: &Vec<f64>) -> bool {
         if x.len() != self.alphas.len() {
             false
         } else {
@@ -198,22 +198,22 @@ mod tests {
         #[test]
         fn properly_sized_points_on_simplex_should_be_in_support() {
             let dir = Dirichlet::symmetric(1.0, 4);
-            assert!(dir.contains(&vec![0.25, 0.25, 0.25, 0.25]));
-            assert!(dir.contains(&vec![0.1, 0.2, 0.3, 0.4]));
+            assert!(dir.supports(&vec![0.25, 0.25, 0.25, 0.25]));
+            assert!(dir.supports(&vec![0.1, 0.2, 0.3, 0.4]));
         }
 
         #[test]
         fn improperly_sized_points_should_not_be_in_support() {
             let dir = Dirichlet::symmetric(1.0, 3);
-            assert!(!dir.contains(&vec![0.25, 0.25, 0.25, 0.25]));
-            assert!(!dir.contains(&vec![0.1, 0.2, 0.7, 0.4]));
+            assert!(!dir.supports(&vec![0.25, 0.25, 0.25, 0.25]));
+            assert!(!dir.supports(&vec![0.1, 0.2, 0.7, 0.4]));
         }
 
         #[test]
         fn properly_sized_points_off_simplex_should_not_be_in_support() {
             let dir = Dirichlet::symmetric(1.0, 4);
-            assert!(!dir.contains(&vec![0.25, 0.25, 0.26, 0.25]));
-            assert!(!dir.contains(&vec![0.1, 0.3, 0.3, 0.4]));
+            assert!(!dir.supports(&vec![0.25, 0.25, 0.26, 0.25]));
+            assert!(!dir.supports(&vec![0.1, 0.3, 0.3, 0.4]));
         }
 
         #[test]
@@ -224,7 +224,7 @@ mod tests {
             let dir = Dirichlet::jeffreys(10);
             for _ in 0..100 {
                 let x = dir.draw(&mut rng);
-                assert!(dir.contains(&x));
+                assert!(dir.supports(&x));
             }
         }
 
@@ -291,8 +291,8 @@ mod tests {
         #[test]
         fn properly_sized_points_off_simplex_should_not_be_in_support() {
             let symdir = SymmetricDirichlet::new(1.0, 4).unwrap();
-            assert!(!symdir.contains(&vec![0.25, 0.25, 0.26, 0.25]));
-            assert!(!symdir.contains(&vec![0.1, 0.3, 0.3, 0.4]));
+            assert!(!symdir.supports(&vec![0.25, 0.25, 0.26, 0.25]));
+            assert!(!symdir.supports(&vec![0.1, 0.3, 0.3, 0.4]));
         }
 
         #[test]
@@ -303,7 +303,7 @@ mod tests {
             let symdir = SymmetricDirichlet::jeffreys(10).unwrap();
             for _ in 0..100 {
                 let x: Vec<f64> = symdir.draw(&mut rng);
-                assert!(symdir.contains(&x));
+                assert!(symdir.supports(&x));
             }
         }
 
