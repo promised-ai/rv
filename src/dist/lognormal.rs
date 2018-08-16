@@ -14,7 +14,6 @@ use consts::*;
 // use data::LogNormalSuffStat;
 use traits::*;
 
-
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct LogNormal {
@@ -39,7 +38,10 @@ impl LogNormal {
     }
 
     pub fn standard() -> Self {
-        LogNormal { mu: 0.0, sigma: 1.0 }
+        LogNormal {
+            mu: 0.0,
+            sigma: 1.0,
+        }
     }
 }
 
@@ -56,7 +58,7 @@ macro_rules! impl_traits {
                 let xk = f64::from(*x);
                 let xk_ln = xk.ln();
                 let d = (xk_ln - self.mu) / self.sigma;
-                - xk_ln - self.sigma.ln() - HALF_LN_2PI - 0.5 * d * d 
+                -xk_ln - self.sigma.ln() - HALF_LN_2PI - 0.5 * d * d
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -87,7 +89,8 @@ macro_rules! impl_traits {
 
         impl InverseCdf<$kind> for LogNormal {
             fn invcdf(&self, p: f64) -> $kind {
-                (self.mu + SQRT_2 * self.sigma * (2.0 * p - 1.0).inv_erf()).exp() as $kind
+                (self.mu + SQRT_2 * self.sigma * (2.0 * p - 1.0).inv_erf())
+                    .exp() as $kind
             }
         }
 
@@ -113,7 +116,10 @@ macro_rules! impl_traits {
 
 impl Variance<f64> for LogNormal {
     fn variance(&self) -> Option<f64> {
-        Some(((self.sigma * self.sigma).exp() - 1.0) * (2.0 * self.mu + self.sigma * self.sigma).exp())
+        Some(
+            ((self.sigma * self.sigma).exp() - 1.0)
+                * (2.0 * self.mu + self.sigma * self.sigma).exp(),
+        )
     }
 }
 
@@ -133,9 +139,12 @@ impl Skewness for LogNormal {
 impl Kurtosis for LogNormal {
     fn kurtosis(&self) -> Option<f64> {
         let s2 = self.sigma * self.sigma;
-        Some((4.0 * s2).exp() + 2.0 * (3.0 * s2).exp() + 3.0 * (2.0 * s2).exp() - 6.0)
+        Some(
+            (4.0 * s2).exp() + 2.0 * (3.0 * s2).exp() + 3.0 * (2.0 * s2).exp()
+                - 6.0,
+        )
     }
-}   
+}
 
 impl_traits!(f32);
 impl_traits!(f64);
@@ -180,8 +189,16 @@ mod tests {
     fn variance() {
         let lognorm_1 = LogNormal::new(3.4, 1.0).unwrap();
         let lognorm_2 = LogNormal::new(1.0, 3.0).unwrap();
-        assert::close(lognorm_1.variance().unwrap(), (1.0_f64.exp() - 1.0) * 7.8_f64.exp(), TOL);
-        assert::close(lognorm_2.variance().unwrap(), (9.0_f64.exp() - 1.0) * 11.0_f64.exp(), TOL);
+        assert::close(
+            lognorm_1.variance().unwrap(),
+            (1.0_f64.exp() - 1.0) * 7.8_f64.exp(),
+            TOL,
+        );
+        assert::close(
+            lognorm_2.variance().unwrap(),
+            (9.0_f64.exp() - 1.0) * 11.0_f64.exp(),
+            TOL,
+        );
     }
 
     #[test]
@@ -211,9 +228,12 @@ mod tests {
     #[test]
     fn standard_ln_pdf_at_e() {
         let lognorm = LogNormal::standard();
-        assert::close(lognorm.ln_pdf(&f64::consts::E), -2.4189385332046727, TOL);
+        assert::close(
+            lognorm.ln_pdf(&f64::consts::E),
+            -2.4189385332046727,
+            TOL,
+        );
     }
-
 
     #[test]
     fn should_contain_positve_finite_values() {
