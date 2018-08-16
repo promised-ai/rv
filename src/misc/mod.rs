@@ -1,4 +1,5 @@
 //! Random utilities
+mod bessel;
 mod func;
 mod ks;
 mod mardia;
