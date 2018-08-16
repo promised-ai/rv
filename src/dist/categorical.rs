@@ -33,9 +33,9 @@ impl Categorical {
     /// let weights: Vec<f64> = vec![4.0, 2.0, 3.0, 1.0];
     /// let cat = Categorical::new(&weights).unwrap();
     ///
-    /// assert!(cat.contains(&0_u8));
-    /// assert!(cat.contains(&3_u8));
-    /// assert!(!cat.contains(&4_u8));
+    /// assert!(cat.supports(&0_u8));
+    /// assert!(cat.supports(&3_u8));
+    /// assert!(!cat.supports(&4_u8));
     ///
     /// assert::close(cat.pmf(&0_u8), 0.4, 10E-12);
     /// ```
@@ -100,7 +100,7 @@ impl<X: CategoricalDatum> Rv<X> for Categorical {
 }
 
 impl<X: CategoricalDatum> Support<X> for Categorical {
-    fn contains(&self, x: &X) -> bool {
+    fn supports(&self, x: &X) -> bool {
         let ix: usize = (*x).into();
         ix < self.ln_weights.len()
     }
@@ -220,10 +220,10 @@ mod tests {
         let k = 3;
         let cat = Categorical::uniform(k);
 
-        assert!(cat.contains(&0_usize));
-        assert!(cat.contains(&1_usize));
-        assert!(cat.contains(&2_usize));
-        assert!(!cat.contains(&3_usize));
+        assert!(cat.supports(&0_usize));
+        assert!(cat.supports(&1_usize));
+        assert!(cat.supports(&2_usize));
+        assert!(!cat.supports(&3_usize));
     }
 
     #[test]

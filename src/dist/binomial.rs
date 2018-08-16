@@ -69,7 +69,7 @@ macro_rules! impl_int_traits {
 
         impl Support<$kind> for Binomial {
             #[allow(unused_comparisons)]
-            fn contains(&self, k: &$kind) -> bool {
+            fn supports(&self, k: &$kind) -> bool {
                 *k >= 0 && *k <= self.n as $kind
             }
         }
@@ -204,9 +204,9 @@ mod tests {
     #[test]
     fn support() {
         let binom = Binomial::new(10, 0.6).unwrap();
-        assert!((0..=10).all(|x| binom.contains(&x)));
-        assert!(!binom.contains(&-1_i32));
-        assert!(!binom.contains(&11_u32));
+        assert!((0..=10).all(|x| binom.supports(&x)));
+        assert!(!binom.supports(&-1_i32));
+        assert!(!binom.supports(&11_u32));
     }
 
     #[test]

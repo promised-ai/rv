@@ -67,7 +67,7 @@ macro_rules! impl_traits {
         impl ContinuousDistr<$kind> for InvGamma {}
 
         impl Support<$kind> for InvGamma {
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 x.is_finite() && *x > 0.0
             }
         }
@@ -229,24 +229,24 @@ mod tests {
 
     #[test]
     fn does_not_contain_negative_values() {
-        assert!(!InvGamma::new(1.0, 1.0).unwrap().contains(&-0.000001_f64));
-        assert!(!InvGamma::new(1.0, 1.0).unwrap().contains(&-1.0_f64));
+        assert!(!InvGamma::new(1.0, 1.0).unwrap().supports(&-0.000001_f64));
+        assert!(!InvGamma::new(1.0, 1.0).unwrap().supports(&-1.0_f64));
     }
 
     #[test]
     fn does_not_contain_zero() {
-        assert!(!InvGamma::new(1.0, 1.0).unwrap().contains(&0.0_f32));
+        assert!(!InvGamma::new(1.0, 1.0).unwrap().supports(&0.0_f32));
     }
 
     #[test]
     fn contains_positive_values() {
-        assert!(InvGamma::new(1.0, 1.0).unwrap().contains(&0.000001_f64));
-        assert!(InvGamma::new(1.0, 1.0).unwrap().contains(&1.0_f64));
+        assert!(InvGamma::new(1.0, 1.0).unwrap().supports(&0.000001_f64));
+        assert!(InvGamma::new(1.0, 1.0).unwrap().supports(&1.0_f64));
     }
 
     #[test]
     fn does_not_contain_infinity() {
-        assert!(!InvGamma::new(1.0, 1.0).unwrap().contains(&f64::INFINITY));
+        assert!(!InvGamma::new(1.0, 1.0).unwrap().supports(&f64::INFINITY));
     }
 
     #[test]

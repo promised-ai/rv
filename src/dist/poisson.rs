@@ -69,7 +69,7 @@ macro_rules! impl_traits {
 
         impl Support<$kind> for Poisson {
             #[allow(unused_comparisons)]
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 *x >= 0
             }
         }

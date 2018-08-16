@@ -63,7 +63,7 @@ macro_rules! impl_traits {
 
         impl Support<$kind> for Geometric {
             #[allow(unused_comparisons)]
-            fn contains(&self, k: &$kind) -> bool {
+            fn supports(&self, k: &$kind) -> bool {
                 *k >= 0
             }
         }
