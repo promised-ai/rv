@@ -133,6 +133,7 @@ fn chbevl(x: f64, coeffs: &[f64]) -> f64 {
     0.5 * (b0 - b2)
 }
 
+/// Modified Bessel function, I<sub>0</sub>(x)
 pub fn i0(x: f64) -> f64 {
     let ax = x.abs();
 
@@ -144,6 +145,7 @@ pub fn i0(x: f64) -> f64 {
     }
 }
 
+/// Modified Bessel function, I<sub>1</sub>(x)
 pub fn i1(x: f64) -> f64 {
     let z = x.abs();
     let res = if z <= 8.0 {
