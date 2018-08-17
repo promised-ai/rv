@@ -67,7 +67,7 @@ macro_rules! impl_traits {
         impl ContinuousDistr<$kind> for Gamma {}
 
         impl Support<$kind> for Gamma {
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 x.is_finite() && *x > 0.0
             }
         }

@@ -97,7 +97,7 @@ macro_rules! impl_traits {
         impl ContinuousDistr<$kind> for Gaussian {}
 
         impl Support<$kind> for Gaussian {
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 x.is_finite()
             }
         }
@@ -296,22 +296,22 @@ mod tests {
     #[test]
     fn should_contain_finite_values() {
         let gauss = Gaussian::standard();
-        assert!(gauss.contains(&0.0_f32));
-        assert!(gauss.contains(&10E8_f64));
-        assert!(gauss.contains(&-10E8_f64));
+        assert!(gauss.supports(&0.0_f32));
+        assert!(gauss.supports(&10E8_f64));
+        assert!(gauss.supports(&-10E8_f64));
     }
 
     #[test]
     fn should_not_contain_nan() {
         let gauss = Gaussian::standard();
-        assert!(!gauss.contains(&f64::NAN));
+        assert!(!gauss.supports(&f64::NAN));
     }
 
     #[test]
     fn should_not_contain_positive_or_negative_infinity() {
         let gauss = Gaussian::standard();
-        assert!(!gauss.contains(&f64::INFINITY));
-        assert!(!gauss.contains(&f64::NEG_INFINITY));
+        assert!(!gauss.supports(&f64::INFINITY));
+        assert!(!gauss.supports(&f64::NEG_INFINITY));
     }
 
     #[test]

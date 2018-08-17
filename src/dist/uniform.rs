@@ -83,7 +83,7 @@ macro_rules! impl_traits {
         }
 
         impl Support<$kind> for Uniform {
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 x.is_finite()
                     && self.a <= f64::from(*x)
                     && f64::from(*x) <= self.b

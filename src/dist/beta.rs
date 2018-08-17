@@ -109,7 +109,7 @@ macro_rules! impl_traits {
         }
 
         impl Support<$kind> for Beta {
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 let xf = f64::from(*x);
                 0.0 < xf && xf < 1.0
             }

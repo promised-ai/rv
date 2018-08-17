@@ -98,7 +98,7 @@ impl Rv<DMatrix<f64>> for InvWishart {
 }
 
 impl Support<DMatrix<f64>> for InvWishart {
-    fn contains(&self, x: &DMatrix<f64>) -> bool {
+    fn supports(&self, x: &DMatrix<f64>) -> bool {
         x.clone().cholesky().is_some()
     }
 }

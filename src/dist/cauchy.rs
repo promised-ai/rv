@@ -79,7 +79,7 @@ macro_rules! impl_traits {
         }
 
         impl Support<$kind> for Cauchy {
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 x.is_finite()
             }
         }
@@ -194,18 +194,18 @@ mod tests {
     #[test]
     fn finite_numbers_should_be_in_support() {
         let c = Cauchy::default();
-        assert!(c.contains(&0.0_f64));
-        assert!(c.contains(&f64::MIN_POSITIVE));
-        assert!(c.contains(&f64::MAX));
-        assert!(c.contains(&f64::MIN));
+        assert!(c.supports(&0.0_f64));
+        assert!(c.supports(&f64::MIN_POSITIVE));
+        assert!(c.supports(&f64::MAX));
+        assert!(c.supports(&f64::MIN));
     }
 
     #[test]
     fn non_finite_numbers_should_not_be_in_support() {
         let c = Cauchy::default();
-        assert!(!c.contains(&f64::INFINITY));
-        assert!(!c.contains(&f64::NEG_INFINITY));
-        assert!(!c.contains(&f64::NAN));
+        assert!(!c.supports(&f64::INFINITY));
+        assert!(!c.supports(&f64::NEG_INFINITY));
+        assert!(!c.supports(&f64::NAN));
     }
 
     #[test]

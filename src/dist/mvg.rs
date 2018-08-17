@@ -124,7 +124,7 @@ impl Rv<DVector<f64>> for MvGaussian {
 }
 
 impl Support<DVector<f64>> for MvGaussian {
-    fn contains(&self, x: &DVector<f64>) -> bool {
+    fn supports(&self, x: &DVector<f64>) -> bool {
         x.len() == self.mu.len()
     }
 }

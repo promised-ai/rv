@@ -89,7 +89,7 @@ macro_rules! impl_int_traits {
 
         impl Support<$kind> for BetaBinomial {
             #[allow(unused_comparisons)]
-            fn contains(&self, k: &$kind) -> bool {
+            fn supports(&self, k: &$kind) -> bool {
                 *k >= 0 && *k <= self.n as $kind
             }
         }

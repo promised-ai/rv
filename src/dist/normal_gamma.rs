@@ -69,7 +69,7 @@ impl Rv<Gaussian> for NormalGamma {
 }
 
 impl Support<Gaussian> for NormalGamma {
-    fn contains(&self, x: &Gaussian) -> bool {
+    fn supports(&self, x: &Gaussian) -> bool {
         // NOTE: Could replace this with Gaussian::new(mu, sigma).is_ok(),
         // but this is more explicit.
         x.mu.is_finite() && x.sigma > 0.0 && x.sigma.is_finite()

@@ -104,7 +104,7 @@ impl Rv<MvGaussian> for NormalInvWishart {
 }
 
 impl Support<MvGaussian> for NormalInvWishart {
-    fn contains(&self, x: &MvGaussian) -> bool {
+    fn supports(&self, x: &MvGaussian) -> bool {
         let p = self.mu.len();
         x.mu.len() == p && x.cov.clone().cholesky().is_some()
     }

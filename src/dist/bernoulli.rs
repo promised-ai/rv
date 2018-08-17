@@ -90,7 +90,7 @@ macro_rules! impl_int_traits {
         }
 
         impl Support<$kind> for Bernoulli {
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 *x == 0 || *x == 1
             }
         }
@@ -216,7 +216,7 @@ impl Rv<bool> for Bernoulli {
 }
 
 impl Support<bool> for Bernoulli {
-    fn contains(&self, _x: &bool) -> bool {
+    fn supports(&self, _x: &bool) -> bool {
         true
     }
 }
@@ -409,17 +409,17 @@ mod tests {
     #[test]
     fn contains_both_true_and_false() {
         let b = Bernoulli::uniform();
-        assert!(b.contains(&true));
-        assert!(b.contains(&false));
+        assert!(b.supports(&true));
+        assert!(b.supports(&false));
     }
 
     #[test]
     fn contains_both_zero_and_one() {
         let b = Bernoulli::uniform();
-        assert!(b.contains(&0));
-        assert!(b.contains(&1));
-        assert!(!b.contains(&-1));
-        assert!(!b.contains(&2));
+        assert!(b.supports(&0));
+        assert!(b.supports(&1));
+        assert!(!b.supports(&-1));
+        assert!(!b.supports(&2));
     }
 
     #[test]

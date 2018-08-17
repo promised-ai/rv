@@ -60,7 +60,7 @@ macro_rules! impl_traits {
         impl ContinuousDistr<$kind> for Pareto {}
 
         impl Support<$kind> for Pareto {
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 x.is_finite() && *x >= self.scale as $kind
             }
         }

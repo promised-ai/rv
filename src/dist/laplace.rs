@@ -76,7 +76,7 @@ macro_rules! impl_traits {
         }
 
         impl Support<$kind> for Laplace {
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 x.is_finite()
             }
         }
