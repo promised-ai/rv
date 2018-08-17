@@ -14,7 +14,6 @@ use consts::*;
 // use data::LogNormalSuffStat;
 use traits::*;
 
-
 /// [LogNormal Distribution](https://en.wikipedia.org/wiki/Log-normal_distribution)
 /// If x ~ Normal(μ, σ), then e^x ~ LogNormal(μ, σ).
 #[derive(Debug, Clone)]
