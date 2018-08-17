@@ -14,6 +14,9 @@ use consts::*;
 // use data::LogNormalSuffStat;
 use traits::*;
 
+
+/// [LogNormal Distribution](https://en.wikipedia.org/wiki/Log-normal_distribution)
+/// If x ~ Normal(μ, σ), then e^x ~ LogNormal(μ, σ).
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct LogNormal {
@@ -75,7 +78,7 @@ macro_rules! impl_traits {
         impl ContinuousDistr<$kind> for LogNormal {}
 
         impl Support<$kind> for LogNormal {
-            fn contains(&self, x: &$kind) -> bool {
+            fn supports(&self, x: &$kind) -> bool {
                 *x > 0.0 && x.is_finite()
             }
         }
@@ -238,28 +241,28 @@ mod tests {
     #[test]
     fn should_contain_positve_finite_values() {
         let lognorm = LogNormal::standard();
-        assert!(lognorm.contains(&1E-8_f32));
-        assert!(lognorm.contains(&10E8_f64));
+        assert!(lognorm.supports(&1E-8_f32));
+        assert!(lognorm.supports(&10E8_f64));
     }
 
     #[test]
     fn should_not_contain_negative_or_zero() {
         let lognorm = LogNormal::standard();
-        assert!(!lognorm.contains(&-1.0_f64));
-        assert!(!lognorm.contains(&0.0_f64));
+        assert!(!lognorm.supports(&-1.0_f64));
+        assert!(!lognorm.supports(&0.0_f64));
     }
 
     #[test]
     fn should_not_contain_nan() {
         let lognorm = LogNormal::standard();
-        assert!(!lognorm.contains(&f64::NAN));
+        assert!(!lognorm.supports(&f64::NAN));
     }
 
     #[test]
     fn should_not_contain_positive_or_negative_infinity() {
         let lognorm = LogNormal::standard();
-        assert!(!lognorm.contains(&f64::INFINITY));
-        assert!(!lognorm.contains(&f64::NEG_INFINITY));
+        assert!(!lognorm.supports(&f64::INFINITY));
+        assert!(!lognorm.supports(&f64::NEG_INFINITY));
     }
 
     #[test]
