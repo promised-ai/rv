@@ -7,7 +7,8 @@ use std::f64::consts::PI;
 use std::io;
 use traits::*;
 
-/// VonMises distirbution on the circular interval (0, 2π]
+/// [VonMises distirbution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
+/// on the circular interval (0, 2π]
 ///
 /// # Example
 ///
@@ -79,25 +80,27 @@ macro_rules! impl_traits {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let u = rand::distributions::Open01;
                 let tau = 1.0 + (1.0 + 4.0 * self.k.powi(2)).sqrt();
-                let rho = (tau * (2.0*tau).sqrt()) / (2.0 * self.k);
-                let r = (1.0 + rho.powi(2))/(2.0 * rho);
+                let rho = (tau * (2.0 * tau).sqrt()) / (2.0 * self.k);
+                let r = (1.0 + rho.powi(2)) / (2.0 * rho);
 
                 loop {
                     let u1: f64 = rng.sample(u);
                     let u2: f64 = rng.sample(u);
 
-                    let z: f64 = (PI*u1).cos();
+                    let z: f64 = (PI * u1).cos();
                     let f = (1.0 + r * z) / (r + z);
                     let c = self.k * (r - f);
 
-                    if (c*(2.0 - c) - u2 >= 0.0) || ((c/u2).ln() + 1.0 - c >= 0.0){
+                    if (c * (2.0 - c) - u2 >= 0.0)
+                        || ((c / u2).ln() + 1.0 - c >= 0.0)
+                    {
                         let u3: f64 = rng.sample(u);
                         let y = (u3 - 0.5).signum() * f.acos() + self.mu;
-                        let x = y.mod_euc(2.0*PI) as $kind;
+                        let x = y.mod_euc(2.0 * PI) as $kind;
                         if !self.supports(&x) {
                             panic!(format!("VonMises does not support {}", x));
                         } else {
-                            return x
+                            return x;
                         }
                     }
                 }
