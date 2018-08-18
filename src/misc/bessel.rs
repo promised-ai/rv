@@ -127,7 +127,7 @@ fn chbevl(x: f64, coeffs: &[f64]) -> f64 {
     coeffs.iter().skip(1).for_each(|c| {
         b2 = b1;
         b1 = b0;
-        b0 = x * b1 - b2 + c;
+        b0 = x.mul_add(b1, *c) - b2;
     });
 
     0.5 * (b0 - b2)
@@ -138,10 +138,11 @@ pub fn i0(x: f64) -> f64 {
     let ax = x.abs();
 
     if ax <= 8.0 {
-        let y = (ax / 2.0) - 2.0;
+        let y = ax.mul_add(0.5, -2.0);
         ax.exp() * chbevl(y, &BESSI0_COEFFS_A)
     } else {
-        ax.exp() * chbevl(32.0 / ax - 2.0, &BESSI0_COEFFS_B) / ax.sqrt()
+        ax.exp() * chbevl(32.0_f64.mul_add(ax.recip(), -2.0), &BESSI0_COEFFS_B)
+            / ax.sqrt()
     }
 }
 
@@ -149,10 +150,11 @@ pub fn i0(x: f64) -> f64 {
 pub fn i1(x: f64) -> f64 {
     let z = x.abs();
     let res = if z <= 8.0 {
-        let y = (z / 2.0) - 2.0;
+        let y = z.mul_add(0.5, -2.0);
         chbevl(y, &BESSI1_COEFFS_A) * z * z.exp()
     } else {
-        z.exp() * chbevl(32.0 / z - 2.0, &BESSI1_COEFFS_B) / z.sqrt()
+        z.exp() * chbevl(32.0_f64.mul_add(x.recip(), -2.0), &BESSI1_COEFFS_B)
+            / z.sqrt()
     };
 
     res * x.signum()

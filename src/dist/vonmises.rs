@@ -2,11 +2,32 @@ extern crate rand;
 
 use self::rand::Rng;
 use consts::LN_2PI;
-use misc::bessel;
+use misc::{bessel, quad};
 use std::f64::consts::PI;
 use std::io;
 use traits::*;
 
+/// VonMises distirbution on the circular interval (0, 2π]
+///
+/// # Example
+///
+/// ```
+/// extern crate rand;
+/// extern crate rv;
+///
+/// use rv::prelude::*;
+///
+/// let vm = VonMises::new(1.0, 2.0).unwrap();
+///
+/// // x is in (0, 2π]
+/// assert!(!vm.supports(&-0.001_f64));
+/// assert!(!vm.supports(&6.3_f64));
+///
+/// // 103 VonMises draws
+/// let mut rng = rand::thread_rng();
+/// let xs: Vec<f64> = vm.sample(103, &mut rng);
+/// assert_eq!(xs.len(), 103);
+/// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct VonMises {
@@ -14,6 +35,7 @@ pub struct VonMises {
     pub mu: f64,
     /// Sort of like precision. Higher k implies lower variance.
     pub k: f64,
+    // bessel:i0(k), save some cycles
     i0_k: f64,
 }
 
@@ -51,8 +73,42 @@ macro_rules! impl_traits {
                 self.k * (xf - self.mu).cos() - LN_2PI - self.i0_k.ln()
             }
 
+            // Best, D. J., & Fisher, N. I. (1979). Efficient simulation of the
+            //     von Mises distribution. Applied Statistics, 152-157.
+            // https://www.researchgate.net/publication/246035131_Efficient_Simulation_of_the_von_Mises_Distribution
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                unimplemented!();
+                let u = rand::distributions::Open01;
+                let tau = 1.0 + (1.0 + 4.0 * self.k.powi(2)).sqrt();
+                let rho = (tau * (2.0*tau).sqrt()) / (2.0 * self.k);
+                let r = (1.0 + rho.powi(2))/(2.0 * rho);
+
+                loop {
+                    let u1: f64 = rng.sample(u);
+                    let u2: f64 = rng.sample(u);
+
+                    let z: f64 = (PI*u1).cos();
+                    let f = (1.0 + r * z) / (r + z);
+                    let c = self.k * (r - f);
+
+                    if (c*(2.0 - c) - u2 >= 0.0) || ((c/u2).ln() + 1.0 - c >= 0.0){
+                        let u3: f64 = rng.sample(u);
+                        let y = (u3 - 0.5).signum() * f.acos() + self.mu;
+                        let x = y.mod_euc(2.0*PI) as $kind;
+                        if !self.supports(&x) {
+                            panic!(format!("VonMises does not support {}", x));
+                        } else {
+                            return x
+                        }
+                    }
+                }
+            }
+        }
+
+        // TODO: XXX:This is going to be SLOW, because it uses quadrature.
+        impl Cdf<$kind> for VonMises {
+            fn cdf(&self, x: &$kind) -> f64 {
+                let func = |y: f64| self.f(&y);
+                quad(func, 0.0, f64::from(*x))
             }
         }
 
@@ -83,6 +139,7 @@ macro_rules! impl_traits {
             }
         }
 
+        // This is the circular variance
         impl Variance<$kind> for VonMises {
             fn variance(&self) -> Option<$kind> {
                 let v: f64 = 1.0 - bessel::i1(self.k) / self.i0_k;
@@ -105,9 +162,12 @@ impl_traits!(f64);
 mod tests {
     extern crate assert;
     use super::*;
+    use misc::ks_test;
     use std::f64::EPSILON;
 
     const TOL: f64 = 1E-12;
+    const KS_PVAL: f64 = 0.2;
+    const N_TRIES: usize = 5;
 
     #[test]
     fn new_should_allow_mu_in_0_2pi() {
@@ -149,6 +209,15 @@ mod tests {
 
         let m2: f64 = VonMises::new(0.2, 1.0).unwrap().mode().unwrap();
         assert::close(m2, 0.2, TOL);
+    }
+
+    #[test]
+    fn variance() {
+        let v1: f64 = VonMises::new(0.0, 1.0).unwrap().variance().unwrap();
+        assert::close(v1, 0.5536100341034653, TOL);
+
+        let v2: f64 = VonMises::new(0.2, 2.0).unwrap().variance().unwrap();
+        assert::close(v2, 0.3022253420359917, TOL);
     }
 
     #[test]
@@ -206,5 +275,34 @@ mod tests {
         let vm = VonMises::new(2.23, PI).unwrap();
         let ln_pdfs: Vec<f64> = xs.iter().map(|x| vm.ln_pdf(x)).collect();
         assert::close(ln_pdfs, target, TOL);
+    }
+
+    #[test]
+    fn all_samples_should_be_supported() {
+        let mut rng = rand::thread_rng();
+        // kappa should be low so we get samples at the tails
+        let vm = VonMises::new(1.5 * PI, 0.25).unwrap();
+        let xs: Vec<f64> = vm.sample(1000, &mut rng);
+        assert!(xs.iter().all(|x| vm.supports(x)));
+    }
+
+    #[test]
+    fn vm_draw_test() {
+        let mut rng = rand::thread_rng();
+        let vm = VonMises::new(1.0, 1.2).unwrap();
+        let cdf = |x: f64| vm.cdf(&x);
+
+        // test is flaky, try a few times
+        let passes = (0..N_TRIES).fold(0, |acc, _| {
+            let xs: Vec<f64> = vm.sample(1000, &mut rng);
+            let (_, p) = ks_test(&xs, cdf);
+            if p > KS_PVAL {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+
+        assert!(passes > 0);
     }
 }
