@@ -11,7 +11,6 @@ use self::rand::Rng;
 use self::special::Error;
 
 use consts::*;
-// use data::LogNormalSuffStat;
 use traits::*;
 
 /// [LogNormal Distribution](https://en.wikipedia.org/wiki/Log-normal_distribution)
@@ -312,12 +311,4 @@ mod tests {
         let lognorm = LogNormal::standard();
         assert::close(lognorm.entropy(), 1.4189385332046727, TOL);
     }
-
-    /*
-    #[test]
-    fn kl_of_idential_dsitrbutions_should_be_zero() {
-        let lognorm = LogNormal::new(1.2, 3.4).unwrap();
-        assert::close(lognorm.kl(&lognorm), 0.0, TOL);
-    }
-    */
 }
