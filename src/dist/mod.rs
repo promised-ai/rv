@@ -31,6 +31,7 @@ mod pareto;
 mod poisson;
 mod students_t;
 mod uniform;
+mod vonmises;
 mod wishart;
 
 pub use self::bernoulli::Bernoulli;
@@ -57,4 +58,5 @@ pub use self::pareto::Pareto;
 pub use self::poisson::Poisson;
 pub use self::students_t::StudentsT;
 pub use self::uniform::Uniform;
+pub use self::vonmises::VonMises;
 pub use self::wishart::InvWishart;
