@@ -3,22 +3,14 @@ extern crate rand;
 use self::rand::Rng;
 use misc::{logsumexp, pflip};
 use std::io;
-use std::marker::PhantomData;
 use traits::*;
 
-pub struct Mixture<X, Fx>
-where
-    Fx: Rv<X>,
-{
+pub struct Mixture<Fx> {
     pub weights: Vec<f64>,
     pub components: Vec<Fx>,
-    phantom: PhantomData<X>,
 }
 
-impl<X, Fx> Mixture<X, Fx>
-where
-    Fx: Rv<X>,
-{
+impl<Fx> Mixture<Fx> {
     pub fn new(weights: Vec<f64>, components: Vec<Fx>) -> io::Result<Self> {
         let weights_sum = weights.iter().fold(0.0, |acc, &w| acc + w);
         let length_mismatch = weights.len() != components.len();
@@ -35,13 +27,12 @@ where
             Ok(Mixture {
                 weights,
                 components,
-                phantom: PhantomData,
             })
         }
     }
 }
 
-impl<X, Fx> Rv<X> for Mixture<X, Fx>
+impl<X, Fx> Rv<X> for Mixture<Fx>
 where
     Fx: Rv<X>,
 {
@@ -78,7 +69,7 @@ where
 
 // XXX: Not quite sure how this should work. I'd like to have mixtures of
 // things with different support.
-impl<X, Fx> Support<X> for Mixture<X, Fx>
+impl<X, Fx> Support<X> for Mixture<Fx>
 where
     Fx: Rv<X> + Support<X>,
 {
@@ -87,7 +78,7 @@ where
     }
 }
 
-impl<X, Fx> ContinuousDistr<X> for Mixture<X, Fx>
+impl<X, Fx> ContinuousDistr<X> for Mixture<Fx>
 where
     Fx: Rv<X> + ContinuousDistr<X>,
 {
@@ -109,7 +100,7 @@ where
     }
 }
 
-impl<X, Fx> DiscreteDistr<X> for Mixture<X, Fx>
+impl<X, Fx> DiscreteDistr<X> for Mixture<Fx>
 where
     Fx: Rv<X> + DiscreteDistr<X>,
 {
@@ -141,29 +132,15 @@ mod tests {
     fn new_should_not_allow_bad_weights() {
         let components = vec![Gaussian::standard(), Gaussian::standard()];
 
-        assert!(
-            Mixture::<f64, Gaussian>::new(vec![0.5, 0.51], components.clone())
-                .is_err()
-        );
-        assert!(
-            Mixture::<f64, Gaussian>::new(vec![0.5, 0.49], components.clone())
-                .is_err()
-        );
-        assert!(
-            Mixture::<f64, Gaussian>::new(vec![0.5, 0.5], components.clone())
-                .is_ok()
-        );
+        assert!(Mixture::new(vec![0.5, 0.51], components.clone()).is_err());
+        assert!(Mixture::new(vec![0.5, 0.49], components.clone()).is_err());
+        assert!(Mixture::new(vec![0.5, 0.5], components.clone()).is_ok());
     }
 
     #[test]
     fn new_should_not_allow_mismatched_inputs() {
         let components = vec![Gaussian::standard(), Gaussian::standard()];
-        assert!(
-            Mixture::<f64, Gaussian>::new(
-                vec![0.5, 0.3, 0.2],
-                components.clone()
-            ).is_err()
-        );
+        assert!(Mixture::new(vec![0.5, 0.3, 0.2], components.clone()).is_err());
     }
 
     #[test]
@@ -188,7 +165,7 @@ mod tests {
         // using draw
         let ybar: f64 = (0..100_000)
             .map(|_| mm.draw(&mut rng))
-            .fold(0.0_f64, |acc, x| acc + x)
+            .fold(0.0_f64, |acc, x: f64| acc + x)
             / 100_000.0;
         assert::close(ybar, 0.0, 0.05);
     }
@@ -215,7 +192,7 @@ mod tests {
         // using draw
         let ybar: f64 = (0..100_000)
             .map(|_| mm.draw(&mut rng))
-            .fold(0.0_f64, |acc, x| acc + x)
+            .fold(0.0_f64, |acc, x: f64| acc + x)
             / 100_000.0;
         assert::close(ybar, -2.4, 0.05);
     }
