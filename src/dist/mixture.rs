@@ -21,16 +21,22 @@ where
 {
     pub fn new(weights: Vec<f64>, components: Vec<Fx>) -> io::Result<Self> {
         let weights_sum = weights.iter().fold(0.0, |acc, &w| acc + w);
-        if (weights_sum - 1.0).abs() > 1E-12 {
+        let length_mismatch = weights.len() != components.len();
+        if length_mismatch {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let msg = "weights.len() != components.len()";
+            let err = io::Error::new(err_kind, msg);
+            Err(err)
+        } else if (weights_sum - 1.0).abs() > 1E-12 {
+            let err_kind = io::ErrorKind::InvalidInput;
+            let err = io::Error::new(err_kind, "weights must sum to 1");
+            Err(err)
+        } else {
             Ok(Mixture {
                 weights,
                 components,
                 phantom: PhantomData,
             })
-        } else {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "weights must sum to 1");
-            Err(err)
         }
     }
 }
@@ -86,3 +92,93 @@ impl<X, Fx> ContinuousDistr<X> for Mixture<X, Fx> where
 impl<X, Fx> DiscreteDistr<X> for Mixture<X, Fx> where
     Fx: Rv<X> + DiscreteDistr<X>
 {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    extern crate assert;
+    use dist::Gaussian;
+
+    #[test]
+    fn new_should_not_allow_bad_weights() {
+        let components = vec![Gaussian::standard(), Gaussian::standard()];
+
+        assert!(
+            Mixture::<f64, Gaussian>::new(vec![0.5, 0.51], components.clone())
+                .is_err()
+        );
+        assert!(
+            Mixture::<f64, Gaussian>::new(vec![0.5, 0.49], components.clone())
+                .is_err()
+        );
+        assert!(
+            Mixture::<f64, Gaussian>::new(vec![0.5, 0.5], components.clone())
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn new_should_not_allow_mismatched_inputs() {
+        let components = vec![Gaussian::standard(), Gaussian::standard()];
+        assert!(
+            Mixture::<f64, Gaussian>::new(
+                vec![0.5, 0.3, 0.2],
+                components.clone()
+            ).is_err()
+        );
+    }
+
+    #[test]
+    fn mean_of_sample_should_be_weighted_dist_means_uniform() {
+        let mut rng = rand::thread_rng();
+        let mm = Mixture::new(
+            vec![0.5, 0.5],
+            vec![
+                Gaussian::new(-3.0, 1.0).unwrap(),
+                Gaussian::new(3.0, 3.0).unwrap(),
+            ],
+        ).unwrap();
+
+        // using sample
+        let xbar: f64 = mm
+            .sample(100_000, &mut rng)
+            .iter()
+            .fold(0.0_f64, |acc, &x: &f64| acc + x)
+            / 100_000.0;
+        assert::close(xbar, 0.0, 0.05);
+
+        // using draw
+        let ybar: f64 = (0..100_000)
+            .map(|_| mm.draw(&mut rng))
+            .fold(0.0_f64, |acc, x| acc + x)
+            / 100_000.0;
+        assert::close(ybar, 0.0, 0.05);
+    }
+
+    #[test]
+    fn mean_of_sample_should_be_weighted_dist_means_nonuniform() {
+        let mut rng = rand::thread_rng();
+        let mm = Mixture::new(
+            vec![0.9, 0.1],
+            vec![
+                Gaussian::new(-3.0, 1.0).unwrap(),
+                Gaussian::new(3.0, 3.0).unwrap(),
+            ],
+        ).unwrap();
+
+        // using sample
+        let xbar: f64 = mm
+            .sample(100_000, &mut rng)
+            .iter()
+            .fold(0.0_f64, |acc, &x: &f64| acc + x)
+            / 100_000.0;
+        assert::close(xbar, -2.4, 0.05);
+
+        // using draw
+        let ybar: f64 = (0..100_000)
+            .map(|_| mm.draw(&mut rng))
+            .fold(0.0_f64, |acc, x| acc + x)
+            / 100_000.0;
+        assert::close(ybar, -2.4, 0.05);
+    }
+}
