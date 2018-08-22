@@ -76,6 +76,8 @@ where
     }
 }
 
+// XXX: Not quite sure how this should work. I'd like to have mixtures of
+// things with different support.
 impl<X, Fx> Support<X> for Mixture<X, Fx>
 where
     Fx: Rv<X> + Support<X>,
@@ -85,13 +87,49 @@ where
     }
 }
 
-impl<X, Fx> ContinuousDistr<X> for Mixture<X, Fx> where
-    Fx: Rv<X> + ContinuousDistr<X>
-{}
+impl<X, Fx> ContinuousDistr<X> for Mixture<X, Fx>
+where
+    Fx: Rv<X> + ContinuousDistr<X>,
+{
+    fn pdf(&self, x: &X) -> f64 {
+        self.weights.iter().zip(self.components.iter()).fold(
+            0.0,
+            |acc, (&w, cpnt)| {
+                if cpnt.supports(&x) {
+                    acc + w * cpnt.f(&x)
+                } else {
+                    acc
+                }
+            },
+        )
+    }
 
-impl<X, Fx> DiscreteDistr<X> for Mixture<X, Fx> where
-    Fx: Rv<X> + DiscreteDistr<X>
-{}
+    fn ln_pdf(&self, x: &X) -> f64 {
+        self.pdf(&x).ln()
+    }
+}
+
+impl<X, Fx> DiscreteDistr<X> for Mixture<X, Fx>
+where
+    Fx: Rv<X> + DiscreteDistr<X>,
+{
+    fn pmf(&self, x: &X) -> f64 {
+        self.weights.iter().zip(self.components.iter()).fold(
+            0.0,
+            |acc, (&w, cpnt)| {
+                if cpnt.supports(&x) {
+                    acc + w * cpnt.f(&x)
+                } else {
+                    acc
+                }
+            },
+        )
+    }
+
+    fn ln_pmf(&self, x: &X) -> f64 {
+        self.pmf(&x).ln()
+    }
+}
 
 #[cfg(test)]
 mod tests {
