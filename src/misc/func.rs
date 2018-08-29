@@ -5,6 +5,7 @@ use self::rand::distributions::Open01;
 use self::rand::Rng;
 use self::special::Gamma;
 use consts::LN_PI;
+use std::cmp::PartialOrd;
 use std::ops::AddAssign;
 
 /// Natural logarithm of binomial coefficent, ln nCk
@@ -56,19 +57,57 @@ where
     summed
 }
 
+#[inline]
+fn binary_search(cws: &[f64], r: f64) -> usize {
+    let mut left: usize = 0;
+    let mut right: usize = cws.len();
+    while left < right {
+        let mid = (left + right) / 2;
+        if cws[mid] < r {
+            left = mid + 1;
+        } else {
+            right = mid;
+        }
+    }
+    left
+}
+
+#[inline]
+fn catflip_bisection(cws: &[f64], r: f64) -> Option<usize> {
+    let ix = binary_search(&cws, r);
+    if ix < cws.len() {
+        Some(ix)
+    } else {
+        None
+    }
+}
+
+#[inline]
+fn catflip_standard(cws: &[f64], r: f64) -> Option<usize> {
+    cws.iter().position(|&w| w > r)
+}
+
+fn catflip(cws: &[f64], r: f64) -> Option<usize> {
+    if cws.len() > 9 {
+        catflip_bisection(&cws, r)
+    } else {
+        catflip_standard(&cws, r)
+    }
+}
+
 /// Draw `n` indices in proportion to their `weights`
 pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
     if weights.is_empty() {
         panic!("Empty container");
     }
-    let ws: Vec<f64> = cumsum(weights);
-    let scale: f64 = *ws.last().unwrap();
+    let cws: Vec<f64> = cumsum(weights);
+    let scale: f64 = *cws.last().unwrap();
     let u = rand::distributions::Uniform::new(0.0, 1.0);
 
     (0..n)
         .map(|_| {
             let r = rng.sample(u) * scale;
-            match ws.iter().position(|&w| w > r) {
+            match catflip(&cws, r) {
                 Some(ix) => ix,
                 None => {
                     let wsvec = weights.to_vec();
@@ -108,19 +147,23 @@ pub fn ln_pflip<R: Rng>(
 ) -> Vec<usize> {
     let z = if normed { 0.0 } else { logsumexp(ln_weights) };
 
-    let mut cdf: Vec<f64> = ln_weights.iter().map(|w| (w - z).exp()).collect();
+    let mut cws: Vec<f64> = ln_weights.iter().map(|w| (w - z).exp()).collect();
 
     // doing this instead of calling pflip shaves about 30% off the runtime.
-    for i in 1..cdf.len() {
-        cdf[i] += cdf[i - 1];
+    for i in 1..cws.len() {
+        cws[i] += cws[i - 1];
     }
 
     (0..n)
         .map(|_| {
             let r = rng.sample(Open01);
-            cdf.iter()
-                .position(|&w| w > r)
-                .expect("Could not draw from ln_weights")
+            match catflip(&cws, r) {
+                Some(ix) => ix,
+                None => {
+                    let wsvec = ln_weights.to_vec();
+                    panic!("Could not draw from {:?}", wsvec)
+                }
+            }
         }).collect()
 }
 
@@ -251,5 +294,22 @@ mod tests {
         assert::close(lnmv_gamma(1, 12.0), 17.502307845873887, TOL);
         assert::close(lnmv_gamma(3, 12.0), 50.615815724290741, TOL);
         assert::close(lnmv_gamma(3, 8.23), 25.709195968438628, TOL);
+    }
+
+    #[test]
+    fn bisection_and_stanard_catflip_equivalence() {
+        let mut rng = rand::thread_rng();
+        let u1 = rand::distributions::Range::new(10, 100);
+        for _ in 0..1000 {
+            let n: usize = rng.sample(u1);
+            let cws: Vec<f64> = (1..=n).map(|i| i as f64).collect();
+            let u2 = rand::distributions::Uniform::new(0.0, n as f64);
+            let r = rng.sample(u2);
+
+            let ix1 = catflip_standard(&cws, r).unwrap();
+            let ix2 = catflip_bisection(&cws, r).unwrap();
+
+            assert_eq!(ix1, ix2);
+        }
     }
 }
