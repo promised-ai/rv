@@ -24,6 +24,7 @@ impl<T> CategoricalDatum for T where
 {}
 
 /// Holds either a sufficient statistic of a vector of data.
+#[derive(Debug, Clone)]
 pub enum DataOrSuffStat<'a, X, Fx>
 where
     X: 'a,
