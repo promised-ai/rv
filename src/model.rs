@@ -1,5 +1,6 @@
 extern crate rand;
 
+use std::fmt::Debug;
 use self::rand::Rng;
 use data::DataOrSuffStat;
 use std::marker::PhantomData;
@@ -15,6 +16,7 @@ use traits::*;
 /// `Pr`: The type of the prior on the parameters of `Fx`, π(θ)
 pub struct ConjugateModel<X, Fx, Pr>
 where
+    X: Debug,
     Fx: Rv<X> + HasSuffStat<X>,
     Pr: ConjugatePrior<X, Fx>,
 {
@@ -27,6 +29,7 @@ where
 
 impl<X, Fx, Pr> ConjugateModel<X, Fx, Pr>
 where
+    X: Debug,
     Fx: Rv<X> + HasSuffStat<X>,
     Pr: ConjugatePrior<X, Fx>,
 {
@@ -99,6 +102,7 @@ where
 
 impl<X, Fx, Pr> SuffStat<X> for ConjugateModel<X, Fx, Pr>
 where
+    X: Debug,
     Fx: Rv<X> + HasSuffStat<X>,
     Pr: ConjugatePrior<X, Fx>,
 {
@@ -117,6 +121,7 @@ where
 
 impl<X, Fx, Pr> Rv<X> for ConjugateModel<X, Fx, Pr>
 where
+    X: Debug,
     Fx: Rv<X> + HasSuffStat<X>,
     Pr: ConjugatePrior<X, Fx>,
 {
