@@ -9,12 +9,8 @@ before_script:
 
 test:cargo:
     script:
-        - rustup toolchain list
-        - rustup toolchain add nightly-2018-06-24-x86_64
-        - rustup default nightly-2018-06-24-x86_64
-        # - rustup component add rustfmt-preview
-        - rustc --version && cargo --version    # Print version info for debugging
-        # - cargo fmt --all -- --check            # check formatting
-        - cargo build --features serde_support  # Build w/ serde support to make sure things compile
-        - time cargo test --jobs 1              # Run serial for more readable errors
+        - rustc --version && cargo --version  # Print version info for debugging
+        - cargo fmt --all -- --check          # check formatting
+        - cargo build                         # don't build w/ serde support because of proc_macro issues with nightly
+        - time cargo test --jobs 1            # Run serial for more readable errors
 
