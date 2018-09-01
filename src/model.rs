@@ -1,8 +1,8 @@
 extern crate rand;
 
-use std::fmt::Debug;
 use self::rand::Rng;
 use data::DataOrSuffStat;
+use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::Arc;
 use traits::*;
