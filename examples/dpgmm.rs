@@ -107,7 +107,7 @@ impl Dpgmm {
             .counts
             .iter()
             .zip(self.components.iter())
-            .map(|(&w, cj)| (w as f64).ln() + cj.ln_pp(&x))  // nk * p(xi|xk)
+            .map(|(&w, cj)| (w as f64).ln() + cj.ln_pp(&x)) // nk * p(xi|xk)
             .collect();
 
         let mut ctmp: GaussComponent =
