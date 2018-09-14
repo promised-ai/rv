@@ -187,8 +187,6 @@ impl_traits!(f64);
 #[cfg(test)]
 mod tests {
     extern crate assert;
-    extern crate test;
-    use self::test::Bencher;
     use super::*;
     use misc::ks_test;
     use misc::linspace;
@@ -538,32 +536,5 @@ mod tests {
             0.858407346410206761537356616720497115802830600624894,
             TOL,
         );
-    }
-
-    #[bench]
-    fn bench_draw_0(b: &mut Bencher) {
-        let mut rng = rand::thread_rng();
-        let gev = Gev::new(0.0, 1.0, 0.0).unwrap();
-        b.iter(|| {
-            let _sample: f64 = gev.draw(&mut rng);
-        });
-    }
-
-    #[bench]
-    fn bench_draw_one_half(b: &mut Bencher) {
-        let mut rng = rand::thread_rng();
-        let gev = Gev::new(0.0, 1.0, 0.5).unwrap();
-        b.iter(|| {
-            let _sample: f64 = gev.draw(&mut rng);
-        });
-    }
-
-    #[bench]
-    fn bench_draw_negative_one_half(b: &mut Bencher) {
-        let mut rng = rand::thread_rng();
-        let gev = Gev::new(0.0, 1.0, -0.5).unwrap();
-        b.iter(|| {
-            let _sample: f64 = gev.draw(&mut rng);
-        });
     }
 }
