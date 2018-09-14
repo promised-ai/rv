@@ -225,7 +225,6 @@ pub fn mvgamma(p: usize, a: f64) -> f64 {
     lnmv_gamma(p, a).exp()
 }
 
-
 // TODO: Replace this with x.mod_ecu(y) when `euclidean_division` is
 // stabilized.
 /// Euclidean modulo
@@ -250,7 +249,7 @@ pub fn mvgamma(p: usize, a: f64) -> f64 {
 pub fn mod_euc(lhs: f64, rhs: f64) -> f64 {
     let r = lhs % rhs;
     if r < 0.0 {
-        return if rhs > 0.0 { r + rhs } else { r - rhs }
+        return if rhs > 0.0 { r + rhs } else { r - rhs };
     }
     r
 }

@@ -15,7 +15,8 @@ fn main() {
 
     // Generate some 1000 coin flips from a coin that will come up head 70%
     // of the time.
-    let flips: Vec<bool> = (0..1000).map(|_| {
+    let flips: Vec<bool> = (0..1000)
+        .map(|_| {
             let x: f64 = rng.sample(u);
             x < 0.7
         }).collect();

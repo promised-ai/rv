@@ -2,7 +2,7 @@ extern crate rand;
 
 use self::rand::Rng;
 use consts::LN_2PI;
-use misc::{bessel, quad, mod_euc};
+use misc::{bessel, mod_euc, quad};
 use std::f64::consts::PI;
 use std::io;
 use traits::*;
