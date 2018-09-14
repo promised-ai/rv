@@ -1,4 +1,3 @@
-#![feature(type_ascription)]
 extern crate rand;
 extern crate rv;
 

@@ -2,8 +2,6 @@
 
 Random variables for rust
 
-**Developed and tested on nightly.**
-
 ## Design
 
 Random variables are designed to be flexible. For example, we don't just want a

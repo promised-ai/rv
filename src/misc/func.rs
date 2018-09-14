@@ -225,6 +225,36 @@ pub fn mvgamma(p: usize, a: f64) -> f64 {
     lnmv_gamma(p, a).exp()
 }
 
+
+// TODO: Replace this with x.mod_ecu(y) when `euclidean_division` is
+// stabilized.
+/// Euclidean modulo
+///
+/// # Example
+///
+/// Taken from the [rust
+/// documentation](https://doc.rust-lang.org/std/primitive.f64.html#method.mod_euc)
+///
+/// ```rust
+/// # extern crate rv;
+/// # use rv::misc::mod_euc;
+/// let a: f64 = 7.0;
+/// let b = 4.0;
+/// assert_eq!(mod_euc(a, b), 3.0);
+/// assert_eq!(mod_euc(-a, b), 1.0);
+/// assert_eq!(mod_euc(a, -b), 3.0);
+/// assert_eq!(mod_euc(-a, -b), 1.0);
+/// // limitation due to round-off error
+/// assert!(mod_euc(-std::f64::EPSILON, 3.0) != 0.0);
+/// ```
+pub fn mod_euc(lhs: f64, rhs: f64) -> f64 {
+    let r = lhs % rhs;
+    if r < 0.0 {
+        return if rhs > 0.0 { r + rhs } else { r - rhs }
+    }
+    r
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -73,10 +73,10 @@
 //!     let p_heads = prior.pp(&true, &obs);
 //! }
 //! ```
-#![feature(associated_type_defaults)]
-#![feature(stmt_expr_attributes)]
-#![feature(euclidean_division)]
-#![feature(test)]
+// #![feature(associated_type_defaults)]
+// #![feature(stmt_expr_attributes)]
+// #![feature(euclidean_division)]
+// #![feature(test)]
 
 #[cfg(feature = "serde_support")]
 #[macro_use]
