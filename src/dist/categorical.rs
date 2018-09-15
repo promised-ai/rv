@@ -110,7 +110,7 @@ impl<X: CategoricalDatum> DiscreteDistr<X> for Categorical {}
 
 impl<X: CategoricalDatum> Cdf<X> for Categorical {
     fn cdf(&self, x: &X) -> f64 {
-        let xu: usize =  (*x).into();
+        let xu: usize = (*x).into();
         self.ln_weights
             .iter()
             .take(xu + 1)
