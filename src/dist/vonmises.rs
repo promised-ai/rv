@@ -2,7 +2,7 @@ extern crate rand;
 
 use self::rand::Rng;
 use consts::LN_2PI;
-use misc::{bessel, quad};
+use misc::{bessel, mod_euc, quad};
 use std::f64::consts::PI;
 use std::io;
 use traits::*;
@@ -96,7 +96,7 @@ macro_rules! impl_traits {
                     {
                         let u3: f64 = rng.sample(u);
                         let y = (u3 - 0.5).signum() * f.acos() + self.mu;
-                        let x = y.mod_euc(2.0 * PI) as $kind;
+                        let x = mod_euc(y, 2.0 * PI) as $kind;
                         if !self.supports(&x) {
                             panic!(format!("VonMises does not support {}", x));
                         } else {

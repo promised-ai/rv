@@ -3,6 +3,7 @@ extern crate rand;
 
 use self::rand::Rng;
 use data::DataOrSuffStat;
+use std::fmt::Debug;
 
 /// Random variable
 ///
@@ -386,7 +387,7 @@ pub trait KlDivergence {
 
 /// The data for this distribution can be summarized by a statistic
 pub trait HasSuffStat<X> {
-    type Stat: SuffStat<X>;
+    type Stat: SuffStat<X> + Debug;
     fn empty_suffstat(&self) -> Self::Stat;
 }
 

@@ -126,7 +126,6 @@ impl Mode<DMatrix<f64>> for InvWishart {
 #[cfg(test)]
 mod tests {
     extern crate assert;
-    extern crate test;
     use super::*;
 
     const TOL: f64 = 1E-12;
@@ -255,19 +254,5 @@ mod tests {
         let x = inv_scale.clone();
         let iw = InvWishart::new(inv_scale, 5).unwrap();
         assert::close(iw.ln_f(&x), -6.187876016819759, TOL)
-    }
-
-    #[bench]
-    fn bench_draw(b: &mut test::Bencher) {
-        let mut rng = rand::thread_rng();
-        let iw = InvWishart::identity(10);
-        b.iter(|| iw.draw(&mut rng));
-    }
-
-    #[bench]
-    fn bench_ln_f(b: &mut test::Bencher) {
-        let iw = InvWishart::identity(10);
-        let x = DMatrix::<f64>::identity(10, 10);
-        b.iter(|| iw.ln_f(&x));
     }
 }

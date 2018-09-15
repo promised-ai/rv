@@ -1,5 +1,3 @@
-image: "rustlang/rust:nightly"
-
 variables:
     CARGO_HOME: $CI_PROJECT_DIR/cargo
     RUST_BACKTRACE: 1
@@ -7,14 +5,17 @@ variables:
 before_script:
     - rustup component add rustfmt-preview
 
-test:cargo:
+test:cargo-nightly:
+    image: "rustlang/rust:nightly"
     script:
-        - rustup toolchain list
-        - rustup toolchain add nightly-2018-08-15-x86_64
-        - rustup default nightly-2018-08-15-x86_64
-        - rustup component add rustfmt-preview
-        - rustc --version && cargo --version    # Print version info for debugging
-        - cargo fmt --all -- --check            # check formatting
-        - cargo build --features serde_support  # Build w/ serde support to make sure things compile
-        - time cargo test --jobs 1              # Run serial for more readable errors
+        - rustc --version && cargo --version
+        - cargo fmt --all -- --check
+        - cargo build  --features serde_support
+        - time cargo test --jobs 1
 
+test:cargo-stable:
+    image: "rust:1.29.0"
+    script:
+        - rustc --version && cargo --version
+        - cargo build  --features serde_support
+        - time cargo test --jobs 1

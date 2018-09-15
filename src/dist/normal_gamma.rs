@@ -36,7 +36,7 @@ impl NormalGamma {
             Ok(NormalGamma { m, r, s, v })
         } else {
             let err_kind = io::ErrorKind::InvalidInput;
-            let msg = "r, s, and v must be finite and greater than zero";
+            let msg = format!("r ({}), s ({}), and v ({}) must be finite and greater than zero", r, s, v);
             let err = io::Error::new(err_kind, msg);
             Err(err)
         }
