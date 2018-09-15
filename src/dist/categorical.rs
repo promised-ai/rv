@@ -108,6 +108,16 @@ impl<X: CategoricalDatum> Support<X> for Categorical {
 
 impl<X: CategoricalDatum> DiscreteDistr<X> for Categorical {}
 
+impl<X: CategoricalDatum> Cdf<X> for Categorical {
+    fn cdf(&self, x: &X) -> f64 {
+        let xu: usize =  (*x).into();
+        self.ln_weights
+            .iter()
+            .take(xu + 1)
+            .fold(0.0, |acc, &w| w.exp() + acc)
+    }
+}
+
 impl<X: CategoricalDatum> Mode<X> for Categorical {
     fn mode(&self) -> Option<X> {
         // FIXME: Return None if more than one max value
@@ -271,5 +281,14 @@ mod tests {
         // Allow extra error for the normalization
         assert::close(cat1.kl(&cat2), 0.1973394327976612, 1E-7);
         assert::close(cat2.kl(&cat1), 0.18814408198625582, 1E-7);
+    }
+
+    #[test]
+    fn cdf() {
+        let cat = Categorical::new(&vec![1.0, 2.0, 4.0, 3.0]).unwrap();
+        assert::close(cat.cdf(&0_u8), 0.1, TOL);
+        assert::close(cat.cdf(&1_u8), 0.3, TOL);
+        assert::close(cat.cdf(&2_u8), 0.7, TOL);
+        assert::close(cat.cdf(&3_u8), 1.0, TOL);
     }
 }
