@@ -1,8 +1,9 @@
 extern crate rand;
 
 use self::rand::Rng;
+
 use misc::{logsumexp, pflip};
-use std::io;
+use result;
 use traits::*;
 
 /// [Mixture distribution](https://en.wikipedia.org/wiki/Mixture_model)
@@ -32,20 +33,20 @@ pub struct Mixture<Fx> {
 }
 
 impl<Fx> Mixture<Fx> {
-    pub fn new(weights: Vec<f64>, components: Vec<Fx>) -> io::Result<Self> {
+    pub fn new(weights: Vec<f64>, components: Vec<Fx>) -> result::Result<Self> {
         let weights_ok = weights.iter().all(|&w| w >= 0.0)
             && (weights.iter().fold(0.0, |acc, &w| acc + w) - 1.0).abs()
                 < 1E-12;
         let length_mismatch = weights.len() != components.len();
         if length_mismatch {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "weights.len() != components.len()";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else if !weights_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "weights must be positive and sum to 1";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else {
             Ok(Mixture {

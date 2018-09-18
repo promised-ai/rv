@@ -1,13 +1,14 @@
 extern crate rand;
 extern crate special;
 
+use std::f64::consts::PI;
+use std::f64::INFINITY;
+
 use self::rand::distributions;
 use self::rand::Rng;
 use self::special::Gamma as SGamma;
-use std::f64::consts::PI;
-use std::f64::INFINITY;
-use std::io;
 
+use result;
 use traits::*;
 
 /// [Student's T distribution](https://en.wikipedia.org/wiki/Student%27s_t-distribution)
@@ -20,13 +21,13 @@ pub struct StudentsT {
 }
 
 impl StudentsT {
-    pub fn new(v: f64) -> io::Result<Self> {
+    pub fn new(v: f64) -> result::Result<Self> {
         if v > 0.0 && v.is_finite() {
             Ok(StudentsT { v })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "v must be finite and greater than 0";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }

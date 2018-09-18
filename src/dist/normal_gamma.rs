@@ -2,10 +2,11 @@
 extern crate rand;
 
 use self::rand::Rng;
+
 use consts::HALF_LN_2PI;
 use data::GaussianSuffStat;
 use dist::{Gamma, Gaussian};
-use std::io;
+use result;
 use traits::*;
 
 /// Prior for Gaussian
@@ -23,21 +24,21 @@ pub struct NormalGamma {
 }
 
 impl NormalGamma {
-    pub fn new(m: f64, r: f64, s: f64, v: f64) -> io::Result<Self> {
+    pub fn new(m: f64, r: f64, s: f64, v: f64) -> result::Result<Self> {
         let m_ok = m.is_finite();
         let r_ok = r > 0.0 && r.is_finite();
         let s_ok = s > 0.0 && s.is_finite();
         let v_ok = v > 0.0 && v.is_finite();
         if !m_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "m must be finite");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "m must be finite");
             Err(err)
         } else if r_ok && s_ok && v_ok {
             Ok(NormalGamma { m, r, s, v })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = format!("r ({}), s ({}), and v ({}) must be finite and greater than zero", r, s, v);
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg.as_str());
             Err(err)
         }
     }

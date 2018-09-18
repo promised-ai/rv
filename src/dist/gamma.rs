@@ -5,8 +5,8 @@ extern crate special;
 use self::rand::distributions;
 use self::rand::Rng;
 use self::special::Gamma as SGamma;
-use std::io;
 
+use result;
 use traits::*;
 
 /// [Gamma distribution](https://en.wikipedia.org/wiki/Gamma_distribution) G(α, β)
@@ -29,16 +29,16 @@ pub struct Gamma {
 
 impl Gamma {
     /// Create a new `Gamma` distribution with shape (α) and rate (β).
-    pub fn new(shape: f64, rate: f64) -> io::Result<Self> {
+    pub fn new(shape: f64, rate: f64) -> result::Result<Self> {
         let shape_ok = shape > 0.0 && shape.is_finite();
         let rate_ok = rate > 0.0 && rate.is_finite();
 
         if shape_ok && rate_ok {
             Ok(Gamma { shape, rate })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "shape and rate must be finite and greater than 0";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }

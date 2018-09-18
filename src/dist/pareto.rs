@@ -4,8 +4,8 @@ extern crate special;
 
 use self::rand::Rng;
 use std::f64;
-use std::io;
 
+use result;
 use traits::*;
 
 /// [Pareto distribution](https://en.wikipedia.org/wiki/Pareto_distribution) Pareto(x_m, α)
@@ -28,16 +28,16 @@ pub struct Pareto {
 
 impl Pareto {
     /// Create a new `Pareto` distribution with shape (α) and scale (x_m).
-    pub fn new(shape: f64, scale: f64) -> io::Result<Self> {
+    pub fn new(shape: f64, scale: f64) -> result::Result<Self> {
         let shape_ok = shape > 0.0 && shape.is_finite();
         let scale_ok = scale > 0.0 && scale.is_finite();
 
         if shape_ok && scale_ok {
             Ok(Pareto { shape, scale })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "shape and scale must be finite and greater than 0";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }

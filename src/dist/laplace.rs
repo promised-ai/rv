@@ -1,9 +1,11 @@
 //! Laplace (double exponential) distribution
 extern crate rand;
 
-use self::rand::Rng;
 use std::f64::consts::{E, FRAC_1_SQRT_2, LN_2};
-use std::io;
+
+use self::rand::Rng;
+
+use result;
 use traits::*;
 
 /// [Laplace](https://en.wikipedia.org/wiki/Laplace_distribution), or double
@@ -34,14 +36,14 @@ pub struct Laplace {
 }
 
 impl Laplace {
-    pub fn new(mu: f64, b: f64) -> io::Result<Self> {
+    pub fn new(mu: f64, b: f64) -> result::Result<Self> {
         if !mu.is_finite() {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "mu must be finite");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "mu must be finite");
             Err(err)
         } else if b <= 0.0 || !b.is_finite() {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "b must be in (0, ∞)");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "b must be in (0, ∞)");
             Err(err)
         } else {
             Ok(Laplace { mu, b })

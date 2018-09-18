@@ -3,8 +3,9 @@ extern crate rand;
 extern crate special;
 
 use self::rand::Rng;
+
 use dist::Uniform;
-use std::io;
+use result;
 use traits::*;
 
 /// [Geometric distribution](https://en.wikipedia.org/wiki/Geometric_distribution)
@@ -33,12 +34,12 @@ pub struct Geometric {
 }
 
 impl Geometric {
-    pub fn new(p: f64) -> io::Result<Self> {
+    pub fn new(p: f64) -> result::Result<Self> {
         if p > 0.0 && p <= 1.0 {
             Ok(Geometric { p })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(
                 err_kind,
                 "p must be between zero and one (right closed).",
             );

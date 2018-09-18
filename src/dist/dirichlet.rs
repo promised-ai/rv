@@ -5,8 +5,8 @@ extern crate special;
 use self::rand::distributions::Gamma as RGamma;
 use self::rand::Rng;
 use self::special::Gamma as SGamma;
-use std::io;
 
+use result;
 use traits::*;
 
 /// Symmetric [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
@@ -23,25 +23,26 @@ pub struct SymmetricDirichlet {
 }
 
 impl SymmetricDirichlet {
-    pub fn new(alpha: f64, k: usize) -> io::Result<Self> {
+    pub fn new(alpha: f64, k: usize) -> result::Result<Self> {
         let k_ok = k > 0;
         let alpha_ok = alpha > 0.0 && alpha.is_finite();
 
         if !k_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "k must be greater than zero");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err =
+                result::Error::new(err_kind, "k must be greater than zero");
             Err(err)
         } else if !alpha_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "Alpha must be finite and greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else {
             Ok(SymmetricDirichlet { alpha, k })
         }
     }
 
-    pub fn jeffreys(k: usize) -> io::Result<Self> {
+    pub fn jeffreys(k: usize) -> result::Result<Self> {
         SymmetricDirichlet::new(0.5, k)
     }
 }
@@ -77,11 +78,11 @@ pub struct Dirichlet {
 
 impl Dirichlet {
     /// Creates a `Dirichlet` with a given `alphas` vector
-    pub fn new(alphas: Vec<f64>) -> io::Result<Self> {
+    pub fn new(alphas: Vec<f64>) -> result::Result<Self> {
         if alphas.iter().any(|&a| !(a > 0.0 && a.is_finite())) {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "All alphas must be finite and greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else {
             Ok(Dirichlet { alphas })

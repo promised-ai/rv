@@ -3,7 +3,6 @@ extern crate rand;
 extern crate special;
 
 use std::f64::consts::SQRT_2;
-use std::io;
 
 use self::rand::distributions::Normal;
 use self::rand::Rng;
@@ -11,6 +10,7 @@ use self::special::Error;
 
 use consts::*;
 use data::GaussianSuffStat;
+use result;
 use traits::*;
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
@@ -46,17 +46,17 @@ pub struct Gaussian {
 }
 
 impl Gaussian {
-    pub fn new(mu: f64, sigma: f64) -> io::Result<Self> {
+    pub fn new(mu: f64, sigma: f64) -> result::Result<Self> {
         let mu_ok = mu.is_finite();
         let sigma_ok = sigma > 0.0 && sigma.is_finite();
         if !mu_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "mu must be finite");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "mu must be finite");
             Err(err)
         } else if !sigma_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "sigma must be finite and greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else {
             Ok(Gaussian { mu, sigma })

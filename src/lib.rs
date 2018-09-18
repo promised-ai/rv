@@ -89,6 +89,8 @@ pub mod misc;
 mod model;
 pub mod prelude;
 mod priors;
+pub mod result;
 pub mod traits;
 
 pub use model::ConjugateModel;
+pub use result::{Error, ErrorKind, Result};

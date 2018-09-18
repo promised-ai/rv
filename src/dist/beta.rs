@@ -7,8 +7,8 @@ use self::rand::Rng;
 use self::special::Beta as SBeta;
 use self::special::Gamma as SGamma;
 use std::f64;
-use std::io;
 
+use result;
 use traits::*;
 
 /// [Beta distribution](https://en.wikipedia.org/wiki/Beta_distribution),
@@ -47,16 +47,16 @@ pub struct Beta {
 }
 
 impl Beta {
-    pub fn new(alpha: f64, beta: f64) -> io::Result<Self> {
+    pub fn new(alpha: f64, beta: f64) -> result::Result<Self> {
         let alpha_ok = alpha > 0.0 && alpha.is_finite();
         let beta_ok = beta > 0.0 && beta.is_finite();
 
         if alpha_ok && beta_ok {
             Ok(Beta { alpha, beta })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "α and β must be finite and greater than 0";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }

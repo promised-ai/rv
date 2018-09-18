@@ -1,4 +1,4 @@
-use std::io;
+use result;
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
@@ -42,7 +42,7 @@ impl Partition {
     /// let z2 = vec![0, 1, 2, 3, 1, 5];
     /// assert!(Partition::from_z(z2).is_err());
     /// ```
-    pub fn from_z(z: Vec<usize>) -> io::Result<Self> {
+    pub fn from_z(z: Vec<usize>) -> result::Result<Self> {
         // TODO: integrate NoneError into output instead of using expect
         let k = *z.iter().max().expect("empty z") + 1;
         let mut counts: Vec<usize> = vec![0; k];
@@ -52,8 +52,8 @@ impl Partition {
             let part = Partition { z, counts };
             Ok(part)
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
-            Err(io::Error::new(err_kind, "Unoccupied partition(s)"))
+            let err_kind = result::ErrorKind::InvalidParameter;
+            Err(result::Error::new(err_kind, "Unoccupied partition(s)"))
         }
     }
 
@@ -71,7 +71,7 @@ impl Partition {
     /// assert_eq!(part.z, vec![0, 0, 1]);
     /// assert_eq!(part.counts, vec![2, 1]);
     /// ```
-    pub fn remove(&mut self, ix: usize) -> io::Result<()> {
+    pub fn remove(&mut self, ix: usize) -> result::Result<()> {
         // Panics  on index error panics.
         let zi = self.z.remove(ix);
         if self.counts[zi] == 1 {
@@ -103,11 +103,11 @@ impl Partition {
     /// assert_eq!(part.z, vec![0, 1, 0, 2, 3]);
     /// assert_eq!(part.counts, vec![2, 1, 1, 1]);
     /// ```
-    pub fn append(&mut self, zi: usize) -> io::Result<()> {
+    pub fn append(&mut self, zi: usize) -> result::Result<()> {
         let k = self.k();
         if zi > k {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "zi higher than k");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "zi higher than k");
             Err(err)
         } else {
             self.z.push(zi);

@@ -6,8 +6,8 @@ use self::rand::distributions;
 use self::rand::Rng;
 use self::special::Gamma as SGamma;
 use std::f64::consts::LN_2;
-use std::io;
 
+use result;
 use traits::*;
 
 /// [Χ<sup>2</sup> distribution](https://en.wikipedia.org/wiki/Chi-squared_distribution)
@@ -29,13 +29,13 @@ pub struct ChiSquared {
 }
 
 impl ChiSquared {
-    pub fn new(k: f64) -> io::Result<Self> {
+    pub fn new(k: f64) -> result::Result<Self> {
         if k > 0.0 && k.is_finite() {
             Ok(ChiSquared { k })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "k must be finite and greater than 0";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }
