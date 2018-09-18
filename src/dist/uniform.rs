@@ -3,8 +3,8 @@ extern crate rand;
 
 use self::rand::Rng;
 use std::f64;
-use std::io;
 
+use result;
 use traits::*;
 
 /// [Continuous uniform distribution](https://en.wikipedia.org/wiki/Uniform_distribution_(continuous)),
@@ -34,18 +34,18 @@ pub struct Uniform {
 }
 
 impl Uniform {
-    pub fn new(a: f64, b: f64) -> io::Result<Self> {
+    pub fn new(a: f64, b: f64) -> result::Result<Self> {
         let a_ok = a.is_finite();
         let b_ok = b.is_finite() && b > a;
         if !a_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "a must be finite";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else if !b_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "b must be finite and greater than a";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else {
             Ok(Uniform { a, b })

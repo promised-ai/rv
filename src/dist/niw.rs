@@ -3,8 +3,9 @@ extern crate rand;
 
 use self::nalgebra::{DMatrix, DVector};
 use self::rand::Rng;
+
 use dist::{InvWishart, MvGaussian};
-use std::io;
+use result;
 use traits::*;
 
 /// Common conjugate prior on the μ and Σ parameters in the Multivariate
@@ -57,7 +58,7 @@ impl NormalInvWishart {
         k: f64,
         df: usize,
         scale: DMatrix<f64>,
-    ) -> io::Result<Self> {
+    ) -> result::Result<Self> {
         let dims = mu.len();
         let err = if k <= 0.0 {
             Some("k must be > 0.0")
@@ -74,7 +75,10 @@ impl NormalInvWishart {
         };
 
         match err {
-            Some(msg) => Err(io::Error::new(io::ErrorKind::InvalidInput, msg)),
+            Some(msg) => Err(result::Error::new(
+                result::ErrorKind::InvalidParameter,
+                msg,
+            )),
             None => Ok(NormalInvWishart { mu, k, df, scale }),
         }
     }

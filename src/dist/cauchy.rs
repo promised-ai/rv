@@ -5,8 +5,8 @@ use self::rand::distributions::Cauchy as RCauchy;
 use self::rand::Rng;
 use consts::LN_PI;
 use misc::logsumexp;
+use result;
 use std::f64::consts::PI;
-use std::io;
 use traits::*;
 
 /// [Cauchy distribution](https://en.wikipedia.org/wiki/Cauchy_distribution)
@@ -32,19 +32,19 @@ pub struct Cauchy {
 }
 
 impl Cauchy {
-    pub fn new(loc: f64, scale: f64) -> io::Result<Self> {
+    pub fn new(loc: f64, scale: f64) -> result::Result<Self> {
         let loc_ok = loc.is_finite();
         let scale_ok = scale > 0.0 && scale.is_finite();
         if loc_ok && scale_ok {
             Ok(Cauchy { loc, scale })
         } else if !loc_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "loc must be finite");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "loc must be finite");
             Err(err)
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "scale must be finite and greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }

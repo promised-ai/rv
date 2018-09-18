@@ -6,7 +6,7 @@ use self::num::traits::FromPrimitive;
 use self::rand::Rng;
 use data::{CategoricalDatum, CategoricalSuffStat};
 use misc::{argmax, ln_pflip, logsumexp};
-use std::io;
+use result;
 use traits::*;
 
 /// [Categorical distribution](https://en.wikipedia.org/wiki/Categorical_distribution)
@@ -39,10 +39,10 @@ impl Categorical {
     ///
     /// assert::close(cat.pmf(&0_u8), 0.4, 10E-12);
     /// ```
-    pub fn new(weights: &[f64]) -> io::Result<Self> {
+    pub fn new(weights: &[f64]) -> result::Result<Self> {
         if weights.iter().any(|&w| !w.is_finite()) {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "Weights must be finite");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "Weights must be finite");
             Err(err)
         } else {
             let ln_weights: Vec<f64> = weights.iter().map(|w| w.ln()).collect();
@@ -54,12 +54,12 @@ impl Categorical {
     }
 
     /// Build a Categorical distribution from normalized log weights
-    pub fn from_ln_weights(ln_weights: Vec<f64>) -> io::Result<Self> {
+    pub fn from_ln_weights(ln_weights: Vec<f64>) -> result::Result<Self> {
         if logsumexp(&ln_weights).abs() < 10E-12 {
             Ok(Categorical { ln_weights })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "Weights not normalized");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "Weights not normalized");
             Err(err)
         }
     }

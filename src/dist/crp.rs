@@ -14,7 +14,7 @@ use self::rand::Rng;
 use self::special::Gamma as SGamma;
 use data::Partition;
 use misc::pflip;
-use std::io;
+use result;
 use traits::*;
 
 /// [Chinese Restaurant Process](https://en.wikipedia.org/wiki/Chinese_restaurant_process),
@@ -46,18 +46,18 @@ pub struct Crp {
 
 impl Crp {
     /// Create an empty `Crp` with parameter alpha
-    pub fn new(alpha: f64, n: usize) -> io::Result<Self> {
+    pub fn new(alpha: f64, n: usize) -> result::Result<Self> {
         let alpha_ok = alpha > 0.0 && alpha.is_finite();
         let n_ok = n > 0;
         if !alpha_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "α must be greater than zero and finite";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else if !n_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "n must be greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else {
             Ok(Crp { alpha, n })

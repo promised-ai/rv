@@ -4,13 +4,13 @@ extern crate rand;
 extern crate special;
 
 use std::f64::consts::SQRT_2;
-use std::io;
 
 use self::rand::distributions::Normal;
 use self::rand::Rng;
 use self::special::Error;
 
 use consts::*;
+use result;
 use traits::*;
 
 /// [LogNormal Distribution](https://en.wikipedia.org/wiki/Log-normal_distribution)
@@ -25,15 +25,15 @@ pub struct LogNormal {
 }
 
 impl LogNormal {
-    pub fn new(mu: f64, sigma: f64) -> io::Result<Self> {
+    pub fn new(mu: f64, sigma: f64) -> result::Result<Self> {
         let mu_ok = mu.is_finite();
         let sigma_ok = sigma > 0.0 && sigma.is_finite();
 
         if mu_ok && sigma_ok {
             Ok(LogNormal { mu, sigma })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "mu must be finite and sigma must be finite and greater than zero.");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "mu must be finite and sigma must be finite and greater than zero.");
             Err(err)
         }
     }

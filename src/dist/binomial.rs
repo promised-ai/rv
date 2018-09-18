@@ -4,8 +4,8 @@ extern crate special;
 
 use self::rand::Rng;
 use misc::ln_binom;
+use result;
 use std::f64;
-use std::io;
 use traits::*;
 
 /// [Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
@@ -20,16 +20,16 @@ pub struct Binomial {
 }
 
 impl Binomial {
-    pub fn new(n: u64, p: f64) -> io::Result<Self> {
+    pub fn new(n: u64, p: f64) -> result::Result<Self> {
         let p_ok = p.is_finite() && 0.0 < p && p < 1.0;
         let n_ok = n > 0;
         if !p_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "p must be in [0, 1]");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "p must be in [0, 1]");
             Err(err)
         } else if !n_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "n must be > 0");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "n must be > 0");
             Err(err)
         } else {
             Ok(Binomial { n, p })

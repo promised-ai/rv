@@ -73,11 +73,6 @@
 //!     let p_heads = prior.pp(&true, &obs);
 //! }
 //! ```
-// #![feature(associated_type_defaults)]
-// #![feature(stmt_expr_attributes)]
-// #![feature(euclidean_division)]
-// #![feature(test)]
-
 #[cfg(feature = "serde_support")]
 #[macro_use]
 extern crate serde_derive;
@@ -89,6 +84,8 @@ pub mod misc;
 mod model;
 pub mod prelude;
 mod priors;
+pub mod result;
 pub mod traits;
 
 pub use model::ConjugateModel;
+pub use result::{Error, ErrorKind, Result};

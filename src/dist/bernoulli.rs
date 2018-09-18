@@ -5,8 +5,8 @@ extern crate special;
 use self::rand::distributions::Uniform;
 use self::rand::Rng;
 use data::BernoulliSuffStat;
+use result;
 use std::f64;
-use std::io;
 use traits::*;
 
 /// [Bernoulli distribution](https://en.wikipedia.org/wiki/Bernoulli_distribution)
@@ -29,12 +29,12 @@ pub struct Bernoulli {
 }
 
 impl Bernoulli {
-    pub fn new(p: f64) -> io::Result<Self> {
+    pub fn new(p: f64) -> result::Result<Self> {
         if p.is_finite() && 0.0 < p && p < 1.0 {
             Ok(Bernoulli { p })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "p must be in [0, 1]");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "p must be in [0, 1]");
             Err(err)
         }
     }

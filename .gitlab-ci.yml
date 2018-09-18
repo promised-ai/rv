@@ -12,6 +12,7 @@ test:cargo-nightly:
         - cargo fmt --all -- --check
         - cargo build  --features serde_support
         - time cargo test --jobs 1
+        - cargo bench
 
 test:cargo-stable:
     image: "rust:1.29.0"

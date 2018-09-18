@@ -2,11 +2,11 @@
 extern crate rand;
 
 use std::f64::consts::LN_2;
-use std::io;
 
 use self::rand::distributions::Exp;
 use self::rand::Rng;
 
+use result;
 use traits::*;
 
 /// [Exponential distribution](https://en.wikipedia.org/wiki/Exponential_distribution),
@@ -31,13 +31,13 @@ pub struct Exponential {
 }
 
 impl Exponential {
-    pub fn new(rate: f64) -> io::Result<Self> {
+    pub fn new(rate: f64) -> result::Result<Self> {
         if rate > 0.0 && rate.is_finite() {
             Ok(Exponential { rate })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "rate must be finite and greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }

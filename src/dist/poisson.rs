@@ -5,7 +5,8 @@ extern crate special;
 use self::rand::distributions::Poisson as RPossion;
 use self::rand::Rng;
 use self::special::Gamma as SGamma;
-use std::io;
+
+use result;
 use traits::*;
 
 /// [Possion distribution](https://en.wikipedia.org/wiki/Poisson_distribution)
@@ -37,12 +38,13 @@ pub struct Poisson {
 }
 
 impl Poisson {
-    pub fn new(rate: f64) -> io::Result<Self> {
+    pub fn new(rate: f64) -> result::Result<Self> {
         if rate > 0.0 && rate.is_finite() {
             Ok(Poisson { rate })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "rate must be greater than 0");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err =
+                result::Error::new(err_kind, "rate must be greater than 0");
             Err(err)
         }
     }

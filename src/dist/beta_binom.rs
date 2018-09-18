@@ -5,8 +5,8 @@ extern crate special;
 use self::rand::Rng;
 use self::special::Beta as SBeta;
 use misc::{ln_binom, ln_pflip};
+use result;
 use std::f64;
-use std::io;
 use traits::*;
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
@@ -41,17 +41,19 @@ pub struct BetaBinomial {
 }
 
 impl BetaBinomial {
-    pub fn new(n: u32, alpha: f64, beta: f64) -> io::Result<Self> {
+    pub fn new(n: u32, alpha: f64, beta: f64) -> result::Result<Self> {
         let alpha_ok = alpha.is_finite() && alpha > 0.0;
         let beta_ok = beta.is_finite() && beta > 0.0;
         let n_ok = n > 0;
         if !(alpha_ok && beta_ok) {
             let msg = "'alpha' and 'beta' must be in (0, ∞)";
-            let err = io::Error::new(io::ErrorKind::InvalidInput, msg);
+            let err =
+                result::Error::new(result::ErrorKind::InvalidParameter, msg);
             Err(err)
         } else if !n_ok {
             let msg = "'n' must be greater than 0";
-            let err = io::Error::new(io::ErrorKind::InvalidInput, msg);
+            let err =
+                result::Error::new(result::ErrorKind::InvalidParameter, msg);
             Err(err)
         } else {
             Ok(BetaBinomial { n, alpha, beta })

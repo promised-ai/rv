@@ -1,14 +1,16 @@
 extern crate rand;
 extern crate special;
 
-use self::rand::Rng;
-use self::special::Gamma;
-use consts;
-use dist;
 use std::f32;
 use std::f64;
 use std::f64::consts::{LN_2, PI};
-use std::io;
+
+use self::rand::Rng;
+use self::special::Gamma;
+
+use consts;
+use dist;
+use result;
 use traits::*;
 
 /// [Generalized Extreme Value Distribution](https://en.wikipedia.org/wiki/Generalized_extreme_value_distribution)
@@ -36,7 +38,7 @@ pub struct Gev {
 
 impl Gev {
     /// Create a new `Gev` distribution with location, scale, and shape.
-    pub fn new(loc: f64, scale: f64, shape: f64) -> io::Result<Self> {
+    pub fn new(loc: f64, scale: f64, shape: f64) -> result::Result<Self> {
         let scale_ok = scale > 0.0 && scale.is_finite();
         let loc_ok = loc.is_finite();
         let shape_ok = shape.is_finite();
@@ -44,9 +46,9 @@ impl Gev {
         if scale_ok && loc_ok && shape_ok {
             Ok(Gev { loc, scale, shape })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "location, shape, and scale must all be finite and scale must be greater than zero.";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }

@@ -1,11 +1,13 @@
 extern crate nalgebra;
 extern crate rand;
 
+use std::f64::consts::{E, PI};
+
 use self::nalgebra::{DMatrix, DVector};
 use self::rand::Rng;
+
 use data::MvGaussianSuffStat;
-use std::f64::consts::{E, PI};
-use std::io;
+use result;
 use traits::*;
 
 /// [Multivariate Gaussian/Normal Distribution](https://en.wikipedia.org/wiki/Multivariate_normal_distribution),
@@ -62,28 +64,28 @@ pub struct MvGaussian {
 }
 
 impl MvGaussian {
-    pub fn new(mu: DVector<f64>, cov: DMatrix<f64>) -> io::Result<Self> {
+    pub fn new(mu: DVector<f64>, cov: DMatrix<f64>) -> result::Result<Self> {
         let cov_square = cov.nrows() == cov.ncols();
         let dims_match = mu.len() == cov.nrows();
 
         if !dims_match {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameter;
             let msg = "Number of dimensions in μ and Σ must match";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else if !cov_square {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "Σ must be square");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "Σ must be square");
             Err(err)
         } else {
             Ok(MvGaussian { mu, cov })
         }
     }
 
-    pub fn standard(dims: usize) -> io::Result<Self> {
+    pub fn standard(dims: usize) -> result::Result<Self> {
         if dims < 1 {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "ndims must be >= 1");
+            let err_kind = result::ErrorKind::InvalidParameter;
+            let err = result::Error::new(err_kind, "ndims must be >= 1");
             Err(err)
         } else {
             let mu = DVector::zeros(dims);
@@ -188,7 +190,7 @@ mod tests {
 
         match mvg {
             Err(err) => {
-                let msg = err.get_ref().unwrap().description();
+                let msg = err.description();
                 assert!(msg.contains("dimensions"));
             }
             Ok(..) => panic!("Should've failed"),
@@ -203,7 +205,7 @@ mod tests {
 
         match mvg {
             Err(err) => {
-                let msg = err.get_ref().unwrap().description();
+                let msg = err.description();
                 assert!(msg.contains("dimensions"));
             }
             Ok(..) => panic!("Should've failed"),
@@ -218,7 +220,7 @@ mod tests {
 
         match mvg {
             Err(err) => {
-                let msg = err.get_ref().unwrap().description();
+                let msg = err.description();
                 assert!(msg.contains("square"));
             }
             Ok(..) => panic!("Should've failed"),
