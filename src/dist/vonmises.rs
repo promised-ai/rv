@@ -47,11 +47,11 @@ impl VonMises {
         let mu_ok = 0.0 <= mu && mu <= 2.0 * PI && mu.is_finite();
         let k_ok = k > 0.0 && k.is_finite();
         if !mu_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "mu must be in [0, 2π]");
             Err(err)
         } else if !k_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "k must be finite and greater than zero";
             let err = result::Error::new(err_kind, msg);
             Err(err)

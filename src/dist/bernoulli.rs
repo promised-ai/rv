@@ -33,7 +33,7 @@ impl Bernoulli {
         if p.is_finite() && 0.0 < p && p < 1.0 {
             Ok(Bernoulli { p })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "p must be in [0, 1]");
             Err(err)
         }

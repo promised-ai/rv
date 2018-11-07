@@ -38,7 +38,7 @@ impl Geometric {
         if p > 0.0 && p <= 1.0 {
             Ok(Geometric { p })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(
                 err_kind,
                 "p must be between zero and one (right closed).",

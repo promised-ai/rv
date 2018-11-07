@@ -24,11 +24,11 @@ impl Binomial {
         let p_ok = p.is_finite() && 0.0 < p && p < 1.0;
         let n_ok = n > 0;
         if !p_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "p must be in [0, 1]");
             Err(err)
         } else if !n_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "n must be > 0");
             Err(err)
         } else {

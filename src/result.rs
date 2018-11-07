@@ -5,19 +5,22 @@ pub type Result<T> = result::Result<T, Error>;
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ErrorKind {
     /// One or more of the supplied parameters is invalid
-    InvalidParameter,
+    InvalidParameterError,
     /// The requested quantity is not mathematically defined
-    UndefinedQuantity,
+    UndefinedQuantityError,
     /// An algorithm has reached the maximum number of iterations allowed
-    MaxIterationsExceeded,
+    MaxIterationsError,
+    /// Recieved an empty container, but requires a non-empty container
+    EmptyContainerError,
 }
 
 impl ErrorKind {
     pub fn as_str(&self) -> &str {
         match self {
-            ErrorKind::InvalidParameter => "invalid parameter",
-            ErrorKind::UndefinedQuantity => "undefined quantity",
-            ErrorKind::MaxIterationsExceeded => "max iterations exceeded",
+            ErrorKind::InvalidParameterError => "invalid parameter error",
+            ErrorKind::UndefinedQuantityError => "undefined quantity error",
+            ErrorKind::MaxIterationsError => "max iterations error",
+            ErrorKind::EmptyContainerError => "empty container error",
         }
     }
 }

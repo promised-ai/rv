@@ -52,7 +52,7 @@ impl Partition {
             let part = Partition { z, counts };
             Ok(part)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             Err(result::Error::new(err_kind, "Unoccupied partition(s)"))
         }
     }
@@ -106,7 +106,7 @@ impl Partition {
     pub fn append(&mut self, zi: usize) -> result::Result<()> {
         let k = self.k();
         if zi > k {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "zi higher than k");
             Err(err)
         } else {

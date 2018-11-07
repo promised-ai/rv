@@ -76,7 +76,7 @@ impl NormalInvWishart {
 
         match err {
             Some(msg) => Err(result::Error::new(
-                result::ErrorKind::InvalidParameter,
+                result::ErrorKind::InvalidParameterError,
                 msg,
             )),
             None => Ok(NormalInvWishart { mu, k, df, scale }),

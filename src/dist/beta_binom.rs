@@ -47,13 +47,17 @@ impl BetaBinomial {
         let n_ok = n > 0;
         if !(alpha_ok && beta_ok) {
             let msg = "'alpha' and 'beta' must be in (0, ∞)";
-            let err =
-                result::Error::new(result::ErrorKind::InvalidParameter, msg);
+            let err = result::Error::new(
+                result::ErrorKind::InvalidParameterError,
+                msg,
+            );
             Err(err)
         } else if !n_ok {
             let msg = "'n' must be greater than 0";
-            let err =
-                result::Error::new(result::ErrorKind::InvalidParameter, msg);
+            let err = result::Error::new(
+                result::ErrorKind::InvalidParameterError,
+                msg,
+            );
             Err(err)
         } else {
             Ok(BetaBinomial { n, alpha, beta })

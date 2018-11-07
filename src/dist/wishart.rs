@@ -39,7 +39,7 @@ impl InvWishart {
 
         match err {
             Some(msg) => Err(result::Error::new(
-                result::ErrorKind::InvalidParameter,
+                result::ErrorKind::InvalidParameterError,
                 msg,
             )),
             None => Ok(InvWishart { inv_scale, df }),

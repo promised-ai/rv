@@ -42,7 +42,7 @@ impl Poisson {
         if rate > 0.0 && rate.is_finite() {
             Ok(Poisson { rate })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err =
                 result::Error::new(err_kind, "rate must be greater than 0");
             Err(err)

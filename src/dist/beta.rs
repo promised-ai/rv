@@ -54,7 +54,7 @@ impl Beta {
         if alpha_ok && beta_ok {
             Ok(Beta { alpha, beta })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "α and β must be finite and greater than 0";
             let err = result::Error::new(err_kind, msg);
             Err(err)

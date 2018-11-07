@@ -50,11 +50,11 @@ impl Gaussian {
         let mu_ok = mu.is_finite();
         let sigma_ok = sigma > 0.0 && sigma.is_finite();
         if !mu_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "mu must be finite");
             Err(err)
         } else if !sigma_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "sigma must be finite and greater than zero";
             let err = result::Error::new(err_kind, msg);
             Err(err)

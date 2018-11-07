@@ -50,12 +50,12 @@ impl Crp {
         let alpha_ok = alpha > 0.0 && alpha.is_finite();
         let n_ok = n > 0;
         if !alpha_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "α must be greater than zero and finite";
             let err = result::Error::new(err_kind, msg);
             Err(err)
         } else if !n_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "n must be greater than zero";
             let err = result::Error::new(err_kind, msg);
             Err(err)
