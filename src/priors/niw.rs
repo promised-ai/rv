@@ -141,7 +141,8 @@ mod tests {
             1.0,
             2,
             DMatrix::identity(2, 2),
-        ).unwrap();
+        )
+        .unwrap();
         let obs = obs_fxtr();
         let data: MvgData = DataOrSuffStat::SuffStat(&obs);
 

@@ -141,6 +141,7 @@ where
             .map(|_| {
                 let fx: Fx = post.draw(&mut rng);
                 fx.draw(&mut rng)
-            }).collect()
+            })
+            .collect()
     }
 }
