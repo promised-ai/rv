@@ -38,11 +38,11 @@ impl Cauchy {
         if loc_ok && scale_ok {
             Ok(Cauchy { loc, scale })
         } else if !loc_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "loc must be finite");
             Err(err)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "scale must be finite and greater than zero";
             let err = result::Error::new(err_kind, msg);
             Err(err)

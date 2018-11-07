@@ -38,12 +38,12 @@ impl Uniform {
         let a_ok = a.is_finite();
         let b_ok = b.is_finite() && b > a;
         if !a_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "a must be finite";
             let err = result::Error::new(err_kind, msg);
             Err(err)
         } else if !b_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "b must be finite and greater than a";
             let err = result::Error::new(err_kind, msg);
             Err(err)

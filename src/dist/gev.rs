@@ -46,7 +46,7 @@ impl Gev {
         if scale_ok && loc_ok && shape_ok {
             Ok(Gev { loc, scale, shape })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "location, shape, and scale must all be finite and scale must be greater than zero.";
             let err = result::Error::new(err_kind, msg);
             Err(err)

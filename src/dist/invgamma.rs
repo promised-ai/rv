@@ -34,7 +34,7 @@ impl InvGamma {
         if shape_ok && scale_ok {
             Ok(InvGamma { shape, scale })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "shape and scale must be finite and greater than 0";
             let err = result::Error::new(err_kind, msg);
             Err(err)

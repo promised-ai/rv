@@ -28,12 +28,12 @@ impl SymmetricDirichlet {
         let alpha_ok = alpha > 0.0 && alpha.is_finite();
 
         if !k_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err =
                 result::Error::new(err_kind, "k must be greater than zero");
             Err(err)
         } else if !alpha_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "Alpha must be finite and greater than zero";
             let err = result::Error::new(err_kind, msg);
             Err(err)
@@ -80,7 +80,7 @@ impl Dirichlet {
     /// Creates a `Dirichlet` with a given `alphas` vector
     pub fn new(alphas: Vec<f64>) -> result::Result<Self> {
         if alphas.iter().any(|&a| !(a > 0.0 && a.is_finite())) {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "All alphas must be finite and greater than zero";
             let err = result::Error::new(err_kind, msg);
             Err(err)

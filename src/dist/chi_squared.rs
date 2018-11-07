@@ -33,7 +33,7 @@ impl ChiSquared {
         if k > 0.0 && k.is_finite() {
             Ok(ChiSquared { k })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "k must be finite and greater than 0";
             let err = result::Error::new(err_kind, msg);
             Err(err)

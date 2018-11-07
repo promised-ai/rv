@@ -38,11 +38,11 @@ pub struct Laplace {
 impl Laplace {
     pub fn new(mu: f64, b: f64) -> result::Result<Self> {
         if !mu.is_finite() {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "mu must be finite");
             Err(err)
         } else if b <= 0.0 || !b.is_finite() {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "b must be in (0, ∞)");
             Err(err)
         } else {

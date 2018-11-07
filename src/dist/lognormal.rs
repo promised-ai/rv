@@ -32,7 +32,7 @@ impl LogNormal {
         if mu_ok && sigma_ok {
             Ok(LogNormal { mu, sigma })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "mu must be finite and sigma must be finite and greater than zero.");
             Err(err)
         }

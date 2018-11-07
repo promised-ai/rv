@@ -35,7 +35,7 @@ impl Exponential {
         if rate > 0.0 && rate.is_finite() {
             Ok(Exponential { rate })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "rate must be finite and greater than zero";
             let err = result::Error::new(err_kind, msg);
             Err(err)

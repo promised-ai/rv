@@ -36,7 +36,7 @@ impl Gamma {
         if shape_ok && rate_ok {
             Ok(Gamma { shape, rate })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "shape and rate must be finite and greater than 0";
             let err = result::Error::new(err_kind, msg);
             Err(err)

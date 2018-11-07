@@ -30,13 +30,13 @@ impl NormalGamma {
         let s_ok = s > 0.0 && s.is_finite();
         let v_ok = v > 0.0 && v.is_finite();
         if !m_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "m must be finite");
             Err(err)
         } else if r_ok && s_ok && v_ok {
             Ok(NormalGamma { m, r, s, v })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = format!("r ({}), s ({}), and v ({}) must be finite and greater than zero", r, s, v);
             let err = result::Error::new(err_kind, msg.as_str());
             Err(err)

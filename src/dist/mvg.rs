@@ -69,12 +69,12 @@ impl MvGaussian {
         let dims_match = mu.len() == cov.nrows();
 
         if !dims_match {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "Number of dimensions in μ and Σ must match";
             let err = result::Error::new(err_kind, msg);
             Err(err)
         } else if !cov_square {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "Σ must be square");
             Err(err)
         } else {
@@ -84,7 +84,7 @@ impl MvGaussian {
 
     pub fn standard(dims: usize) -> result::Result<Self> {
         if dims < 1 {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "ndims must be >= 1");
             Err(err)
         } else {

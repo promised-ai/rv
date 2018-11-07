@@ -25,7 +25,7 @@ impl StudentsT {
         if v > 0.0 && v.is_finite() {
             Ok(StudentsT { v })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "v must be finite and greater than 0";
             let err = result::Error::new(err_kind, msg);
             Err(err)

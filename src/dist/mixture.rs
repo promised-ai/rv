@@ -37,14 +37,19 @@ impl<Fx> Mixture<Fx> {
         let weights_ok = weights.iter().all(|&w| w >= 0.0)
             && (weights.iter().fold(0.0, |acc, &w| acc + w) - 1.0).abs()
                 < 1E-12;
-        let length_mismatch = weights.len() != components.len();
-        if length_mismatch {
-            let err_kind = result::ErrorKind::InvalidParameter;
+
+        if weights.is_empty() || components.is_empty() {
+            let err_kind = result::ErrorKind::EmptyContainerError;
+            let msg = "weights or components was empty";
+            let err = result::Error::new(err_kind, msg);
+            Err(err)
+        } else if weights.len() != components.len() {
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "weights.len() != components.len()";
             let err = result::Error::new(err_kind, msg);
             Err(err)
         } else if !weights_ok {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "weights must be positive and sum to 1";
             let err = result::Error::new(err_kind, msg);
             Err(err)
@@ -255,6 +260,22 @@ mod tests {
         assert!(Mixture::new(vec![0.5, 0.51], components.clone()).is_err());
         assert!(Mixture::new(vec![0.5, 0.49], components.clone()).is_err());
         assert!(Mixture::new(vec![0.5, 0.5], components.clone()).is_ok());
+    }
+
+    #[test]
+    fn new_should_not_allow_empty_weights() {
+        let components = vec![Gaussian::standard(), Gaussian::standard()];
+        let empty_components: Vec<Gaussian> = vec![];
+
+        assert!(Mixture::new(vec![], components.clone()).is_err());
+        assert!(Mixture::new(vec![], empty_components).is_err());
+    }
+
+    #[test]
+    fn new_should_not_allow_empty_components() {
+        let empty_components: Vec<Gaussian> = vec![];
+        assert!(Mixture::new(vec![0.5, 0.5], empty_components.clone()).is_err());
+        assert!(Mixture::new(vec![], empty_components.clone()).is_err());
     }
 
     #[test]

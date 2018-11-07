@@ -41,7 +41,7 @@ impl Categorical {
     /// ```
     pub fn new(weights: &[f64]) -> result::Result<Self> {
         if weights.iter().any(|&w| !w.is_finite()) {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "Weights must be finite");
             Err(err)
         } else {
@@ -58,7 +58,7 @@ impl Categorical {
         if logsumexp(&ln_weights).abs() < 10E-12 {
             Ok(Categorical { ln_weights })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameter;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "Weights not normalized");
             Err(err)
         }
