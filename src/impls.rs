@@ -16,18 +16,20 @@ impl QuadBounds for Gaussian {
     }
 }
 
+// Exact computation for categorical
 impl Entropy for Mixture<Categorical> {
     fn entropy(&self) -> f64 {
-        (0..self.k()).fold(0.0, |acc, x| {
+        (0..self.components[0].k()).fold(0.0, |acc, x| {
             let ln_f = self.ln_f(&x);
             acc - ln_f.exp() * ln_f
         })
     }
 }
 
+// Exact computation for categorical
 impl Entropy for Mixture<Mixture<Categorical>> {
     fn entropy(&self) -> f64 {
-        let k = self.components[0].k();
+        let k = self.components[0].components[0].k();
         (0..k).fold(0.0, |acc, x| {
             let ln_f = self.ln_f(&x);
             acc - ln_f.exp() * ln_f
@@ -66,6 +68,7 @@ macro_rules! dual_step_quad_bounds {
     };
 }
 
+// Entropy by quadrature. Should be faster and more accurate than monte carlo
 macro_rules! quadrature_entropy {
     ($kind: ty) => {
         impl Entropy for $kind {
@@ -126,5 +129,23 @@ mod tests {
 
         let h: f64 = mm.entropy();
         assert::close(h, 1.4189385332046727, TOL);
+    }
+
+    #[test]
+    fn categorical_mixture_entropy() {
+        let components = vec![
+            {
+                let weights: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
+                Categorical::new(&weights).unwrap()
+            },
+            {
+                let weights: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
+                Categorical::new(&weights).unwrap()
+            },
+        ];
+        let weights = vec![0.5, 0.5];
+        let mm = Mixture::new(weights, components).unwrap();
+        let h: f64 = mm.entropy();
+        assert::close(h, 1.2798542258336676, TOL);
     }
 }
