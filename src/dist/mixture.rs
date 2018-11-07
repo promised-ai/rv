@@ -56,6 +56,19 @@ impl<Fx> Mixture<Fx> {
         }
     }
 
+    /// Assume uniform component weights
+    ///
+    /// Given a n-length vector of components, automatically sets the component
+    /// weights to 1/n.
+    pub fn uniform(components: Vec<Fx>) -> result::Result<Self> {
+        let k = components.len();
+        let weights = vec![1.0 / k as f64; k];
+        Ok(Mixture {
+            weights,
+            components,
+        })
+    }
+
     /// Number of components
     pub fn k(&self) -> usize {
         self.components.len()
@@ -223,6 +236,17 @@ mod tests {
     use dist::{Gaussian, Poisson};
 
     const TOL: f64 = 1E-12;
+
+    #[test]
+    fn uniform_ctor() {
+        let components = vec![Gaussian::standard(), Gaussian::standard()];
+        let mm = Mixture::uniform(components).unwrap();
+
+        assert_eq!(mm.weights.len(), 2);
+        assert_eq!(mm.k(), 2);
+        assert::close(mm.weights[0], 0.5, TOL);
+        assert::close(mm.weights[1], 0.5, TOL);
+    }
 
     #[test]
     fn new_should_not_allow_bad_weights() {
