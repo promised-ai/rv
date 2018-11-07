@@ -273,10 +273,12 @@ mod tests {
     fn kl() {
         let cat1 = Categorical::new(&vec![
             0.2280317, 0.1506706, 0.33620052, 0.13911904, 0.14597815,
-        ]).unwrap();
+        ])
+        .unwrap();
         let cat2 = Categorical::new(&vec![
             0.30050657, 0.04237857, 0.20973238, 0.32858568, 0.1187968,
-        ]).unwrap();
+        ])
+        .unwrap();
 
         // Allow extra error for the normalization
         assert::close(cat1.kl(&cat2), 0.1973394327976612, 1E-7);

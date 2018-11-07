@@ -19,7 +19,8 @@ fn main() {
         .map(|_| {
             let x: f64 = rng.sample(u);
             x < 0.7
-        }).collect();
+        })
+        .collect();
 
     // Use the Jeffreys prior of Beta(0.5, 0.5)
     let prior = Beta::jeffreys();

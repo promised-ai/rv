@@ -21,7 +21,8 @@ pub trait CategoricalDatum:
 
 impl<T> CategoricalDatum for T where
     T: Clone + Into<usize> + Sync + Copy + FromPrimitive
-{}
+{
+}
 
 /// Holds either a sufficient statistic of a vector of data.
 #[derive(Debug, Clone)]

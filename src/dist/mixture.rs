@@ -55,6 +55,11 @@ impl<Fx> Mixture<Fx> {
             })
         }
     }
+
+    /// Number of components
+    pub fn k(&self) -> usize {
+        self.components.len()
+    }
 }
 
 impl<X, Fx> Rv<X> for Mixture<Fx>
@@ -159,6 +164,58 @@ where
     }
 }
 
+macro_rules! continuous_uv_mean_and_var {
+    ($kind: ty) => {
+        impl<Fx> Mean<$kind> for Mixture<Fx>
+        where
+            Fx: ContinuousDistr<$kind> + Mean<$kind>,
+        {
+            fn mean(&self) -> Option<$kind> {
+                let mut out: f64 = 0.0;
+                for (w, cpnt) in self.weights.iter().zip(self.components.iter())
+                {
+                    match cpnt.mean() {
+                        Some(m) => out += w * (m as f64),
+                        None => return None,
+                    }
+                }
+                Some(out as $kind / (self.k() as $kind))
+            }
+        }
+
+        // https://stats.stackexchange.com/a/16609/36044
+        impl<Fx> Variance<$kind> for Mixture<Fx>
+        where
+            Fx: ContinuousDistr<$kind> + Mean<$kind> + Variance<$kind>,
+        {
+            fn variance(&self) -> Option<$kind> {
+                let mut p1: f64 = 0.0;
+                let mut p2: f64 = 0.0;
+                let mut p3: f64 = 0.0;
+                for (w, cpnt) in self.weights.iter().zip(self.components.iter())
+                {
+                    match cpnt.mean() {
+                        Some(m) => {
+                            p1 += w * (m as f64).powi(2);
+                            p3 += w * (m as f64);
+                        }
+                        None => return None,
+                    }
+                    match cpnt.variance() {
+                        Some(v) => p2 += w * (v as f64),
+                        None => return None,
+                    }
+                }
+                let out: f64 = p1 + p2 - p3.powi(2);
+                Some(out as $kind)
+            }
+        }
+    };
+}
+
+continuous_uv_mean_and_var!(f32);
+continuous_uv_mean_and_var!(f64);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -191,7 +248,8 @@ mod tests {
                 Gaussian::new(-3.0, 1.0).unwrap(),
                 Gaussian::new(3.0, 3.0).unwrap(),
             ],
-        ).unwrap();
+        )
+        .unwrap();
 
         // using sample
         let xbar: f64 = mm
@@ -218,7 +276,8 @@ mod tests {
                 Gaussian::new(-3.0, 1.0).unwrap(),
                 Gaussian::new(3.0, 3.0).unwrap(),
             ],
-        ).unwrap();
+        )
+        .unwrap();
 
         // using sample
         let xbar: f64 = mm
@@ -363,5 +422,59 @@ mod tests {
         let mm = Mixture::new(weights, components).unwrap();
 
         assert::close(mm.cdf(&1.0_f64), 0.5, TOL);
+    }
+
+    #[test]
+    fn mean_even_weight() {
+        let components = vec![
+            Gaussian::new(-1.0, 3.0).unwrap(),
+            Gaussian::new(1.0, 1.0).unwrap(),
+            Gaussian::new(3.0, 3.0).unwrap(),
+        ];
+        let weights = vec![1.0 / 3.0; 3];
+        let mm = Mixture::new(weights, components).unwrap();
+
+        let m: f64 = mm.mean().unwrap();
+        assert::close(m, 0.3333333333333333, TOL);
+    }
+
+    #[test]
+    fn mean_uneven_weight() {
+        let components = vec![
+            Gaussian::new(-1.0, 3.0).unwrap(),
+            Gaussian::new(1.0, 1.0).unwrap(),
+            Gaussian::new(3.0, 3.0).unwrap(),
+        ];
+        let weights = vec![0.5, 0.25, 0.25];
+        let mm = Mixture::new(weights, components).unwrap();
+
+        let m: f64 = mm.mean().unwrap();
+        assert::close(m, 0.16666666666666666, TOL);
+    }
+
+    #[test]
+    fn variance_even_weight() {
+        let components = vec![
+            Gaussian::new(1.0, 3.0).unwrap(),
+            Gaussian::new(3.0, 1.0).unwrap(),
+        ];
+        let weights = vec![0.5, 0.5];
+        let mm = Mixture::new(weights, components).unwrap();
+
+        let v: f64 = mm.variance().unwrap();
+        assert::close(v, 6.0, TOL);
+    }
+
+    #[test]
+    fn variance_uneven_weight() {
+        let components = vec![
+            Gaussian::new(1.0, 3.0).unwrap(),
+            Gaussian::new(3.0, 1.0).unwrap(),
+        ];
+        let weights = vec![0.25, 0.75];
+        let mm = Mixture::new(weights, components).unwrap();
+
+        let v: f64 = mm.variance().unwrap();
+        assert::close(v, 3.75, TOL);
     }
 }

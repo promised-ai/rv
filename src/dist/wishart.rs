@@ -98,7 +98,8 @@ impl Rv<DMatrix<f64>> for InvWishart {
                         acc + x * x.transpose()
                     });
                 y.try_inverse().unwrap()
-            }).collect()
+            })
+            .collect()
     }
 }
 
