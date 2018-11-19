@@ -1,4 +1,5 @@
 extern crate quadrature;
+extern crate rand;
 
 use dist::Categorical;
 use dist::Gaussian;
@@ -178,5 +179,19 @@ mod tests {
         });
 
         assert!(bad_bounds.is_none());
+    }
+
+    #[test]
+    fn gauss_2_component_mixture_entropy() {
+        let components = vec![
+            Gaussian::new(-2.0, 1.0).unwrap(),
+            Gaussian::new(2.0, 1.0).unwrap(),
+        ];
+        let weights = vec![0.5, 0.5];
+        let mm = Mixture::new(weights, components).unwrap();
+
+        let h: f64 = mm.entropy();
+        // Answer from numerical integration in python
+        assert::close(h, 2.051658739391058, 1E-7);
     }
 }
