@@ -1,4 +1,5 @@
 extern crate quadrature;
+extern crate rand;
 
 use dist::Categorical;
 use dist::Gaussian;
@@ -147,5 +148,50 @@ mod tests {
         let mm = Mixture::new(weights, components).unwrap();
         let h: f64 = mm.entropy();
         assert::close(h, 1.2798542258336676, TOL);
+    }
+
+    #[test]
+    fn gauss_mixture_quad_bounds_have_zero_pdf() {
+        use dist::{InvGamma, Poisson};
+        use traits::Rv;
+
+        let mut rng = rand::thread_rng();
+        let pois = Poisson::new(7.0).unwrap();
+
+        let mu_prior = Gaussian::new(0.0, 5.0).unwrap();
+        let sigma_prior = InvGamma::new(2.0, 3.0).unwrap();
+        let bad_bounds = (0..100).find(|_| {
+            // TODO: should probably implement Rv<usize> for Poisson...
+            let n: usize = <Poisson as Rv<u32>>::draw(&pois, &mut rng) as usize;
+
+            let components: Vec<Gaussian> = (0..n)
+                .map(|_| {
+                    let mu: f64 = mu_prior.draw(&mut rng);
+                    let sigma: f64 = sigma_prior.draw(&mut rng);
+                    Gaussian::new(mu, sigma).unwrap()
+                })
+                .collect();
+
+            let mm = Mixture::uniform(components).unwrap();
+            let (a, b) = mm.quad_bounds();
+
+            mm.pdf(&a).abs() > 1E-16 || mm.pdf(&b).abs() > 1E-16
+        });
+
+        assert!(bad_bounds.is_none());
+    }
+
+    #[test]
+    fn gauss_2_component_mixture_entropy() {
+        let components = vec![
+            Gaussian::new(-2.0, 1.0).unwrap(),
+            Gaussian::new(2.0, 1.0).unwrap(),
+        ];
+        let weights = vec![0.5, 0.5];
+        let mm = Mixture::new(weights, components).unwrap();
+
+        let h: f64 = mm.entropy();
+        // Answer from numerical integration in python
+        assert::close(h, 2.051658739391058, 1E-7);
     }
 }

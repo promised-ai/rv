@@ -74,6 +74,26 @@ impl<Fx> Mixture<Fx> {
         })
     }
 
+    /// Combines many mixtures into one big mixture
+    pub fn combine(mut mixtures: Vec<Mixture<Fx>>) -> result::Result<Self> {
+        let k_total: usize = mixtures.iter().fold(0, |acc, mm| acc + mm.k());
+        let nf = mixtures.len() as f64;
+
+        let mut weights: Vec<f64> = Vec::with_capacity(k_total);
+        let mut components: Vec<Fx> = Vec::with_capacity(k_total);
+
+        mixtures.iter_mut().for_each(|mm| {
+            mm.weights.drain(..).zip(mm.components.drain(..)).for_each(
+                |(w, cpnt)| {
+                    weights.push(w / nf);
+                    components.push(cpnt);
+                },
+            );
+        });
+
+        Mixture::new(weights, components)
+    }
+
     /// Number of components
     pub fn k(&self) -> usize {
         self.components.len()
@@ -282,6 +302,32 @@ mod tests {
     fn new_should_not_allow_mismatched_inputs() {
         let components = vec![Gaussian::standard(), Gaussian::standard()];
         assert!(Mixture::new(vec![0.5, 0.3, 0.2], components.clone()).is_err());
+    }
+
+    #[test]
+    fn combine() {
+        let mm1 = {
+            let components = vec![
+                Gaussian::new(0.0, 1.0).unwrap(),
+                Gaussian::new(1.0, 1.0).unwrap(),
+            ];
+            Mixture::new(vec![0.2, 0.8], components).unwrap()
+        };
+        let mm2 = {
+            let components = vec![
+                Gaussian::new(2.0, 1.0).unwrap(),
+                Gaussian::new(3.0, 1.0).unwrap(),
+            ];
+            Mixture::new(vec![0.4, 0.6], components).unwrap()
+        };
+
+        let mmc = Mixture::combine(vec![mm1, mm2]).unwrap();
+
+        assert::close(mmc.weights, vec![0.1, 0.4, 0.2, 0.3], TOL);
+        assert::close(mmc.components[0].mu, 0.0, TOL);
+        assert::close(mmc.components[1].mu, 1.0, TOL);
+        assert::close(mmc.components[2].mu, 2.0, TOL);
+        assert::close(mmc.components[3].mu, 3.0, TOL);
     }
 
     #[test]
