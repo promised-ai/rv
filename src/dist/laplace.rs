@@ -1,12 +1,8 @@
 //! Laplace (double exponential) distribution
-extern crate rand;
-
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
 use std::f64::consts::{E, FRAC_1_SQRT_2, LN_2};
-
-use self::rand::Rng;
-
-use result;
-use traits::*;
 
 /// [Laplace](https://en.wikipedia.org/wiki/Laplace_distribution), or double
 /// exponential, distribution over x in (-∞, ∞).
@@ -145,9 +141,8 @@ impl_traits!(f32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

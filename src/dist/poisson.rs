@@ -1,13 +1,10 @@
 //! Possion distribution on unisgned integers
-extern crate rand;
-extern crate special;
+use rand::distributions::Poisson as RPossion;
+use rand::Rng;
+use special::Gamma as SGamma;
 
-use self::rand::distributions::Poisson as RPossion;
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
-
-use result;
-use traits::*;
+use crate::result;
+use crate::traits::*;
 
 /// [Possion distribution](https://en.wikipedia.org/wiki/Poisson_distribution)
 /// over x in {0, 1, ... }.
@@ -116,9 +113,8 @@ impl_traits!(u32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::x2_test;
+    use crate::misc::x2_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

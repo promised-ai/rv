@@ -1,14 +1,11 @@
 //! Χ</sup>2</sup> over x in (0, ∞)
-extern crate rand;
-extern crate special;
-
-use self::rand::distributions;
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
+use rand::distributions;
+use rand::Rng;
+use special::Gamma as SGamma;
 use std::f64::consts::LN_2;
 
-use result;
-use traits::*;
+use crate::result;
+use crate::traits::*;
 
 /// [Χ<sup>2</sup> distribution](https://en.wikipedia.org/wiki/Chi-squared_distribution)
 /// Χ<sup>2</sup>(k).
@@ -112,9 +109,8 @@ impl_traits!(f32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

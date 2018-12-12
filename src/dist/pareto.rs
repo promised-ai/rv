@@ -1,12 +1,9 @@
 //! Pareto distribution over x in [shape, ∞)
-extern crate rand;
-extern crate special;
-
-use self::rand::Rng;
+use rand::Rng;
 use std::f64;
 
-use result;
-use traits::*;
+use crate::result;
+use crate::traits::*;
 
 /// [Pareto distribution](https://en.wikipedia.org/wiki/Pareto_distribution) Pareto(x_m, α)
 /// over x in (x_m, ∞).
@@ -146,9 +143,8 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::{ks_test, linspace};
+    use crate::misc::{ks_test, linspace};
     use std::f64;
 
     const TOL: f64 = 1E-12;

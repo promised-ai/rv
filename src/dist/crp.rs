@@ -10,12 +10,12 @@
 extern crate rand;
 extern crate special;
 
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
-use data::Partition;
-use misc::pflip;
-use result;
-use traits::*;
+use crate::data::Partition;
+use crate::misc::pflip;
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
+use special::Gamma as SGamma;
 
 /// [Chinese Restaurant Process](https://en.wikipedia.org/wiki/Chinese_restaurant_process),
 /// a distribution over partitions.
@@ -113,7 +113,6 @@ impl Support<Partition> for Crp {
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
 
     const TOL: f64 = 1E-12;

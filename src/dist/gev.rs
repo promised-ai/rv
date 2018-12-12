@@ -1,17 +1,14 @@
-extern crate rand;
-extern crate special;
-
 use std::f32;
 use std::f64;
 use std::f64::consts::{LN_2, PI};
 
-use self::rand::Rng;
-use self::special::Gamma;
+use rand::Rng;
+use special::Gamma;
 
-use consts;
-use dist;
-use result;
-use traits::*;
+use crate::consts;
+use crate::dist;
+use crate::result;
+use crate::traits::*;
 
 /// [Generalized Extreme Value Distribution](https://en.wikipedia.org/wiki/Generalized_extreme_value_distribution)
 /// Gev(μ, σ, ξ) where the parameters are
@@ -188,10 +185,9 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
-    use misc::linspace;
+    use crate::misc::ks_test;
+    use crate::misc::linspace;
     use std::f64;
 
     const TOL: f64 = 1E-12;

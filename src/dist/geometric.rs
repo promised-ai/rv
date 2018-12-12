@@ -1,12 +1,9 @@
 //! Possion distribution on unisgned integers
-extern crate rand;
-extern crate special;
+use rand::Rng;
 
-use self::rand::Rng;
-
-use dist::Uniform;
-use result;
-use traits::*;
+use crate::dist::Uniform;
+use crate::result;
+use crate::traits::*;
 
 /// [Geometric distribution](https://en.wikipedia.org/wiki/Geometric_distribution)
 /// over x in {0, 1, 2, 3, ... }.
@@ -116,9 +113,8 @@ impl_traits!(u32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::x2_test;
+    use crate::misc::x2_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

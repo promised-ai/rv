@@ -10,7 +10,7 @@ pub use self::suffstat::MvGaussianSuffStat;
 
 extern crate num;
 use self::num::traits::FromPrimitive;
-use traits::{HasSuffStat, SuffStat};
+use crate::traits::{HasSuffStat, SuffStat};
 
 /// The trait that data must implemented by all data used with the
 /// `Categorical` distribution

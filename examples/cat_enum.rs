@@ -1,3 +1,4 @@
+extern crate num;
 /// Using an enum as a categorical variable.
 ///
 /// In a future where proc_macro is stable, we can offload all of this to a
@@ -13,11 +14,10 @@
 /// ```
 extern crate rand;
 extern crate rv;
-extern crate num;
 
 use num::FromPrimitive;
-use std::convert::From;
 use rv::prelude::*;
+use std::convert::From;
 
 /// We have to assign values 0, ..., n-1 to the enum values so they map to
 /// indices in the categorical weights

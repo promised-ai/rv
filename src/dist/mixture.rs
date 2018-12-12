@@ -2,9 +2,9 @@ extern crate rand;
 
 use self::rand::Rng;
 
-use misc::{logsumexp, pflip};
-use result;
-use traits::*;
+use crate::misc::{logsumexp, pflip};
+use crate::result;
+use crate::traits::*;
 
 /// [Mixture distribution](https://en.wikipedia.org/wiki/Mixture_model)
 /// Σ w<sub>i</sub> f(x|θ<sub>i</sub>)
@@ -258,7 +258,7 @@ continuous_uv_mean_and_var!(f64);
 mod tests {
     use super::*;
     extern crate assert;
-    use dist::{Gaussian, Poisson};
+    use crate::dist::{Gaussian, Poisson};
 
     const TOL: f64 = 1E-12;
 

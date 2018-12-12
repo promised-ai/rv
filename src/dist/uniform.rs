@@ -1,11 +1,9 @@
 //! Continuous uniform distribution, U(a, b) on the interval x in [a, b]
-extern crate rand;
-
-use self::rand::Rng;
+use rand::Rng;
 use std::f64;
 
-use result;
-use traits::*;
+use crate::result;
+use crate::traits::*;
 
 /// [Continuous uniform distribution](https://en.wikipedia.org/wiki/Uniform_distribution_(continuous)),
 /// U(a, b) on the interval x in [a, b]
@@ -158,9 +156,8 @@ impl_traits!(f32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;

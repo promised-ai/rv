@@ -1,13 +1,10 @@
 //! Bernoulli distribution of x in {0, 1}
-extern crate rand;
-extern crate special;
-
-use self::rand::distributions::Uniform;
-use self::rand::Rng;
-use data::BernoulliSuffStat;
-use result;
+use crate::data::BernoulliSuffStat;
+use crate::result;
+use crate::traits::*;
+use rand::distributions::Uniform;
+use rand::Rng;
 use std::f64;
-use traits::*;
 
 /// [Bernoulli distribution](https://en.wikipedia.org/wiki/Bernoulli_distribution)
 /// with success probability *p*
@@ -275,9 +272,8 @@ impl_int_traits!(isize);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::x2_test;
+    use crate::misc::x2_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

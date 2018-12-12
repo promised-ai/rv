@@ -1,13 +1,10 @@
 //! Inverse Gamma distribution over x in (0, ∞)
-extern crate rand;
-extern crate special;
+use rand::distributions;
+use rand::Rng;
+use special::Gamma as SGamma;
 
-use self::rand::distributions;
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
-
-use result;
-use traits::*;
+use crate::result;
+use crate::traits::*;
 
 /// [Inverse gamma distribution](https://en.wikipedia.org/wiki/Inverse-gamma_distribution)
 /// IG(α, β) over x in (0, ∞).
@@ -142,9 +139,8 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

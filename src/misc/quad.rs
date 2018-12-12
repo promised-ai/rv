@@ -48,7 +48,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
     use std::f64::consts::PI;
 
     #[test]

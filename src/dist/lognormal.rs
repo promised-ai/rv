@@ -1,17 +1,13 @@
 //! Log Normal Distribution over x in (0, ∞)
-
-extern crate rand;
-extern crate special;
-
 use std::f64::consts::SQRT_2;
 
-use self::rand::distributions::Normal;
-use self::rand::Rng;
-use self::special::Error;
+use rand::distributions::Normal;
+use rand::Rng;
+use special::Error;
 
-use consts::*;
-use result;
-use traits::*;
+use crate::consts::*;
+use crate::result;
+use crate::traits::*;
 
 /// [LogNormal Distribution](https://en.wikipedia.org/wiki/Log-normal_distribution)
 /// If x ~ Normal(μ, σ), then e^x ~ LogNormal(μ, σ).
@@ -152,7 +148,6 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
     use std::f64;
 

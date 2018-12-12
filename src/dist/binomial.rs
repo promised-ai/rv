@@ -1,12 +1,9 @@
 //! Binomial distribution
-extern crate rand;
-extern crate special;
-
-use self::rand::Rng;
-use misc::ln_binom;
-use result;
+use crate::misc::ln_binom;
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
 use std::f64;
-use traits::*;
 
 /// [Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// with success probability *p*
@@ -124,9 +121,8 @@ impl_int_traits!(i64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::x2_test;
+    use crate::misc::x2_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

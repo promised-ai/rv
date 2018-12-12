@@ -1,10 +1,7 @@
-extern crate rand;
-extern crate special;
-
-use self::rand::distributions::Open01;
-use self::rand::Rng;
-use self::special::Gamma;
-use consts::LN_PI;
+use crate::consts::LN_PI;
+use rand::distributions::Open01;
+use rand::Rng;
+use special::Gamma;
 use std::cmp::PartialOrd;
 use std::ops::AddAssign;
 
@@ -48,13 +45,14 @@ pub fn logsumexp(xs: &[f64]) -> f64 {
 /// ```
 pub fn cumsum<T>(xs: &[T]) -> Vec<T>
 where
-    T: AddAssign + Clone,
+    T: AddAssign + Copy + Default,
 {
-    let mut summed: Vec<T> = xs.to_vec();
-    for i in 1..xs.len() {
-        summed[i] += summed[i - 1].clone();
-    }
-    summed
+    xs.iter()
+        .scan(T::default(), |acc, &x| {
+            *acc += x;
+            Some(*acc)
+        })
+        .collect()
 }
 
 #[inline]
@@ -259,7 +257,6 @@ pub fn mod_euc(lhs: f64, rhs: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
 
     const TOL: f64 = 1E-12;
 

@@ -1,6 +1,4 @@
-extern crate special;
-
-use self::special::Gamma;
+use special::Gamma;
 
 /// Χ<sup>2</sup> (Chi-squared) test.
 ///
@@ -37,8 +35,6 @@ pub fn x2_test(f_obs: &[u32], ps: &[f64]) -> (f64, f64) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
-
     const TOL: f64 = 1E-12;
 
     #[test]
