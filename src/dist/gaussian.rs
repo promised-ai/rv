@@ -1,4 +1,7 @@
 //! Gaussian/Normal distribution over x in (-∞, ∞)
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 extern crate rand;
 extern crate special;
 
@@ -8,10 +11,10 @@ use self::rand::distributions::Normal;
 use self::rand::Rng;
 use self::special::Error;
 
-use consts::*;
-use data::GaussianSuffStat;
-use result;
-use traits::*;
+use crate::consts::*;
+use crate::data::GaussianSuffStat;
+use crate::result;
+use crate::traits::*;
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.
@@ -192,7 +195,6 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
     use std::f64;
 

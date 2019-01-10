@@ -1,13 +1,14 @@
 //! A common conjugate prior for Gaussians
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::Rng;
+use rand::Rng;
 
-use consts::HALF_LN_2PI;
-use data::GaussianSuffStat;
-use dist::{Gamma, Gaussian};
-use result;
-use traits::*;
+use crate::consts::HALF_LN_2PI;
+use crate::data::GaussianSuffStat;
+use crate::dist::{Gamma, Gaussian};
+use crate::result;
+use crate::traits::*;
 
 /// Prior for Gaussian
 ///

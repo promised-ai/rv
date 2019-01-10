@@ -1,15 +1,15 @@
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
 use std::f64::consts::PI;
 use std::f64::INFINITY;
 
-use self::rand::distributions;
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
+use rand::distributions;
+use rand::Rng;
+use special::Gamma as SGamma;
 
-use result;
-use traits::*;
+use crate::result;
+use crate::traits::*;
 
 /// [Student's T distribution](https://en.wikipedia.org/wiki/Student%27s_t-distribution)
 /// over x in (-∞, ∞).
@@ -126,7 +126,6 @@ impl_traits!(f32);
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
     use std::f64;
 
     const TOL: f64 = 1E-12;

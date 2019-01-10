@@ -1,14 +1,14 @@
-extern crate nalgebra;
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
 use std::f64::consts::{E, PI};
 
-use self::nalgebra::{DMatrix, DVector};
-use self::rand::Rng;
+use nalgebra::{DMatrix, DVector};
+use rand::Rng;
 
-use data::MvGaussianSuffStat;
-use result;
-use traits::*;
+use crate::data::MvGaussianSuffStat;
+use crate::result;
+use crate::traits::*;
 
 /// [Multivariate Gaussian/Normal Distribution](https://en.wikipedia.org/wiki/Multivariate_normal_distribution),
 /// 𝒩(μ, Σ).
@@ -165,10 +165,9 @@ impl HasSuffStat<DVector<f64>> for MvGaussian {
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use dist::Gaussian;
-    use misc::{ks_test, mardia};
+    use crate::dist::Gaussian;
+    use crate::misc::{ks_test, mardia};
 
     const TOL: f64 = 1E-12;
     const NTRIES: usize = 5;

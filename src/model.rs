@@ -1,11 +1,9 @@
-extern crate rand;
-
-use self::rand::Rng;
-use data::DataOrSuffStat;
+use crate::data::DataOrSuffStat;
+use crate::traits::*;
+use rand::Rng;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::Arc;
-use traits::*;
 
 /// A wrapper for a complete conjugate model
 ///

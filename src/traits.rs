@@ -1,8 +1,6 @@
 //! Trait definitions
-extern crate rand;
-
-use self::rand::Rng;
-use data::DataOrSuffStat;
+use crate::data::DataOrSuffStat;
+use rand::Rng;
 use std::fmt::Debug;
 
 /// Random variable

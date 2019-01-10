@@ -1,13 +1,14 @@
 //! Exponential distribution over x in [0, ∞)
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
 use std::f64::consts::LN_2;
 
-use self::rand::distributions::Exp;
-use self::rand::Rng;
+use rand::distributions::Exp;
+use rand::Rng;
 
-use result;
-use traits::*;
+use crate::result;
+use crate::traits::*;
 
 /// [Exponential distribution](https://en.wikipedia.org/wiki/Exponential_distribution),
 /// Exp(λ) over x in [0, ∞).
@@ -137,9 +138,8 @@ impl_traits!(f32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

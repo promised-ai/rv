@@ -1,15 +1,15 @@
 //! Beta distribution over x in (0, 1)
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::distributions::Gamma;
-use self::rand::Rng;
-use self::special::Beta as SBeta;
-use self::special::Gamma as SGamma;
+use rand::distributions::Gamma;
+use rand::Rng;
+use special::Beta as SBeta;
+use special::Gamma as SGamma;
 use std::f64;
 
-use result;
-use traits::*;
+use crate::result;
+use crate::traits::*;
 
 /// [Beta distribution](https://en.wikipedia.org/wiki/Beta_distribution),
 /// Beta(α, β) over x in (0, 1).
@@ -199,9 +199,8 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

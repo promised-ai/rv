@@ -1,8 +1,11 @@
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 extern crate nalgebra;
 
 use self::nalgebra::{DMatrix, DVector};
-use data::CategoricalDatum;
-use traits::SuffStat;
+use crate::data::CategoricalDatum;
+use crate::traits::SuffStat;
 
 // Bernoulli
 // ---------

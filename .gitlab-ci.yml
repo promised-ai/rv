@@ -15,7 +15,7 @@ test:cargo-nightly:
         - cargo bench
 
 test:cargo-stable:
-    image: "rust:1.29.0"
+    image: "rust:1.31.1"
     script:
         - rustc --version && cargo --version
         - cargo build  --features serde_support

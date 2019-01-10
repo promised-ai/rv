@@ -1,12 +1,12 @@
-extern crate nalgebra;
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::nalgebra::{DMatrix, DVector};
-use self::rand::Rng;
+use nalgebra::{DMatrix, DVector};
+use rand::Rng;
 
-use dist::{InvWishart, MvGaussian};
-use result;
-use traits::*;
+use crate::dist::{InvWishart, MvGaussian};
+use crate::result;
+use crate::traits::*;
 
 /// Common conjugate prior on the μ and Σ parameters in the Multivariate
 /// Gaussian, Ν(μ, Σ)

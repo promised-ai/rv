@@ -1,13 +1,13 @@
 //! Categorical distribution of x<sub>k</sub> in {0, 1, ..., k-1}
-extern crate num;
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::num::traits::FromPrimitive;
-use self::rand::Rng;
-use data::{CategoricalDatum, CategoricalSuffStat};
-use misc::{argmax, ln_pflip, logsumexp};
-use result;
-use traits::*;
+use crate::data::{CategoricalDatum, CategoricalSuffStat};
+use crate::misc::{argmax, ln_pflip, logsumexp};
+use crate::result;
+use crate::traits::*;
+use num::traits::FromPrimitive;
+use rand::Rng;
 
 /// [Categorical distribution](https://en.wikipedia.org/wiki/Categorical_distribution)
 /// over unordered values in [0, k).
@@ -157,8 +157,7 @@ impl KlDivergence for Categorical {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
-    use misc::x2_test;
+    use crate::misc::x2_test;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;

@@ -1,13 +1,13 @@
 //! Dirichlet and Symmetric Dirichlet distributions over simplexes
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::distributions::Gamma as RGamma;
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
+use rand::distributions::Gamma as RGamma;
+use rand::Rng;
+use special::Gamma as SGamma;
 
-use result;
-use traits::*;
+use crate::result;
+use crate::traits::*;
 
 /// Symmetric [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
 /// where all alphas are the same.
@@ -188,7 +188,6 @@ impl Support<Vec<f64>> for Dirichlet {
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
 
     const TOL: f64 = 1E-12;

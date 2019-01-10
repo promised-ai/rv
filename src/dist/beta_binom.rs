@@ -1,13 +1,13 @@
 //! Beta Binomial distribution of x in {0, ..., n}
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::Rng;
-use self::special::Beta as SBeta;
-use misc::{ln_binom, ln_pflip};
-use result;
+use crate::misc::{ln_binom, ln_pflip};
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
+use special::Beta as SBeta;
 use std::f64;
-use traits::*;
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// over k in {0, ..., n}
@@ -145,7 +145,6 @@ impl_int_traits!(i64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
     use std::f64;
 

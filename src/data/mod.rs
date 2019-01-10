@@ -8,9 +8,8 @@ pub use self::suffstat::CategoricalSuffStat;
 pub use self::suffstat::GaussianSuffStat;
 pub use self::suffstat::MvGaussianSuffStat;
 
-extern crate num;
-use self::num::traits::FromPrimitive;
-use traits::{HasSuffStat, SuffStat};
+use crate::traits::{HasSuffStat, SuffStat};
+use num::traits::FromPrimitive;
 
 /// The trait that data must implemented by all data used with the
 /// `Categorical` distribution

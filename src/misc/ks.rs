@@ -60,10 +60,10 @@ fn mmul(xs: &[Vec<f64>], ys: &[Vec<f64>]) -> Vec<Vec<f64>> {
     zs
 }
 
-fn mpow(xs: &Vec<Vec<f64>>, ea: i32, n: usize) -> (Vec<Vec<f64>>, i32) {
+fn mpow(xs: &[Vec<f64>], ea: i32, n: usize) -> (Vec<Vec<f64>>, i32) {
     let m = xs.len();
     if n == 1 {
-        (xs.clone(), ea)
+        (xs.to_owned(), ea)
     } else {
         let (mut zs, mut ev) = mpow(xs, ea, n / 2);
         let ys = mmul(&zs, &zs);
@@ -145,9 +145,8 @@ fn ks_cdf(n: usize, d: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
-    use dist::Gaussian;
-    use traits::Cdf;
+    use crate::dist::Gaussian;
+    use crate::traits::Cdf;
 
     const TOL: f64 = 1E-12;
 

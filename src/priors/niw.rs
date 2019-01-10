@@ -1,12 +1,10 @@
-extern crate nalgebra;
-
-use self::nalgebra::{DMatrix, DVector};
-use consts::LN_2PI;
-use data::{DataOrSuffStat, MvGaussianSuffStat};
-use dist::{MvGaussian, NormalInvWishart};
-use misc::lnmv_gamma;
+use crate::consts::LN_2PI;
+use crate::data::{DataOrSuffStat, MvGaussianSuffStat};
+use crate::dist::{MvGaussian, NormalInvWishart};
+use crate::misc::lnmv_gamma;
+use crate::traits::{ConjugatePrior, SuffStat};
+use nalgebra::{DMatrix, DVector};
 use std::f64::consts::{LN_2, PI};
-use traits::{ConjugatePrior, SuffStat};
 
 type MvgData<'a> = DataOrSuffStat<'a, DVector<f64>, MvGaussian>;
 
@@ -88,24 +86,8 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
 
     const TOL: f64 = 1E-12;
-
-    // fn niw_fxtr() -> NormalInvWishart {
-    //     let muv = vec![-1.124144348216312, 1.48969760778546];
-    //     let scalev = vec![
-    //         0.226836817541677,
-    //         -0.0200753958619398,
-    //         -0.0200753958619398,
-    //         0.217753683861863,
-    //     ];
-
-    //     let mu = DVector::<f64>::from_column_slice(2, &muv);
-    //     let scale = DMatrix::<f64>::from_row_slice(2, 2, &scalev);
-
-    //     NormalInvWishart::new(mu, 1.0, 2, scale).unwrap()
-    // }
 
     fn obs_fxtr() -> MvGaussianSuffStat {
         let x0v = vec![3.57839693972576, 0.725404224946106];

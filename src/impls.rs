@@ -1,10 +1,7 @@
-extern crate quadrature;
-extern crate rand;
-
-use dist::Categorical;
-use dist::Gaussian;
-use dist::Mixture;
-use traits::*;
+use crate::dist::Categorical;
+use crate::dist::Gaussian;
+use crate::dist::Mixture;
+use crate::traits::*;
 
 trait QuadBounds {
     fn quad_bounds(&self) -> (f64, f64);
@@ -152,8 +149,8 @@ mod tests {
 
     #[test]
     fn gauss_mixture_quad_bounds_have_zero_pdf() {
-        use dist::{InvGamma, Poisson};
-        use traits::Rv;
+        use crate::dist::{InvGamma, Poisson};
+        use crate::traits::Rv;
 
         let mut rng = rand::thread_rng();
         let pois = Poisson::new(7.0).unwrap();

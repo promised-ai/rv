@@ -1,13 +1,14 @@
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
 use std::f64::consts::PI;
 
-use self::rand::Rng;
+use rand::Rng;
 
-use consts::LN_2PI;
-use misc::{bessel, mod_euc, quad};
-use result;
-use traits::*;
+use crate::consts::LN_2PI;
+use crate::misc::{bessel, mod_euc, quad};
+use crate::result;
+use crate::traits::*;
 
 /// [VonMises distirbution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
 /// on the circular interval (0, 2π]
@@ -165,9 +166,8 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64::EPSILON;
 
     const TOL: f64 = 1E-12;

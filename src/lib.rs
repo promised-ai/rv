@@ -74,7 +74,6 @@
 //! }
 //! ```
 #[cfg(feature = "serde_support")]
-#[macro_use]
 extern crate serde_derive;
 
 pub mod consts;
@@ -88,5 +87,5 @@ mod priors;
 pub mod result;
 pub mod traits;
 
-pub use model::ConjugateModel;
-pub use result::{Error, ErrorKind, Result};
+pub use crate::model::ConjugateModel;
+pub use crate::result::{Error, ErrorKind, Result};

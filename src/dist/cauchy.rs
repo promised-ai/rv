@@ -1,13 +1,14 @@
 //! Cauchy distribution over x in (-∞, ∞)
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::distributions::Cauchy as RCauchy;
-use self::rand::Rng;
-use consts::LN_PI;
-use misc::logsumexp;
-use result;
+use crate::consts::LN_PI;
+use crate::misc::logsumexp;
+use crate::result;
+use crate::traits::*;
+use rand::distributions::Cauchy as RCauchy;
+use rand::Rng;
 use std::f64::consts::PI;
-use traits::*;
 
 /// [Cauchy distribution](https://en.wikipedia.org/wiki/Cauchy_distribution)
 /// over x in (-∞, ∞).
@@ -124,9 +125,8 @@ impl_traits!(f32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

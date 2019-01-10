@@ -1,15 +1,15 @@
-extern crate nalgebra;
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
 use std::f64::consts::LN_2;
 
-use self::nalgebra::{DMatrix, DVector};
-use self::rand::Rng;
+use nalgebra::{DMatrix, DVector};
+use rand::Rng;
 
-use dist::MvGaussian;
-use misc::lnmv_gamma;
-use result;
-use traits::*;
+use crate::dist::MvGaussian;
+use crate::misc::lnmv_gamma;
+use crate::result;
+use crate::traits::*;
 
 /// [Inverse Wishart distribution](https://en.wikipedia.org/wiki/Inverse-Wishart_distribution),
 /// W<sup>-1</sup>(**Ψ**,ν) over positive definite matrices.
@@ -131,7 +131,6 @@ impl Mode<DMatrix<f64>> for InvWishart {
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
 
     const TOL: f64 = 1E-12;
