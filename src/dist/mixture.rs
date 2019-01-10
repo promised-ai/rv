@@ -1,6 +1,3 @@
-#[cfg(feature = "serde_support")]
-use serde_derive::{Deserialize, Serialize};
-
 extern crate rand;
 
 use self::rand::Rng;
