@@ -1,3 +1,6 @@
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use std::f64::consts::{E, PI};
 
 use nalgebra::{DMatrix, DVector};

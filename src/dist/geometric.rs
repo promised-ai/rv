@@ -1,4 +1,7 @@
 //! Possion distribution on unisgned integers
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use rand::Rng;
 
 use crate::dist::Uniform;

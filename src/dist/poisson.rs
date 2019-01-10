@@ -1,4 +1,7 @@
 //! Possion distribution on unisgned integers
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use rand::distributions::Poisson as RPossion;
 use rand::Rng;
 use special::Gamma as SGamma;

@@ -1,4 +1,7 @@
 //! Gaussian/Normal distribution over x in (-∞, ∞)
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 extern crate rand;
 extern crate special;
 

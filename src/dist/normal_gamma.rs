@@ -1,4 +1,7 @@
 //! A common conjugate prior for Gaussians
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use rand::Rng;
 
 use crate::consts::HALF_LN_2PI;

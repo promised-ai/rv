@@ -1,4 +1,7 @@
 //! Cauchy distribution over x in (-∞, ∞)
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use crate::consts::LN_PI;
 use crate::misc::logsumexp;
 use crate::result;

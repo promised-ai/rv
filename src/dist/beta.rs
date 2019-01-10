@@ -1,4 +1,7 @@
 //! Beta distribution over x in (0, 1)
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use rand::distributions::Gamma;
 use rand::Rng;
 use special::Beta as SBeta;

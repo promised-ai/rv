@@ -1,3 +1,6 @@
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use crate::result;
 
 #[derive(Debug, Clone)]

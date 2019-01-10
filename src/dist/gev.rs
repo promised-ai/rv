@@ -1,3 +1,6 @@
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use std::f32;
 use std::f64;
 use std::f64::consts::{LN_2, PI};

@@ -1,4 +1,7 @@
 //! Pareto distribution over x in [shape, ∞)
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use rand::Rng;
 use std::f64;
 

@@ -1,3 +1,6 @@
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 extern crate nalgebra;
 
 use self::nalgebra::{DMatrix, DVector};

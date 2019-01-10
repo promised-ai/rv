@@ -1,4 +1,7 @@
 //! Dirichlet and Symmetric Dirichlet distributions over simplexes
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use rand::distributions::Gamma as RGamma;
 use rand::Rng;
 use special::Gamma as SGamma;

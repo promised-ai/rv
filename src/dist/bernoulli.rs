@@ -1,4 +1,7 @@
 //! Bernoulli distribution of x in {0, 1}
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use crate::data::BernoulliSuffStat;
 use crate::result;
 use crate::traits::*;

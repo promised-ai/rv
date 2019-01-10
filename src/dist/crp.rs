@@ -7,6 +7,9 @@
 //! The CRP is parameterized CRP(α) where α is the 'discount' parameter in
 //! (0, ∞). Higher α causes there to be more partitions, as it encourages new
 //! entries to create new partitions.
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 extern crate rand;
 extern crate special;
 

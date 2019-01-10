@@ -1,4 +1,7 @@
 //! Continuous uniform distribution, U(a, b) on the interval x in [a, b]
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use rand::Rng;
 use std::f64;
 

@@ -1,4 +1,7 @@
 //! Inverse Gamma distribution over x in (0, ∞)
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use rand::distributions;
 use rand::Rng;
 use special::Gamma as SGamma;

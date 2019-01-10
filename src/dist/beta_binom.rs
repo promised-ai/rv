@@ -1,4 +1,7 @@
 //! Beta Binomial distribution of x in {0, ..., n}
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use crate::misc::{ln_binom, ln_pflip};
 use crate::result;
 use crate::traits::*;
