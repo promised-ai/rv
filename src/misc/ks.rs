@@ -31,8 +31,12 @@
 /// let (_, p_laplace) = ks_test(&xs, laplace_cdf);
 /// assert!(p_laplace < 0.05);
 /// ```
-pub fn ks_test<F: Fn(f64) -> f64>(xs: &[f64], cdf: F) -> (f64, f64) {
-    let mut xs_r: Vec<f64> = xs.to_vec();
+pub fn ks_test<X, F>(xs: &[X], cdf: F) -> (f64, f64)
+where
+    X: Copy + PartialOrd,
+    F: Fn(X) -> f64,
+{
+    let mut xs_r: Vec<X> = xs.to_vec();
     xs_r.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
 
     let n: f64 = xs_r.len() as f64;
