@@ -53,6 +53,61 @@ where
     (d, p)
 }
 
+pub fn ks_two<X>(xs: &[X], ys: &[X]) -> (f64, f64)
+where
+    X: Copy + PartialOrd + std::fmt::Debug
+{
+    let mut xs: Vec<X> = xs.to_vec();
+    let mut ys: Vec<X> = ys.to_vec();
+    xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    ys.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+    let n_x = xs.len();
+    let n_y = ys.len();
+
+    let mut it_xs = xs.iter();
+    let mut it_ys = ys.iter();
+
+    let mut fn_x = 0.0;
+    let mut fn_y = 0.0;
+
+    let d_fn_x = 1.0 / (n_x as f64);
+    let d_fn_y = 1.0 / (n_y as f64);
+
+    let mut x_opt = it_xs.next();
+    let mut y_opt = it_ys.next();
+    let mut d: f64 = 0.0;
+
+    loop {
+        match (x_opt, y_opt) {
+            (Some(x), Some(y)) => {
+                if x < y {
+                    fn_x += d_fn_x;
+                    x_opt = it_xs.next();
+                } else {
+                    fn_y += d_fn_y;
+                    y_opt = it_ys.next();
+                }
+                d = d.max((fn_x - fn_y).abs());
+            },
+            (Some(_), None) => {
+                d = d.max(1.0 - fn_x);
+                break;
+            },
+            (None, Some(_)) => {
+                d = d.max(1.0 - fn_y);
+                break;
+            },
+            (None, None) => break,
+        }
+    }
+    let n_x_f = n_x as f64;
+    let n_y_f = n_y as f64;
+    let p = 1.0 - ks_cdf(n_x.min(n_y), d);
+
+    (d, p)
+}
+
 fn mmul(xs: &[Vec<f64>], ys: &[Vec<f64>]) -> Vec<Vec<f64>> {
     let m = xs.len();
     let mut zs = vec![vec![0.0; m]; m];
@@ -175,5 +230,26 @@ mod tests {
 
         assert::close(ks, 0.55171678665456114, TOL);
         assert::close(p, 0.0021804502526949765, TOL);
+    }
+
+    #[test]
+    fn ks_two_known() {
+        let xs: Vec<f64> = vec![
+            1.62805595, -1.28284995, -0.16074287,  0.36135322,  0.01440087,
+            -1.0059501 ,  1.53957475, -1.04123753, -0.41885811,  0.54975795,
+            -0.47733008,  1.10397893, -0.84994073, -0.20375695, -0.12977272,
+            0.915276  ,  0.71426726, -1.54661317,  0.38228231,  0.26592397
+        ];
+
+        let ys: Vec<f64> = vec![
+            0.39391058, -0.39739767,  1.67236872,  1.16190065, -1.93320129,
+            -0.11767175,  1.01881742,  0.26254619,  1.15808479, -0.47545073,
+            -2.47376934, -1.6341644 , -0.40558285,  0.75866004, -1.86267948,
+            0.22708557, -1.11218436,  0.68928247, -1.08577561, -1.95370744
+        ];
+
+        let (stat, p) = ks_two(&xs, &ys);
+        assert::close(stat, 0.25, TOL);
+        assert::close(p, 0.4973423353136131, TOL);
     }
 }
