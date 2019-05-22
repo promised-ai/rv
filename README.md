@@ -1,6 +1,7 @@
 # rv
 
-Random variables for rust
+Random variables for rust. rv offers basic functionality for many probability
+distributions.
 
 ## Design
 
@@ -36,12 +37,12 @@ let pdf_bern = beta.ln_pdf(&berns[42]);
 ## Contributing
 
 1. All PRs should be branched off `dev`.
-2. Please create an issue before starting any work. We're far from stable, so
+2. Please create an issue before starting any work. We're not quite stable, so
    we might actually be working on what you want, or we might be working on
    something that will change the way you might implement it.
 3. If you plan on implementing a new distribution, implement at least `Rv`,
-   `Support`, and either `ContinuousDistr` or `DiscreteDistr`. Of course, more
-   is better!
+   `Support`, and either `ContinuousDistr` or `DiscreteDistr` (more is better)
+   for all types that make sense.
 4. Implement new distributions for the appropriate types. For example, don't
    just implement `Rv<f64>`, also implement `Rv<f32>`. Check out other
    distributions to see how it can be done easily with macros.
