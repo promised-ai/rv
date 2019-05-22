@@ -1,6 +1,7 @@
 # rv
 
-Random variables for rust
+Random variables for rust. rv offers basic functionality for many probability
+distributions.
 
 ## Design
 

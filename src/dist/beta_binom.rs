@@ -30,6 +30,24 @@ use std::f64;
 /// let beta_binom_mean: f64 = beta_binom.mean().unwrap();
 /// assert!( (beta_mean * f64::from(n) - beta_binom_mean).abs() < 1E-12 );
 /// ```
+///
+/// Some functions will panic when given data outside the supported range:
+/// [0, n]
+///
+/// ```
+/// # use rv::prelude::*;
+/// let beta_binom = BetaBinomial::new(20, 3.0, 2.0).unwrap();
+/// assert!(!beta_binom.supports(&21_u32));
+/// ```
+///
+/// The following will panic because 21 is out of the support
+///
+/// ```should_panic
+/// # use rv::prelude::*;
+/// # let beta_binom = BetaBinomial::new(20, 3.0, 2.0).unwrap();
+/// beta_binom.pmf(&21_u32); // panics
+/// ```
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct BetaBinomial {
