@@ -1,13 +1,13 @@
 //! Inverse Gamma distribution over x in (0, ∞)
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::distributions;
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
-use std::io;
-
-use traits::*;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::distributions;
+use rand::Rng;
+use special::Gamma as _;
 
 /// [Inverse gamma distribution](https://en.wikipedia.org/wiki/Inverse-gamma_distribution)
 /// IG(α, β) over x in (0, ∞).
@@ -17,7 +17,7 @@ use traits::*;
 /// f(x|α, β) = ----  x^(-α-1) e^(-β/x)
 ///             Γ(α)
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct InvGamma {
     // shape parameter, α
@@ -28,19 +28,36 @@ pub struct InvGamma {
 
 impl InvGamma {
     /// Create a new `Gamma` distribution with shape (α) and rate (β).
-    pub fn new(shape: f64, scale: f64) -> io::Result<Self> {
+    pub fn new(shape: f64, scale: f64) -> result::Result<Self> {
         let shape_ok = shape > 0.0 && shape.is_finite();
         let scale_ok = scale > 0.0 && scale.is_finite();
         if shape_ok && scale_ok {
             Ok(InvGamma { shape, scale })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "shape and scale must be finite and greater than 0";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }
 }
+
+impl Default for InvGamma {
+    fn default() -> Self {
+        InvGamma {
+            shape: 1.0,
+            scale: 1.0,
+        }
+    }
+}
+
+impl From<&InvGamma> for String {
+    fn from(invgam: &InvGamma) -> String {
+        format!("IG(α: {}, β: {})", invgam.shape, invgam.scale)
+    }
+}
+
+impl_display!(InvGamma);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
@@ -142,9 +159,8 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;
@@ -263,7 +279,7 @@ mod tests {
         let ig = InvGamma::new(3.0, 2.0).unwrap();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
-            assert!(x > 0.0 and x.is_finite());
+            assert!(x > 0.0 && x.is_finite());
         }
     }
 

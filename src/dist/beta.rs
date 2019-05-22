@@ -1,15 +1,15 @@
 //! Beta distribution over x in (0, 1)
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::distributions::Gamma;
-use self::rand::Rng;
-use self::special::Beta as SBeta;
-use self::special::Gamma as SGamma;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::distributions::Gamma;
+use rand::Rng;
+use special::Beta as _;
+use special::Gamma as _;
 use std::f64;
-use std::io;
-
-use traits::*;
 
 /// [Beta distribution](https://en.wikipedia.org/wiki/Beta_distribution),
 /// Beta(α, β) over x in (0, 1).
@@ -39,7 +39,7 @@ use traits::*;
 /// let p_pred_heads = beta.pp(&true, &DataOrSuffStat::Data(&flips)); // 9/15
 /// assert!((p_pred_heads - 3.0/5.0).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Beta {
     pub alpha: f64,
@@ -47,16 +47,16 @@ pub struct Beta {
 }
 
 impl Beta {
-    pub fn new(alpha: f64, beta: f64) -> io::Result<Self> {
+    pub fn new(alpha: f64, beta: f64) -> result::Result<Self> {
         let alpha_ok = alpha > 0.0 && alpha.is_finite();
         let beta_ok = beta > 0.0 && beta.is_finite();
 
         if alpha_ok && beta_ok {
             Ok(Beta { alpha, beta })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "α and β must be finite and greater than 0";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }
@@ -78,6 +78,14 @@ impl Default for Beta {
         Beta::jeffreys()
     }
 }
+
+impl From<&Beta> for String {
+    fn from(beta: &Beta) -> String {
+        format!("Beta(α: {}, β: {})", beta.alpha, beta.beta)
+    }
+}
+
+impl_display!(Beta);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
@@ -104,7 +112,8 @@ macro_rules! impl_traits {
                         let a = rng.sample(ga);
                         let b = rng.sample(gb);
                         (a / (a + b)) as $kind
-                    }).collect()
+                    })
+                    .collect()
             }
         }
 
@@ -116,6 +125,13 @@ macro_rules! impl_traits {
         }
 
         impl ContinuousDistr<$kind> for Beta {}
+
+        impl Cdf<$kind> for Beta {
+            fn cdf(&self, x: &$kind) -> f64 {
+                let ln_beta = self.alpha.ln_beta(self.beta);
+                (*x as f64).inc_beta(self.alpha, self.beta, ln_beta)
+            }
+        }
 
         impl Mean<$kind> for Beta {
             fn mean(&self) -> Option<$kind> {
@@ -191,11 +207,13 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;
+    const KS_PVAL: f64 = 0.2;
+    const N_TRIES: usize = 5;
 
     #[test]
     fn new() {
@@ -234,6 +252,46 @@ mod tests {
     fn ln_pdf_high_value() {
         let beta = Beta::new(1.5, 2.0).unwrap();
         assert::close(beta.ln_pdf(&0.99), -3.2884395139325218, TOL);
+    }
+
+    #[test]
+    fn cdf_hump_shaped() {
+        let beta = Beta::new(1.5, 2.0).unwrap();
+        let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+        let true_cdfs = vec![
+            0.07431352501395692,
+            0.19677398201998159,
+            0.3368493728656773,
+            0.48066620434559376,
+            0.6187184335382292,
+            0.7436128024718239,
+            0.8492099269320867,
+            0.9302042786399125,
+            0.9818872134822818,
+        ];
+        let cdfs: Vec<f64> = xs.iter().map(|x| beta.cdf(x)).collect();
+
+        assert::close(cdfs, true_cdfs, TOL);
+    }
+
+    #[test]
+    fn cdf_bowl_shaped() {
+        let beta = Beta::new(0.5, 0.7).unwrap();
+        let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+        let true_cdfs = vec![
+            0.25502526668462605,
+            0.36470920861186545,
+            0.45212784899417957,
+            0.529074597952903,
+            0.6003642321330015,
+            0.6688324654577239,
+            0.7367590200551991,
+            0.8067813209919937,
+            0.8837889567707921,
+        ];
+        let cdfs: Vec<f64> = xs.iter().map(|x| beta.cdf(x)).collect();
+
+        assert::close(cdfs, true_cdfs, TOL);
     }
 
     #[test]
@@ -340,5 +398,45 @@ mod tests {
     fn kurtosis() {
         let beta = Beta::new(1.5, 2.0).unwrap();
         assert::close(beta.kurtosis().unwrap(), -0.8601398601398601, TOL);
+    }
+
+    #[test]
+    fn draw_test_alpha_beta_gt_one() {
+        let mut rng = rand::thread_rng();
+        let beta = Beta::new(1.2, 3.4).unwrap();
+        let cdf = |x: f64| beta.cdf(&x);
+
+        // test is flaky, try a few times
+        let passes = (0..N_TRIES).fold(0, |acc, _| {
+            let xs: Vec<f64> = beta.sample(1000, &mut rng);
+            let (_, p) = ks_test(&xs, cdf);
+            if p > KS_PVAL {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+
+        assert!(passes > 0);
+    }
+
+    #[test]
+    fn draw_test_alpha_beta_lt_one() {
+        let mut rng = rand::thread_rng();
+        let beta = Beta::new(0.2, 0.7).unwrap();
+        let cdf = |x: f64| beta.cdf(&x);
+
+        // test is flaky, try a few times
+        let passes = (0..N_TRIES).fold(0, |acc, _| {
+            let xs: Vec<f64> = beta.sample(1000, &mut rng);
+            let (_, p) = ks_test(&xs, cdf);
+            if p > KS_PVAL {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+
+        assert!(passes > 0);
     }
 }

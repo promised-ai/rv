@@ -31,8 +31,12 @@
 /// let (_, p_laplace) = ks_test(&xs, laplace_cdf);
 /// assert!(p_laplace < 0.05);
 /// ```
-pub fn ks_test<F: Fn(f64) -> f64>(xs: &[f64], cdf: F) -> (f64, f64) {
-    let mut xs_r: Vec<f64> = xs.to_vec();
+pub fn ks_test<X, F>(xs: &[X], cdf: F) -> (f64, f64)
+where
+    X: Copy + PartialOrd,
+    F: Fn(X) -> f64,
+{
+    let mut xs_r: Vec<X> = xs.to_vec();
     xs_r.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
 
     let n: f64 = xs_r.len() as f64;
@@ -60,10 +64,10 @@ fn mmul(xs: &[Vec<f64>], ys: &[Vec<f64>]) -> Vec<Vec<f64>> {
     zs
 }
 
-fn mpow(xs: &Vec<Vec<f64>>, ea: i32, n: usize) -> (Vec<Vec<f64>>, i32) {
+fn mpow(xs: &[Vec<f64>], ea: i32, n: usize) -> (Vec<Vec<f64>>, i32) {
     let m = xs.len();
     if n == 1 {
-        (xs.clone(), ea)
+        (xs.to_owned(), ea)
     } else {
         let (mut zs, mut ev) = mpow(xs, ea, n / 2);
         let ys = mmul(&zs, &zs);
@@ -145,9 +149,8 @@ fn ks_cdf(n: usize, d: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
-    use dist::Gaussian;
-    use traits::Cdf;
+    use crate::dist::Gaussian;
+    use crate::traits::Cdf;
 
     const TOL: f64 = 1E-12;
 

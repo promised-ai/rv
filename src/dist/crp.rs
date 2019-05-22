@@ -7,15 +7,16 @@
 //! The CRP is parameterized CRP(α) where α is the 'discount' parameter in
 //! (0, ∞). Higher α causes there to be more partitions, as it encourages new
 //! entries to create new partitions.
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
-use data::Partition;
-use misc::pflip;
-use std::io;
-use traits::*;
+use crate::data::Partition;
+use crate::impl_display;
+use crate::misc::pflip;
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
+use special::Gamma as _;
 
 /// [Chinese Restaurant Process](https://en.wikipedia.org/wiki/Chinese_restaurant_process),
 /// a distribution over partitions.
@@ -46,24 +47,32 @@ pub struct Crp {
 
 impl Crp {
     /// Create an empty `Crp` with parameter alpha
-    pub fn new(alpha: f64, n: usize) -> io::Result<Self> {
+    pub fn new(alpha: f64, n: usize) -> result::Result<Self> {
         let alpha_ok = alpha > 0.0 && alpha.is_finite();
         let n_ok = n > 0;
         if !alpha_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "α must be greater than zero and finite";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else if !n_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "n must be greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else {
             Ok(Crp { alpha, n })
         }
     }
 }
+
+impl From<&Crp> for String {
+    fn from(crp: &Crp) -> String {
+        format!("CRP({}; α: {})", crp.n, crp.alpha)
+    }
+}
+
+impl_display!(Crp);
 
 impl Rv<Partition> for Crp {
     fn ln_f(&self, x: &Partition) -> f64 {
@@ -113,7 +122,6 @@ impl Support<Partition> for Crp {
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
 
     const TOL: f64 = 1E-12;

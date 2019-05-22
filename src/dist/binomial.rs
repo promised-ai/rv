@@ -1,16 +1,17 @@
 //! Binomial distribution
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::Rng;
-use misc::ln_binom;
+use crate::impl_display;
+use crate::misc::ln_binom;
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
 use std::f64;
-use std::io;
-use traits::*;
 
 /// [Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// with success probability *p*
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Binomial {
     /// Total number of trials
@@ -20,16 +21,16 @@ pub struct Binomial {
 }
 
 impl Binomial {
-    pub fn new(n: u64, p: f64) -> io::Result<Self> {
+    pub fn new(n: u64, p: f64) -> result::Result<Self> {
         let p_ok = p.is_finite() && 0.0 < p && p < 1.0;
         let n_ok = n > 0;
         if !p_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "p must be in [0, 1]");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(err_kind, "p must be in [0, 1]");
             Err(err)
         } else if !n_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "n must be > 0");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(err_kind, "n must be > 0");
             Err(err)
         } else {
             Ok(Binomial { n, p })
@@ -47,6 +48,14 @@ impl Binomial {
         1.0 - self.p
     }
 }
+
+impl From<&Binomial> for String {
+    fn from(b: &Binomial) -> String {
+        format!("Binomial({}; p: {})", b.n, b.p)
+    }
+}
+
+impl_display!(Binomial);
 
 macro_rules! impl_int_traits {
     ($kind:ty) => {
@@ -124,9 +133,8 @@ impl_int_traits!(i64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::x2_test;
+    use crate::misc::x2_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

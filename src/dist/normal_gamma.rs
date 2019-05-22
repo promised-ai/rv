@@ -1,18 +1,20 @@
 //! A common conjugate prior for Gaussians
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::Rng;
-use consts::HALF_LN_2PI;
-use data::GaussianSuffStat;
-use dist::{Gamma, Gaussian};
-use std::io;
-use traits::*;
+use crate::consts::HALF_LN_2PI;
+use crate::data::GaussianSuffStat;
+use crate::dist::{Gamma, Gaussian};
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
 
 /// Prior for Gaussian
 ///
 /// Given `x ~ N(μ, σ)`, the Normal Gamma prior implies that `μ ~ N(m, 1/(rρ))`
 /// and `ρ ~ Gamma(ν/2, s/2)`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct NormalGamma {
     // TODO: document parameters
@@ -23,25 +25,36 @@ pub struct NormalGamma {
 }
 
 impl NormalGamma {
-    pub fn new(m: f64, r: f64, s: f64, v: f64) -> io::Result<Self> {
+    pub fn new(m: f64, r: f64, s: f64, v: f64) -> result::Result<Self> {
         let m_ok = m.is_finite();
         let r_ok = r > 0.0 && r.is_finite();
         let s_ok = s > 0.0 && s.is_finite();
         let v_ok = v > 0.0 && v.is_finite();
         if !m_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "m must be finite");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(err_kind, "m must be finite");
             Err(err)
         } else if r_ok && s_ok && v_ok {
             Ok(NormalGamma { m, r, s, v })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = format!("r ({}), s ({}), and v ({}) must be finite and greater than zero", r, s, v);
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg.as_str());
             Err(err)
         }
     }
 }
+
+impl From<&NormalGamma> for String {
+    fn from(ng: &NormalGamma) -> String {
+        format!(
+            "Normal-Gamma(m: {}, r: {}, s: {}, ν: {})",
+            ng.m, ng.r, ng.s, ng.v
+        )
+    }
+}
+
+impl_display!(NormalGamma);
 
 impl Rv<Gaussian> for NormalGamma {
     fn ln_f(&self, x: &Gaussian) -> f64 {

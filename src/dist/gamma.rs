@@ -1,13 +1,13 @@
 //! Gamma distribution over x in (0, ∞)
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::distributions;
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
-use std::io;
-
-use traits::*;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::distributions;
+use rand::Rng;
+use special::Gamma as _;
 
 /// [Gamma distribution](https://en.wikipedia.org/wiki/Gamma_distribution) G(α, β)
 /// over x in (0, ∞).
@@ -20,7 +20,7 @@ use traits::*;
 /// f(x|α, β) = ----  x^(α-1) e^(-βx)
 ///             Γ(α)
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gamma {
     pub shape: f64,
@@ -29,20 +29,37 @@ pub struct Gamma {
 
 impl Gamma {
     /// Create a new `Gamma` distribution with shape (α) and rate (β).
-    pub fn new(shape: f64, rate: f64) -> io::Result<Self> {
+    pub fn new(shape: f64, rate: f64) -> result::Result<Self> {
         let shape_ok = shape > 0.0 && shape.is_finite();
         let rate_ok = rate > 0.0 && rate.is_finite();
 
         if shape_ok && rate_ok {
             Ok(Gamma { shape, rate })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "shape and rate must be finite and greater than 0";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }
 }
+
+impl Default for Gamma {
+    fn default() -> Self {
+        Gamma {
+            shape: 1.0,
+            rate: 1.0,
+        }
+    }
+}
+
+impl From<&Gamma> for String {
+    fn from(gam: &Gamma) -> String {
+        format!("G(α: {}, β: {})", gam.shape, gam.rate)
+    }
+}
+
+impl_display!(Gamma);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
@@ -128,9 +145,8 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

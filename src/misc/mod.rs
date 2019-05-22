@@ -7,9 +7,9 @@ mod quad;
 mod seq;
 mod x2;
 
-pub use self::func::*;
-pub use self::ks::ks_test;
-pub use self::mardia::mardia;
-pub use self::quad::quad;
-pub use self::seq::*;
-pub use self::x2::x2_test;
+pub use func::*;
+pub use ks::ks_test;
+pub use mardia::mardia;
+pub use quad::quad;
+pub use seq::*;
+pub use x2::x2_test;

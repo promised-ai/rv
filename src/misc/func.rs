@@ -1,12 +1,41 @@
-extern crate rand;
-extern crate special;
-
-use self::rand::distributions::Open01;
-use self::rand::Rng;
-use self::special::Gamma;
-use consts::LN_PI;
+use crate::consts::LN_PI;
+use rand::distributions::Open01;
+use rand::Rng;
+use special::Gamma;
 use std::cmp::PartialOrd;
+use std::fmt::Debug;
 use std::ops::AddAssign;
+
+/// Convert a Vector to a printable string
+///
+/// # Example
+///
+/// ```rust
+/// # use rv::misc::vec_to_string;
+/// let xs: Vec<u8> = vec![0, 1, 2, 3, 4, 5];
+///
+/// assert_eq!(vec_to_string(&xs, 6).as_str(), "[0, 1, 2, 3, 4, 5]");
+/// assert_eq!(vec_to_string(&xs, 5).as_str(), "[0, 1, 2, 3, ... , 5]");
+///
+/// ```
+pub fn vec_to_string<T: Debug>(xs: &Vec<T>, max_entries: usize) -> String {
+    let mut out = String::new();
+    out += "[";
+    let n = xs.len();
+    xs.iter().enumerate().for_each(|(i, x)| {
+        let to_push = if i < max_entries - 1 {
+            format!("{:?}, ", x)
+        } else if i == (max_entries - 1) && n > max_entries {
+            String::from("... , ")
+        } else {
+            format!("{:?}]", x)
+        };
+
+        out.push_str(to_push.as_str());
+    });
+
+    out
+}
 
 /// Natural logarithm of binomial coefficent, ln nCk
 ///
@@ -48,13 +77,14 @@ pub fn logsumexp(xs: &[f64]) -> f64 {
 /// ```
 pub fn cumsum<T>(xs: &[T]) -> Vec<T>
 where
-    T: AddAssign + Clone,
+    T: AddAssign + Copy + Default,
 {
-    let mut summed: Vec<T> = xs.to_vec();
-    for i in 1..xs.len() {
-        summed[i] += summed[i - 1].clone();
-    }
-    summed
+    xs.iter()
+        .scan(T::default(), |acc, &x| {
+            *acc += x;
+            Some(*acc)
+        })
+        .collect()
 }
 
 #[inline]
@@ -114,7 +144,8 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
                     panic!("Could not draw from {:?}", wsvec)
                 }
             }
-        }).collect()
+        })
+        .collect()
 }
 
 /// Draw an index according to log-domain weights
@@ -164,7 +195,8 @@ pub fn ln_pflip<R: Rng>(
                     panic!("Could not draw from {:?}", wsvec)
                 }
             }
-        }).collect()
+        })
+        .collect()
 }
 
 /// Indices of the largest element(s) in xs.
@@ -257,7 +289,6 @@ pub fn mod_euc(lhs: f64, rhs: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
 
     const TOL: f64 = 1E-12;
 

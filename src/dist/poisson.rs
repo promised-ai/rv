@@ -1,12 +1,13 @@
 //! Possion distribution on unisgned integers
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::distributions::Poisson as RPossion;
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
-use std::io;
-use traits::*;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::distributions::Poisson as RPossion;
+use rand::Rng;
+use special::Gamma as _;
 
 /// [Possion distribution](https://en.wikipedia.org/wiki/Poisson_distribution)
 /// over x in {0, 1, ... }.
@@ -30,23 +31,32 @@ use traits::*;
 /// let xs: Vec<u32> = pois.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Poisson {
     pub rate: f64,
 }
 
 impl Poisson {
-    pub fn new(rate: f64) -> io::Result<Self> {
+    pub fn new(rate: f64) -> result::Result<Self> {
         if rate > 0.0 && rate.is_finite() {
             Ok(Poisson { rate })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "rate must be greater than 0");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err =
+                result::Error::new(err_kind, "rate must be greater than 0");
             Err(err)
         }
     }
 }
+
+impl From<&Poisson> for String {
+    fn from(pois: &Poisson) -> String {
+        format!("Poisson(λ: {})", pois.rate)
+    }
+}
+
+impl_display!(Poisson);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
@@ -114,9 +124,8 @@ impl_traits!(u32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::x2_test;
+    use crate::misc::x2_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

@@ -1,13 +1,13 @@
 //! Exponential distribution over x in [0, ∞)
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::distributions::Exp;
+use rand::Rng;
 use std::f64::consts::LN_2;
-use std::io;
-
-use self::rand::distributions::Exp;
-use self::rand::Rng;
-
-use traits::*;
 
 /// [Exponential distribution](https://en.wikipedia.org/wiki/Exponential_distribution),
 /// Exp(λ) over x in [0, ∞).
@@ -23,7 +23,7 @@ use traits::*;
 /// let expon = Exponential::new(1.5).unwrap();
 /// let interval: (f64, f64) = expon.interval(0.5);  // (0.19, 0.92)
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Exponential {
     /// λ > 0, rate or inverse scale
@@ -31,17 +31,25 @@ pub struct Exponential {
 }
 
 impl Exponential {
-    pub fn new(rate: f64) -> io::Result<Self> {
+    pub fn new(rate: f64) -> result::Result<Self> {
         if rate > 0.0 && rate.is_finite() {
             Ok(Exponential { rate })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "rate must be finite and greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }
 }
+
+impl From<&Exponential> for String {
+    fn from(expon: &Exponential) -> String {
+        format!("Expon(λ: {})", expon.rate)
+    }
+}
+
+impl_display!(Exponential);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
@@ -137,9 +145,8 @@ impl_traits!(f32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

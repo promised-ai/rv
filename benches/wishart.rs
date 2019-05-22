@@ -1,7 +1,11 @@
+#![feature(test)]
+
+extern crate nalgebra;
 extern crate rand;
 extern crate rv;
 extern crate test;
 
+use self::nalgebra::DMatrix;
 use self::rv::dist::InvWishart;
 use self::rv::traits::Rv;
 use self::test::Bencher;

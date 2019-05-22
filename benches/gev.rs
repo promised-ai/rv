@@ -1,10 +1,12 @@
+#![feature(test)]
+
 extern crate rand;
 extern crate rv;
 extern crate test;
 
-use self::rv::dist::Gev;
-use self::rv::traits::{ContinuousDistr, Rv};
-use self::test::Bencher;
+use rv::dist::Gev;
+use rv::traits::{ContinuousDistr, Rv};
+use test::Bencher;
 
 #[bench]
 fn bench_draw_0(b: &mut Bencher) {

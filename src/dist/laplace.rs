@@ -1,10 +1,12 @@
 //! Laplace (double exponential) distribution
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::Rng;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
 use std::f64::consts::{E, FRAC_1_SQRT_2, LN_2};
-use std::io;
-use traits::*;
 
 /// [Laplace](https://en.wikipedia.org/wiki/Laplace_distribution), or double
 /// exponential, distribution over x in (-∞, ∞).
@@ -24,7 +26,7 @@ use traits::*;
 /// let xs: Vec<f64> = laplace.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Laplace {
     /// Location in (-∞, ∞)
@@ -34,14 +36,14 @@ pub struct Laplace {
 }
 
 impl Laplace {
-    pub fn new(mu: f64, b: f64) -> io::Result<Self> {
+    pub fn new(mu: f64, b: f64) -> result::Result<Self> {
         if !mu.is_finite() {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "mu must be finite");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(err_kind, "mu must be finite");
             Err(err)
         } else if b <= 0.0 || !b.is_finite() {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "b must be in (0, ∞)");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(err_kind, "b must be in (0, ∞)");
             Err(err)
         } else {
             Ok(Laplace { mu, b })
@@ -55,6 +57,14 @@ impl Default for Laplace {
         Laplace::new(0.0, FRAC_1_SQRT_2).unwrap()
     }
 }
+
+impl From<&Laplace> for String {
+    fn from(laplace: &Laplace) -> String {
+        format!("Laplace(μ: {}, b: {})", laplace.mu, laplace.b)
+    }
+}
+
+impl_display!(Laplace);
 
 #[inline]
 fn laplace_partial_draw(u: f64) -> f64 {
@@ -143,9 +153,8 @@ impl_traits!(f32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

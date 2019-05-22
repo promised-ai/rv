@@ -1,13 +1,15 @@
-extern crate nalgebra;
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::nalgebra::{DMatrix, DVector};
-use self::rand::Rng;
-use dist::MvGaussian;
-use misc::lnmv_gamma;
 use std::f64::consts::LN_2;
-use std::io;
-use traits::*;
+
+use nalgebra::{DMatrix, DVector};
+use rand::Rng;
+
+use crate::dist::MvGaussian;
+use crate::misc::lnmv_gamma;
+use crate::result;
+use crate::traits::*;
 
 /// [Inverse Wishart distribution](https://en.wikipedia.org/wiki/Inverse-Wishart_distribution),
 /// W<sup>-1</sup>(**Ψ**,ν) over positive definite matrices.
@@ -23,7 +25,7 @@ pub struct InvWishart {
 impl InvWishart {
     /// Create an Inverse Wishart distribution, W<sup>-1</sup>(**Ψ**,ν) with
     /// p-by-p inverse scale matrix, **Ψ**, and degrees of freedom, ν > p - 1.
-    pub fn new(inv_scale: DMatrix<f64>, df: usize) -> io::Result<Self> {
+    pub fn new(inv_scale: DMatrix<f64>, df: usize) -> result::Result<Self> {
         let err: Option<&str> = if !inv_scale.is_square() {
             Some("scale matrix not square")
         } else if (df as usize) < inv_scale.nrows() {
@@ -36,7 +38,10 @@ impl InvWishart {
         };
 
         match err {
-            Some(msg) => Err(io::Error::new(io::ErrorKind::InvalidInput, msg)),
+            Some(msg) => Err(result::Error::new(
+                result::ErrorKind::InvalidParameterError,
+                msg,
+            )),
             None => Ok(InvWishart { inv_scale, df }),
         }
     }
@@ -93,7 +98,8 @@ impl Rv<DMatrix<f64>> for InvWishart {
                         acc + x * x.transpose()
                     });
                 y.try_inverse().unwrap()
-            }).collect()
+            })
+            .collect()
     }
 }
 
@@ -125,7 +131,6 @@ impl Mode<DMatrix<f64>> for InvWishart {
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
 
     const TOL: f64 = 1E-12;
@@ -137,7 +142,7 @@ mod tests {
         assert!(InvWishart::new(inv_scale.clone(), 5).is_ok());
         match InvWishart::new(inv_scale.clone(), 3) {
             Err(err) => {
-                let msg = err.get_ref().unwrap().description();
+                let msg = err.description();
                 assert!(msg.contains("df too low"));
             }
             Ok(..) => panic!("Should've failed"),
@@ -149,7 +154,7 @@ mod tests {
         let inv_scale = DMatrix::identity(4, 3);
         match InvWishart::new(inv_scale, 5) {
             Err(err) => {
-                let msg = err.get_ref().unwrap().description();
+                let msg = err.description();
                 assert!(msg.contains("square"));
             }
             Ok(..) => panic!("Should've failed"),

@@ -1,18 +1,18 @@
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::distributions;
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::distributions;
+use rand::Rng;
+use special::Gamma as SGamma;
 use std::f64::consts::PI;
 use std::f64::INFINITY;
-use std::io;
-
-use traits::*;
 
 /// [Student's T distribution](https://en.wikipedia.org/wiki/Student%27s_t-distribution)
 /// over x in (-∞, ∞).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct StudentsT {
     /// Degrees of freedom, ν, in (0, ∞)
@@ -20,17 +20,31 @@ pub struct StudentsT {
 }
 
 impl StudentsT {
-    pub fn new(v: f64) -> io::Result<Self> {
+    pub fn new(v: f64) -> result::Result<Self> {
         if v > 0.0 && v.is_finite() {
             Ok(StudentsT { v })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "v must be finite and greater than 0";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }
 }
+
+impl Default for StudentsT {
+    fn default() -> Self {
+        StudentsT { v: 2.0 }
+    }
+}
+
+impl From<&StudentsT> for String {
+    fn from(t: &StudentsT) -> String {
+        format!("Student's({})", t.v)
+    }
+}
+
+impl_display!(StudentsT);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
@@ -125,7 +139,6 @@ impl_traits!(f32);
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
     use std::f64;
 
     const TOL: f64 = 1E-12;

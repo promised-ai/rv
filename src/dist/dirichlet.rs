@@ -1,13 +1,14 @@
 //! Dirichlet and Symmetric Dirichlet distributions over simplexes
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::distributions::Gamma as RGamma;
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
-use std::io;
-
-use traits::*;
+use crate::impl_display;
+use crate::misc::vec_to_string;
+use crate::result;
+use crate::traits::*;
+use rand::distributions::Gamma as RGamma;
+use rand::Rng;
+use special::Gamma as _;
 
 /// Symmetric [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
 /// where all alphas are the same.
@@ -15,7 +16,7 @@ use traits::*;
 /// `SymmetricDirichlet { alpha, k }` is mathematicall equivalent to
 /// `Dirichlet { alphas: vec![alpha; k] }`. This version has some extra
 /// optimizations to seep up computing the PDF and drawing random vectors.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SymmetricDirichlet {
     pub alpha: f64,
@@ -23,28 +24,37 @@ pub struct SymmetricDirichlet {
 }
 
 impl SymmetricDirichlet {
-    pub fn new(alpha: f64, k: usize) -> io::Result<Self> {
+    pub fn new(alpha: f64, k: usize) -> result::Result<Self> {
         let k_ok = k > 0;
         let alpha_ok = alpha > 0.0 && alpha.is_finite();
 
         if !k_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "k must be greater than zero");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err =
+                result::Error::new(err_kind, "k must be greater than zero");
             Err(err)
         } else if !alpha_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "Alpha must be finite and greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else {
             Ok(SymmetricDirichlet { alpha, k })
         }
     }
 
-    pub fn jeffreys(k: usize) -> io::Result<Self> {
+    pub fn jeffreys(k: usize) -> result::Result<Self> {
         SymmetricDirichlet::new(0.5, k)
     }
 }
+
+impl From<&SymmetricDirichlet> for String {
+    fn from(symdir: &SymmetricDirichlet) -> String {
+        format!("SymmetricDirichlet({}; α: {})", symdir.k, symdir.alpha)
+    }
+}
+
+impl_display!(SymmetricDirichlet);
 
 impl Rv<Vec<f64>> for SymmetricDirichlet {
     fn draw<R: Rng>(&self, rng: &mut R) -> Vec<f64> {
@@ -68,7 +78,7 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
 
 /// [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
 /// over points on the k-simplex.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Dirichlet {
     /// A `Vec` of real numbers in (0, ∞)
@@ -77,11 +87,11 @@ pub struct Dirichlet {
 
 impl Dirichlet {
     /// Creates a `Dirichlet` with a given `alphas` vector
-    pub fn new(alphas: Vec<f64>) -> io::Result<Self> {
+    pub fn new(alphas: Vec<f64>) -> result::Result<Self> {
         if alphas.iter().any(|&a| !(a > 0.0 && a.is_finite())) {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "All alphas must be finite and greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else {
             Ok(Dirichlet { alphas })
@@ -123,6 +133,14 @@ impl Dirichlet {
         self.alphas.len()
     }
 }
+
+impl From<&Dirichlet> for String {
+    fn from(dir: &Dirichlet) -> String {
+        format!("Dir(α: {})", vec_to_string(&dir.alphas, 5))
+    }
+}
+
+impl_display!(Dirichlet);
 
 impl ContinuousDistr<Vec<f64>> for SymmetricDirichlet {}
 
@@ -187,7 +205,6 @@ impl Support<Vec<f64>> for Dirichlet {
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
 
     const TOL: f64 = 1E-12;

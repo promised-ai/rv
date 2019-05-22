@@ -1,13 +1,10 @@
-extern crate rand;
-extern crate special;
+use rand::Rng;
+use special::Gamma as SGamma;
 
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
-
-use data::{CategoricalDatum, CategoricalSuffStat, DataOrSuffStat};
-use dist::{Categorical, Dirichlet, SymmetricDirichlet};
-use prelude::CategoricalData;
-use traits::*;
+use crate::data::{CategoricalDatum, CategoricalSuffStat, DataOrSuffStat};
+use crate::dist::{Categorical, Dirichlet, SymmetricDirichlet};
+use crate::prelude::CategoricalData;
+use crate::traits::*;
 
 impl Rv<Categorical> for SymmetricDirichlet {
     fn ln_f(&self, x: &Categorical) -> f64 {
@@ -126,7 +123,6 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
 #[cfg(test)]
 mod test {
     use super::*;
-    extern crate assert;
 
     const TOL: f64 = 1E-12;
 

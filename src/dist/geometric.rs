@@ -1,11 +1,13 @@
 //! Possion distribution on unisgned integers
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::Rng;
-use dist::Uniform;
-use std::io;
-use traits::*;
+use crate::dist::Uniform;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use num::{Bounded, FromPrimitive, Integer, Saturating, ToPrimitive, Unsigned};
+use rand::Rng;
 
 /// [Geometric distribution](https://en.wikipedia.org/wiki/Geometric_distribution)
 /// over x in {0, 1, 2, 3, ... }.
@@ -26,57 +28,116 @@ use traits::*;
 /// let xs: Vec<u32> = geom.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialOrd, PartialEq)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Geometric {
     pub p: f64,
 }
 
 impl Geometric {
-    pub fn new(p: f64) -> io::Result<Self> {
+    pub fn new(p: f64) -> result::Result<Self> {
         if p > 0.0 && p <= 1.0 {
             Ok(Geometric { p })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(
                 err_kind,
                 "p must be between zero and one (right closed).",
             );
             Err(err)
         }
     }
+
+    // Use the inversion method to select the corresponding integer.
+    fn inversion_draw_method<X, R>(rng: &mut R, p: f64) -> X
+    where
+        X: Unsigned + Integer + FromPrimitive + Bounded,
+        R: Rng,
+    {
+        let u: f64 = Uniform::new(0.0, 1.0).unwrap().draw(rng);
+        X::from_f64(((1.0 - u).ln() / (1.0 - p).ln()).ceil() - 1.0)
+            .unwrap_or(X::max_value())
+    }
+
+    // Increase the value until the cdf surpasses the given p value.
+    fn search_draw_method<X, R>(rng: &mut R, p: f64) -> X
+    where
+        X: Unsigned + Integer + Saturating,
+        R: Rng,
+    {
+        let u: f64 = rng.gen();
+        let q = 1.0 - p;
+
+        let mut t: X = X::zero();
+        let mut sum = p;
+        let mut prod = p;
+
+        while u > sum {
+            prod *= q;
+            sum += prod;
+            t = t.saturating_add(X::one());
+        }
+        t
+    }
 }
 
-macro_rules! impl_traits {
-    ($kind:ty) => {
-        impl Rv<$kind> for Geometric {
-            fn ln_f(&self, k: &$kind) -> f64 {
-                let kf = f64::from(*k);
-                kf * (1.0 - self.p).ln() + self.p.ln()
-            }
+impl Default for Geometric {
+    fn default() -> Self {
+        Geometric { p: 0.5 }
+    }
+}
 
-            fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let u: f64 = Uniform::new(0.0, 1.0).unwrap().draw(rng);
-                (((1.0 - u).ln() / (1.0 - self.p).ln()).ceil() - 1.0) as $kind
-            }
+impl From<&Geometric> for String {
+    fn from(geom: &Geometric) -> String {
+        format!("G(p: {})", geom.p)
+    }
+}
+
+impl_display!(Geometric);
+
+impl<X> Rv<X> for Geometric
+where
+    X: Unsigned + Integer + FromPrimitive + ToPrimitive + Saturating + Bounded,
+{
+    fn ln_f(&self, k: &X) -> f64 {
+        let kf = (*k).to_f64().unwrap();
+        kf * (1.0 - self.p).ln() + self.p.ln()
+    }
+
+    fn draw<R: Rng>(&self, rng: &mut R) -> X {
+        // Follows the same pattern as
+        // https://github.com/numpy/numpy/blob/7c41164f5340dc998ea1c04d2061f7d246894955/numpy/random/mtrand/distributions.c#L777
+        if 3.0 * self.p > 1.0 {
+            Geometric::search_draw_method(rng, self.p)
+        } else {
+            Geometric::inversion_draw_method(rng, self.p)
         }
+    }
+}
 
-        impl Support<$kind> for Geometric {
-            #[allow(unused_comparisons)]
-            fn supports(&self, k: &$kind) -> bool {
-                *k >= 0
-            }
-        }
+impl<X> Support<X> for Geometric
+where
+    X: Unsigned + Integer,
+{
+    #[allow(unused_comparisons)]
+    fn supports(&self, k: &X) -> bool {
+        *k >= X::zero()
+    }
+}
 
-        impl DiscreteDistr<$kind> for Geometric {}
+impl<X> DiscreteDistr<X> for Geometric where
+    X: Unsigned + Integer + FromPrimitive + ToPrimitive + Saturating + Bounded
+{
+}
 
-        impl Cdf<$kind> for Geometric {
-            fn cdf(&self, k: &$kind) -> f64 {
-                let kf = f64::from(*k);
-                1.0 - (1.0 - self.p).powf(kf + 1.0)
-            }
-        }
-    };
+impl<X> Cdf<X> for Geometric
+where
+    X: Unsigned + Integer + FromPrimitive + ToPrimitive + Saturating + Bounded,
+{
+    fn cdf(&self, k: &X) -> f64 {
+        let kf = (*k).to_f64().unwrap();
+        1.0 - (1.0 - self.p).powf(kf + 1.0)
+    }
 }
 
 impl Mean<f64> for Geometric {
@@ -110,14 +171,10 @@ impl Entropy for Geometric {
     }
 }
 
-impl_traits!(u16);
-impl_traits!(u32);
-
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::x2_test;
+    use crate::misc::x2_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;
@@ -199,10 +256,9 @@ mod tests {
         assert::close(k, 6.5, TOL);
     }
 
-    #[test]
-    fn draw_test() {
+    fn test_draw_generic(p: f64) {
         let mut rng = rand::thread_rng();
-        let geom = Geometric::new(0.5).unwrap();
+        let geom = Geometric::new(p).unwrap();
 
         // How many bins do we need?
         let k: usize = (0..100)
@@ -215,7 +271,6 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let mut f_obs: Vec<u32> = vec![0; k];
             let xs: Vec<u32> = geom.sample(1000, &mut rng);
-            println!("xs = {:#?}", xs);
             xs.iter().for_each(|&x| f_obs[x as usize] += 1);
             let (_, p) = x2_test(&f_obs, &ps);
             if p > X2_PVAL {
@@ -225,5 +280,15 @@ mod tests {
             }
         });
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn draw_test_05() {
+        test_draw_generic(0.5)
+    }
+
+    #[test]
+    fn draw_test_02() {
+        test_draw_generic(0.2)
     }
 }
