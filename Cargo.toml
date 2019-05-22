@@ -14,7 +14,7 @@ edition = "2018"
 serde_support = ["serde", "serde_derive", "nalgebra/serde-serialize"]
 
 [badges]
-gitlab = { repository = "baxe/rv", branch = "master" }
+gitlab = { repository = "baxe/rv", tag = "v0.5.1" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
