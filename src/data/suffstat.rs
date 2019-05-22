@@ -1,12 +1,15 @@
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 extern crate nalgebra;
 
 use self::nalgebra::{DMatrix, DVector};
-use data::CategoricalDatum;
-use traits::SuffStat;
+use crate::data::CategoricalDatum;
+use crate::traits::SuffStat;
 
 // Bernoulli
 // ---------
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct BernoulliSuffStat {
     pub n: usize,
@@ -82,7 +85,7 @@ impl_bernoulli_suffstat!(isize);
 
 // Categorical
 // -----------
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct CategoricalSuffStat {
     pub n: usize,
@@ -118,7 +121,7 @@ impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
 
 // Gaussian
 // --------
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct GaussianSuffStat {
     /// Number of observations
@@ -179,7 +182,7 @@ macro_rules! impl_gaussian_suffstat {
 impl_gaussian_suffstat!(f32);
 impl_gaussian_suffstat!(f64);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct MvGaussianSuffStat {
     pub n: usize,

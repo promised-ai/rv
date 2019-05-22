@@ -1,11 +1,13 @@
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::Rng;
-use consts::LN_2PI;
-use misc::{bessel, mod_euc, quad};
+use crate::consts::LN_2PI;
+use crate::impl_display;
+use crate::misc::{bessel, mod_euc, quad};
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
 use std::f64::consts::PI;
-use std::io;
-use traits::*;
 
 /// [VonMises distirbution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
 /// on the circular interval (0, 2π]
@@ -29,7 +31,7 @@ use traits::*;
 /// let xs: Vec<f64> = vm.sample(103, &mut rng);
 /// assert_eq!(xs.len(), 103);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct VonMises {
     /// Mean
@@ -41,17 +43,17 @@ pub struct VonMises {
 }
 
 impl VonMises {
-    pub fn new(mu: f64, k: f64) -> io::Result<Self> {
+    pub fn new(mu: f64, k: f64) -> result::Result<Self> {
         let mu_ok = 0.0 <= mu && mu <= 2.0 * PI && mu.is_finite();
         let k_ok = k > 0.0 && k.is_finite();
         if !mu_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "mu must be in [0, 2π]");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(err_kind, "mu must be in [0, 2π]");
             Err(err)
         } else if !k_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "k must be finite and greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else {
             let i0_k = bessel::i0(k);
@@ -65,6 +67,14 @@ impl Default for VonMises {
         VonMises::new(PI, 1.0).unwrap()
     }
 }
+
+impl From<&VonMises> for String {
+    fn from(vm: &VonMises) -> String {
+        format!("VonMises(μ: {}, k: {})", vm.mu, vm.k)
+    }
+}
+
+impl_display!(VonMises);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
@@ -163,9 +173,8 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64::EPSILON;
 
     const TOL: f64 = 1E-12;

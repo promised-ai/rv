@@ -1,17 +1,16 @@
 //! Gaussian/Normal distribution over x in (-∞, ∞)
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
+use crate::consts::*;
+use crate::data::GaussianSuffStat;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::distributions::Normal;
+use rand::Rng;
+use special::Error as _;
 use std::f64::consts::SQRT_2;
-use std::io;
-
-use self::rand::distributions::Normal;
-use self::rand::Rng;
-use self::special::Error;
-
-use consts::*;
-use data::GaussianSuffStat;
-use traits::*;
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.
@@ -36,7 +35,7 @@ use traits::*;
 /// let kl_sym = gauss_1.kl_sym(&gauss_2);
 /// assert!((kl_sym - (kl_12 + kl_21)).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gaussian {
     /// Mean
@@ -46,17 +45,17 @@ pub struct Gaussian {
 }
 
 impl Gaussian {
-    pub fn new(mu: f64, sigma: f64) -> io::Result<Self> {
+    pub fn new(mu: f64, sigma: f64) -> result::Result<Self> {
         let mu_ok = mu.is_finite();
         let sigma_ok = sigma > 0.0 && sigma.is_finite();
         if !mu_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "mu must be finite");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(err_kind, "mu must be finite");
             Err(err)
         } else if !sigma_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "sigma must be finite and greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else {
             Ok(Gaussian { mu, sigma })
@@ -74,6 +73,14 @@ impl Default for Gaussian {
         Gaussian::standard()
     }
 }
+
+impl From<&Gaussian> for String {
+    fn from(gauss: &Gaussian) -> String {
+        format!("N(μ: {}, σ: {})", gauss.mu, gauss.sigma)
+    }
+}
+
+impl_display!(Gaussian);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
@@ -192,7 +199,6 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
     use std::f64;
 

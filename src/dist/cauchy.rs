@@ -1,13 +1,15 @@
 //! Cauchy distribution over x in (-∞, ∞)
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::distributions::Cauchy as RCauchy;
-use self::rand::Rng;
-use consts::LN_PI;
-use misc::logsumexp;
+use crate::consts::LN_PI;
+use crate::impl_display;
+use crate::misc::logsumexp;
+use crate::result;
+use crate::traits::*;
+use rand::distributions::Cauchy as RCauchy;
+use rand::Rng;
 use std::f64::consts::PI;
-use std::io;
-use traits::*;
 
 /// [Cauchy distribution](https://en.wikipedia.org/wiki/Cauchy_distribution)
 /// over x in (-∞, ∞).
@@ -22,7 +24,7 @@ use traits::*;
 ///
 /// assert!((ln_fx + 2.4514716152673368).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Cauchy {
     /// location, x<sub>0</sub>, in (-∞, ∞)
@@ -32,19 +34,19 @@ pub struct Cauchy {
 }
 
 impl Cauchy {
-    pub fn new(loc: f64, scale: f64) -> io::Result<Self> {
+    pub fn new(loc: f64, scale: f64) -> result::Result<Self> {
         let loc_ok = loc.is_finite();
         let scale_ok = scale > 0.0 && scale.is_finite();
         if loc_ok && scale_ok {
             Ok(Cauchy { loc, scale })
         } else if !loc_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "loc must be finite");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(err_kind, "loc must be finite");
             Err(err)
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "scale must be finite and greater than zero";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }
@@ -55,6 +57,14 @@ impl Default for Cauchy {
         Cauchy::new(0.0, 1.0).unwrap()
     }
 }
+
+impl From<&Cauchy> for String {
+    fn from(cauchy: &Cauchy) -> String {
+        format!("Cauchy(loc: {}, scale: {})", cauchy.loc, cauchy.scale)
+    }
+}
+
+impl_display!(Cauchy);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
@@ -124,9 +134,8 @@ impl_traits!(f32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

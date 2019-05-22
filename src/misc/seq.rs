@@ -8,7 +8,6 @@ pub fn linspace(start: f64, stop: f64, num: i32) -> Vec<f64> {
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
 
     const TOL: f64 = 1E-8;

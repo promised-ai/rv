@@ -1,13 +1,11 @@
-extern crate special;
-
 use std::f64::consts::LN_2;
 
-use self::special::Gamma as SGamma;
+use special::Gamma as SGamma;
 
-use consts::*;
-use data::{DataOrSuffStat, GaussianSuffStat};
-use dist::{Gaussian, NormalGamma};
-use traits::*;
+use crate::consts::*;
+use crate::data::{DataOrSuffStat, GaussianSuffStat};
+use crate::dist::{Gaussian, NormalGamma};
+use crate::traits::*;
 
 fn extract_stat(x: &DataOrSuffStat<f64, Gaussian>) -> GaussianSuffStat {
     match x {
@@ -67,7 +65,6 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
 
     const TOL: f64 = 1E-12;

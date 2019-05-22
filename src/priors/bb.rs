@@ -1,12 +1,9 @@
-extern crate rand;
-extern crate special;
+use rand::Rng;
+use special::Beta as SBeta;
 
-use self::rand::Rng;
-use self::special::Beta as SBeta;
-
-use data::{BernoulliSuffStat, DataOrSuffStat};
-use dist::{Bernoulli, Beta};
-use traits::*;
+use crate::data::{BernoulliSuffStat, DataOrSuffStat};
+use crate::dist::{Bernoulli, Beta};
+use crate::traits::*;
 
 impl Rv<Bernoulli> for Beta {
     fn ln_f(&self, x: &Bernoulli) -> f64 {
@@ -121,7 +118,6 @@ impl_int_traits!(isize);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
 
     const TOL: f64 = 1E-12;

@@ -1,15 +1,16 @@
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::Rng;
-use self::special::Gamma;
-use consts;
-use dist;
+use crate::consts;
+use crate::dist;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
+use special::Gamma;
 use std::f32;
 use std::f64;
 use std::f64::consts::{LN_2, PI};
-use std::io;
-use traits::*;
 
 /// [Generalized Extreme Value Distribution](https://en.wikipedia.org/wiki/Generalized_extreme_value_distribution)
 /// Gev(μ, σ, ξ) where the parameters are
@@ -23,20 +24,17 @@ use traits::*;
 /// t(x) = ⎰ (1 + ξ ((x - μ) / σ))^(-1/ξ) if ξ ≠ 0
 ///        ⎱ e^{(μ - x) / σ}              if ξ = 0
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gev {
-    /// location
     pub loc: f64,
-    /// scale
     pub scale: f64,
-    /// shape
     pub shape: f64,
 }
 
 impl Gev {
     /// Create a new `Gev` distribution with location, scale, and shape.
-    pub fn new(loc: f64, scale: f64, shape: f64) -> io::Result<Self> {
+    pub fn new(loc: f64, scale: f64, shape: f64) -> result::Result<Self> {
         let scale_ok = scale > 0.0 && scale.is_finite();
         let loc_ok = loc.is_finite();
         let shape_ok = shape.is_finite();
@@ -44,9 +42,9 @@ impl Gev {
         if scale_ok && loc_ok && shape_ok {
             Ok(Gev { loc, scale, shape })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "location, shape, and scale must all be finite and scale must be greater than zero.";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }
@@ -59,6 +57,14 @@ fn t(loc: f64, shape: f64, scale: f64, x: f64) -> f64 {
         (1.0 + shape * (x - loc) / scale).powf(-1.0 / shape)
     }
 }
+
+impl From<&Gev> for String {
+    fn from(gev: &Gev) -> String {
+        format!("GEV(μ: {}, α: {}, ξ: {})", gev.loc, gev.scale, gev.shape)
+    }
+}
+
+impl_display!(Gev);
 
 macro_rules! impl_traits {
     ($kind: ty) => {
@@ -186,10 +192,9 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
-    use misc::linspace;
+    use crate::misc::ks_test;
+    use crate::misc::linspace;
     use std::f64;
 
     const TOL: f64 = 1E-12;

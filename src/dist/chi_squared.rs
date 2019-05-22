@@ -1,14 +1,14 @@
 //! Χ</sup>2</sup> over x in (0, ∞)
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::distributions;
-use self::rand::Rng;
-use self::special::Gamma as SGamma;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::distributions;
+use rand::Rng;
+use special::Gamma as _;
 use std::f64::consts::LN_2;
-use std::io;
-
-use traits::*;
 
 /// [Χ<sup>2</sup> distribution](https://en.wikipedia.org/wiki/Chi-squared_distribution)
 /// Χ<sup>2</sup>(k).
@@ -21,7 +21,7 @@ use traits::*;
 ///
 /// let x2 = ChiSquared::new(2.0).unwrap();
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct ChiSquared {
     /// Degrees of freedom in (0, ∞)
@@ -29,17 +29,25 @@ pub struct ChiSquared {
 }
 
 impl ChiSquared {
-    pub fn new(k: f64) -> io::Result<Self> {
+    pub fn new(k: f64) -> result::Result<Self> {
         if k > 0.0 && k.is_finite() {
             Ok(ChiSquared { k })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "k must be finite and greater than 0";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }
 }
+
+impl From<&ChiSquared> for String {
+    fn from(x2: &ChiSquared) -> String {
+        format!("χ²({})", x2.k)
+    }
+}
+
+impl_display!(ChiSquared);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
@@ -112,9 +120,8 @@ impl_traits!(f32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

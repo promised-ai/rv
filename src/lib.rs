@@ -73,22 +73,34 @@
 //!     let p_heads = prior.pp(&true, &obs);
 //! }
 //! ```
-// #![feature(associated_type_defaults)]
-// #![feature(stmt_expr_attributes)]
-// #![feature(euclidean_division)]
-// #![feature(test)]
-
 #[cfg(feature = "serde_support")]
-#[macro_use]
 extern crate serde_derive;
+
+// Test the README
+use doc_comment::doctest;
+doctest!("../README.md");
 
 pub mod consts;
 pub mod data;
 pub mod dist;
+mod impls;
 pub mod misc;
 mod model;
 pub mod prelude;
 mod priors;
+pub mod result;
 pub mod traits;
 
-pub use model::ConjugateModel;
+pub use crate::model::ConjugateModel;
+pub use crate::result::{Error, ErrorKind, Result};
+
+#[macro_export]
+macro_rules! impl_display {
+    ($kind: ty) => {
+        impl ::std::fmt::Display for $kind {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                write!(f, "{}", String::from(self))
+            }
+        }
+    };
+}

@@ -1,7 +1,11 @@
+#![feature(test)]
+
+extern crate nalgebra;
 extern crate rand;
 extern crate rv;
 extern crate test;
 
+use self::nalgebra::DVector;
 use self::rv::dist::MvGaussian;
 use self::rv::traits::{ContinuousDistr, Rv};
 use self::test::Bencher;

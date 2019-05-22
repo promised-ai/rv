@@ -163,7 +163,6 @@ pub fn i1(x: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
 
     const TOL: f64 = 1E-12;
 

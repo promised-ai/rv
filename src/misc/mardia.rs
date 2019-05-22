@@ -1,12 +1,10 @@
-extern crate nalgebra;
-
-use self::nalgebra::{DMatrix, DVector};
-use dist::{ChiSquared, Gaussian};
-use traits::Cdf;
+use crate::dist::{ChiSquared, Gaussian};
+use crate::traits::Cdf;
+use nalgebra::{DMatrix, DVector};
 
 /// [Mardia's
 /// test](https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Multivariate_normality_tests) for multivariate normality.
-pub fn mardia(xs: &Vec<DVector<f64>>) -> (f64, f64) {
+pub fn mardia(xs: &[DVector<f64>]) -> (f64, f64) {
     let dims = xs[0].len();
     let n = xs.len() as f64;
 
@@ -53,10 +51,8 @@ pub fn mardia(xs: &Vec<DVector<f64>>) -> (f64, f64) {
 #[cfg(test)]
 mod test {
     use super::*;
-    extern crate assert;
-    extern crate rand;
-    use dist::MvGaussian;
-    use traits::Rv;
+    use crate::dist::MvGaussian;
+    use crate::traits::Rv;
 
     const MARDIA_PVAL: f64 = 0.05;
     const NTRIES: usize = 5;
@@ -91,7 +87,8 @@ mod test {
             .map(|(&x, &y)| {
                 let xyv = vec![x, y];
                 DVector::from_row_slice(2, &xyv)
-            }).collect();
+            })
+            .collect();
         let (pa, pb) = mardia(&xys);
         assert!(pa < MARDIA_PVAL && pb < MARDIA_PVAL);
     }

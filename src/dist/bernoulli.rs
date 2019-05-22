@@ -1,13 +1,14 @@
 //! Bernoulli distribution of x in {0, 1}
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::distributions::Uniform;
-use self::rand::Rng;
-use data::BernoulliSuffStat;
+use crate::data::BernoulliSuffStat;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::distributions::Uniform;
+use rand::Rng;
 use std::f64;
-use std::io;
-use traits::*;
 
 /// [Bernoulli distribution](https://en.wikipedia.org/wiki/Bernoulli_distribution)
 /// with success probability *p*
@@ -21,7 +22,7 @@ use traits::*;
 /// let b = Bernoulli::new(0.75).unwrap();
 /// assert!((b.pmf(&true) - 0.75).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Bernoulli {
     /// Probability of a success (x=1)
@@ -29,12 +30,12 @@ pub struct Bernoulli {
 }
 
 impl Bernoulli {
-    pub fn new(p: f64) -> io::Result<Self> {
+    pub fn new(p: f64) -> result::Result<Self> {
         if p.is_finite() && 0.0 < p && p < 1.0 {
             Ok(Bernoulli { p })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "p must be in [0, 1]");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(err_kind, "p must be in [0, 1]");
             Err(err)
         }
     }
@@ -56,6 +57,14 @@ impl Default for Bernoulli {
         Bernoulli::uniform()
     }
 }
+
+impl From<&Bernoulli> for String {
+    fn from(b: &Bernoulli) -> String {
+        format!("Bernoulli(p: {})", b.p)
+    }
+}
+
+impl_display!(Bernoulli);
 
 macro_rules! impl_int_traits {
     ($kind:ty) => {
@@ -275,9 +284,8 @@ impl_int_traits!(isize);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::x2_test;
+    use crate::misc::x2_test;
     use std::f64;
 
     const TOL: f64 = 1E-12;

@@ -1,11 +1,8 @@
-extern crate rand;
-
-use self::rand::Rng;
-use data::DataOrSuffStat;
-use std::fmt::Debug;
+use crate::data::DataOrSuffStat;
+use crate::traits::*;
+use rand::Rng;
 use std::marker::PhantomData;
 use std::sync::Arc;
-use traits::*;
 
 /// A wrapper for a complete conjugate model
 ///
@@ -14,11 +11,13 @@ use traits::*;
 /// `X`: The type of the data/observations to be modeled
 /// `Fx`: The type of the likelihood, *f(x|θ)*
 /// `Pr`: The type of the prior on the parameters of `Fx`, π(θ)
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct ConjugateModel<X, Fx, Pr>
 where
-    X: Debug,
-    Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    X: ApiReady,
+    Fx: Rv<X> + HasSuffStat<X> + ApiReady,
+    Pr: ConjugatePrior<X, Fx> + ApiReady,
+    Fx::Stat: ApiReady,
 {
     /// Pointer to an `Rv` implementing `ConjugatePrior` for `Fx`
     prior: Arc<Pr>,
@@ -29,9 +28,10 @@ where
 
 impl<X, Fx, Pr> ConjugateModel<X, Fx, Pr>
 where
-    X: Debug,
-    Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    X: ApiReady,
+    Fx: Rv<X> + HasSuffStat<X> + ApiReady,
+    Pr: ConjugatePrior<X, Fx> + ApiReady,
+    Fx::Stat: ApiReady,
 {
     /// Create a new conjugate model
     ///
@@ -102,9 +102,10 @@ where
 
 impl<X, Fx, Pr> SuffStat<X> for ConjugateModel<X, Fx, Pr>
 where
-    X: Debug,
-    Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    X: ApiReady,
+    Fx: Rv<X> + HasSuffStat<X> + ApiReady,
+    Pr: ConjugatePrior<X, Fx> + ApiReady,
+    Fx::Stat: ApiReady,
 {
     fn n(&self) -> usize {
         self.suffstat.n()
@@ -121,9 +122,10 @@ where
 
 impl<X, Fx, Pr> Rv<X> for ConjugateModel<X, Fx, Pr>
 where
-    X: Debug,
-    Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    X: ApiReady,
+    Fx: Rv<X> + HasSuffStat<X> + ApiReady,
+    Pr: ConjugatePrior<X, Fx> + ApiReady,
+    Fx::Stat: ApiReady,
 {
     fn ln_f(&self, x: &X) -> f64 {
         self.prior.ln_pp(&x, &self.obs())
@@ -141,6 +143,7 @@ where
             .map(|_| {
                 let fx: Fx = post.draw(&mut rng);
                 fx.draw(&mut rng)
-            }).collect()
+            })
+            .collect()
     }
 }

@@ -1,11 +1,12 @@
 //! Continuous uniform distribution, U(a, b) on the interval x in [a, b]
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::Rng;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
 use std::f64;
-use std::io;
-
-use traits::*;
 
 /// [Continuous uniform distribution](https://en.wikipedia.org/wiki/Uniform_distribution_(continuous)),
 /// U(a, b) on the interval x in [a, b]
@@ -26,7 +27,7 @@ use traits::*;
 /// assert!((u.cdf(&3.0_f64) - y(3.0)).abs() < 1E-12);
 /// assert!((u.cdf(&3.2_f64) - y(3.2)).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Uniform {
     pub a: f64,
@@ -34,18 +35,18 @@ pub struct Uniform {
 }
 
 impl Uniform {
-    pub fn new(a: f64, b: f64) -> io::Result<Self> {
+    pub fn new(a: f64, b: f64) -> result::Result<Self> {
         let a_ok = a.is_finite();
         let b_ok = b.is_finite() && b > a;
         if !a_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "a must be finite";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else if !b_ok {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "b must be finite and greater than a";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         } else {
             Ok(Uniform { a, b })
@@ -58,6 +59,14 @@ impl Default for Uniform {
         Uniform::new(0.0, 1.0).unwrap()
     }
 }
+
+impl From<&Uniform> for String {
+    fn from(u: &Uniform) -> String {
+        format!("U({}, {})", u.a, u.b)
+    }
+}
+
+impl_display!(Uniform);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
@@ -158,9 +167,8 @@ impl_traits!(f32);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::ks_test;
+    use crate::misc::ks_test;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;

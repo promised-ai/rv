@@ -1,13 +1,14 @@
 //! Beta Binomial distribution of x in {0, ..., n}
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::Rng;
-use self::special::Beta as SBeta;
-use misc::{ln_binom, ln_pflip};
+use crate::impl_display;
+use crate::misc::{ln_binom, ln_pflip};
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
+use special::Beta as _;
 use std::f64;
-use std::io;
-use traits::*;
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// over k in {0, ..., n}
@@ -29,7 +30,7 @@ use traits::*;
 /// let beta_binom_mean: f64 = beta_binom.mean().unwrap();
 /// assert!( (beta_mean * f64::from(n) - beta_binom_mean).abs() < 1E-12 );
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct BetaBinomial {
     /// Total number of trials
@@ -41,23 +42,37 @@ pub struct BetaBinomial {
 }
 
 impl BetaBinomial {
-    pub fn new(n: u32, alpha: f64, beta: f64) -> io::Result<Self> {
+    pub fn new(n: u32, alpha: f64, beta: f64) -> result::Result<Self> {
         let alpha_ok = alpha.is_finite() && alpha > 0.0;
         let beta_ok = beta.is_finite() && beta > 0.0;
         let n_ok = n > 0;
         if !(alpha_ok && beta_ok) {
             let msg = "'alpha' and 'beta' must be in (0, ∞)";
-            let err = io::Error::new(io::ErrorKind::InvalidInput, msg);
+            let err = result::Error::new(
+                result::ErrorKind::InvalidParameterError,
+                msg,
+            );
             Err(err)
         } else if !n_ok {
             let msg = "'n' must be greater than 0";
-            let err = io::Error::new(io::ErrorKind::InvalidInput, msg);
+            let err = result::Error::new(
+                result::ErrorKind::InvalidParameterError,
+                msg,
+            );
             Err(err)
         } else {
             Ok(BetaBinomial { n, alpha, beta })
         }
     }
 }
+
+impl From<&BetaBinomial> for String {
+    fn from(bb: &BetaBinomial) -> String {
+        format!("BetaBinomial({}; α: {}, β: {})", bb.n, bb.alpha, bb.beta)
+    }
+}
+
+impl_display!(BetaBinomial);
 
 macro_rules! impl_int_traits {
     ($kind:ty) => {
@@ -139,7 +154,6 @@ impl_int_traits!(i64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
     use std::f64;
 

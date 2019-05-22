@@ -1,17 +1,18 @@
 //! Categorical distribution of x<sub>k</sub> in {0, 1, ..., k-1}
-extern crate num;
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::num::traits::FromPrimitive;
-use self::rand::Rng;
-use data::{CategoricalDatum, CategoricalSuffStat};
-use misc::{argmax, ln_pflip, logsumexp};
-use std::io;
-use traits::*;
+use crate::data::{CategoricalDatum, CategoricalSuffStat};
+use crate::impl_display;
+use crate::misc::{argmax, ln_pflip, logsumexp, vec_to_string};
+use crate::result;
+use crate::traits::*;
+use num::traits::FromPrimitive;
+use rand::Rng;
 
 /// [Categorical distribution](https://en.wikipedia.org/wiki/Categorical_distribution)
 /// over unordered values in [0, k).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Categorical {
     // Use log weights instead to optimize for computation of ln_f
@@ -39,10 +40,10 @@ impl Categorical {
     ///
     /// assert::close(cat.pmf(&0_u8), 0.4, 10E-12);
     /// ```
-    pub fn new(weights: &[f64]) -> io::Result<Self> {
+    pub fn new(weights: &[f64]) -> result::Result<Self> {
         if weights.iter().any(|&w| !w.is_finite()) {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "Weights must be finite");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(err_kind, "Weights must be finite");
             Err(err)
         } else {
             let ln_weights: Vec<f64> = weights.iter().map(|w| w.ln()).collect();
@@ -54,12 +55,12 @@ impl Categorical {
     }
 
     /// Build a Categorical distribution from normalized log weights
-    pub fn from_ln_weights(ln_weights: Vec<f64>) -> io::Result<Self> {
+    pub fn from_ln_weights(ln_weights: Vec<f64>) -> result::Result<Self> {
         if logsumexp(&ln_weights).abs() < 10E-12 {
             Ok(Categorical { ln_weights })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
-            let err = io::Error::new(err_kind, "Weights not normalized");
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(err_kind, "Weights not normalized");
             Err(err)
         }
     }
@@ -79,6 +80,15 @@ impl Categorical {
         self.ln_weights.len()
     }
 }
+
+impl From<&Categorical> for String {
+    fn from(cat: &Categorical) -> String {
+        let weights = vec_to_string(&cat.weights(), 5);
+        format!("Categorical({};, {})", cat.k(), weights)
+    }
+}
+
+impl_display!(Categorical);
 
 impl<X: CategoricalDatum> Rv<X> for Categorical {
     fn ln_f(&self, x: &X) -> f64 {
@@ -107,6 +117,16 @@ impl<X: CategoricalDatum> Support<X> for Categorical {
 }
 
 impl<X: CategoricalDatum> DiscreteDistr<X> for Categorical {}
+
+impl<X: CategoricalDatum> Cdf<X> for Categorical {
+    fn cdf(&self, x: &X) -> f64 {
+        let xu: usize = (*x).into();
+        self.ln_weights
+            .iter()
+            .take(xu + 1)
+            .fold(0.0, |acc, &w| w.exp() + acc)
+    }
+}
 
 impl<X: CategoricalDatum> Mode<X> for Categorical {
     fn mode(&self) -> Option<X> {
@@ -147,8 +167,7 @@ impl KlDivergence for Categorical {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
-    use misc::x2_test;
+    use crate::misc::x2_test;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
@@ -263,13 +282,24 @@ mod tests {
     fn kl() {
         let cat1 = Categorical::new(&vec![
             0.2280317, 0.1506706, 0.33620052, 0.13911904, 0.14597815,
-        ]).unwrap();
+        ])
+        .unwrap();
         let cat2 = Categorical::new(&vec![
             0.30050657, 0.04237857, 0.20973238, 0.32858568, 0.1187968,
-        ]).unwrap();
+        ])
+        .unwrap();
 
         // Allow extra error for the normalization
         assert::close(cat1.kl(&cat2), 0.1973394327976612, 1E-7);
         assert::close(cat2.kl(&cat1), 0.18814408198625582, 1E-7);
+    }
+
+    #[test]
+    fn cdf() {
+        let cat = Categorical::new(&vec![1.0, 2.0, 4.0, 3.0]).unwrap();
+        assert::close(cat.cdf(&0_u8), 0.1, TOL);
+        assert::close(cat.cdf(&1_u8), 0.3, TOL);
+        assert::close(cat.cdf(&2_u8), 0.7, TOL);
+        assert::close(cat.cdf(&3_u8), 1.0, TOL);
     }
 }

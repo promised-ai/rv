@@ -1,11 +1,12 @@
-extern crate nalgebra;
-extern crate rand;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::nalgebra::{DMatrix, DVector};
-use self::rand::Rng;
-use dist::{InvWishart, MvGaussian};
-use std::io;
-use traits::*;
+use crate::dist::{InvWishart, MvGaussian};
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use nalgebra::{DMatrix, DVector};
+use rand::Rng;
 
 /// Common conjugate prior on the μ and Σ parameters in the Multivariate
 /// Gaussian, Ν(μ, Σ)
@@ -37,7 +38,7 @@ use traits::*;
 ///
 /// let mvg: MvGaussian = niw.draw(&mut rng);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct NormalInvWishart {
     /// The mean of μ, μ<sub>0</sub>
@@ -57,7 +58,7 @@ impl NormalInvWishart {
         k: f64,
         df: usize,
         scale: DMatrix<f64>,
-    ) -> io::Result<Self> {
+    ) -> result::Result<Self> {
         let dims = mu.len();
         let err = if k <= 0.0 {
             Some("k must be > 0.0")
@@ -74,11 +75,25 @@ impl NormalInvWishart {
         };
 
         match err {
-            Some(msg) => Err(io::Error::new(io::ErrorKind::InvalidInput, msg)),
+            Some(msg) => Err(result::Error::new(
+                result::ErrorKind::InvalidParameterError,
+                msg,
+            )),
             None => Ok(NormalInvWishart { mu, k, df, scale }),
         }
     }
 }
+
+impl From<&NormalInvWishart> for String {
+    fn from(niw: &NormalInvWishart) -> String {
+        format!(
+            "NIW (\n μ: {}\n κ: {}\n ν: {}\n Ψ: {}",
+            niw.mu, niw.k, niw.df, niw.scale
+        )
+    }
+}
+
+impl_display!(NormalInvWishart);
 
 // TODO: We might be able to make things faster by storing the InvWishart
 // because each time we create it, it clones and validates the parameters.

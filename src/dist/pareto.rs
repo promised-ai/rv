@@ -1,12 +1,12 @@
 //! Pareto distribution over x in [shape, ∞)
-extern crate rand;
-extern crate special;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 
-use self::rand::Rng;
+use crate::impl_display;
+use crate::result;
+use crate::traits::*;
+use rand::Rng;
 use std::f64;
-use std::io;
-
-use traits::*;
 
 /// [Pareto distribution](https://en.wikipedia.org/wiki/Pareto_distribution) Pareto(x_m, α)
 /// over x in (x_m, ∞).
@@ -19,7 +19,7 @@ use traits::*;
 /// f(x|α, x_m) = ---------
 ///               x^(α + 1)
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Pareto {
     pub shape: f64,
@@ -28,20 +28,28 @@ pub struct Pareto {
 
 impl Pareto {
     /// Create a new `Pareto` distribution with shape (α) and scale (x_m).
-    pub fn new(shape: f64, scale: f64) -> io::Result<Self> {
+    pub fn new(shape: f64, scale: f64) -> result::Result<Self> {
         let shape_ok = shape > 0.0 && shape.is_finite();
         let scale_ok = scale > 0.0 && scale.is_finite();
 
         if shape_ok && scale_ok {
             Ok(Pareto { shape, scale })
         } else {
-            let err_kind = io::ErrorKind::InvalidInput;
+            let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "shape and scale must be finite and greater than 0";
-            let err = io::Error::new(err_kind, msg);
+            let err = result::Error::new(err_kind, msg);
             Err(err)
         }
     }
 }
+
+impl From<&Pareto> for String {
+    fn from(pareto: &Pareto) -> String {
+        format!("Pareto(xₘ: {}, α: {})", pareto.scale, pareto.shape)
+    }
+}
+
+impl_display!(Pareto);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
@@ -146,9 +154,8 @@ impl_traits!(f64);
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
-    use misc::{ks_test, linspace};
+    use crate::misc::{ks_test, linspace};
     use std::f64;
 
     const TOL: f64 = 1E-12;
