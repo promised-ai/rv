@@ -119,6 +119,7 @@ impl Kurtosis for Poisson {
     }
 }
 
+impl_traits!(u8);
 impl_traits!(u16);
 impl_traits!(u32);
 

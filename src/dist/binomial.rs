@@ -11,6 +11,35 @@ use std::f64;
 
 /// [Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// with success probability *p*
+///
+/// # Examples
+///
+/// ```
+/// use rv::prelude::*;
+///
+/// let binom = Binomial::new(4, 0.5).unwrap();
+/// let cdf = binom.cdf(&2_u8);
+///
+/// assert_eq!(cdf, binom.pmf(&0_u8) + binom.pmf(&1_u8) + binom.pmf(&2_u8))
+/// ```
+///
+/// Values outside the support of [0, n] can cause panics in certain functions
+///
+/// ```
+/// # use rv::prelude::*;
+/// let n = 4;
+/// let binom = Binomial::new(n, 0.5).unwrap();
+/// assert!(!binom.supports(&5_u8))
+/// ```
+///
+/// The maximum allowed value is 4, so the PMF of 5 cannot be computed
+///
+/// ```should_panic
+/// # use rv::prelude::*;
+/// # let n = 4;
+/// # let binom = Binomial::new(n, 0.5).unwrap();
+/// binom.pmf(&5_u8); // panics
+/// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Binomial {

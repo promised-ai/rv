@@ -22,6 +22,19 @@ use std::f64;
 /// let b = Bernoulli::new(0.75).unwrap();
 /// assert!((b.pmf(&true) - 0.75).abs() < 1E-12);
 /// ```
+///
+/// The following example panics because 2 is out of outside the Bernoulli
+/// support
+///
+/// ```should_panic
+/// # extern crate rv;
+/// # use rv::prelude::*;
+/// let b = Bernoulli::new(0.75).unwrap();
+/// assert!(!b.supports(&2_u8));
+///
+/// b.pmf(&2_u8); // panics
+/// ```
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Bernoulli {
@@ -72,8 +85,10 @@ macro_rules! impl_int_traits {
             fn f(&self, x: &$kind) -> f64 {
                 if *x == 1 {
                     self.p
-                } else {
+                } else if *x == 0 {
                     1.0_f64 - self.p
+                } else {
+                    panic!("Invalid value: x was not 0 or 1");
                 }
             }
 
