@@ -30,3 +30,23 @@ serde_derive = {version = "1.0.70", optional = true}
 
 [dev-dependencies]
 assert = "0.7.4"
+criterion = "0.2"
+
+
+# Benchmarks
+# ==========
+[[bench]]
+name = "mvg"
+harness = false
+
+[[bench]]
+name = "gev"
+harness = false
+
+[[bench]]
+name = "wishart"
+harness = false
+
+[[bench]]
+name = "categorical"
+harness = false

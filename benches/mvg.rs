@@ -1,32 +1,59 @@
-#![feature(test)]
+use criterion::black_box;
+use criterion::BatchSize;
+use criterion::Criterion;
+use criterion::{criterion_group, criterion_main};
+use nalgebra::DVector;
+use rv::dist::MvGaussian;
+use rv::traits::{ContinuousDistr, Rv};
 
-extern crate nalgebra;
-extern crate rand;
-extern crate rv;
-extern crate test;
-
-use self::nalgebra::DVector;
-use self::rv::dist::MvGaussian;
-use self::rv::traits::{ContinuousDistr, Rv};
-use self::test::Bencher;
-
-#[bench]
-fn bench_draw(b: &mut test::Bencher) {
-    let mut rng = rand::thread_rng();
-    let mvg = MvGaussian::standard(10).unwrap();
-    b.iter(|| mvg.draw(&mut rng));
+fn bench_mvg_draw(c: &mut Criterion) {
+    c.bench_function_over_inputs(
+        "MvGaussian, draw 1",
+        |b, &&dims| {
+            let mvg = MvGaussian::standard(dims).unwrap();
+            b.iter_batched_ref(
+                || rand::thread_rng(),
+                |mut rng| black_box(mvg.draw(&mut rng)),
+                BatchSize::SmallInput,
+            )
+        },
+        &[2, 3, 5, 10],
+    );
 }
 
-#[bench]
-fn bench_sample_100(b: &mut test::Bencher) {
-    let mut rng = rand::thread_rng();
+// There is some pre-computation that makes sampling more efficient than
+// repeatedly calling `draw`
+fn bench_mvg_sample(c: &mut Criterion) {
     let mvg = MvGaussian::standard(10).unwrap();
-    b.iter(|| mvg.sample(100, &mut rng));
+    c.bench_function_over_inputs(
+        "10-D MvGaussian, sample",
+        move |b, &&n| {
+            b.iter_batched_ref(
+                || rand::thread_rng(),
+                |mut rng| black_box(mvg.sample(n, &mut rng)),
+                BatchSize::SmallInput,
+            )
+        },
+        &[1, 10, 50, 100],
+    );
 }
 
-#[bench]
-fn bench_ln_f(b: &mut test::Bencher) {
-    let mvg = MvGaussian::standard(10).unwrap();
-    let x = DVector::<f64>::zeros(10);
-    b.iter(|| mvg.ln_pdf(&x));
+fn bench_mvg_ln_f(c: &mut Criterion) {
+    c.bench_function_over_inputs(
+        "MvGaussian ln f(x)",
+        |b, &&dims| {
+            let mvg = &MvGaussian::standard(dims).unwrap();
+            let x = DVector::<f64>::zeros(dims);
+            b.iter(|| mvg.ln_pdf(&x))
+        },
+        &[2, 3, 5, 10],
+    );
 }
+
+criterion_group!(
+    mvg_benches,
+    bench_mvg_draw,
+    bench_mvg_sample,
+    bench_mvg_ln_f
+);
+criterion_main!(mvg_benches);
