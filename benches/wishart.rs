@@ -1,25 +1,39 @@
-#![feature(test)]
+use criterion::black_box;
+use criterion::BatchSize;
+use criterion::Criterion;
+use criterion::{criterion_group, criterion_main};
+use nalgebra::DMatrix;
+use rv::dist::InvWishart;
+use rv::traits::Rv;
 
-extern crate nalgebra;
-extern crate rand;
-extern crate rv;
-extern crate test;
-
-use self::nalgebra::DMatrix;
-use self::rv::dist::InvWishart;
-use self::rv::traits::Rv;
-use self::test::Bencher;
-
-#[bench]
-fn bench_draw(b: &mut test::Bencher) {
-    let mut rng = rand::thread_rng();
-    let iw = InvWishart::identity(10);
-    b.iter(|| iw.draw(&mut rng));
+fn bench_wishart_draw(c: &mut Criterion) {
+    c.bench_function_over_inputs(
+        "InvWisart, draw 1",
+        |b, &&dims| {
+            let iw = InvWishart::identity(dims);
+            b.iter_batched_ref(
+                || rand::thread_rng(),
+                |mut rng| {
+                    black_box(iw.draw(&mut rng));
+                },
+                BatchSize::SmallInput,
+            )
+        },
+        &[2, 3, 5, 10],
+    );
 }
 
-#[bench]
-fn bench_ln_f(b: &mut test::Bencher) {
-    let iw = InvWishart::identity(10);
-    let x = DMatrix::<f64>::identity(10, 10);
-    b.iter(|| iw.ln_f(&x));
+fn bench_wishart_ln_f(c: &mut Criterion) {
+    c.bench_function_over_inputs(
+        "InvWisart, ln f(x)",
+        |b, &&dims| {
+            let iw = &InvWishart::identity(dims);
+            let x = &DMatrix::<f64>::identity(dims, dims);
+            b.iter(|| black_box(iw.ln_f(&x)))
+        },
+        &[2, 3, 5, 10],
+    );
 }
+
+criterion_group!(wishart_benches, bench_wishart_draw, bench_wishart_ln_f,);
+criterion_main!(wishart_benches);
