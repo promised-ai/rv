@@ -1,36 +1,52 @@
-#![feature(test)]
-
-extern crate rand;
-extern crate rv;
-extern crate test;
-
+use criterion::BatchSize;
+use criterion::Criterion;
+use criterion::{criterion_group, criterion_main};
 use rv::dist::Gev;
-use rv::traits::{ContinuousDistr, Rv};
-use test::Bencher;
+use rv::traits::Rv;
 
-#[bench]
-fn bench_draw_0(b: &mut Bencher) {
-    let mut rng = rand::thread_rng();
+fn bench_gev_draw_0(c: &mut Criterion) {
     let gev = Gev::new(0.0, 1.0, 0.0).unwrap();
-    b.iter(|| {
-        let _sample: f64 = gev.draw(&mut rng);
+    c.bench_function("GEV(0, 1, 0), draw 1", move |b| {
+        b.iter_batched_ref(
+            || rand::thread_rng(),
+            |mut rng| {
+                let _x: f64 = gev.draw(&mut rng);
+            },
+            BatchSize::SmallInput,
+        )
     });
 }
 
-#[bench]
-fn bench_draw_one_half(b: &mut Bencher) {
-    let mut rng = rand::thread_rng();
+fn bench_gev_draw_one_half(c: &mut Criterion) {
     let gev = Gev::new(0.0, 1.0, 0.5).unwrap();
-    b.iter(|| {
-        let _sample: f64 = gev.draw(&mut rng);
+    c.bench_function("GEV(0, 1, 0.5), draw 1", move |b| {
+        b.iter_batched_ref(
+            || rand::thread_rng(),
+            |mut rng| {
+                let _x: f64 = gev.draw(&mut rng);
+            },
+            BatchSize::SmallInput,
+        )
     });
 }
 
-#[bench]
-fn bench_draw_negative_one_half(b: &mut Bencher) {
-    let mut rng = rand::thread_rng();
+fn bench_gev_draw_negative_one_half(c: &mut Criterion) {
     let gev = Gev::new(0.0, 1.0, -0.5).unwrap();
-    b.iter(|| {
-        let _sample: f64 = gev.draw(&mut rng);
+    c.bench_function("GEV(0, 1, -0.5), draw 1", move |b| {
+        b.iter_batched_ref(
+            || rand::thread_rng(),
+            |mut rng| {
+                let _x: f64 = gev.draw(&mut rng);
+            },
+            BatchSize::SmallInput,
+        )
     });
 }
+
+criterion_group!(
+    gev_benches,
+    bench_gev_draw_0,
+    bench_gev_draw_one_half,
+    bench_gev_draw_negative_one_half,
+);
+criterion_main!(gev_benches);
