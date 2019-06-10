@@ -107,13 +107,13 @@ impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
     }
 
     fn observe(&mut self, x: &X) {
-        let ix: usize = (*x).into();
+        let ix = x.into_usize();
         self.n += 1;
         self.counts[ix] += 1.0;
     }
 
     fn forget(&mut self, x: &X) {
-        let ix: usize = (*x).into();
+        let ix = x.into_usize();
         self.n -= 1;
         self.counts[ix] -= 1.0;
     }

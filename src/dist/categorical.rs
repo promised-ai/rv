@@ -7,7 +7,6 @@ use crate::impl_display;
 use crate::misc::{argmax, ln_pflip, logsumexp, vec_to_string};
 use crate::result;
 use crate::traits::*;
-use num::traits::FromPrimitive;
 use rand::Rng;
 
 /// [Categorical distribution](https://en.wikipedia.org/wiki/Categorical_distribution)
@@ -92,26 +91,26 @@ impl_display!(Categorical);
 
 impl<X: CategoricalDatum> Rv<X> for Categorical {
     fn ln_f(&self, x: &X) -> f64 {
-        let ix: usize = (*x).into();
+        let ix: usize = x.into_usize();
         self.ln_weights[ix]
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
         let ix = ln_pflip(&self.ln_weights, 1, true, &mut rng)[0];
-        FromPrimitive::from_usize(ix).unwrap()
+        CategoricalDatum::from_usize(ix)
     }
 
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<X> {
         ln_pflip(&self.ln_weights, n, true, &mut rng)
             .iter()
-            .map(|&ix| FromPrimitive::from_usize(ix).unwrap())
+            .map(|&ix| CategoricalDatum::from_usize(ix))
             .collect()
     }
 }
 
 impl<X: CategoricalDatum> Support<X> for Categorical {
     fn supports(&self, x: &X) -> bool {
-        let ix: usize = (*x).into();
+        let ix: usize = x.into_usize();
         ix < self.ln_weights.len()
     }
 }
@@ -120,7 +119,7 @@ impl<X: CategoricalDatum> DiscreteDistr<X> for Categorical {}
 
 impl<X: CategoricalDatum> Cdf<X> for Categorical {
     fn cdf(&self, x: &X) -> f64 {
-        let xu: usize = (*x).into();
+        let xu: usize = x.into_usize();
         self.ln_weights
             .iter()
             .take(xu + 1)
@@ -135,7 +134,7 @@ impl<X: CategoricalDatum> Mode<X> for Categorical {
         if max_ixs.len() > 1 {
             None
         } else {
-            Some(FromPrimitive::from_usize(max_ixs[0]).unwrap())
+            Some(CategoricalDatum::from_usize(max_ixs[0]))
         }
     }
 }

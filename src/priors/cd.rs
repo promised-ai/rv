@@ -49,7 +49,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     fn ln_pp(&self, y: &X, x: &CategoricalData<X>) -> f64 {
         let post = self.posterior(x);
         let norm = post.alphas.iter().fold(0.0, |acc, &a| acc + a);
-        let ix: usize = (*y).into();
+        let ix = y.into_usize();
         post.alphas[ix].ln() - norm.ln()
     }
 }
@@ -115,7 +115,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     fn ln_pp(&self, y: &X, x: &CategoricalData<X>) -> f64 {
         let post = self.posterior(x);
         let norm = post.alphas.iter().fold(0.0, |acc, &a| acc + a);
-        let ix: usize = (*y).into();
+        let ix: usize = y.into_usize();
         post.alphas[ix].ln() - norm.ln()
     }
 }

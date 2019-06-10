@@ -15,9 +15,8 @@ extern crate num;
 extern crate rand;
 extern crate rv;
 
-use num::FromPrimitive;
+use rv::data::CategoricalDatum;
 use rv::prelude::*;
-use std::convert::From;
 
 /// We have to assign values 0, ..., n-1 to the enum values so they map to
 /// indices in the categorical weights
@@ -29,36 +28,19 @@ enum Color {
     Green = 2,
 }
 
-/// Then we implement a couple of traits for our `enum` so it satisfies the
-/// requirements to be a `CategoricalDatum`.
-///
-/// We must implement `From<Color>` for `usize` so we can convert the color to
-/// a vector index.
-impl From<Color> for usize {
-    fn from(color: Color) -> usize {
-        color as usize
-    }
-}
-
-/// We must implement `FromPrimitive` for color, so we can convert from a
-/// `usize` index into a `Color` on Rust stable. We must, at minimum, implement
-/// `from_i64` and `from_u64` -- the rest of the trait methods have defaults.
-impl FromPrimitive for Color {
-    fn from_i64(x: i64) -> Option<Self> {
-        match x {
-            0 => Some(Color::Red),
-            1 => Some(Color::Blue),
-            2 => Some(Color::Green),
-            _ => None,
-        }
+/// Then we implement the CatgoricalDatum trait for Color which has methods to
+/// convert to and from a usize index.
+impl CategoricalDatum for Color {
+    fn into_usize(&self) -> usize {
+        *self as usize
     }
 
-    fn from_u64(x: u64) -> Option<Self> {
-        match x {
-            0 => Some(Color::Red),
-            1 => Some(Color::Blue),
-            2 => Some(Color::Green),
-            _ => None,
+    fn from_usize(n: usize) -> Self {
+        match n {
+            0 => Color::Red,
+            1 => Color::Blue,
+            2 => Color::Green,
+            _ => panic!("Cannot convert {} to Color", n),
         }
     }
 }
