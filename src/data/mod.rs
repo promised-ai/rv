@@ -8,28 +8,67 @@ pub use suffstat::CategoricalSuffStat;
 pub use suffstat::GaussianSuffStat;
 pub use suffstat::MvGaussianSuffStat;
 
-use crate::traits::{ApiReady, HasSuffStat, SuffStat};
-use num::traits::FromPrimitive;
+use crate::traits::{HasSuffStat, SuffStat};
 
 /// The trait that data must implemented by all data used with the
 /// `Categorical` distribution
-pub trait CategoricalDatum:
-    Sized + Into<usize> + Sync + Copy + FromPrimitive + ApiReady
-{
+pub trait CategoricalDatum: Sized + Sync + Copy {
+    fn into_usize(&self) -> usize;
+    fn from_usize(n: usize) -> Self;
 }
 
-impl<T> CategoricalDatum for T where
-    T: Clone + Into<usize> + Sync + Copy + FromPrimitive + ApiReady
-{
+impl CategoricalDatum for usize {
+    fn into_usize(&self) -> usize {
+        *self
+    }
+
+    fn from_usize(n: usize) -> Self {
+        n
+    }
 }
+
+impl CategoricalDatum for bool {
+    fn into_usize(&self) -> usize {
+        if *self {
+            1
+        } else {
+            0
+        }
+    }
+
+    fn from_usize(n: usize) -> Self {
+        match n {
+            0 => false,
+            1 => true,
+            _ => panic!("cannot convert {} into bool", n),
+        }
+    }
+}
+
+macro_rules! impl_categorical_datum {
+    ($kind:ty) => {
+        impl CategoricalDatum for $kind {
+            fn into_usize(&self) -> usize {
+                *self as usize
+            }
+
+            fn from_usize(n: usize) -> Self {
+                n as $kind
+            }
+        }
+    };
+}
+
+impl_categorical_datum!(u8);
+impl_categorical_datum!(u16);
+impl_categorical_datum!(u32);
 
 /// Holds either a sufficient statistic of a vector of data.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum DataOrSuffStat<'a, X, Fx>
 where
-    X: 'a + ApiReady,
-    Fx: 'a + HasSuffStat<X> + ApiReady,
-    Fx::Stat: ApiReady,
+    X: 'a,
+    Fx: 'a + HasSuffStat<X>,
 {
     /// A `Vec` of raw data
     Data(&'a Vec<X>),
@@ -41,9 +80,8 @@ where
 
 impl<'a, X, Fx> DataOrSuffStat<'a, X, Fx>
 where
-    X: 'a + ApiReady,
-    Fx: 'a + HasSuffStat<X> + ApiReady,
-    Fx::Stat: ApiReady,
+    X: 'a,
+    Fx: 'a + HasSuffStat<X>,
 {
     /// Get the number of observations
     pub fn n(&self) -> usize {
