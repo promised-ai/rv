@@ -34,6 +34,9 @@ let berns: Vec<Bernoulli> = beta.sample(100, &mut rng);
 let pdf_bern = beta.ln_pdf(&berns[42]);
 ```
 
+For more interesting examples, including use in machine learning, see
+`examples/`.
+
 ## Contributing
 
 1. Please create an issue before starting any work. We're far from stable, so
