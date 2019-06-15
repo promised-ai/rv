@@ -8,11 +8,11 @@ pub use suffstat::CategoricalSuffStat;
 pub use suffstat::GaussianSuffStat;
 pub use suffstat::MvGaussianSuffStat;
 
-use crate::traits::{ApiReady, HasSuffStat, SuffStat};
+use crate::traits::{HasSuffStat, SuffStat};
 
 /// The trait that data must implemented by all data used with the
 /// `Categorical` distribution
-pub trait CategoricalDatum: Sized + Sync + Copy + ApiReady {
+pub trait CategoricalDatum: Sized + Sync + Copy {
     fn into_usize(&self) -> usize;
     fn from_usize(n: usize) -> Self;
 }
@@ -67,9 +67,8 @@ impl_categorical_datum!(u32);
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum DataOrSuffStat<'a, X, Fx>
 where
-    X: 'a + ApiReady,
-    Fx: 'a + HasSuffStat<X> + ApiReady,
-    Fx::Stat: ApiReady,
+    X: 'a,
+    Fx: 'a + HasSuffStat<X>,
 {
     /// A `Vec` of raw data
     Data(&'a Vec<X>),
@@ -81,9 +80,8 @@ where
 
 impl<'a, X, Fx> DataOrSuffStat<'a, X, Fx>
 where
-    X: 'a + ApiReady,
-    Fx: 'a + HasSuffStat<X> + ApiReady,
-    Fx::Stat: ApiReady,
+    X: 'a,
+    Fx: 'a + HasSuffStat<X>,
 {
     /// Get the number of observations
     pub fn n(&self) -> usize {

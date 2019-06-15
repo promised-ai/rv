@@ -22,7 +22,7 @@ use rand::Rng;
 /// let mm = Mixture::new(vec![0.6, 0.4], vec![g1, g2]).unwrap();
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Mixture<Fx: ApiReady> {
+pub struct Mixture<Fx> {
     /// The weights for each component distribution. All entries must be
     /// positive and sum to 1.
     pub weights: Vec<f64>,
@@ -30,7 +30,7 @@ pub struct Mixture<Fx: ApiReady> {
     pub components: Vec<Fx>,
 }
 
-impl<Fx: ApiReady> Mixture<Fx> {
+impl<Fx> Mixture<Fx> {
     pub fn new(weights: Vec<f64>, components: Vec<Fx>) -> result::Result<Self> {
         let weights_ok = weights.iter().all(|&w| w >= 0.0)
             && (weights.iter().fold(0.0, |acc, &w| acc + w) - 1.0).abs()
@@ -100,7 +100,7 @@ impl<Fx: ApiReady> Mixture<Fx> {
 
 impl<X, Fx> Rv<X> for Mixture<Fx>
 where
-    Fx: Rv<X> + ApiReady,
+    Fx: Rv<X>,
 {
     fn ln_f(&self, x: &X) -> f64 {
         let lfs: Vec<f64> = self
@@ -137,7 +137,7 @@ where
 // things with different support.
 impl<X, Fx> Support<X> for Mixture<Fx>
 where
-    Fx: Rv<X> + Support<X> + ApiReady,
+    Fx: Rv<X> + Support<X>,
 {
     fn supports(&self, x: &X) -> bool {
         self.components.iter().any(|cpnt| cpnt.supports(&x))
@@ -146,7 +146,7 @@ where
 
 impl<X, Fx> Cdf<X> for Mixture<Fx>
 where
-    Fx: Rv<X> + Cdf<X> + ApiReady,
+    Fx: Rv<X> + Cdf<X>,
 {
     fn cdf(&self, x: &X) -> f64 {
         self.weights
@@ -158,7 +158,7 @@ where
 
 impl<X, Fx> ContinuousDistr<X> for Mixture<Fx>
 where
-    Fx: Rv<X> + ContinuousDistr<X> + ApiReady,
+    Fx: Rv<X> + ContinuousDistr<X>,
 {
     fn pdf(&self, x: &X) -> f64 {
         self.weights.iter().zip(self.components.iter()).fold(
@@ -180,7 +180,7 @@ where
 
 impl<X, Fx> DiscreteDistr<X> for Mixture<Fx>
 where
-    Fx: Rv<X> + DiscreteDistr<X> + ApiReady,
+    Fx: Rv<X> + DiscreteDistr<X>,
 {
     fn pmf(&self, x: &X) -> f64 {
         self.weights.iter().zip(self.components.iter()).fold(
@@ -204,7 +204,7 @@ macro_rules! continuous_uv_mean_and_var {
     ($kind: ty) => {
         impl<Fx> Mean<$kind> for Mixture<Fx>
         where
-            Fx: ContinuousDistr<$kind> + Mean<$kind> + ApiReady,
+            Fx: ContinuousDistr<$kind> + Mean<$kind>,
         {
             fn mean(&self) -> Option<$kind> {
                 let mut out: f64 = 0.0;
@@ -222,10 +222,7 @@ macro_rules! continuous_uv_mean_and_var {
         // https://stats.stackexchange.com/a/16609/36044
         impl<Fx> Variance<$kind> for Mixture<Fx>
         where
-            Fx: ContinuousDistr<$kind>
-                + Mean<$kind>
-                + Variance<$kind>
-                + ApiReady,
+            Fx: ContinuousDistr<$kind> + Mean<$kind> + Variance<$kind>,
         {
             fn variance(&self) -> Option<$kind> {
                 let mut p1: f64 = 0.0;

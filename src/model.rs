@@ -14,10 +14,8 @@ use std::sync::Arc;
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct ConjugateModel<X, Fx, Pr>
 where
-    X: ApiReady,
-    Fx: Rv<X> + HasSuffStat<X> + ApiReady,
-    Pr: ConjugatePrior<X, Fx> + ApiReady,
-    Fx::Stat: ApiReady,
+    Fx: Rv<X> + HasSuffStat<X>,
+    Pr: ConjugatePrior<X, Fx>,
 {
     /// Pointer to an `Rv` implementing `ConjugatePrior` for `Fx`
     prior: Arc<Pr>,
@@ -28,10 +26,8 @@ where
 
 impl<X, Fx, Pr> ConjugateModel<X, Fx, Pr>
 where
-    X: ApiReady,
-    Fx: Rv<X> + HasSuffStat<X> + ApiReady,
-    Pr: ConjugatePrior<X, Fx> + ApiReady,
-    Fx::Stat: ApiReady,
+    Fx: Rv<X> + HasSuffStat<X>,
+    Pr: ConjugatePrior<X, Fx>,
 {
     /// Create a new conjugate model
     ///
@@ -102,10 +98,8 @@ where
 
 impl<X, Fx, Pr> SuffStat<X> for ConjugateModel<X, Fx, Pr>
 where
-    X: ApiReady,
-    Fx: Rv<X> + HasSuffStat<X> + ApiReady,
-    Pr: ConjugatePrior<X, Fx> + ApiReady,
-    Fx::Stat: ApiReady,
+    Fx: Rv<X> + HasSuffStat<X>,
+    Pr: ConjugatePrior<X, Fx>,
 {
     fn n(&self) -> usize {
         self.suffstat.n()
@@ -122,10 +116,8 @@ where
 
 impl<X, Fx, Pr> Rv<X> for ConjugateModel<X, Fx, Pr>
 where
-    X: ApiReady,
-    Fx: Rv<X> + HasSuffStat<X> + ApiReady,
-    Pr: ConjugatePrior<X, Fx> + ApiReady,
-    Fx::Stat: ApiReady,
+    Fx: Rv<X> + HasSuffStat<X>,
+    Pr: ConjugatePrior<X, Fx>,
 {
     fn ln_f(&self, x: &X) -> f64 {
         self.prior.ln_pp(&x, &self.obs())

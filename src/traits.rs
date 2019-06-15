@@ -384,7 +384,7 @@ pub trait KlDivergence {
 
 /// The data for this distribution can be summarized by a statistic
 pub trait HasSuffStat<X> {
-    type Stat: SuffStat<X> + ApiReady;
+    type Stat: SuffStat<X>;
     fn empty_suffstat(&self) -> Self::Stat;
 }
 
@@ -436,9 +436,7 @@ pub trait SuffStat<X> {
 /// A prior on `Fx` that induces a posterior that is the same form as the prior
 pub trait ConjugatePrior<X, Fx>: Rv<Fx>
 where
-    X: ApiReady,
-    Fx: Rv<X> + HasSuffStat<X> + ApiReady,
-    Fx::Stat: ApiReady,
+    Fx: Rv<X> + HasSuffStat<X>,
 {
     type Posterior: Rv<Fx>;
 
@@ -460,31 +458,4 @@ where
     fn pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64 {
         self.ln_pp(&y, x).exp()
     }
-}
-
-/// Trait defining the minimum set of auto-derives every distirbution should have
-#[cfg(serde_support)]
-pub trait ApiReady:
-    Clone + ::std::fmt::Debug + PartialOrd + PartialEq + Serialize + Deserialize
-{
-}
-
-#[cfg(serde_support)]
-impl<T> ApiReady for T where
-    T: Clone
-        + ::std::fmt::Debug
-        + PartialOrd
-        + PartialEq
-        + Serialize
-        + Deserialize
-{
-}
-
-#[cfg(not(serde_support))]
-pub trait ApiReady: Clone + ::std::fmt::Debug + PartialOrd + PartialEq {}
-
-#[cfg(not(serde_support))]
-impl<T> ApiReady for T where
-    T: Clone + ::std::fmt::Debug + PartialOrd + PartialEq
-{
 }
