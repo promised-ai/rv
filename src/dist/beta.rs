@@ -5,7 +5,6 @@ use serde_derive::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
-use rand::distributions::Gamma;
 use rand::Rng;
 use special::Beta as _;
 use special::Gamma as _;
@@ -97,23 +96,13 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let ga = Gamma::new(self.alpha, 1.0);
-                let gb = Gamma::new(self.beta, 1.0);
-                let a = rng.sample(ga);
-                let b = rng.sample(gb);
-                (a / (a + b)) as $kind
+                let b = rand::distributions::Beta::new(self.alpha, self.beta);
+                rng.sample(b) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let ga = Gamma::new(self.alpha, 1.0);
-                let gb = Gamma::new(self.beta, 1.0);
-                (0..n)
-                    .map(|_| {
-                        let a = rng.sample(ga);
-                        let b = rng.sample(gb);
-                        (a / (a + b)) as $kind
-                    })
-                    .collect()
+                let b = rand::distributions::Beta::new(self.alpha, self.beta);
+                (0..n).map(|_| rng.sample(b) as $kind).collect()
             }
         }
 
@@ -438,5 +427,17 @@ mod tests {
         });
 
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn beta_u_should_never_draw_1() {
+        let mut rng = rand::thread_rng();
+        let beta = Beta::new(0.5, 0.5).unwrap();
+
+        let some_1 = beta
+            .sample(10_000, &mut rng)
+            .drain(..)
+            .any(|x: f64| x == 1.0);
+        assert!(!some_1);
     }
 }

@@ -1,6 +1,4 @@
-extern crate rand;
-extern crate rv;
-
+use rand::seq::SliceRandom;
 use rand::Rng;
 use rv::data::Partition;
 use rv::dist::{Crp, Gaussian, NormalGamma};
@@ -144,7 +142,7 @@ impl Dpgmm {
     // Reassigns each datum in random order
     fn scan<R: Rng>(&mut self, mut rng: &mut R) {
         let mut positions: Vec<usize> = (0..self.n()).collect();
-        rng.shuffle(&mut positions);
+        positions.shuffle(&mut rng);
         positions.iter().for_each(|&pos| self.step(pos, &mut rng));
     }
 
