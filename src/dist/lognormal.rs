@@ -90,13 +90,14 @@ macro_rules! impl_traits {
         impl Cdf<$kind> for LogNormal {
             fn cdf(&self, x: &$kind) -> f64 {
                 let xk = f64::from(*x);
-                0.5 + 0.5 * ((xk.ln() - self.mu) / (SQRT_2 * self.sigma)).erf()
+                0.5 + 0.5
+                    * ((xk.ln() - self.mu) / (SQRT_2 * self.sigma)).error()
             }
         }
 
         impl InverseCdf<$kind> for LogNormal {
             fn invcdf(&self, p: f64) -> $kind {
-                (self.mu + SQRT_2 * self.sigma * (2.0 * p - 1.0).inv_erf())
+                (self.mu + SQRT_2 * self.sigma * (2.0 * p - 1.0).inv_error())
                     .exp() as $kind
             }
         }

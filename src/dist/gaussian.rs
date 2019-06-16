@@ -112,7 +112,7 @@ macro_rules! impl_traits {
         impl Cdf<$kind> for Gaussian {
             fn cdf(&self, x: &$kind) -> f64 {
                 let errf =
-                    ((f64::from(*x) - self.mu) / (self.sigma * SQRT_2)).erf();
+                    ((f64::from(*x) - self.mu) / (self.sigma * SQRT_2)).error();
                 0.5 * (1.0 + errf)
             }
         }
@@ -123,7 +123,7 @@ macro_rules! impl_traits {
                     panic!("P out of range");
                 }
                 let x =
-                    self.mu + self.sigma * SQRT_2 * (2.0 * p - 1.0).inv_erf();
+                    self.mu + self.sigma * SQRT_2 * (2.0 * p - 1.0).inv_error();
                 x as $kind
             }
         }
