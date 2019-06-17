@@ -52,11 +52,11 @@ use std::f64;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct BetaBinomial {
     /// Total number of trials
-    pub n: u32,
+    n: u32,
     /// Analogous to Beta Distribution α parameter.
-    pub alpha: f64,
+    alpha: f64,
     /// Analogous to Beta Distribution β parameter
-    pub beta: f64,
+    beta: f64,
 }
 
 impl BetaBinomial {
@@ -81,6 +81,45 @@ impl BetaBinomial {
         } else {
             Ok(BetaBinomial { n, alpha, beta })
         }
+    }
+
+    /// Get `n`, the number of trials.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::BetaBinomial;
+    /// let bb = BetaBinomial::new(10, 1.0, 2.0).unwrap();
+    /// assert_eq!(bb.n(), 10);
+    /// ```
+    pub fn n(&self) -> u32 {
+        self.n
+    }
+
+    /// Get the `alpha` parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::BetaBinomial;
+    /// let bb = BetaBinomial::new(10, 1.0, 2.0).unwrap();
+    /// assert_eq!(bb.alpha(), 1.0);
+    /// ```
+    pub fn alpha(&self) -> f64 {
+        self.alpha
+    }
+
+    /// Get the `beta` parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::BetaBinomial;
+    /// let bb = BetaBinomial::new(10, 1.0, 2.0).unwrap();
+    /// assert_eq!(bb.beta(), 2.0);
+    /// ```
+    pub fn beta(&self) -> f64 {
+        self.beta
     }
 }
 
@@ -181,8 +220,8 @@ mod tests {
     fn new() {
         let beta_binom = BetaBinomial::new(10, 0.1, 0.2).unwrap();
         assert_eq!(beta_binom.n, 10);
-        assert::close(beta_binom.alpha, 0.1, TOL);
-        assert::close(beta_binom.beta, 0.2, TOL);
+        assert::close(beta_binom.alpha(), 0.1, TOL);
+        assert::close(beta_binom.beta(), 0.2, TOL);
     }
 
     #[test]
