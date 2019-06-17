@@ -37,15 +37,15 @@ impl ConjugatePrior<bool, Bernoulli> for Beta {
             DataOrSuffStat::None => (0, 0),
         };
 
-        let a = self.alpha + k as f64;
-        let b = self.beta + (n - k) as f64;
+        let a = self.alpha() + k as f64;
+        let b = self.beta() + (n - k) as f64;
 
         Beta::new(a, b).expect("Invalid posterior parameters")
     }
 
     fn ln_m(&self, x: &DataOrSuffStat<bool, Bernoulli>) -> f64 {
         let post = self.posterior(x);
-        post.alpha.ln_beta(post.beta) - self.alpha.ln_beta(self.beta)
+        post.alpha().ln_beta(post.beta()) - self.alpha().ln_beta(self.beta())
     }
 
     fn ln_pp(&self, y: &bool, x: &DataOrSuffStat<bool, Bernoulli>) -> f64 {
@@ -75,15 +75,16 @@ macro_rules! impl_int_traits {
                     DataOrSuffStat::None => (0, 0),
                 };
 
-                let a = self.alpha + k as f64;
-                let b = self.beta + (n - k) as f64;
+                let a = self.alpha() + k as f64;
+                let b = self.beta() + (n - k) as f64;
 
                 Beta::new(a, b).expect("Invalid posterior parameters")
             }
 
             fn ln_m(&self, x: &DataOrSuffStat<$kind, Bernoulli>) -> f64 {
                 let post = self.posterior(x);
-                post.alpha.ln_beta(post.beta) - self.alpha.ln_beta(self.beta)
+                post.alpha().ln_beta(post.beta())
+                    - self.alpha().ln_beta(self.beta())
             }
 
             fn ln_pp(
@@ -129,8 +130,8 @@ mod tests {
 
         let posterior = Beta::new(1.0, 1.0).unwrap().posterior(&xs);
 
-        assert::close(posterior.alpha, 4.0, TOL);
-        assert::close(posterior.beta, 3.0, TOL);
+        assert::close(posterior.alpha(), 4.0, TOL);
+        assert::close(posterior.beta(), 3.0, TOL);
     }
 
     #[test]
@@ -140,7 +141,7 @@ mod tests {
 
         let posterior = Beta::new(1.0, 1.0).unwrap().posterior(&xs);
 
-        assert::close(posterior.alpha, 4.0, TOL);
-        assert::close(posterior.beta, 3.0, TOL);
+        assert::close(posterior.alpha(), 4.0, TOL);
+        assert::close(posterior.beta(), 3.0, TOL);
     }
 }

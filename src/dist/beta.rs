@@ -41,11 +41,29 @@ use std::f64;
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Beta {
-    pub alpha: f64,
-    pub beta: f64,
+    alpha: f64,
+    beta: f64,
 }
 
 impl Beta {
+    /// Create a `Beta` distribution with even density over (0, 1).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Beta;
+    /// // Uniform
+    /// let beta_unif = Beta::new(1.0, 1.0);
+    /// assert!(beta_unif.is_ok());
+    ///
+    /// // Jefferey's prior
+    /// let beta_jeff  = Beta::new(0.5, 0.5);
+    /// assert!(beta_jeff.is_ok());
+    ///
+    /// // Invalid negative parameter
+    /// let beta_nope  = Beta::new(-5.0, 1.0);
+    /// assert!(beta_nope.is_err());
+    /// ```
     pub fn new(alpha: f64, beta: f64) -> result::Result<Self> {
         let alpha_ok = alpha > 0.0 && alpha.is_finite();
         let beta_ok = beta > 0.0 && beta.is_finite();
@@ -61,14 +79,62 @@ impl Beta {
     }
 
     /// Create a `Beta` distribution with even density over (0, 1).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Beta;
+    /// let beta = Beta::uniform();
+    /// assert_eq!(beta, Beta::new(1.0, 1.0).unwrap());
+    /// ```
     pub fn uniform() -> Self {
-        Beta::new(1.0, 1.0).unwrap()
+        Beta {
+            alpha: 1.0,
+            beta: 1.0,
+        }
     }
 
     /// Create a `Beta` distribution with the Jeffrey's parameterization,
     /// *Beta(0.5, 0.5)*.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Beta;
+    /// let beta = Beta::jeffreys();
+    /// assert_eq!(beta, Beta::new(0.5, 0.5).unwrap());
+    /// ```
     pub fn jeffreys() -> Self {
-        Beta::new(0.5, 0.5).unwrap()
+        Beta {
+            alpha: 0.5,
+            beta: 0.5,
+        }
+    }
+
+    /// Get the alpha parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Beta;
+    /// let beta = Beta::new(1.0, 5.0).unwrap();
+    /// assert_eq!(beta.alpha(), 1.0);
+    /// ```
+    pub fn alpha(&self) -> f64 {
+        self.alpha
+    }
+
+    /// Get the beta parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Beta;
+    /// let beta = Beta::new(1.0, 5.0).unwrap();
+    /// assert_eq!(beta.beta(), 5.0);
+    /// ```
+    pub fn beta(&self) -> f64 {
+        self.beta
     }
 }
 
