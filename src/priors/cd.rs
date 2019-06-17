@@ -191,7 +191,7 @@ mod test {
             let csd = SymmetricDirichlet::new(1.0, 4).unwrap();
             let ctgrl: Categorical = csd.draw(&mut rng);
 
-            assert!(ctgrl.ln_weights.iter().all(|lw| *lw < 0.0));
+            assert!(ctgrl.ln_weights().iter().all(|lw| *lw < 0.0));
         }
 
         #[test]
@@ -200,7 +200,7 @@ mod test {
             let csd = SymmetricDirichlet::new(1.0, 4).unwrap();
             let ctgrl: Categorical = csd.draw(&mut rng);
 
-            let ln_weights = &ctgrl.ln_weights;
+            let ln_weights = ctgrl.ln_weights();
 
             assert!((ln_weights[0] - ln_weights[1]).abs() > TOL);
             assert!((ln_weights[1] - ln_weights[2]).abs() > TOL);
@@ -221,7 +221,7 @@ mod test {
             let cd = csd.posterior(&data);
             let ctgrl: Categorical = cd.draw(&mut rng);
 
-            assert!(ctgrl.ln_weights.iter().all(|lw| *lw < 0.0));
+            assert!(ctgrl.ln_weights().iter().all(|lw| *lw < 0.0));
         }
 
         #[test]
@@ -235,7 +235,7 @@ mod test {
             let cd = csd.posterior(&data);
             let ctgrl: Categorical = cd.draw(&mut rng);
 
-            let ln_weights = &ctgrl.ln_weights;
+            let ln_weights = ctgrl.ln_weights();
 
             assert!((ln_weights[0] - ln_weights[1]).abs() > TOL);
             assert!((ln_weights[1] - ln_weights[2]).abs() > TOL);

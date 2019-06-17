@@ -44,12 +44,18 @@ use std::f64;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Binomial {
     /// Total number of trials
-    pub n: u64,
+    n: u64,
     /// Probability of a success
-    pub p: f64,
+    p: f64,
 }
 
 impl Binomial {
+    /// Create a new Binomial distribution
+    ///
+    /// # Arguments
+    ///
+    /// - n: the total number of trials
+    /// - p: the pobability of success
     pub fn new(n: u64, p: f64) -> result::Result<Self> {
         let p_ok = p.is_finite() && 0.0 < p && p < 1.0;
         let n_ok = n > 0;
@@ -67,11 +73,53 @@ impl Binomial {
     }
 
     /// A Binomial distribution with a 50% chance of success
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Binomial;
+    /// let binom = Binomial::uniform(11);
+    /// assert_eq!(binom.p(), 0.5);
+    /// ```
     pub fn uniform(n: u64) -> Self {
         Binomial::new(n, 0.5).unwrap()
     }
 
+    /// Get the number of trials
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Binomial;
+    /// let binom = Binomial::uniform(11);
+    /// assert_eq!(binom, Binomial::new(11, 0.5).unwrap());
+    /// ```
+    pub fn n(&self) -> u64 {
+        self.n
+    }
+
+    /// Get the probability of success
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Binomial;
+    /// let binom = Binomial::new(10, 0.2).unwrap();
+    /// assert_eq!(binom.p(), 0.2);
+    /// ```
+    pub fn p(&self) -> f64 {
+        self.p
+    }
+
     /// The complement of `p`, i.e. `(1 - p)`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Binomial;
+    /// let binom = Binomial::new(10, 0.2).unwrap();
+    /// assert_eq!(binom.q(), 0.8);
+    /// ```
     #[inline]
     pub fn q(&self) -> f64 {
         1.0 - self.p

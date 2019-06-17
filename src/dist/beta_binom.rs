@@ -60,6 +60,13 @@ pub struct BetaBinomial {
 }
 
 impl BetaBinomial {
+    /// Create a beta-binomal distirbution
+    ///
+    /// # Arguments
+    ///
+    /// - n: the total number of trials
+    /// - alpha: the prior pseudo obersvations of success
+    /// - beta: the prior pseudo obersvations of failure
     pub fn new(n: u32, alpha: f64, beta: f64) -> result::Result<Self> {
         let alpha_ok = alpha.is_finite() && alpha > 0.0;
         let beta_ok = beta.is_finite() && beta > 0.0;
