@@ -19,11 +19,16 @@ use special::Gamma as _;
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SymmetricDirichlet {
-    pub alpha: f64,
-    pub k: usize,
+    alpha: f64,
+    k: usize,
 }
 
 impl SymmetricDirichlet {
+    /// Create a new symmetric Dirichlet distributon
+    ///
+    /// # Arguments
+    /// - alpha: The Dirichlet weight.
+    /// - k : The number of weights. `alpha` will be replicated `k` times.
     pub fn new(alpha: f64, k: usize) -> result::Result<Self> {
         let k_ok = k > 0;
         let alpha_ok = alpha > 0.0 && alpha.is_finite();
@@ -43,8 +48,50 @@ impl SymmetricDirichlet {
         }
     }
 
+    /// The Jeffrey's Dirichlet prior for Categorical distributions
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::SymmetricDirichlet;
+    /// let symdir = SymmetricDirichlet::jeffreys(4).unwrap();
+    /// assert_eq!(symdir, SymmetricDirichlet::new(0.5, 4).unwrap());
+    /// ```
     pub fn jeffreys(k: usize) -> result::Result<Self> {
-        SymmetricDirichlet::new(0.5, k)
+        if k == 0 {
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err =
+                result::Error::new(err_kind, "k must be greater than zero");
+            Err(err)
+        } else {
+            Ok(SymmetricDirichlet { alpha: 0.5, k })
+        }
+    }
+
+    /// Get the alpha unfiorm weight parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::SymmetricDirichlet;
+    /// let symdir = SymmetricDirichlet::new(1.2, 5).unwrap();
+    /// assert_eq!(symdir.alpha(), 1.2);
+    /// ```
+    pub fn alpha(&self) -> f64 {
+        self.alpha
+    }
+
+    /// Get the number of weights, k
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::SymmetricDirichlet;
+    /// let symdir = SymmetricDirichlet::new(1.2, 5).unwrap();
+    /// assert_eq!(symdir.k(), 5);
+    /// ```
+    pub fn k(&self) -> usize {
+        self.k
     }
 }
 
@@ -82,13 +129,30 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Dirichlet {
     /// A `Vec` of real numbers in (0, ∞)
-    pub alphas: Vec<f64>,
+    alphas: Vec<f64>,
+}
+
+impl From<SymmetricDirichlet> for Dirichlet {
+    fn from(symdir: SymmetricDirichlet) -> Self {
+        Dirichlet::new_unchecked(vec![symdir.alpha; symdir.k])
+    }
+}
+
+impl From<&SymmetricDirichlet> for Dirichlet {
+    fn from(symdir: &SymmetricDirichlet) -> Self {
+        Dirichlet::new_unchecked(vec![symdir.alpha; symdir.k])
+    }
 }
 
 impl Dirichlet {
     /// Creates a `Dirichlet` with a given `alphas` vector
     pub fn new(alphas: Vec<f64>) -> result::Result<Self> {
-        if alphas.iter().any(|&a| !(a > 0.0 && a.is_finite())) {
+        if alphas.is_empty() {
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err =
+                result::Error::new(err_kind, "k must be greater than zero");
+            Err(err)
+        } else if alphas.iter().any(|&a| !(a > 0.0 && a.is_finite())) {
             let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "All alphas must be finite and greater than zero";
             let err = result::Error::new(err_kind, msg);
@@ -98,39 +162,76 @@ impl Dirichlet {
         }
     }
 
-    /// Creates a `Dirichlet` where all alphas are identical
-    ///
-    /// # Eaxmples
-    ///
-    /// ```
-    /// # extern crate rv;
-    /// # use rv::dist::Dirichlet;
-    /// #
-    /// let dir = Dirichlet::symmetric(1.0, 4);
-    /// assert_eq!(dir.alphas, vec![1.0, 1.0, 1.0, 1.0]);
-    /// ```
-    pub fn symmetric(alpha: f64, k: usize) -> Self {
-        Dirichlet::new(vec![alpha; k]).unwrap()
+    fn new_unchecked(alphas: Vec<f64>) -> Self {
+        Dirichlet { alphas }
     }
 
-    /// Creates a `Dirichlet` with all alphas = 0.5 (Feffreys prior)
+    /// Creates a `Dirichlet` where all alphas are identical.
     ///
-    /// # Eaxmples
+    /// # Notes
+    ///
+    /// `SymmetricDirichlet` if faster and more compact, and is the preferred
+    /// way to represent a Dirichlet symmetric weights.
+    ///
+    /// # Examples
     ///
     /// ```
-    /// # extern crate rv;
+    /// # use rv::dist::{Dirichlet, SymmetricDirichlet};
+    /// # use rv::traits::Rv;
+    /// let dir = Dirichlet::symmetric(1.0, 4).unwrap();
+    /// assert_eq!(*dir.alphas(), vec![1.0, 1.0, 1.0, 1.0]);
+    ///
+    /// // Equivalent to SymmetricDirichlet
+    /// let symdir = SymmetricDirichlet::new(1.0, 4).unwrap();
+    /// let x: Vec<f64> = vec![0.1, 0.4, 0.3, 0.2];
+    /// assert::close(dir.ln_f(&x), symdir.ln_f(&x), 1E-12);
+    /// ```
+    pub fn symmetric(alpha: f64, k: usize) -> result::Result<Self> {
+        if k == 0 {
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err =
+                result::Error::new(err_kind, "k must be greater than zero");
+            Err(err)
+        } else {
+            Ok(Dirichlet {
+                alphas: vec![alpha; k],
+            })
+        }
+    }
+
+    /// Creates a `Dirichlet` with all alphas = 0.5 (Jeffreys prior)
+    ///
+    /// # Notes
+    ///
+    /// `SymmetricDirichlet` if faster and more compact, and is the preferred
+    /// way to represent a Dirichlet symmetric weights.
+    ///
+    /// # Examples
+    ///
+    /// ```
     /// # use rv::dist::Dirichlet;
-    /// #
-    /// let dir = Dirichlet::jeffreys(3);
-    /// assert_eq!(dir.alphas, vec![0.5, 0.5, 0.5]);
+    /// # use rv::dist::SymmetricDirichlet;
+    /// # use rv::traits::Rv;
+    /// let dir = Dirichlet::jeffreys(3).unwrap();
+    /// assert_eq!(*dir.alphas(), vec![0.5, 0.5, 0.5]);
+    ///
+    /// // Equivalent to SymmetricDirichlet::jeffreys
+    /// let symdir = SymmetricDirichlet::jeffreys(3).unwrap();
+    /// let x: Vec<f64> = vec![0.1, 0.4, 0.5];
+    /// assert::close(dir.ln_f(&x), symdir.ln_f(&x), 1E-12);
     /// ```
-    pub fn jeffreys(k: usize) -> Self {
-        Dirichlet::new(vec![0.5; k]).unwrap()
+    pub fn jeffreys(k: usize) -> result::Result<Self> {
+        Dirichlet::symmetric(0.5, k)
     }
 
     /// The length of `alphas` / the number of categories
     pub fn k(&self) -> usize {
         self.alphas.len()
+    }
+
+    /// Get a reference to the weights vector, `alphas`
+    pub fn alphas(&self) -> &Vec<f64> {
+        &self.alphas
     }
 }
 
@@ -214,21 +315,21 @@ mod tests {
 
         #[test]
         fn properly_sized_points_on_simplex_should_be_in_support() {
-            let dir = Dirichlet::symmetric(1.0, 4);
+            let dir = Dirichlet::symmetric(1.0, 4).unwrap();
             assert!(dir.supports(&vec![0.25, 0.25, 0.25, 0.25]));
             assert!(dir.supports(&vec![0.1, 0.2, 0.3, 0.4]));
         }
 
         #[test]
         fn improperly_sized_points_should_not_be_in_support() {
-            let dir = Dirichlet::symmetric(1.0, 3);
+            let dir = Dirichlet::symmetric(1.0, 3).unwrap();
             assert!(!dir.supports(&vec![0.25, 0.25, 0.25, 0.25]));
             assert!(!dir.supports(&vec![0.1, 0.2, 0.7, 0.4]));
         }
 
         #[test]
         fn properly_sized_points_off_simplex_should_not_be_in_support() {
-            let dir = Dirichlet::symmetric(1.0, 4);
+            let dir = Dirichlet::symmetric(1.0, 4).unwrap();
             assert!(!dir.supports(&vec![0.25, 0.25, 0.26, 0.25]));
             assert!(!dir.supports(&vec![0.1, 0.3, 0.3, 0.4]));
         }
@@ -238,7 +339,7 @@ mod tests {
             let mut rng = rand::thread_rng();
             // Small alphas gives us more variability in the simplex, and more
             // variability gives us a beter test.
-            let dir = Dirichlet::jeffreys(10);
+            let dir = Dirichlet::jeffreys(10).unwrap();
             for _ in 0..100 {
                 let x = dir.draw(&mut rng);
                 assert!(dir.supports(&x));
@@ -248,14 +349,14 @@ mod tests {
         #[test]
         fn sample_should_return_the_proper_number_of_draws() {
             let mut rng = rand::thread_rng();
-            let dir = Dirichlet::jeffreys(3);
+            let dir = Dirichlet::jeffreys(3).unwrap();
             let xs: Vec<Vec<f64>> = dir.sample(88, &mut rng);
             assert_eq!(xs.len(), 88);
         }
 
         #[test]
         fn log_pdf_symemtric() {
-            let dir = Dirichlet::symmetric(1.0, 3);
+            let dir = Dirichlet::symmetric(1.0, 3).unwrap();
             assert::close(
                 dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
                 0.69314718055994529,
@@ -265,7 +366,7 @@ mod tests {
 
         #[test]
         fn log_pdf_jeffreys() {
-            let dir = Dirichlet::jeffreys(3);
+            let dir = Dirichlet::jeffreys(3).unwrap();
             assert::close(
                 dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
                 -0.084598117749354218,

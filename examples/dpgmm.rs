@@ -113,7 +113,7 @@ impl Dpgmm {
             ConjugateModel::new(&Gaussian::default(), self.prior.clone());
 
         // probability of being in a new category -- α * p(xi)
-        ln_weights.push(self.crp.alpha.ln() + ctmp.ln_pp(&x));
+        ln_weights.push(self.crp.alpha().ln() + ctmp.ln_pp(&x));
 
         // Draws a new assignment in proportion with the weights
         let zi = ln_pflip(&ln_weights, 1, false, &mut rng)[0];

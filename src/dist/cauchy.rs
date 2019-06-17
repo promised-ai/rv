@@ -28,12 +28,17 @@ use std::f64::consts::PI;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Cauchy {
     /// location, x<sub>0</sub>, in (-∞, ∞)
-    pub loc: f64,
-    /// location, γ, in (0, ∞)
-    pub scale: f64,
+    loc: f64,
+    /// scale, γ, in (0, ∞)
+    scale: f64,
 }
 
 impl Cauchy {
+    /// Createa a new Cauchy distribution
+    ///
+    /// # Arguments
+    /// - loc: location, x<sub>0</sub>, in (-∞, ∞)
+    /// - scale: scale, γ, in (0, ∞)
     pub fn new(loc: f64, scale: f64) -> result::Result<Self> {
         let loc_ok = loc.is_finite();
         let scale_ok = scale > 0.0 && scale.is_finite();
@@ -49,6 +54,32 @@ impl Cauchy {
             let err = result::Error::new(err_kind, msg);
             Err(err)
         }
+    }
+
+    /// Get the location parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Cauchy;
+    /// let c = Cauchy::new(0.1, 1.0).unwrap();
+    /// assert_eq!(c.loc(), 0.1);
+    /// ```
+    pub fn loc(&self) -> f64 {
+        self.loc
+    }
+
+    /// Get the scale parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Cauchy;
+    /// let c = Cauchy::new(0.1, 1.0).unwrap();
+    /// assert_eq!(c.scale(), 1.0);
+    /// ```
+    pub fn scale(&self) -> f64 {
+        self.scale
     }
 }
 
