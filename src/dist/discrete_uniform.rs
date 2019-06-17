@@ -7,6 +7,9 @@ use rand::Rng;
 use std::f64;
 use std::fmt;
 
+pub trait DuParam: Integer + Copy {}
+impl<T> DuParam for T where T: Integer + Copy {}
+
 #[cfg(feature = "serde_support")]
 use serde_derive::{Deserialize, Serialize};
 
@@ -14,12 +17,17 @@ use serde_derive::{Deserialize, Serialize};
 /// U(a, b) on the interval x in [a, b]
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct DiscreteUniform<T: Integer> {
-    pub a: T,
-    pub b: T,
+pub struct DiscreteUniform<T: DuParam> {
+    a: T,
+    b: T,
 }
 
-impl<T: Integer> DiscreteUniform<T> {
+impl<T: DuParam> DiscreteUniform<T> {
+    /// Create a new discreet uniform distribution
+    ///
+    /// # Arguments
+    /// - a: lower bound
+    /// - b : upper bound
     pub fn new(a: T, b: T) -> Result<Self> {
         if a < b {
             Ok(Self { a, b })
@@ -30,11 +38,37 @@ impl<T: Integer> DiscreteUniform<T> {
             ))
         }
     }
+
+    /// Get lower bound parameter, a
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::DiscreteUniform;
+    /// let du = DiscreteUniform::new(1_u8, 22_u8).unwrap();
+    /// assert_eq!(du.a(), 1);
+    /// ```
+    pub fn a(&self) -> T {
+        self.a
+    }
+
+    /// Get upper bound parameter, a
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::DiscreteUniform;
+    /// let du = DiscreteUniform::new(1_u8, 22_u8).unwrap();
+    /// assert_eq!(du.b(), 22);
+    /// ```
+    pub fn b(&self) -> T {
+        self.b
+    }
 }
 
 impl<T> From<&DiscreteUniform<T>> for String
 where
-    T: Integer + fmt::Display,
+    T: DuParam + fmt::Display,
 {
     fn from(u: &DiscreteUniform<T>) -> String {
         format!("DiscreteUniform({}, {})", u.a, u.b)
@@ -43,7 +77,7 @@ where
 
 impl<T> fmt::Display for DiscreteUniform<T>
 where
-    T: Integer + fmt::Display,
+    T: DuParam + fmt::Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", String::from(self))
@@ -52,7 +86,7 @@ where
 
 impl<X, T> Rv<X> for DiscreteUniform<T>
 where
-    T: Integer + SampleUniform + Copy,
+    T: DuParam + SampleUniform + Copy,
     X: Integer + From<T>,
 {
     fn ln_f(&self, x: &X) -> f64 {
@@ -77,7 +111,7 @@ where
 impl<X, T> Support<X> for DiscreteUniform<T>
 where
     X: Integer + From<T>,
-    T: Integer + Copy,
+    T: DuParam,
 {
     fn supports(&self, x: &X) -> bool {
         X::from(self.a) <= *x && X::from(self.b) >= *x
@@ -87,13 +121,13 @@ where
 impl<X, T> DiscreteDistr<X> for DiscreteUniform<T>
 where
     X: Integer + From<T>,
-    T: Integer + SampleUniform + Into<f64> + Copy,
+    T: DuParam + SampleUniform + Into<f64>,
 {
 }
 
 impl<T> Entropy for DiscreteUniform<T>
 where
-    T: Integer + Into<f64> + Copy,
+    T: DuParam + Into<f64>,
 {
     fn entropy(&self) -> f64 {
         let diff: f64 = (self.b - self.a).into();
@@ -103,7 +137,7 @@ where
 
 impl<T> Mean<f64> for DiscreteUniform<T>
 where
-    T: Integer + SampleUniform + Into<f64> + Copy,
+    T: DuParam + SampleUniform + Into<f64>,
 {
     fn mean(&self) -> Option<f64> {
         let m = ((self.b + self.a).into()) / 2.0;
@@ -113,7 +147,7 @@ where
 
 impl<T> Median<f64> for DiscreteUniform<T>
 where
-    T: Integer + SampleUniform + Into<f64> + Copy,
+    T: DuParam + SampleUniform + Into<f64>,
 {
     fn median(&self) -> Option<f64> {
         let m: f64 = (self.b + self.a).into() / 2.0;
@@ -123,7 +157,7 @@ where
 
 impl<T> Variance<f64> for DiscreteUniform<T>
 where
-    T: Integer + SampleUniform + Into<f64> + Copy,
+    T: DuParam + SampleUniform + Into<f64>,
 {
     fn variance(&self) -> Option<f64> {
         let v = (self.b - self.a + T::one()).into().powi(2) / 12.0;
@@ -134,7 +168,7 @@ where
 impl<X, T> Cdf<X> for DiscreteUniform<T>
 where
     X: Integer + From<T> + ToPrimitive + Copy,
-    T: Integer + SampleUniform + ToPrimitive + Copy,
+    T: DuParam + SampleUniform + ToPrimitive,
 {
     fn cdf(&self, x: &X) -> f64 {
         if *x < X::from(self.a) {
@@ -154,7 +188,7 @@ where
 impl<X, T> InverseCdf<X> for DiscreteUniform<T>
 where
     X: Integer + From<T> + FromPrimitive,
-    T: Integer + SampleUniform + ToPrimitive + Copy,
+    T: DuParam + SampleUniform + ToPrimitive,
 {
     fn invcdf(&self, p: f64) -> X {
         let diff: f64 = (self.b - self.a).to_f64().unwrap();
@@ -162,13 +196,13 @@ where
     }
 }
 
-impl<T: Integer> Skewness for DiscreteUniform<T> {
+impl<T: DuParam> Skewness for DiscreteUniform<T> {
     fn skewness(&self) -> Option<f64> {
         Some(0.0)
     }
 }
 
-impl<T: Integer> Kurtosis for DiscreteUniform<T> {
+impl<T: DuParam> Kurtosis for DiscreteUniform<T> {
     fn kurtosis(&self) -> Option<f64> {
         Some(-1.2)
     }

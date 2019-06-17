@@ -9,7 +9,7 @@ trait QuadBounds {
 
 impl QuadBounds for Gaussian {
     fn quad_bounds(&self) -> (f64, f64) {
-        let span = self.mu + 6.0 * self.sigma;
+        let span = self.mu() + 6.0 * self.sigma();
         (-span, span)
     }
 }

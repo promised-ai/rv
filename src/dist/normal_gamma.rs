@@ -58,11 +58,11 @@ impl_display!(NormalGamma);
 
 impl Rv<Gaussian> for NormalGamma {
     fn ln_f(&self, x: &Gaussian) -> f64 {
-        let rho = x.sigma.powi(2).recip();
+        let rho = x.sigma().powi(2).recip();
         let lnf_rho =
             Gamma::new(self.v / 2.0, self.s / 2.0).unwrap().ln_f(&rho);
         let prior_sigma = (self.r * rho).recip().sqrt();
-        let lnf_mu = Gaussian::new(self.m, prior_sigma).unwrap().ln_f(&x.mu);
+        let lnf_mu = Gaussian::new(self.m, prior_sigma).unwrap().ln_f(&x.mu());
         lnf_rho + lnf_mu - HALF_LN_2PI
     }
 
@@ -85,7 +85,7 @@ impl Support<Gaussian> for NormalGamma {
     fn supports(&self, x: &Gaussian) -> bool {
         // NOTE: Could replace this with Gaussian::new(mu, sigma).is_ok(),
         // but this is more explicit.
-        x.mu.is_finite() && x.sigma > 0.0 && x.sigma.is_finite()
+        x.mu().is_finite() && x.sigma() > 0.0 && x.sigma().is_finite()
     }
 }
 

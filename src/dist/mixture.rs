@@ -322,10 +322,10 @@ mod tests {
         let mmc = Mixture::combine(vec![mm1, mm2]).unwrap();
 
         assert::close(mmc.weights, vec![0.1, 0.4, 0.2, 0.3], TOL);
-        assert::close(mmc.components[0].mu, 0.0, TOL);
-        assert::close(mmc.components[1].mu, 1.0, TOL);
-        assert::close(mmc.components[2].mu, 2.0, TOL);
-        assert::close(mmc.components[3].mu, 3.0, TOL);
+        assert::close(mmc.components[0].mu(), 0.0, TOL);
+        assert::close(mmc.components[1].mu(), 1.0, TOL);
+        assert::close(mmc.components[2].mu(), 2.0, TOL);
+        assert::close(mmc.components[3].mu(), 3.0, TOL);
     }
 
     #[test]

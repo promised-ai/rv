@@ -39,12 +39,17 @@ use std::f64::consts::SQRT_2;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gaussian {
     /// Mean
-    pub mu: f64,
+    mu: f64,
     /// Standard deviation
-    pub sigma: f64,
+    sigma: f64,
 }
 
 impl Gaussian {
+    /// Create a new Gaussian distribution
+    ///
+    /// # Aruments
+    /// - mu: mean
+    /// - sigma: standard deviation
     pub fn new(mu: f64, sigma: f64) -> result::Result<Self> {
         let mu_ok = mu.is_finite();
         let sigma_ok = sigma > 0.0 && sigma.is_finite();
@@ -63,8 +68,48 @@ impl Gaussian {
     }
 
     /// Standard normal
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gaussian;
+    /// let gauss = Gaussian::standard();
+    ///
+    /// assert_eq!(gauss, Gaussian::new(0.0, 1.0).unwrap());
+    /// ```
     pub fn standard() -> Self {
-        Gaussian::new(0.0, 1.0).unwrap()
+        Gaussian {
+            mu: 0.0,
+            sigma: 1.0,
+        }
+    }
+
+    /// Get mu parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gaussian;
+    /// let gauss = Gaussian::new(2.0, 1.5).unwrap();
+    ///
+    /// assert_eq!(gauss.mu(), 2.0);
+    /// ```
+    pub fn mu(&self) -> f64 {
+        self.mu
+    }
+
+    /// Get sigma parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gaussian;
+    /// let gauss = Gaussian::new(2.0, 1.5).unwrap();
+    ///
+    /// assert_eq!(gauss.sigma(), 1.5);
+    /// ```
+    pub fn sigma(&self) -> f64 {
+        self.sigma
     }
 }
 

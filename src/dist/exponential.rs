@@ -27,10 +27,14 @@ use std::f64::consts::LN_2;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Exponential {
     /// λ > 0, rate or inverse scale
-    pub rate: f64,
+    rate: f64,
 }
 
 impl Exponential {
+    /// Create a new exponential distribution
+    ///
+    /// # Arguments
+    /// - rate: λ > 0, rate or inverse scale
     pub fn new(rate: f64) -> result::Result<Self> {
         if rate > 0.0 && rate.is_finite() {
             Ok(Exponential { rate })
@@ -40,6 +44,19 @@ impl Exponential {
             let err = result::Error::new(err_kind, msg);
             Err(err)
         }
+    }
+
+    /// Get the rate parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Exponential;
+    /// let expon = Exponential::new(1.3).unwrap();
+    /// assert_eq!(expon.rate(), 1.3);
+    /// ```
+    pub fn rate(&self) -> f64 {
+        self.rate
     }
 }
 

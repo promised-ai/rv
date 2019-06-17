@@ -81,7 +81,7 @@ impl Crp {
     pub fn alpha(&self) -> f64 {
         self.alpha
     }
-    
+
     /// Get the number of entries in the partition, `n`.
     ///
     /// # Example
