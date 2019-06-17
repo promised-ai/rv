@@ -17,7 +17,7 @@ impl QuadBounds for Gaussian {
 // Exact computation for categorical
 impl Entropy for Mixture<Categorical> {
     fn entropy(&self) -> f64 {
-        (0..self.components[0].k()).fold(0.0, |acc, x| {
+        (0..self.components()[0].k()).fold(0.0, |acc, x| {
             let ln_f = self.ln_f(&x);
             acc - ln_f.exp() * ln_f
         })
@@ -27,7 +27,7 @@ impl Entropy for Mixture<Categorical> {
 // Exact computation for categorical
 impl Entropy for Mixture<Mixture<Categorical>> {
     fn entropy(&self) -> f64 {
-        let k = self.components[0].components[0].k();
+        let k = self.components()[0].components()[0].k();
         (0..k).fold(0.0, |acc, x| {
             let ln_f = self.ln_f(&x);
             acc - ln_f.exp() * ln_f

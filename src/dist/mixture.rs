@@ -25,12 +25,18 @@ use rand::Rng;
 pub struct Mixture<Fx> {
     /// The weights for each component distribution. All entries must be
     /// positive and sum to 1.
-    pub weights: Vec<f64>,
+    weights: Vec<f64>,
     /// The component distributions.
-    pub components: Vec<Fx>,
+    components: Vec<Fx>,
 }
 
 impl<Fx> Mixture<Fx> {
+    /// Create a new micture distribution
+    ///
+    /// # Arguments
+    /// - weights: The weights for each component distribution. All entries
+    ///   must be positive and sum to 1.
+    /// - components: The componen distributions.
     pub fn new(weights: Vec<f64>, components: Vec<Fx>) -> result::Result<Self> {
         let weights_ok = weights.iter().all(|&w| w >= 0.0)
             && (weights.iter().fold(0.0, |acc, &w| acc + w) - 1.0).abs()
@@ -95,6 +101,16 @@ impl<Fx> Mixture<Fx> {
     /// Number of components
     pub fn k(&self) -> usize {
         self.components.len()
+    }
+
+    /// Get a reference to the component weights
+    pub fn weights(&self) -> &Vec<f64> {
+        &self.weights
+    }
+
+    /// Get a reference to the components
+    pub fn components(&self) -> &Vec<Fx> {
+        &self.components
     }
 }
 

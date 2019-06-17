@@ -17,9 +17,6 @@ use std::f64::consts::{E, PI};
 /// Generate a Wishart random 3x3 matrix **Σ** ~ W<sub>ν</sub>(S)
 ///
 /// ```
-/// # extern crate rv;
-/// # extern crate rand;
-/// # extern crate nalgebra;
 /// use nalgebra::{DMatrix, DVector};
 /// use rv::prelude::*;
 ///
