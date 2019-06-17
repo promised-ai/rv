@@ -7,7 +7,7 @@ use crate::traits::*;
 
 impl Rv<Bernoulli> for Beta {
     fn ln_f(&self, x: &Bernoulli) -> f64 {
-        self.ln_f(&x.p)
+        self.ln_f(&x.p())
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Bernoulli {
@@ -18,7 +18,7 @@ impl Rv<Bernoulli> for Beta {
 
 impl Support<Bernoulli> for Beta {
     fn supports(&self, x: &Bernoulli) -> bool {
-        0.0 < x.p && x.p < 1.0
+        0.0 < x.p() && x.p() < 1.0
     }
 }
 
