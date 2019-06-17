@@ -49,6 +49,32 @@ impl Laplace {
             Ok(Laplace { mu, b })
         }
     }
+
+    /// Get the mu parameter
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use rv::dist::Laplace;
+    /// let laplace = Laplace::new(-1.0, 2.0).unwrap();
+    /// assert_eq!(laplace.mu(), -1.0);
+    /// ```
+    pub fn mu(&self) -> f64 {
+        self.mu
+    }
+
+    /// Get the b parameter
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use rv::dist::Laplace;
+    /// let laplace = Laplace::new(-1.0, 2.0).unwrap();
+    /// assert_eq!(laplace.b(), 2.0);
+    /// ```
+    pub fn b(&self) -> f64 {
+        self.b
+    }
 }
 
 /// Laplace with mean 0 and variance 1
