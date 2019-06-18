@@ -20,10 +20,6 @@ use rand::Rng;
 /// Draw a Multivariate Gaussian from GIW
 ///
 /// ```
-/// # extern crate rv;
-/// extern crate rand;
-/// extern crate nalgebra;
-///
 /// use nalgebra::{DMatrix, DVector};
 /// use rv::prelude::*;
 ///
@@ -42,17 +38,23 @@ use rand::Rng;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct NormalInvWishart {
     /// The mean of μ, μ<sub>0</sub>
-    pub mu: DVector<f64>,
+    mu: DVector<f64>,
     /// A scale factor on Σ, κ<sub>0</sub>
-    pub k: f64,
+    k: f64,
     /// The degrees of freedom, ν > |μ| - 1
-    pub df: usize,
+    df: usize,
     /// The positive-definite scale matrix, Ψ
-    pub scale: DMatrix<f64>,
+    scale: DMatrix<f64>,
 }
 
 impl NormalInvWishart {
     /// Create a new `NormalInvWishart` distribution
+    ///
+    /// # Arguments
+    /// - mu: The mean of μ, μ<sub>0</sub>
+    /// - k: A scale factor on Σ, κ<sub>0</sub>
+    /// - df: The degrees of freedom, ν > |μ| - 1
+    /// - scale The positive-definite scale matrix, Ψ
     pub fn new(
         mu: DVector<f64>,
         k: f64,
@@ -82,6 +84,31 @@ impl NormalInvWishart {
             None => Ok(NormalInvWishart { mu, k, df, scale }),
         }
     }
+
+    /// Get the number of dimensions
+    pub fn dims(&self) -> usize {
+        self.mu.len()
+    }
+
+    /// Get a reference to the mu vector
+    pub fn mu(&self) -> &DVector<f64> {
+        &self.mu
+    }
+
+    /// Get the k parameter
+    pub fn k(&self) -> f64 {
+        self.k
+    }
+
+    /// Get the degrees of freedom, df
+    pub fn df(&self) -> usize {
+        self.df
+    }
+
+    /// Get a reference to the scale matrix
+    pub fn scale(&self) -> &DMatrix<f64> {
+        &self.scale
+    }
 }
 
 impl From<&NormalInvWishart> for String {
@@ -100,10 +127,10 @@ impl_display!(NormalInvWishart);
 impl Rv<MvGaussian> for NormalInvWishart {
     fn ln_f(&self, x: &MvGaussian) -> f64 {
         let m = self.mu.clone();
-        let sigma = x.cov.clone() / self.k;
+        let sigma = x.cov().to_owned() / self.k;
         let mvg = MvGaussian::new(m, sigma).unwrap();
         let iw = InvWishart::new(self.scale.clone(), self.df).unwrap();
-        mvg.ln_f(&x.mu) + iw.ln_f(&x.cov)
+        mvg.ln_f(x.mu()) + iw.ln_f(x.cov())
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> MvGaussian {
@@ -121,7 +148,7 @@ impl Rv<MvGaussian> for NormalInvWishart {
 impl Support<MvGaussian> for NormalInvWishart {
     fn supports(&self, x: &MvGaussian) -> bool {
         let p = self.mu.len();
-        x.mu.len() == p && x.cov.clone().cholesky().is_some()
+        x.mu().len() == p && x.cov().to_owned().cholesky().is_some()
     }
 }
 
