@@ -18,7 +18,6 @@ use std::f64;
 /// Beta as a conjugate prior for Bernoulli
 ///
 /// ```
-/// # extern crate rv;
 /// use rv::prelude::*;
 ///
 /// // A prior that encodes our strong belief that coins are fair:

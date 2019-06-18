@@ -14,9 +14,6 @@ use std::f64::consts::{E, FRAC_1_SQRT_2, LN_2};
 /// # Example
 ///
 /// ```
-/// # extern crate rv;
-/// extern crate rand;
-///
 /// use rv::prelude::*;
 ///
 /// let laplace = Laplace::new(0.0, 1.0).expect("Invalid params");

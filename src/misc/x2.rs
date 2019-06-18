@@ -7,7 +7,6 @@ use special::Gamma;
 /// Test whether the observed counts were generated uniformly.
 ///
 /// ```
-/// # extern crate rv;
 /// use rv::misc::x2_test;
 ///
 /// // The observed counts/frequencies

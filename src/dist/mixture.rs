@@ -271,7 +271,6 @@ continuous_uv_mean_and_var!(f64);
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate assert;
     use crate::dist::{Gaussian, Poisson};
 
     const TOL: f64 = 1E-12;

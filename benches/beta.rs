@@ -1,11 +1,9 @@
 use std::f64;
 
-use criterion::BatchSize;
 use criterion::Benchmark;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use rand::distributions::Beta;
-use rand::Rng;
 use rv::traits::Rv;
 
 fn draw_rand_distr<R: rand::Rng>(rng: &mut R) -> f64 {

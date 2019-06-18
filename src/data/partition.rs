@@ -54,9 +54,7 @@ impl Partition {
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate rv;
     /// # use rv::data::Partition;
-    /// #
     /// let z1 = vec![0, 1, 2, 3, 1, 2];
     /// let part = Partition::from_z(z1).unwrap();
     ///
@@ -86,10 +84,8 @@ impl Partition {
     ///
     /// # Example
     ///
-    /// ``` rust
-    /// # extern crate rv;
+    /// ```
     /// # use rv::data::Partition;
-    /// #
     /// let mut part = Partition::from_z(vec![0, 1, 0, 2]).unwrap();
     /// part.remove(1).expect("Could not remove");
     ///
@@ -119,9 +115,7 @@ impl Partition {
     /// # Example
     ///
     /// ``` rust
-    /// # extern crate rv;
     /// # use rv::data::Partition;
-    /// #
     /// let mut part = Partition::from_z(vec![0, 1, 0, 2]).unwrap();
     /// part.append(3).expect("Could not append");
     ///
@@ -150,9 +144,7 @@ impl Partition {
     /// # Example
     ///
     /// ``` rust
-    /// # extern crate rv;
     /// # use rv::data::Partition;
-    /// #
     /// let part = Partition::from_z(vec![0, 1, 0, 2]).unwrap();
     ///
     /// assert_eq!(part.k(), 3);
@@ -176,9 +168,7 @@ impl Partition {
     /// # Example
     ///
     /// ``` rust
-    /// # extern crate rv;
     /// # use rv::data::Partition;
-    /// #
     /// let part = Partition::from_z(vec![0, 1, 0, 2]).unwrap();
     /// let weights = part.weights();
     ///

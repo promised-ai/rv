@@ -16,7 +16,6 @@ use std::f64::consts::PI;
 ///
 /// # Example
 /// ```
-/// # extern crate rv;
 /// use rv::prelude::*;
 ///
 /// let cauchy = Cauchy::new(1.2, 3.4).expect("Invalid params");

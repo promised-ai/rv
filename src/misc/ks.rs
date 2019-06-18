@@ -7,9 +7,6 @@
 /// # Example
 ///
 /// ```rust
-/// # extern crate rv;
-/// extern crate rand;
-///
 /// use rv::prelude::*;
 /// use rv::misc::ks_test;
 ///

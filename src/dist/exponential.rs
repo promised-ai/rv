@@ -17,7 +17,6 @@ use std::f64::consts::LN_2;
 /// Compute 50% confidence interval
 ///
 /// ```rust
-/// # extern crate rv;
 /// use rv::prelude::*;
 ///
 /// let expon = Exponential::new(1.5).unwrap();

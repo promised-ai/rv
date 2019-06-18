@@ -24,9 +24,6 @@ use special::Gamma as _;
 /// # Example
 ///
 /// ```
-/// # extern crate rv;
-/// extern crate rand;
-///
 /// use::rv::prelude::*;
 ///
 /// let mut rng = rand::thread_rng();

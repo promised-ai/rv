@@ -16,7 +16,6 @@ use std::f64::consts::LN_2;
 /// # Example
 ///
 /// ```
-/// # extern crate rv;
 /// use rv::prelude::*;
 ///
 /// let x2 = ChiSquared::new(2.0).unwrap();

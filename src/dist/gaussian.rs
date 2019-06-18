@@ -21,7 +21,6 @@ use std::f64::consts::SQRT_2;
 /// between two Gaussians.
 ///
 /// ```
-/// # extern crate rv;
 /// use rv::prelude::*;
 ///
 /// let gauss_1 = Gaussian::new(0.1, 2.3).unwrap();

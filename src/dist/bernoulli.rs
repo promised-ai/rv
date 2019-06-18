@@ -16,7 +16,6 @@ use std::f64;
 /// # Example
 ///
 /// ```
-/// # extern crate rv;
 /// use rv::prelude::*;
 ///
 /// let b = Bernoulli::new(0.75).unwrap();
@@ -27,7 +26,6 @@ use std::f64;
 /// support
 ///
 /// ```should_panic
-/// # extern crate rv;
 /// # use rv::prelude::*;
 /// let b = Bernoulli::new(0.75).unwrap();
 /// assert!(!b.supports(&2_u8));

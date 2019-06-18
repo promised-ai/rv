@@ -1,11 +1,9 @@
 #[cfg(feature = "serde_support")]
 use serde_derive::{Deserialize, Serialize};
 
-extern crate nalgebra;
-
-use self::nalgebra::{DMatrix, DVector};
 use crate::data::CategoricalDatum;
 use crate::traits::SuffStat;
+use nalgebra::{DMatrix, DVector};
 
 // Bernoulli
 // ---------
@@ -277,7 +275,6 @@ mod tests {
     }
 
     mod categorical {
-        extern crate assert;
         use super::*;
 
         #[test]

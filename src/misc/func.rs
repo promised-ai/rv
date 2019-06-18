@@ -69,9 +69,7 @@ pub fn logsumexp(xs: &[f64]) -> f64 {
 /// # Example
 ///
 /// ```rust
-/// # extern crate rv;
 /// # use rv::misc::cumsum;
-/// #
 /// let xs: Vec<i32> = vec![1, 1, 2, 1];
 /// assert_eq!(cumsum(&xs), vec![1, 2, 4, 5]);
 /// ```
@@ -156,9 +154,6 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 /// # Examples
 ///
 /// ```rust
-/// extern crate rand;
-/// extern crate rv;
-///
 /// use rv::misc::ln_pflip;
 ///
 /// let weights: Vec<f64> = vec![0.4, 0.2, 0.3, 0.1];
@@ -267,7 +262,6 @@ pub fn mvgamma(p: usize, a: f64) -> f64 {
 /// documentation](https://doc.rust-lang.org/std/primitive.f64.html#method.mod_euc)
 ///
 /// ```rust
-/// # extern crate rv;
 /// # use rv::misc::mod_euc;
 /// let a: f64 = 7.0;
 /// let b = 4.0;

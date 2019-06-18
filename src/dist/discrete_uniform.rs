@@ -210,7 +210,6 @@ impl<T: DuParam> Kurtosis for DiscreteUniform<T> {
 
 #[cfg(test)]
 mod tests {
-    extern crate assert;
     use super::*;
     use crate::misc::ks_test;
 

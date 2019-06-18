@@ -15,9 +15,6 @@ use rand::Rng;
 /// # Example
 ///
 /// ```
-/// extern crate rv;
-/// extern crate rand;
-///
 /// use rv::prelude::*;
 ///
 /// // Create Geometric(p=0.5)
