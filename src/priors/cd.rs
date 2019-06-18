@@ -41,7 +41,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
         extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
             let alphas: Vec<f64> =
-                stat.counts.iter().map(|&ct| self.alpha() + ct).collect();
+                stat.counts().iter().map(|&ct| self.alpha() + ct).collect();
 
             Dirichlet::new(alphas).unwrap()
         })
@@ -52,9 +52,9 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
         extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
             // terms
             let a = sum_alpha.ln_gamma().0;
-            let b = (sum_alpha + stat.n as f64).ln_gamma().0;
+            let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
             let c = stat
-                .counts
+                .counts()
                 .iter()
                 .fold(0.0, |acc, &ct| acc + (self.alpha() + ct).ln_gamma().0);
             let d = self.alpha().ln_gamma().0 * self.k() as f64;
@@ -89,7 +89,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
             let alphas: Vec<f64> = self
                 .alphas()
                 .iter()
-                .zip(stat.counts.iter())
+                .zip(stat.counts().iter())
                 .map(|(&a, &ct)| a + ct)
                 .collect();
 
@@ -102,11 +102,11 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
         extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
             // terms
             let a = sum_alpha.ln_gamma().0;
-            let b = (sum_alpha + stat.n as f64).ln_gamma().0;
+            let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
             let c = self
                 .alphas()
                 .iter()
-                .zip(stat.counts.iter())
+                .zip(stat.counts().iter())
                 .fold(0.0, |acc, (&a, &ct)| acc + (a + ct).ln_gamma().0);
             let d = self
                 .alphas()

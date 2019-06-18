@@ -123,8 +123,8 @@ impl_bernoulli_suffstat!(isize);
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct CategoricalSuffStat {
-    pub n: usize,
-    pub counts: Vec<f64>,
+    n: usize,
+    counts: Vec<f64>,
 }
 
 impl CategoricalSuffStat {
@@ -133,6 +133,44 @@ impl CategoricalSuffStat {
             n: 0,
             counts: vec![0.0; k],
         }
+    }
+
+    /// Get the total number of trials
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::data::CategoricalSuffStat;
+    /// # use rv::traits::SuffStat;
+    /// let mut stat = CategoricalSuffStat::new(3);
+    ///
+    /// stat.observe(&0_u8);
+    /// stat.observe(&1_u8);
+    /// stat.observe(&1_u8);
+    ///
+    /// assert_eq!(stat.n(), 3);
+    /// ```
+    pub fn n(&self) -> usize {
+        self.n
+    }
+
+    /// Get the number of occurrences of each class, counts
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::data::CategoricalSuffStat;
+    /// # use rv::traits::SuffStat;
+    /// let mut stat = CategoricalSuffStat::new(3);
+    ///
+    /// stat.observe(&0_u8);
+    /// stat.observe(&1_u8);
+    /// stat.observe(&1_u8);
+    ///
+    /// assert_eq!(*stat.counts(), vec![1.0, 2.0, 0.0]);
+    /// ```
+    pub fn counts(&self) -> &Vec<f64> {
+        &self.counts
     }
 }
 
@@ -160,11 +198,11 @@ impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct GaussianSuffStat {
     /// Number of observations
-    pub n: usize,
+    n: usize,
     /// Sum of `x`
-    pub sum_x: f64,
+    sum_x: f64,
     /// Sum of `x^2`
-    pub sum_x_sq: f64,
+    sum_x_sq: f64,
 }
 
 impl GaussianSuffStat {
@@ -174,6 +212,21 @@ impl GaussianSuffStat {
             sum_x: 0.0,
             sum_x_sq: 0.0,
         }
+    }
+
+    /// Get the number of observations
+    pub fn n(&self) -> usize {
+        self.n
+    }
+
+    /// Get the sum of observations
+    pub fn sum_x(&self) -> f64 {
+        self.sum_x
+    }
+
+    /// Get the sum of squared observations
+    pub fn sum_x_sq(&self) -> f64 {
+        self.sum_x_sq
     }
 }
 
@@ -220,9 +273,9 @@ impl_gaussian_suffstat!(f64);
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct MvGaussianSuffStat {
-    pub n: usize,
-    pub sum_x: DVector<f64>,
-    pub sum_x_sq: DMatrix<f64>,
+    n: usize,
+    sum_x: DVector<f64>,
+    sum_x_sq: DMatrix<f64>,
 }
 
 impl MvGaussianSuffStat {
@@ -232,6 +285,21 @@ impl MvGaussianSuffStat {
             sum_x: DVector::zeros(dims),
             sum_x_sq: DMatrix::zeros(dims, dims),
         }
+    }
+
+    /// Get the number of observations
+    pub fn n(&self) -> usize {
+        self.n
+    }
+
+    /// Get the sum of observations
+    pub fn sum_x(&self) -> &DVector<f64> {
+        &self.sum_x
+    }
+
+    /// Get the sum of X^2
+    pub fn sum_x_sq(&self) -> &DMatrix<f64> {
+        &self.sum_x_sq
     }
 }
 

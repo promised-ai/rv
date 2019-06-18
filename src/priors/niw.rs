@@ -43,16 +43,16 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
 
         let nf = x.n() as f64;
         extract_stat_then!(self.dims(), x, |stat: &MvGaussianSuffStat| {
-            let xbar = &(stat.sum_x) / stat.n as f64;
+            let xbar = stat.sum_x() / stat.n() as f64;
             let diff = &xbar - self.mu();
-            let s = &stat.sum_x_sq - nf * (&xbar * &xbar.transpose());
+            let s = stat.sum_x_sq() - nf * (&xbar * &xbar.transpose());
 
-            let kn = self.k() + stat.n as f64;
-            let vn = self.df() + stat.n;
-            let mn = (self.k() * self.mu() + &stat.sum_x) / kn;
+            let kn = self.k() + stat.n() as f64;
+            let vn = self.df() + stat.n();
+            let mn = (self.k() * self.mu() + stat.sum_x()) / kn;
             let sn = self.scale()
                 + s
-                + (self.k() * stat.n as f64) / kn * &diff * &diff.transpose();
+                + (self.k() * stat.n() as f64) / kn * &diff * &diff.transpose();
 
             NormalInvWishart::new(mn, kn, vn, sn)
                 .expect("Invalid posterior parameters")

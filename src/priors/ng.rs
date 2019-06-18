@@ -33,10 +33,10 @@ fn posterior_from_stat(
     ng: &NormalGamma,
     stat: &GaussianSuffStat,
 ) -> NormalGamma {
-    let r = ng.r() + stat.n as f64;
-    let v = ng.v() + stat.n as f64;
-    let m = (ng.m() * ng.r() + stat.sum_x) / r;
-    let s = ng.s() + stat.sum_x_sq + ng.r() * ng.m() * ng.m() - r * m * m;
+    let r = ng.r() + stat.n() as f64;
+    let v = ng.v() + stat.n() as f64;
+    let m = (ng.m() * ng.r() + stat.sum_x()) / r;
+    let s = ng.s() + stat.sum_x_sq() + ng.r() * ng.m() * ng.m() - r * m * m;
     NormalGamma::new(m, r, s, v).expect("Invalid posterior params.")
 }
 
@@ -53,7 +53,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
             let post = posterior_from_stat(&self, &stat);
             let lnz_0 = ln_z(self.r(), self.s(), self.v());
             let lnz_n = ln_z(post.r(), post.s(), post.v());
-            -(stat.n as f64) * HALF_LN_2PI + lnz_n - lnz_0
+            -(stat.n() as f64) * HALF_LN_2PI + lnz_n - lnz_0
         })
     }
 
