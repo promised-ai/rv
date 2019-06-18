@@ -10,13 +10,50 @@ use nalgebra::{DMatrix, DVector};
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct BernoulliSuffStat {
-    pub n: usize,
-    pub k: usize,
+    n: usize,
+    k: usize,
 }
 
 impl BernoulliSuffStat {
+    /// Create a new Bernoulli sufficient statistic
     pub fn new() -> Self {
         BernoulliSuffStat { n: 0, k: 0 }
+    }
+
+    /// Get the total number of trials, n.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::data::BernoulliSuffStat;
+    /// # use rv::traits::SuffStat;
+    /// let mut stat = BernoulliSuffStat::new();
+    ///
+    /// stat.observe(&true);
+    /// stat.observe(&false);
+    ///
+    /// assert_eq!(stat.n(), 2);
+    /// ```
+    pub fn n(&self) -> usize {
+        self.n
+    }
+
+    /// Get the number of successfuk trials, k.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::data::BernoulliSuffStat;
+    /// # use rv::traits::SuffStat;
+    /// let mut stat = BernoulliSuffStat::new();
+    ///
+    /// stat.observe(&true);
+    /// stat.observe(&false);
+    ///
+    /// assert_eq!(stat.k(), 1);
+    /// ```
+    pub fn k(&self) -> usize {
+        self.k
     }
 }
 

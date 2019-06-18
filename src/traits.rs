@@ -401,16 +401,16 @@ pub trait HasSuffStat<X> {
 /// // the number of successes, k.
 /// let mut stat = BernoulliSuffStat::new();
 ///
-/// assert!(stat.n == 0 && stat.k == 0);
+/// assert!(stat.n() == 0 && stat.k() == 0);
 ///
 /// stat.observe(&true);  // observe `true`
-/// assert!(stat.n == 1 && stat.k == 1);
+/// assert!(stat.n() == 1 && stat.k() == 1);
 ///
 /// stat.observe(&false);  // observe `false`
-/// assert!(stat.n == 2 && stat.k == 1);
+/// assert!(stat.n() == 2 && stat.k() == 1);
 ///
 /// stat.forget_many(&vec![false, true]);  // forget `true` and `false`
-/// assert!(stat.n == 0 && stat.k == 0);
+/// assert!(stat.n() == 0 && stat.k() == 0);
 /// ```
 pub trait SuffStat<X> {
     /// Returns the number of observations

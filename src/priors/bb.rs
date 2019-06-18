@@ -31,9 +31,9 @@ impl ConjugatePrior<bool, Bernoulli> for Beta {
             DataOrSuffStat::Data(ref xs) => {
                 let mut stat = BernoulliSuffStat::new();
                 xs.iter().for_each(|x| stat.observe(x));
-                (stat.n, stat.k)
+                (stat.n(), stat.k())
             }
-            DataOrSuffStat::SuffStat(ref stat) => (stat.n, stat.k),
+            DataOrSuffStat::SuffStat(ref stat) => (stat.n(), stat.k()),
             DataOrSuffStat::None => (0, 0),
         };
 
@@ -69,9 +69,9 @@ macro_rules! impl_int_traits {
                     DataOrSuffStat::Data(ref xs) => {
                         let mut stat = BernoulliSuffStat::new();
                         xs.iter().for_each(|x| stat.observe(x));
-                        (stat.n, stat.k)
+                        (stat.n(), stat.k())
                     }
-                    DataOrSuffStat::SuffStat(ref stat) => (stat.n, stat.k),
+                    DataOrSuffStat::SuffStat(ref stat) => (stat.n(), stat.k()),
                     DataOrSuffStat::None => (0, 0),
                 };
 
