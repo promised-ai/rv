@@ -9,9 +9,9 @@ use crate::result;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Partition {
     /// The assignment of the n items to partitions 0, ..., k-1
-    pub z: Vec<usize>,
+    z: Vec<usize>,
     /// The number of items assigned to each partition
-    pub counts: Vec<usize>,
+    counts: Vec<usize>,
 }
 
 impl Default for Partition {
@@ -49,6 +49,26 @@ impl Partition {
         }
     }
 
+    pub fn new_unchecked(z: Vec<usize>, counts: Vec<usize>) -> Self {
+        Partition { z, counts }
+    }
+
+    pub fn z(&self) -> &Vec<usize> {
+        &self.z
+    }
+
+    pub fn z_mut(&mut self) -> &mut Vec<usize> {
+        &mut self.z
+    }
+
+    pub fn counts(&self) -> &Vec<usize> {
+        &self.counts
+    }
+
+    pub fn counts_mut(&mut self) -> &mut Vec<usize> {
+        &mut self.counts
+    }
+
     /// Create a `Partition` with a given assignment, `z`
     ///
     /// # Examples
@@ -58,8 +78,8 @@ impl Partition {
     /// let z1 = vec![0, 1, 2, 3, 1, 2];
     /// let part = Partition::from_z(z1).unwrap();
     ///
-    /// assert_eq!(part.z, vec![0, 1, 2, 3, 1, 2]);
-    /// assert_eq!(part.counts, vec![1, 2, 2, 1]);
+    /// assert_eq!(*part.z(), vec![0, 1, 2, 3, 1, 2]);
+    /// assert_eq!(*part.counts(), vec![1, 2, 2, 1]);
     ///
     /// // Invalid z because k=4 is empty. All partitions must be occupied.
     /// let z2 = vec![0, 1, 2, 3, 1, 5];
@@ -89,8 +109,8 @@ impl Partition {
     /// let mut part = Partition::from_z(vec![0, 1, 0, 2]).unwrap();
     /// part.remove(1).expect("Could not remove");
     ///
-    /// assert_eq!(part.z, vec![0, 0, 1]);
-    /// assert_eq!(part.counts, vec![2, 1]);
+    /// assert_eq!(*part.z(), vec![0, 0, 1]);
+    /// assert_eq!(*part.counts(), vec![2, 1]);
     /// ```
     pub fn remove(&mut self, ix: usize) -> result::Result<()> {
         // Panics  on index error panics.
@@ -119,8 +139,8 @@ impl Partition {
     /// let mut part = Partition::from_z(vec![0, 1, 0, 2]).unwrap();
     /// part.append(3).expect("Could not append");
     ///
-    /// assert_eq!(part.z, vec![0, 1, 0, 2, 3]);
-    /// assert_eq!(part.counts, vec![2, 1, 1, 1]);
+    /// assert_eq!(*part.z(), vec![0, 1, 0, 2, 3]);
+    /// assert_eq!(*part.counts(), vec![2, 1, 1, 1]);
     /// ```
     pub fn append(&mut self, zi: usize) -> result::Result<()> {
         let k = self.k();
@@ -148,7 +168,7 @@ impl Partition {
     /// let part = Partition::from_z(vec![0, 1, 0, 2]).unwrap();
     ///
     /// assert_eq!(part.k(), 3);
-    /// assert_eq!(part.counts, vec![2, 1, 1]);
+    /// assert_eq!(*part.counts(), vec![2, 1, 1]);
     /// ```
     pub fn k(&self) -> usize {
         self.counts.len()

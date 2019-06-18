@@ -104,7 +104,7 @@ impl_display!(Crp);
 impl Rv<Partition> for Crp {
     fn ln_f(&self, x: &Partition) -> f64 {
         let gsum = x
-            .counts
+            .counts()
             .iter()
             .fold(0.0, |acc, ct| acc + (*ct as f64).ln_gamma().0);
 
@@ -136,7 +136,7 @@ impl Rv<Partition> for Crp {
         let counts: Vec<usize> =
             weights.iter().map(|w| (w + 0.5) as usize).collect();
 
-        Partition { z, counts }
+        Partition::new_unchecked(z, counts)
     }
 }
 
