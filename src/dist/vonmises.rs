@@ -15,9 +15,6 @@ use std::f64::consts::PI;
 /// # Example
 ///
 /// ```
-/// extern crate rand;
-/// extern crate rv;
-///
 /// use rv::prelude::*;
 ///
 /// let vm = VonMises::new(1.0, 2.0).unwrap();
@@ -35,14 +32,15 @@ use std::f64::consts::PI;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct VonMises {
     /// Mean
-    pub mu: f64,
+    mu: f64,
     /// Sort of like precision. Higher k implies lower variance.
-    pub k: f64,
+    k: f64,
     // bessel:i0(k), save some cycles
     i0_k: f64,
 }
 
 impl VonMises {
+    /// Create a new VonMises distribution with mean mu, and precision, k.
     pub fn new(mu: f64, k: f64) -> result::Result<Self> {
         let mu_ok = 0.0 <= mu && mu <= 2.0 * PI && mu.is_finite();
         let k_ok = k > 0.0 && k.is_finite();
@@ -59,6 +57,32 @@ impl VonMises {
             let i0_k = bessel::i0(k);
             Ok(VonMises { mu, k, i0_k })
         }
+    }
+
+    /// Get the mean parameter, mu
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::dist::VonMises;
+    /// let vm = VonMises::new(0.0, 1.0).unwrap();
+    /// assert_eq!(vm.mu(), 0.0);
+    /// ```
+    pub fn mu(&self) -> f64 {
+        self.mu
+    }
+
+    /// Get the precision parameter, k
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::dist::VonMises;
+    /// let vm = VonMises::new(0.0, 1.0).unwrap();
+    /// assert_eq!(vm.k(), 1.0);
+    /// ```
+    pub fn k(&self) -> f64 {
+        self.k
     }
 }
 

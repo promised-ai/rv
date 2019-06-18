@@ -17,14 +17,18 @@ use crate::traits::*;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct InvWishart {
     /// p-dimensional inverse scale matrix, **Ψ**
-    pub inv_scale: DMatrix<f64>,
+    inv_scale: DMatrix<f64>,
     // Degrees of freedom, ν > p - 1
-    pub df: usize,
+    df: usize,
 }
 
 impl InvWishart {
     /// Create an Inverse Wishart distribution, W<sup>-1</sup>(**Ψ**,ν) with
     /// p-by-p inverse scale matrix, **Ψ**, and degrees of freedom, ν > p - 1.
+    ///
+    /// # Arguments
+    /// - inv_scale: p-dimensional inverse scale matrix, **Ψ**
+    /// - df: Degrees of freedom, ν > p - 1
     pub fn new(inv_scale: DMatrix<f64>, df: usize) -> result::Result<Self> {
         let err: Option<&str> = if !inv_scale.is_square() {
             Some("scale matrix not square")
@@ -53,6 +57,16 @@ impl InvWishart {
             inv_scale: DMatrix::identity(dims, dims),
             df: dims,
         }
+    }
+
+    /// Get a reference to the inverse scale parameter
+    pub fn inv_scale(&self) -> &DMatrix<f64> {
+        &self.inv_scale
+    }
+
+    /// Get the degrees of freedom
+    pub fn df(&self) -> usize {
+        self.df
     }
 }
 

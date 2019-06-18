@@ -15,9 +15,6 @@ use special::Gamma as _;
 /// # Example
 ///
 /// ```
-/// extern crate rv;
-/// extern crate rand;
-///
 /// use rv::prelude::*;
 ///
 /// // Create Possion(λ=5.3)
@@ -34,10 +31,11 @@ use special::Gamma as _;
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Poisson {
-    pub rate: f64,
+    rate: f64,
 }
 
 impl Poisson {
+    /// Create a new Possion distribution with given rate
     pub fn new(rate: f64) -> result::Result<Self> {
         if rate > 0.0 && rate.is_finite() {
             Ok(Poisson { rate })
@@ -47,6 +45,19 @@ impl Poisson {
                 result::Error::new(err_kind, "rate must be greater than 0");
             Err(err)
         }
+    }
+
+    /// Get the rate parameter
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::dist::Poisson;
+    /// let pois = Poisson::new(2.0).unwrap();
+    /// assert_eq!(pois.rate(), 2.0);
+    /// ```
+    pub fn rate(&self) -> f64 {
+        self.rate
     }
 }
 
