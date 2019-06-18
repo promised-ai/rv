@@ -1,4 +1,3 @@
-extern crate num;
 /// Using an enum as a categorical variable.
 ///
 /// In a future where proc_macro is stable, we can offload all of this to a
@@ -12,9 +11,6 @@ extern crate num;
 ///     Green = 2,
 /// }
 /// ```
-extern crate rand;
-extern crate rv;
-
 use rv::data::CategoricalDatum;
 use rv::prelude::*;
 
