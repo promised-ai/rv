@@ -100,6 +100,59 @@ impl Kumaraswamy {
         }
     }
 
+    /// Create a `Kumaraswamy` distribution with median 0.5
+    ///
+    /// # Notes
+    ///
+    /// The distribution will not necessarily be symmetrical about x = 0.5,
+    /// i.e., for c < 0.5, f(0.5 - c) may not equal f(0.5 + c).
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use rv::dist::Kumaraswamy;
+    /// # use rv::traits::{Rv, Cdf, Median};
+    /// // Bowl-shaped
+    /// let kuma_1 = Kumaraswamy::centered(0.5).unwrap();
+    /// assert::close(kuma_1.median().unwrap(), 0.5, 1E-10);
+    /// assert::close(kuma_1.cdf(&0.5), 0.5, 1E-10);
+    /// assert::close(kuma_1.b(), 0.5644763825137, 1E-10);
+    ///
+    /// // Cone-shaped
+    /// let kuma_2 = Kumaraswamy::centered(2.0).unwrap();
+    /// assert::close(kuma_2.median().unwrap(), 0.5, 1E-10);
+    /// assert::close(kuma_2.cdf(&0.5), 0.5, 1E-10);
+    /// assert::close(kuma_2.b(), 2.409420839653209, 1E-10);
+    /// ```
+    ///
+    /// The PDF will most likely not be symmetrical about 0.5
+    ///
+    /// ```rust
+    /// # use rv::dist::Kumaraswamy;
+    /// # use rv::traits::{Rv, Cdf};
+    /// fn absolute_error(a: f64, b: f64) -> f64 {
+    ///     (a - b).abs()
+    /// }
+    ///
+    /// let kuma = Kumaraswamy::centered(2.0).unwrap();
+    /// assert!(absolute_error(kuma.f(&0.1), kuma.f(&0.9)) > 1E-8);
+    /// ```
+    pub fn centered(a: f64) -> result::Result<Self> {
+        if a > 0.0 && a.is_finite() {
+            let b = 0.5_f64.ln() / (1.0 - 0.5_f64.powf(a)).ln();
+            Ok(Kumaraswamy {
+                a,
+                b,
+                ab_ln: a.ln() + b.ln(),
+            })
+        } else {
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let msg = "a must be finite and greater than 0";
+            let err = result::Error::new(err_kind, msg);
+            Err(err)
+        }
+    }
+
     /// Get the `a` parameter
     ///
     /// # Example
@@ -204,9 +257,59 @@ impl Entropy for Kumaraswamy {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dist::LogNormal;
+    use crate::misc::ks_test;
+
+    const KS_PVAL: f64 = 0.2;
+    const N_TRIES: usize = 5;
 
     #[test]
     fn cdf_uniform_midpoint() {
         let kuma = Kumaraswamy::uniform();
+        assert::close(kuma.cdf(&0.5), 0.5, 1E-8);
     }
+
+    #[test]
+    fn draw_should_resturn_values_within_0_to_1() {
+        let mut rng = rand::thread_rng();
+        let kuma = Kumaraswamy::default();
+        for _ in 0..100 {
+            let x = kuma.draw(&mut rng);
+            assert!(0.0 < x && x < 1.0);
+        }
+    }
+
+    #[test]
+    fn sample_returns_the_correct_number_draws() {
+        let mut rng = rand::thread_rng();
+        let kuma = Kumaraswamy::default();
+        let xs: Vec<f64> = kuma.sample(103, &mut rng);
+        assert_eq!(xs.len(), 103);
+    }
+
+    #[test]
+    fn draws_from_correct_distribution() {
+        let lognormal = LogNormal::new(0.0, 0.25).unwrap();
+        let mut rng = rand::thread_rng();
+
+        // test is flaky, try a few times
+        let passes = (0..N_TRIES).fold(0, |acc, _| {
+            let a = lognormal.draw(&mut rng);
+            let b = lognormal.draw(&mut rng);
+            let kuma = Kumaraswamy::new(a, b).unwrap();
+
+            let cdf = |x: f64| kuma.cdf(&x);
+            let xs: Vec<f64> = kuma.sample(1000, &mut rng);
+            let (_, p) = ks_test(&xs, cdf);
+
+            if p > KS_PVAL {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+
+        assert!(passes > 0);
+    }
+
 }
