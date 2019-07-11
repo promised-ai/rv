@@ -51,5 +51,48 @@ fn bench_beta_draw(c: &mut Criterion) {
     );
 }
 
-criterion_group!(beta_benches, bench_beta_draw);
+fn bench_beta_vs_kumaraswamy_ln_pdf(c: &mut Criterion) {
+    c.bench(
+        "bench_beta_vs_kumaraswamy_pdf",
+        Benchmark::new("beta", |b| {
+            let beta = rv::dist::Beta::new(1.0, 2.0).unwrap();
+            b.iter(|| {
+                let _x = beta.ln_f(&0.5_f64);
+            })
+        })
+        .with_function("kumaraswamy", |b| {
+            let kuma = rv::dist::Kumaraswamy::new(1.0, 2.0).unwrap();
+            b.iter(|| {
+                let _x = kuma.ln_f(&0.5_f64);
+            })
+        }),
+    );
+}
+
+fn bench_beta_vs_kumaraswamy_draw(c: &mut Criterion) {
+    c.bench(
+        "bench_beta_vs_kumaraswamy_draw",
+        Benchmark::new("beta", |b| {
+            let mut rng = rand::thread_rng();
+            let beta = rv::dist::Beta::new(1.0, 2.0).unwrap();
+            b.iter(|| {
+                let _x: f64 = beta.draw(&mut rng);
+            })
+        })
+        .with_function("kumaraswamy", |b| {
+            let mut rng = rand::thread_rng();
+            let kuma = rv::dist::Kumaraswamy::new(1.0, 2.0).unwrap();
+            b.iter(|| {
+                let _x: f64 = kuma.draw(&mut rng);
+            })
+        }),
+    );
+}
+
+criterion_group!(
+    beta_benches,
+    bench_beta_draw,
+    bench_beta_vs_kumaraswamy_ln_pdf,
+    bench_beta_vs_kumaraswamy_draw,
+);
 criterion_main!(beta_benches);

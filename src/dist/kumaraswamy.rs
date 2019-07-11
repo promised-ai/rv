@@ -19,7 +19,6 @@ use std::f64;
 ///
 /// ```
 /// # use rv::prelude::*;
-///
 /// let kuma = Kumaraswamy::new(2.1, 3.4).unwrap();
 ///
 /// let x = 0.6_f64;
