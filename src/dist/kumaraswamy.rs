@@ -27,6 +27,20 @@ use std::f64;
 ///
 /// assert::close(x, y, 1E-10);
 /// ```
+///
+/// Kumaraswamy(a, 1) is equivalent to Beta(a, 1)  and Kumaraswamy(1, b) is equivalent to Beta(1, b)
+///
+/// ```
+/// # use rv::prelude::*;
+/// let kuma = Kumaraswamy::new(1.0, 3.5).unwrap();
+/// let beta = Beta::new(1.0, 3.5).unwrap();
+///
+/// let xs = rv::misc::linspace(0.1, 0.9, 10);
+///
+/// for x in xs.iter() {
+///     assert::close(kuma.f(x), beta.f(x), 1E-10);
+/// }
+/// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Kumaraswamy {
@@ -256,8 +270,9 @@ impl Entropy for Kumaraswamy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dist::LogNormal;
+    use crate::dist::{Beta, Gamma, LogNormal};
     use crate::misc::ks_test;
+    use quadrature::clenshaw_curtis::integrate;
 
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
@@ -311,4 +326,109 @@ mod tests {
         assert!(passes > 0);
     }
 
+    #[test]
+    fn pdf_quad_and_cdf_agree() {
+        // create a Kumaraswamy distr with median at 0.5
+        let kuma = Kumaraswamy::centered(2.0).unwrap();
+        let quad_output = integrate(|x| kuma.f(&x), 0.0, 0.5, 1E-8);
+        assert::close(quad_output.integral, 0.5, 1E-6);
+    }
+
+    #[test]
+    fn median_for_centered_should_be_one_half() {
+        fn k_centered(a: f64) -> Kumaraswamy {
+            Kumaraswamy::centered(a).unwrap()
+        }
+        assert::close(k_centered(2.0).median().unwrap(), 0.5, 1E-10);
+        assert::close(k_centered(1.0).median().unwrap(), 0.5, 1E-10);
+        assert::close(k_centered(0.5).median().unwrap(), 0.5, 1E-10);
+        assert::close(k_centered(1.2).median().unwrap(), 0.5, 1E-10);
+        assert::close(k_centered(16.2).median().unwrap(), 0.5, 1E-10);
+    }
+
+    #[test]
+    fn mean_for_uniform_should_be_one_half() {
+        let kuma = Kumaraswamy::uniform();
+        assert::close(kuma.mean().unwrap(), 0.5, 1E-10)
+    }
+
+    #[test]
+    fn equivalent_mean_to_beta_when_a_or_b_is_1() {
+        let mut rng = rand::thread_rng();
+
+        // K(a, 1) = B(a, 1) and K(1, b) = B(1, b)
+        fn equiv(p: f64) {
+            {
+                let kuma_m: f64 =
+                    Kumaraswamy::new(1.0, p).unwrap().mean().unwrap();
+                let beta_m: f64 = Beta::new(1.0, p).unwrap().mean().unwrap();
+
+                assert::close(kuma_m, beta_m, 1E-10)
+            }
+            {
+                let kuma_m: f64 =
+                    Kumaraswamy::new(p, 1.0).unwrap().mean().unwrap();
+                let beta_m: f64 = Beta::new(p, 1.0).unwrap().mean().unwrap();
+
+                assert::close(kuma_m, beta_m, 1E-10)
+            }
+        }
+
+        Gamma::new(2.0, 2.0)
+            .unwrap()
+            .sample(100, &mut rng)
+            .iter()
+            .for_each(|&p| equiv(p))
+    }
+
+    #[test]
+    fn equivalent_mode_to_beta_when_a_or_b_is_1() {
+        let mut rng = rand::thread_rng();
+
+        // K(a, 1) = B(a, 1) and K(1, b) = B(1, b)
+        fn equiv(p: f64) {
+            {
+                let kuma_m: f64 =
+                    Kumaraswamy::new(1.0, p).unwrap().mean().unwrap();
+                let beta_m: f64 = Beta::new(1.0, p).unwrap().mean().unwrap();
+
+                assert::close(kuma_m, beta_m, 1E-10)
+            }
+            {
+                let kuma_m: f64 =
+                    Kumaraswamy::new(p, 1.0).unwrap().mean().unwrap();
+                let beta_m: f64 = Beta::new(p, 1.0).unwrap().mean().unwrap();
+
+                assert::close(kuma_m, beta_m, 1E-10)
+            }
+        }
+
+        // there is no mode if a or b < 1.0, so we'll add 1 to the parameter
+        Gamma::new(2.0, 2.0)
+            .unwrap()
+            .sample(100, &mut rng)
+            .iter()
+            .for_each(|p: &f64| equiv(p + 1_f64))
+    }
+}
+
+#[test]
+fn no_mode_for_a_or_b_less_than_1() {
+    assert!(Kumaraswamy::new(0.5, 2.0).unwrap().mode().is_none());
+    assert!(Kumaraswamy::new(2.0, 0.99999).unwrap().mode().is_none());
+    assert!(Kumaraswamy::new(1.0, 0.99999).unwrap().mode().is_none());
+}
+
+#[test]
+fn no_mode_for_a_and_b_equal_to_1() {
+    assert!(Kumaraswamy::new(1.0, 1.0).unwrap().mode().is_none());
+}
+
+#[test]
+fn uniform_entropy_should_be_higheest() {
+    // XXX: This doesn't test values
+    let kuma_u = Kumaraswamy::uniform();
+    let kuma_m = Kumaraswamy::centered(3.0).unwrap();
+
+    assert!(kuma_u.entropy() > kuma_m.entropy());
 }
