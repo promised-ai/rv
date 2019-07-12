@@ -1,25 +1,35 @@
 #[cfg(feature = "serde_support")]
 use serde_derive::{Deserialize, Serialize};
 
-use std::f64::consts::LN_2;
-
-use nalgebra::{DMatrix, DVector};
-use rand::Rng;
-
 use crate::dist::MvGaussian;
 use crate::misc::lnmv_gamma;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
+use nalgebra::{DMatrix, DVector};
+use rand::Rng;
+use std::f64::consts::LN_2;
 
 /// [Inverse Wishart distribution](https://en.wikipedia.org/wiki/Inverse-Wishart_distribution),
 /// W<sup>-1</sup>(**Ψ**,ν) over positive definite matrices.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct InvWishart {
     /// p-dimensional inverse scale matrix, **Ψ**
     inv_scale: DMatrix<f64>,
-    // Degrees of freedom, ν > p - 1
+    /// Degrees of freedom, ν > p - 1
+    #[set = "pub"]
     df: usize,
+}
+
+fn validate_inv_scale(inv_scale: &DMatrix<f64>, df: usize) -> Option<&str> {
+    if !inv_scale.is_square() {
+        Some("scale matrix not square")
+    } else if (df as usize) < inv_scale.nrows() {
+        Some("df too low, must be >= ndims")
+    } else {
+        None
+    }
 }
 
 impl InvWishart {
@@ -30,16 +40,7 @@ impl InvWishart {
     /// - inv_scale: p-dimensional inverse scale matrix, **Ψ**
     /// - df: Degrees of freedom, ν > p - 1
     pub fn new(inv_scale: DMatrix<f64>, df: usize) -> result::Result<Self> {
-        let err: Option<&str> = if !inv_scale.is_square() {
-            Some("scale matrix not square")
-        } else if (df as usize) < inv_scale.nrows() {
-            Some("df too low, must be >= ndims")
-        } else if inv_scale.clone().cholesky().is_none() {
-            // TODO: no clone
-            Some("scale matrix not positive definite")
-        } else {
-            None
-        };
+        let err = validate_inv_scale(&inv_scale, df);
 
         match err {
             Some(msg) => Err(result::Error::new(
@@ -67,6 +68,25 @@ impl InvWishart {
     /// Get the degrees of freedom
     pub fn df(&self) -> usize {
         self.df
+    }
+
+    /// Set inverse scale parameter
+    pub fn set_inv_scale(
+        &mut self,
+        inv_scale: DMatrix<f64>,
+    ) -> result::Result<()> {
+        let err = validate_inv_scale(&inv_scale, self.df);
+
+        match err {
+            Some(msg) => Err(result::Error::new(
+                result::ErrorKind::InvalidParameterError,
+                msg,
+            )),
+            None => {
+                self.inv_scale = inv_scale;
+                Ok(())
+            }
+        }
     }
 }
 
