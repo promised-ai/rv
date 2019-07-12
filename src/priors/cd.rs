@@ -39,25 +39,25 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
 {
     type Posterior = Dirichlet;
     fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
-        extract_stat_then!(self.k, x, |stat: &CategoricalSuffStat| {
+        extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
             let alphas: Vec<f64> =
-                stat.counts.iter().map(|&ct| self.alpha + ct).collect();
+                stat.counts().iter().map(|&ct| self.alpha() + ct).collect();
 
             Dirichlet::new(alphas).unwrap()
         })
     }
 
     fn ln_m(&self, x: &CategoricalData<X>) -> f64 {
-        let sum_alpha = self.alpha * self.k as f64;
-        extract_stat_then!(self.k, x, |stat: &CategoricalSuffStat| {
+        let sum_alpha = self.alpha() * self.k() as f64;
+        extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
             // terms
             let a = sum_alpha.ln_gamma().0;
-            let b = (sum_alpha + stat.n as f64).ln_gamma().0;
+            let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
             let c = stat
-                .counts
+                .counts()
                 .iter()
-                .fold(0.0, |acc, &ct| acc + (self.alpha + ct).ln_gamma().0);
-            let d = self.alpha.ln_gamma().0 * self.k as f64;
+                .fold(0.0, |acc, &ct| acc + (self.alpha() + ct).ln_gamma().0);
+            let d = self.alpha().ln_gamma().0 * self.k() as f64;
 
             a - b + c - d
         })
@@ -65,9 +65,9 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
 
     fn ln_pp(&self, y: &X, x: &CategoricalData<X>) -> f64 {
         let post = self.posterior(x);
-        let norm = post.alphas.iter().fold(0.0, |acc, &a| acc + a);
+        let norm = post.alphas().iter().fold(0.0, |acc, &a| acc + a);
         let ix = y.into_usize();
-        post.alphas[ix].ln() - norm.ln()
+        post.alphas()[ix].ln() - norm.ln()
     }
 }
 
@@ -87,9 +87,9 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
         extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
             let alphas: Vec<f64> = self
-                .alphas
+                .alphas()
                 .iter()
-                .zip(stat.counts.iter())
+                .zip(stat.counts().iter())
                 .map(|(&a, &ct)| a + ct)
                 .collect();
 
@@ -98,18 +98,20 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     }
 
     fn ln_m(&self, x: &CategoricalData<X>) -> f64 {
-        let sum_alpha = self.alphas.iter().fold(0.0, |acc, &a| acc + a);
+        let sum_alpha = self.alphas().iter().fold(0.0, |acc, &a| acc + a);
         extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
             // terms
             let a = sum_alpha.ln_gamma().0;
-            let b = (sum_alpha + stat.n as f64).ln_gamma().0;
+            let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
             let c = self
-                .alphas
+                .alphas()
                 .iter()
-                .zip(stat.counts.iter())
+                .zip(stat.counts().iter())
                 .fold(0.0, |acc, (&a, &ct)| acc + (a + ct).ln_gamma().0);
-            let d =
-                self.alphas.iter().fold(0.0, |acc, &a| acc + a.ln_gamma().0);
+            let d = self
+                .alphas()
+                .iter()
+                .fold(0.0, |acc, &a| acc + a.ln_gamma().0);
 
             a - b + c - d
         })
@@ -117,9 +119,9 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
 
     fn ln_pp(&self, y: &X, x: &CategoricalData<X>) -> f64 {
         let post = self.posterior(x);
-        let norm = post.alphas.iter().fold(0.0, |acc, &a| acc + a);
+        let norm = post.alphas().iter().fold(0.0, |acc, &a| acc + a);
         let ix: usize = y.into_usize();
-        post.alphas[ix].ln() - norm.ln()
+        post.alphas()[ix].ln() - norm.ln()
     }
 }
 
@@ -191,7 +193,7 @@ mod test {
             let csd = SymmetricDirichlet::new(1.0, 4).unwrap();
             let ctgrl: Categorical = csd.draw(&mut rng);
 
-            assert!(ctgrl.ln_weights.iter().all(|lw| *lw < 0.0));
+            assert!(ctgrl.ln_weights().iter().all(|lw| *lw < 0.0));
         }
 
         #[test]
@@ -200,7 +202,7 @@ mod test {
             let csd = SymmetricDirichlet::new(1.0, 4).unwrap();
             let ctgrl: Categorical = csd.draw(&mut rng);
 
-            let ln_weights = &ctgrl.ln_weights;
+            let ln_weights = ctgrl.ln_weights();
 
             assert!((ln_weights[0] - ln_weights[1]).abs() > TOL);
             assert!((ln_weights[1] - ln_weights[2]).abs() > TOL);
@@ -221,7 +223,7 @@ mod test {
             let cd = csd.posterior(&data);
             let ctgrl: Categorical = cd.draw(&mut rng);
 
-            assert!(ctgrl.ln_weights.iter().all(|lw| *lw < 0.0));
+            assert!(ctgrl.ln_weights().iter().all(|lw| *lw < 0.0));
         }
 
         #[test]
@@ -235,7 +237,7 @@ mod test {
             let cd = csd.posterior(&data);
             let ctgrl: Categorical = cd.draw(&mut rng);
 
-            let ln_weights = &ctgrl.ln_weights;
+            let ln_weights = ctgrl.ln_weights();
 
             assert!((ln_weights[0] - ln_weights[1]).abs() > TOL);
             assert!((ln_weights[1] - ln_weights[2]).abs() > TOL);

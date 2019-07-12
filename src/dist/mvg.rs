@@ -17,9 +17,6 @@ use std::f64::consts::{E, PI};
 /// Generate a Wishart random 3x3 matrix **Σ** ~ W<sub>ν</sub>(S)
 ///
 /// ```
-/// # extern crate rv;
-/// # extern crate rand;
-/// # extern crate nalgebra;
 /// use nalgebra::{DMatrix, DVector};
 /// use rv::prelude::*;
 ///
@@ -56,12 +53,17 @@ use std::f64::consts::{E, PI};
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct MvGaussian {
     // Mean vector
-    pub mu: DVector<f64>,
+    mu: DVector<f64>,
     // Covariance matrix
-    pub cov: DMatrix<f64>,
+    cov: DMatrix<f64>,
 }
 
 impl MvGaussian {
+    /// Create a new multivariate Gaussian distribution
+    ///
+    /// # Arguments
+    /// - mu: k-length mean vector
+    /// - cov: k-by-k positive-definite covariance matrix
     pub fn new(mu: DVector<f64>, cov: DMatrix<f64>) -> result::Result<Self> {
         let cov_square = cov.nrows() == cov.ncols();
         let dims_match = mu.len() == cov.nrows();
@@ -80,26 +82,47 @@ impl MvGaussian {
         }
     }
 
+    /// Create a standard Gaussian distribution with zero mean and identiry
+    /// covariance matrix.
     pub fn standard(dims: usize) -> result::Result<Self> {
-        if dims < 1 {
+        if dims == 0 {
             let err_kind = result::ErrorKind::InvalidParameterError;
             let err = result::Error::new(err_kind, "ndims must be >= 1");
             Err(err)
         } else {
             let mu = DVector::zeros(dims);
             let cov = DMatrix::identity(dims, dims);
-            MvGaussian::new(mu, cov)
+            Ok(MvGaussian { mu, cov })
         }
     }
 
-    pub fn k(&self) -> usize {
+    /// Get the number of dimensions
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::MvGaussian;
+    /// let mvg = MvGaussian::standard(4).unwrap();
+    /// assert_eq!(mvg.dims(), 4);
+    /// ```
+    pub fn dims(&self) -> usize {
         self.mu.len()
+    }
+
+    /// Get a reference to the mean
+    pub fn mu(&self) -> &DVector<f64> {
+        &self.mu
+    }
+
+    /// Get a reference to the covariance
+    pub fn cov(&self) -> &DMatrix<f64> {
+        &self.cov
     }
 }
 
 impl From<&MvGaussian> for String {
     fn from(mvg: &MvGaussian) -> String {
-        format!("Nₖ({})\n  μ: {}\n  σ: {})", mvg.k(), mvg.mu, mvg.cov)
+        format!("Nₖ({})\n  μ: {}\n  σ: {})", mvg.dims(), mvg.mu, mvg.cov)
     }
 }
 

@@ -58,7 +58,7 @@ impl Dpgmm {
         // Given the data to their respective components by having them observe
         // their data.
         xs.iter()
-            .zip(partition.z.iter())
+            .zip(partition.z().iter())
             .for_each(|(xi, &zi)| components[zi].observe(xi));
 
         Dpgmm {
@@ -81,9 +81,9 @@ impl Dpgmm {
     fn remove(&mut self, pos: usize) -> (f64, usize) {
         let x = self.xs.remove(pos);
         let ix = self.ixs.remove(pos);
-        let zi = self.partition.z[pos];
+        let zi = self.partition.z()[pos];
 
-        let is_singleton = self.partition.counts[zi] == 1;
+        let is_singleton = self.partition.counts()[zi] == 1;
         self.partition.remove(pos).expect("could not remove");
 
         // If x was in a component by itself, remove that component; otherwise
@@ -103,7 +103,7 @@ impl Dpgmm {
     fn insert<R: Rng>(&mut self, x: f64, ix: usize, mut rng: &mut R) {
         let mut ln_weights: Vec<f64> = self
             .partition
-            .counts
+            .counts()
             .iter()
             .zip(self.components.iter())
             .map(|(&w, cj)| (w as f64).ln() + cj.ln_pp(&x)) // nk * p(xi|xk)
@@ -113,7 +113,7 @@ impl Dpgmm {
             ConjugateModel::new(&Gaussian::default(), self.prior.clone());
 
         // probability of being in a new category -- α * p(xi)
-        ln_weights.push(self.crp.alpha.ln() + ctmp.ln_pp(&x));
+        ln_weights.push(self.crp.alpha().ln() + ctmp.ln_pp(&x));
 
         // Draws a new assignment in proportion with the weights
         let zi = ln_pflip(&ln_weights, 1, false, &mut rng)[0];
@@ -160,9 +160,9 @@ impl Dpgmm {
         let mut z: Vec<usize> = vec![0; self.n()];
         self.ixs.iter().enumerate().for_each(|(pos, &ix)| {
             xs[ix] = self.xs[pos];
-            z[ix] = self.partition.z[pos];
+            z[ix] = self.partition.z()[pos];
         });
-        self.partition.z = z;
+        std::mem::swap(self.partition.z_mut(), &mut z);
         self.xs = xs;
         self.ixs = (0..self.n()).collect();
     }
@@ -193,5 +193,5 @@ fn main() {
     // and the second half belong to the other. Something like
     // [0, 0, 0, 0, ...,0, 1, ..., 1, 1, 1, 1] -- subject to some noise,
     // because we don't actually know how many components there are.
-    println!("{:?}", dpgmm.partition.z);
+    println!("{:?}", dpgmm.partition.z());
 }

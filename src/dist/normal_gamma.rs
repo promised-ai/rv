@@ -17,14 +17,20 @@ use rand::Rng;
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct NormalGamma {
-    // TODO: document parameters
-    pub m: f64,
-    pub r: f64,
-    pub s: f64,
-    pub v: f64,
+    m: f64,
+    r: f64,
+    s: f64,
+    v: f64,
 }
 
 impl NormalGamma {
+    /// Create a new Normal Gamma distribution
+    ///
+    /// # Arguments
+    /// - m: The prior mean
+    /// - r: Relative precision of μ versus data
+    /// - s: The mean of rho (the precision) is v/s.
+    /// - v: Degrees of freedom of precision of rho
     pub fn new(m: f64, r: f64, s: f64, v: f64) -> result::Result<Self> {
         let m_ok = m.is_finite();
         let r_ok = r > 0.0 && r.is_finite();
@@ -43,6 +49,26 @@ impl NormalGamma {
             Err(err)
         }
     }
+
+    /// Get the m parameter
+    pub fn m(&self) -> f64 {
+        self.m
+    }
+
+    /// Get the r parameter
+    pub fn r(&self) -> f64 {
+        self.r
+    }
+
+    /// Get the s parameter
+    pub fn s(&self) -> f64 {
+        self.s
+    }
+
+    /// Get the v parameter
+    pub fn v(&self) -> f64 {
+        self.v
+    }
 }
 
 impl From<&NormalGamma> for String {
@@ -58,11 +84,11 @@ impl_display!(NormalGamma);
 
 impl Rv<Gaussian> for NormalGamma {
     fn ln_f(&self, x: &Gaussian) -> f64 {
-        let rho = x.sigma.powi(2).recip();
+        let rho = x.sigma().powi(2).recip();
         let lnf_rho =
             Gamma::new(self.v / 2.0, self.s / 2.0).unwrap().ln_f(&rho);
         let prior_sigma = (self.r * rho).recip().sqrt();
-        let lnf_mu = Gaussian::new(self.m, prior_sigma).unwrap().ln_f(&x.mu);
+        let lnf_mu = Gaussian::new(self.m, prior_sigma).unwrap().ln_f(&x.mu());
         lnf_rho + lnf_mu - HALF_LN_2PI
     }
 
@@ -85,7 +111,7 @@ impl Support<Gaussian> for NormalGamma {
     fn supports(&self, x: &Gaussian) -> bool {
         // NOTE: Could replace this with Gaussian::new(mu, sigma).is_ok(),
         // but this is more explicit.
-        x.mu.is_finite() && x.sigma > 0.0 && x.sigma.is_finite()
+        x.mu().is_finite() && x.sigma() > 0.0 && x.sigma().is_finite()
     }
 }
 

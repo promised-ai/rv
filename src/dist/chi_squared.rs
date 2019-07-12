@@ -16,7 +16,6 @@ use std::f64::consts::LN_2;
 /// # Example
 ///
 /// ```
-/// # extern crate rv;
 /// use rv::prelude::*;
 ///
 /// let x2 = ChiSquared::new(2.0).unwrap();
@@ -25,10 +24,14 @@ use std::f64::consts::LN_2;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct ChiSquared {
     /// Degrees of freedom in (0, ∞)
-    pub k: f64,
+    k: f64,
 }
 
 impl ChiSquared {
+    /// Create a new Chi-squared distribution
+    ///
+    /// # Arguments
+    /// - k: Degrees of freedom in (0, ∞)
     pub fn new(k: f64) -> result::Result<Self> {
         if k > 0.0 && k.is_finite() {
             Ok(ChiSquared { k })
@@ -38,6 +41,19 @@ impl ChiSquared {
             let err = result::Error::new(err_kind, msg);
             Err(err)
         }
+    }
+
+    /// Get the degrees of freedom, `k`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::ChiSquared;
+    /// let x2 = ChiSquared::new(1.2).unwrap();
+    /// assert_eq!(x2.k(), 1.2);
+    /// ```
+    pub fn k(&self) -> f64 {
+        self.k
     }
 }
 

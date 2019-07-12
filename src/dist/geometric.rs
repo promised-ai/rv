@@ -15,9 +15,6 @@ use rand::Rng;
 /// # Example
 ///
 /// ```
-/// extern crate rv;
-/// extern crate rand;
-///
 /// use rv::prelude::*;
 ///
 /// // Create Geometric(p=0.5)
@@ -31,10 +28,11 @@ use rand::Rng;
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Geometric {
-    pub p: f64,
+    p: f64,
 }
 
 impl Geometric {
+    /// Create a new geometric distribution
     pub fn new(p: f64) -> result::Result<Self> {
         if p > 0.0 && p <= 1.0 {
             Ok(Geometric { p })
@@ -46,6 +44,11 @@ impl Geometric {
             );
             Err(err)
         }
+    }
+
+    /// Get the p parameter
+    pub fn p(&self) -> f64 {
+        self.p
     }
 
     // Use the inversion method to select the corresponding integer.

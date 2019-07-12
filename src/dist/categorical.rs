@@ -15,21 +15,22 @@ use rand::Rng;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Categorical {
     // Use log weights instead to optimize for computation of ln_f
-    pub ln_weights: Vec<f64>,
+    ln_weights: Vec<f64>,
 }
 
 impl Categorical {
     /// Construct a new Categorical distribution from weights
     ///
+    /// # Arguments
+    /// - weights: A vector describing the proportional likelihood of each
+    ///   outcome. The weights must all be positive, but do not need to sum to
+    ///   1.
+    ///
     /// # Examples
     ///
     /// ```
-    /// extern crate assert;
-    /// extern crate rv;
-    ///
-    /// use rv::traits::*;
-    /// use rv::dist::Categorical;
-    ///
+    /// # use rv::traits::*;
+    /// # use rv::dist::Categorical;
     /// let weights: Vec<f64> = vec![4.0, 2.0, 3.0, 1.0];
     /// let cat = Categorical::new(&weights).unwrap();
     ///
@@ -37,7 +38,7 @@ impl Categorical {
     /// assert!(cat.supports(&3_u8));
     /// assert!(!cat.supports(&4_u8));
     ///
-    /// assert::close(cat.pmf(&0_u8), 0.4, 10E-12);
+    /// assert::close(cat.pmf(&0_u8), 0.4, 1E-12);
     /// ```
     pub fn new(weights: &[f64]) -> result::Result<Self> {
         if weights.iter().any(|&w| !w.is_finite()) {
@@ -49,11 +50,35 @@ impl Categorical {
             let ln_norm = logsumexp(&ln_weights);
             let normed_weights =
                 ln_weights.iter().map(|lnw| lnw - ln_norm).collect();
-            Categorical::from_ln_weights(normed_weights)
+            Ok(Categorical::new_unchecked(normed_weights))
         }
     }
 
     /// Build a Categorical distribution from normalized log weights
+    ///
+    /// # Arguments
+    /// - ln_weights: A vector describing the proportional likelihood of each
+    ///   outcome in log space. sum(exp(ln_weights)) must be equal to 1.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::traits::*;
+    /// # use rv::dist::Categorical;
+    /// let ln_weights: Vec<f64> = vec![
+    ///     -2.3025850929940455,
+    ///     -1.6094379124341003,
+    ///     -1.2039728043259361,
+    ///     -0.916290731874155
+    /// ];
+    ///
+    /// let cat = Categorical::from_ln_weights(ln_weights).unwrap();
+    ///
+    /// assert::close(cat.pmf(&0_u8), 0.1, 1E-12);
+    /// assert::close(cat.pmf(&1_u8), 0.2, 1E-12);
+    /// assert::close(cat.pmf(&2_u8), 0.3, 1E-12);
+    /// assert::close(cat.pmf(&3_u8), 0.4, 1E-12);
+    /// ```
     pub fn from_ln_weights(ln_weights: Vec<f64>) -> result::Result<Self> {
         if logsumexp(&ln_weights).abs() < 10E-12 {
             Ok(Categorical { ln_weights })
@@ -64,10 +89,14 @@ impl Categorical {
         }
     }
 
+    fn new_unchecked(ln_weights: Vec<f64>) -> Self {
+        Categorical { ln_weights }
+    }
+
     /// Creates a Categorical distribution over [0, k) with uniform weights
     pub fn uniform(k: usize) -> Self {
         let lnp = (1.0 / k as f64).ln();
-        Categorical::from_ln_weights(vec![lnp; k]).unwrap()
+        Categorical::new_unchecked(vec![lnp; k])
     }
 
     /// Return the weights (`exp(ln_weights)`)
@@ -75,8 +104,22 @@ impl Categorical {
         self.ln_weights.iter().map(|&w| w.exp()).collect()
     }
 
+    /// Get the number of possible outcomes
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Categorical;
+    /// let cat = Categorical::uniform(4);
+    /// assert_eq!(cat.k(), 4);
+    /// ```
     pub fn k(&self) -> usize {
         self.ln_weights.len()
+    }
+
+    /// Get a reference to the weights
+    pub fn ln_weights(&self) -> &Vec<f64> {
+        &self.ln_weights
     }
 }
 

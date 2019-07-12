@@ -16,7 +16,6 @@ use std::f64;
 /// The Uniform CDF is a line
 ///
 /// ```
-/// # extern crate rv;
 /// use rv::prelude::*;
 ///
 /// let u = Uniform::new(2.0, 4.0).unwrap();
@@ -30,11 +29,12 @@ use std::f64;
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Uniform {
-    pub a: f64,
-    pub b: f64,
+    a: f64,
+    b: f64,
 }
 
 impl Uniform {
+    /// Create a new uniform distribution on [a, b]
     pub fn new(a: f64, b: f64) -> result::Result<Self> {
         let a_ok = a.is_finite();
         let b_ok = b.is_finite() && b > a;
@@ -51,6 +51,32 @@ impl Uniform {
         } else {
             Ok(Uniform { a, b })
         }
+    }
+
+    /// Get the lower bound, a
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::dist::Uniform;
+    /// let u = Uniform::new(0.0, 1.0).unwrap();
+    /// assert_eq!(u.a(), 0.0);
+    /// ```
+    pub fn a(&self) -> f64 {
+        self.a
+    }
+
+    /// Get the upper bound, b
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::dist::Uniform;
+    /// let u = Uniform::new(0.0, 1.0).unwrap();
+    /// assert_eq!(u.b(), 1.0);
+    /// ```
+    pub fn b(&self) -> f64 {
+        self.b
     }
 }
 

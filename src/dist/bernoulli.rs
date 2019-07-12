@@ -16,7 +16,6 @@ use std::f64;
 /// # Example
 ///
 /// ```
-/// # extern crate rv;
 /// use rv::prelude::*;
 ///
 /// let b = Bernoulli::new(0.75).unwrap();
@@ -27,7 +26,6 @@ use std::f64;
 /// support
 ///
 /// ```should_panic
-/// # extern crate rv;
 /// # use rv::prelude::*;
 /// let b = Bernoulli::new(0.75).unwrap();
 /// assert!(!b.supports(&2_u8));
@@ -39,10 +37,33 @@ use std::f64;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Bernoulli {
     /// Probability of a success (x=1)
-    pub p: f64,
+    p: f64,
 }
 
 impl Bernoulli {
+    /// Create a new Bernoulli distribution.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use rv::dist::Bernoulli;
+    /// # use rv::traits::Rv;
+    /// # let mut rng = rand::thread_rng();
+    /// let b = Bernoulli::new(0.5).unwrap();
+    ///
+    /// let coin_flips: Vec<bool> = b.sample(5, &mut rng);
+    ///
+    /// assert_eq!(coin_flips.len(), 5);
+    /// ```
+    ///
+    /// `Bernoulli::new` will return an `Error` type if given an invalid
+    /// paramter.
+    ///
+    /// ```rust
+    /// # use rv::dist::Bernoulli;
+    /// assert!(Bernoulli::new(-1.0).is_err());
+    /// assert!(Bernoulli::new(1.1).is_err());
+    /// ```
     pub fn new(p: f64) -> result::Result<Self> {
         if p.is_finite() && 0.0 < p && p < 1.0 {
             Ok(Bernoulli { p })
@@ -54,11 +75,44 @@ impl Bernoulli {
     }
 
     /// A Bernoulli distribution with a 50% chance of success
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Bernoulli;
+    /// let b = Bernoulli::uniform();
+    ///
+    /// assert_eq!(b.p(), 0.5);
+    /// assert_eq!(b.q(), 0.5);
+    /// ```
     pub fn uniform() -> Self {
-        Bernoulli::new(0.5).unwrap()
+        Bernoulli { p: 0.5 }
+    }
+
+    /// Get p, the probability of success.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Bernoulli;
+    /// let b = Bernoulli::new(0.2).unwrap();
+    ///
+    /// assert_eq!(b.p(), 0.2);
+    /// ```
+    pub fn p(&self) -> f64 {
+        self.p
     }
 
     /// The complement of `p`, i.e. `(1 - p)`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Bernoulli;
+    /// let b = Bernoulli::new(0.2).unwrap();
+    ///
+    /// assert_eq!(b.q(), 0.8);
+    /// ```
     #[inline]
     pub fn q(&self) -> f64 {
         1.0 - self.p

@@ -14,9 +14,6 @@ use std::f64::consts::{E, FRAC_1_SQRT_2, LN_2};
 /// # Example
 ///
 /// ```
-/// # extern crate rv;
-/// extern crate rand;
-///
 /// use rv::prelude::*;
 ///
 /// let laplace = Laplace::new(0.0, 1.0).expect("Invalid params");
@@ -48,6 +45,32 @@ impl Laplace {
         } else {
             Ok(Laplace { mu, b })
         }
+    }
+
+    /// Get the mu parameter
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use rv::dist::Laplace;
+    /// let laplace = Laplace::new(-1.0, 2.0).unwrap();
+    /// assert_eq!(laplace.mu(), -1.0);
+    /// ```
+    pub fn mu(&self) -> f64 {
+        self.mu
+    }
+
+    /// Get the b parameter
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use rv::dist::Laplace;
+    /// let laplace = Laplace::new(-1.0, 2.0).unwrap();
+    /// assert_eq!(laplace.b(), 2.0);
+    /// ```
+    pub fn b(&self) -> f64 {
+        self.b
     }
 }
 

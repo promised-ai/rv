@@ -21,13 +21,17 @@ use special::Gamma as _;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct InvGamma {
     // shape parameter, α
-    pub shape: f64,
+    shape: f64,
     // scale parameter, β
-    pub scale: f64,
+    scale: f64,
 }
 
 impl InvGamma {
     /// Create a new `Gamma` distribution with shape (α) and rate (β).
+    ///
+    /// # Arguments
+    /// - shape: shape parameter, α
+    /// - scale scale parameter, β
     pub fn new(shape: f64, scale: f64) -> result::Result<Self> {
         let shape_ok = shape > 0.0 && shape.is_finite();
         let scale_ok = scale > 0.0 && scale.is_finite();
@@ -39,6 +43,32 @@ impl InvGamma {
             let err = result::Error::new(err_kind, msg);
             Err(err)
         }
+    }
+
+    /// Get the shape paramter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::InvGamma;
+    /// let ig = InvGamma::new(1.0, 2.0).unwrap();
+    /// assert_eq!(ig.shape(), 1.0);
+    /// ```
+    pub fn shape(&self) -> f64 {
+        self.shape
+    }
+
+    /// Get the scale paramter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::InvGamma;
+    /// let ig = InvGamma::new(1.0, 2.0).unwrap();
+    /// assert_eq!(ig.scale(), 2.0);
+    /// ```
+    pub fn scale(&self) -> f64 {
+        self.scale
     }
 }
 

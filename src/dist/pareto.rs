@@ -22,8 +22,8 @@ use std::f64;
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Pareto {
-    pub shape: f64,
-    pub scale: f64,
+    shape: f64,
+    scale: f64,
 }
 
 impl Pareto {
@@ -40,6 +40,32 @@ impl Pareto {
             let err = result::Error::new(err_kind, msg);
             Err(err)
         }
+    }
+
+    /// Get shape parameter
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::dist::Pareto;
+    /// let pareto = Pareto::new(1.0, 2.0).unwrap();
+    /// assert_eq!(pareto.shape(), 1.0);
+    /// ```
+    pub fn shape(&self) -> f64 {
+        self.shape
+    }
+
+    /// Get scale parameter
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::dist::Pareto;
+    /// let pareto = Pareto::new(1.0, 2.0).unwrap();
+    /// assert_eq!(pareto.scale(), 2.0);
+    /// ```
+    pub fn scale(&self) -> f64 {
+        self.scale
     }
 }
 

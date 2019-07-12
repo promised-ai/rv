@@ -24,9 +24,6 @@ use special::Gamma as _;
 /// # Example
 ///
 /// ```
-/// # extern crate rv;
-/// extern crate rand;
-///
 /// use::rv::prelude::*;
 ///
 /// let mut rng = rand::thread_rng();
@@ -40,13 +37,17 @@ use special::Gamma as _;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Crp {
     /// Discount parameter
-    pub alpha: f64,
+    alpha: f64,
     /// number of items in the partition
-    pub n: usize,
+    n: usize,
 }
 
 impl Crp {
     /// Create an empty `Crp` with parameter alpha
+    ///
+    /// # Arguments
+    /// - alpha: Discount parameter in (0, Infinity)
+    /// - n: the number of items in the partition
     pub fn new(alpha: f64, n: usize) -> result::Result<Self> {
         let alpha_ok = alpha > 0.0 && alpha.is_finite();
         let n_ok = n > 0;
@@ -64,6 +65,32 @@ impl Crp {
             Ok(Crp { alpha, n })
         }
     }
+
+    /// Get the discount parameter, `alpha`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Crp;
+    /// let crp = Crp::new(1.0, 12).unwrap();
+    /// assert_eq!(crp.alpha(), 1.0);
+    /// ```
+    pub fn alpha(&self) -> f64 {
+        self.alpha
+    }
+
+    /// Get the number of entries in the partition, `n`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Crp;
+    /// let crp = Crp::new(1.0, 12).unwrap();
+    /// assert_eq!(crp.n(), 12);
+    /// ```
+    pub fn n(&self) -> usize {
+        self.n
+    }
 }
 
 impl From<&Crp> for String {
@@ -77,7 +104,7 @@ impl_display!(Crp);
 impl Rv<Partition> for Crp {
     fn ln_f(&self, x: &Partition) -> f64 {
         let gsum = x
-            .counts
+            .counts()
             .iter()
             .fold(0.0, |acc, ct| acc + (*ct as f64).ln_gamma().0);
 
@@ -109,7 +136,7 @@ impl Rv<Partition> for Crp {
         let counts: Vec<usize> =
             weights.iter().map(|w| (w + 0.5) as usize).collect();
 
-        Partition { z, counts }
+        Partition::new_unchecked(z, counts)
     }
 }
 

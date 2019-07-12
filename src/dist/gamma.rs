@@ -23,8 +23,8 @@ use special::Gamma as _;
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gamma {
-    pub shape: f64,
-    pub rate: f64,
+    shape: f64,
+    rate: f64,
 }
 
 impl Gamma {
@@ -41,6 +41,32 @@ impl Gamma {
             let err = result::Error::new(err_kind, msg);
             Err(err)
         }
+    }
+
+    /// Get the shape parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gamma;
+    /// let gam = Gamma::new(2.0, 1.0).unwrap();
+    /// assert_eq!(gam.shape(), 2.0);
+    /// ```
+    pub fn shape(&self) -> f64 {
+        self.shape
+    }
+
+    /// Get the rate parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gamma;
+    /// let gam = Gamma::new(2.0, 1.0).unwrap();
+    /// assert_eq!(gam.rate(), 1.0);
+    /// ```
+    pub fn rate(&self) -> f64 {
+        self.rate
     }
 }
 

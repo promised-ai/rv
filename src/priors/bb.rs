@@ -7,7 +7,7 @@ use crate::traits::*;
 
 impl Rv<Bernoulli> for Beta {
     fn ln_f(&self, x: &Bernoulli) -> f64 {
-        self.ln_f(&x.p)
+        self.ln_f(&x.p())
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Bernoulli {
@@ -18,7 +18,7 @@ impl Rv<Bernoulli> for Beta {
 
 impl Support<Bernoulli> for Beta {
     fn supports(&self, x: &Bernoulli) -> bool {
-        0.0 < x.p && x.p < 1.0
+        0.0 < x.p() && x.p() < 1.0
     }
 }
 
@@ -31,21 +31,21 @@ impl ConjugatePrior<bool, Bernoulli> for Beta {
             DataOrSuffStat::Data(ref xs) => {
                 let mut stat = BernoulliSuffStat::new();
                 xs.iter().for_each(|x| stat.observe(x));
-                (stat.n, stat.k)
+                (stat.n(), stat.k())
             }
-            DataOrSuffStat::SuffStat(ref stat) => (stat.n, stat.k),
+            DataOrSuffStat::SuffStat(ref stat) => (stat.n(), stat.k()),
             DataOrSuffStat::None => (0, 0),
         };
 
-        let a = self.alpha + k as f64;
-        let b = self.beta + (n - k) as f64;
+        let a = self.alpha() + k as f64;
+        let b = self.beta() + (n - k) as f64;
 
         Beta::new(a, b).expect("Invalid posterior parameters")
     }
 
     fn ln_m(&self, x: &DataOrSuffStat<bool, Bernoulli>) -> f64 {
         let post = self.posterior(x);
-        post.alpha.ln_beta(post.beta) - self.alpha.ln_beta(self.beta)
+        post.alpha().ln_beta(post.beta()) - self.alpha().ln_beta(self.beta())
     }
 
     fn ln_pp(&self, y: &bool, x: &DataOrSuffStat<bool, Bernoulli>) -> f64 {
@@ -69,21 +69,22 @@ macro_rules! impl_int_traits {
                     DataOrSuffStat::Data(ref xs) => {
                         let mut stat = BernoulliSuffStat::new();
                         xs.iter().for_each(|x| stat.observe(x));
-                        (stat.n, stat.k)
+                        (stat.n(), stat.k())
                     }
-                    DataOrSuffStat::SuffStat(ref stat) => (stat.n, stat.k),
+                    DataOrSuffStat::SuffStat(ref stat) => (stat.n(), stat.k()),
                     DataOrSuffStat::None => (0, 0),
                 };
 
-                let a = self.alpha + k as f64;
-                let b = self.beta + (n - k) as f64;
+                let a = self.alpha() + k as f64;
+                let b = self.beta() + (n - k) as f64;
 
                 Beta::new(a, b).expect("Invalid posterior parameters")
             }
 
             fn ln_m(&self, x: &DataOrSuffStat<$kind, Bernoulli>) -> f64 {
                 let post = self.posterior(x);
-                post.alpha.ln_beta(post.beta) - self.alpha.ln_beta(self.beta)
+                post.alpha().ln_beta(post.beta())
+                    - self.alpha().ln_beta(self.beta())
             }
 
             fn ln_pp(
@@ -129,8 +130,8 @@ mod tests {
 
         let posterior = Beta::new(1.0, 1.0).unwrap().posterior(&xs);
 
-        assert::close(posterior.alpha, 4.0, TOL);
-        assert::close(posterior.beta, 3.0, TOL);
+        assert::close(posterior.alpha(), 4.0, TOL);
+        assert::close(posterior.beta(), 3.0, TOL);
     }
 
     #[test]
@@ -140,7 +141,7 @@ mod tests {
 
         let posterior = Beta::new(1.0, 1.0).unwrap().posterior(&xs);
 
-        assert::close(posterior.alpha, 4.0, TOL);
-        assert::close(posterior.beta, 3.0, TOL);
+        assert::close(posterior.alpha(), 4.0, TOL);
+        assert::close(posterior.beta(), 3.0, TOL);
     }
 }

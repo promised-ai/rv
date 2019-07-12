@@ -1,6 +1,3 @@
-extern crate rand;
-extern crate rv;
-
 use rv::data::DataOrSuffStat;
 use rv::dist::{Categorical, SymmetricDirichlet};
 use rv::prelude::CategoricalData;

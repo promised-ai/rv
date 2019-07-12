@@ -16,10 +16,11 @@ use std::f64::INFINITY;
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct StudentsT {
     /// Degrees of freedom, ν, in (0, ∞)
-    pub v: f64,
+    v: f64,
 }
 
 impl StudentsT {
+    /// Create a new Student's T distribtuion with degrees of freedom, v.
     pub fn new(v: f64) -> result::Result<Self> {
         if v > 0.0 && v.is_finite() {
             Ok(StudentsT { v })
@@ -29,6 +30,11 @@ impl StudentsT {
             let err = result::Error::new(err_kind, msg);
             Err(err)
         }
+    }
+
+    /// Get the degrees of freedom, v
+    pub fn v(&self) -> f64 {
+        self.v
     }
 }
 

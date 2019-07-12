@@ -13,16 +13,21 @@ use std::f64::consts::SQRT_2;
 
 /// [LogNormal Distribution](https://en.wikipedia.org/wiki/Log-normal_distribution)
 /// If x ~ Normal(μ, σ), then e^x ~ LogNormal(μ, σ).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct LogNormal {
     /// log scale mean
-    pub mu: f64,
+    mu: f64,
     /// log scale standard deviation
-    pub sigma: f64,
+    sigma: f64,
 }
 
 impl LogNormal {
+    /// Create a new LogNormal distribution
+    ///
+    /// # Arguments
+    /// - mu: log scale mean
+    /// - sigma: log scale standard deviation
     pub fn new(mu: f64, sigma: f64) -> result::Result<Self> {
         let mu_ok = mu.is_finite();
         let sigma_ok = sigma > 0.0 && sigma.is_finite();
@@ -36,11 +41,46 @@ impl LogNormal {
         }
     }
 
+    /// LogNorma(0, 1)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::LogNormal;
+    /// let lognormal = LogNormal::standard();
+    /// assert_eq!(lognormal, LogNormal::new(0.0, 1.0).unwrap());
+    /// ```
     pub fn standard() -> Self {
         LogNormal {
             mu: 0.0,
             sigma: 1.0,
         }
+    }
+
+    /// Get the mu parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::LogNormal;
+    /// let lognormal = LogNormal::new(-1.0, 2.0).unwrap();
+    /// assert_eq!(lognormal.mu(), -1.0);
+    /// ```
+    pub fn mu(&self) -> f64 {
+        self.mu
+    }
+
+    /// Get the sigma parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::LogNormal;
+    /// let lognormal = LogNormal::new(-1.0, 2.0).unwrap();
+    /// assert_eq!(lognormal.sigma(), 2.0);
+    /// ```
+    pub fn sigma(&self) -> f64 {
+        self.sigma
     }
 }
 

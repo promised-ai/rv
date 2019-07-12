@@ -84,7 +84,7 @@ where
     ///
     /// let post = model.posterior();
     ///
-    /// assert_eq!(post, Beta { alpha: 3.0, beta: 5.0 });
+    /// assert_eq!(post, Beta::new(3.0, 5.0).unwrap());
     /// ```
     pub fn posterior(&self) -> Pr::Posterior {
         self.prior.posterior(&self.obs())

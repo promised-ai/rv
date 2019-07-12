@@ -27,9 +27,9 @@ use std::f64::consts::{LN_2, PI};
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gev {
-    pub loc: f64,
-    pub scale: f64,
-    pub shape: f64,
+    loc: f64,
+    scale: f64,
+    shape: f64,
 }
 
 impl Gev {
@@ -47,6 +47,48 @@ impl Gev {
             let err = result::Error::new(err_kind, msg);
             Err(err)
         }
+    }
+
+    /// Get the location parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gev;
+    /// let gev = Gev::new(1.2, 2.3, 3.4).unwrap();
+    ///
+    /// assert_eq!(gev.loc(), 1.2);
+    /// ```
+    pub fn loc(&self) -> f64 {
+        self.loc
+    }
+
+    /// Get the shape parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gev;
+    /// let gev = Gev::new(1.2, 2.3, 3.4).unwrap();
+    ///
+    /// assert_eq!(gev.shape(), 3.4);
+    /// ```
+    pub fn shape(&self) -> f64 {
+        self.shape
+    }
+
+    /// Get the scale parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gev;
+    /// let gev = Gev::new(1.2, 2.3, 3.4).unwrap();
+    ///
+    /// assert_eq!(gev.scale(), 2.3);
+    /// ```
+    pub fn scale(&self) -> f64 {
+        self.scale
     }
 }
 
