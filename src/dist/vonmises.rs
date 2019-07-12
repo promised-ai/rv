@@ -6,6 +6,7 @@ use crate::impl_display;
 use crate::misc::{bessel, mod_euc, quad};
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::Rng;
 use std::f64::consts::PI;
 
@@ -28,10 +29,11 @@ use std::f64::consts::PI;
 /// let xs: Vec<f64> = vm.sample(103, &mut rng);
 /// assert_eq!(xs.len(), 103);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct VonMises {
     /// Mean
+    #[set = "pub"]
     mu: f64,
     /// Sort of like precision. Higher k implies lower variance.
     k: f64,
@@ -83,6 +85,35 @@ impl VonMises {
     /// ```
     pub fn k(&self) -> f64 {
         self.k
+    }
+
+    /// Set the value of k
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::prelude::*;
+    /// let mut vm = VonMises::new(0.0, 1.0).unwrap();
+    /// let v1: f64 = vm.variance().unwrap();
+    /// assert::close(v1, 0.5536100341034653, 1E-10);
+    ///
+    /// vm.set_mu(0.2);
+    /// vm.set_k(2.0);
+    ///
+    /// let v2: f64 = vm.variance().unwrap();
+    /// assert::close(v2, 0.3022253420359917, 1E-10);
+    /// ```
+    pub fn set_k(&mut self, k: f64) -> result::Result<()> {
+        if k <= 0.0 {
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let msg = "k must be finite and greater than zero";
+            let err = result::Error::new(err_kind, msg);
+            Err(err)
+        } else {
+            self.k = k;
+            self.i0_k = bessel::i0(k);
+            Ok(())
+        }
     }
 }
 

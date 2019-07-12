@@ -6,6 +6,7 @@ use crate::impl_display;
 use crate::misc::ln_binom;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::Rng;
 use std::f64;
 
@@ -40,12 +41,14 @@ use std::f64;
 /// # let binom = Binomial::new(n, 0.5).unwrap();
 /// binom.pmf(&5_u8); // panics
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Binomial {
     /// Total number of trials
+    #[set = "pub"]
     n: u64,
     /// Probability of a success
+    #[set = "pub"]
     p: f64,
 }
 

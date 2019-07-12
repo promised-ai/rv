@@ -6,6 +6,7 @@ use crate::impl_display;
 use crate::misc::{ln_binom, ln_pflip};
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::Rng;
 use special::Beta as _;
 use std::f64;
@@ -48,14 +49,17 @@ use std::f64;
 /// beta_binom.pmf(&21_u32); // panics
 /// ```
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct BetaBinomial {
     /// Total number of trials
+    #[set = "pub"]
     n: u32,
     /// Analogous to Beta Distribution α parameter.
+    #[set = "pub"]
     alpha: f64,
     /// Analogous to Beta Distribution β parameter
+    #[set = "pub"]
     beta: f64,
 }
 

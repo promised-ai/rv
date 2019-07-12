@@ -24,6 +24,7 @@ special = "0.8"
 nalgebra = "0.16"
 quadrature = "0.1"
 doc-comment = "0.3"
+getset = "0.0.7"
 
 serde = {version = "1", optional = true}
 serde_derive = {version = "1", optional = true}

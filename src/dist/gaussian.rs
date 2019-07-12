@@ -7,6 +7,7 @@ use crate::data::GaussianSuffStat;
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::distributions::Normal;
 use rand::Rng;
 use special::Error as _;
@@ -34,12 +35,14 @@ use std::f64::consts::SQRT_2;
 /// let kl_sym = gauss_1.kl_sym(&gauss_2);
 /// assert!((kl_sym - (kl_12 + kl_21)).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gaussian {
     /// Mean
+    #[set = "pub"]
     mu: f64,
     /// Standard deviation
+    #[set = "pub"]
     sigma: f64,
 }
 

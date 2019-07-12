@@ -4,6 +4,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::distributions;
 use rand::Rng;
 use special::Gamma as SGamma;
@@ -12,10 +13,11 @@ use std::f64::INFINITY;
 
 /// [Student's T distribution](https://en.wikipedia.org/wiki/Student%27s_t-distribution)
 /// over x in (-∞, ∞).
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct StudentsT {
     /// Degrees of freedom, ν, in (0, ∞)
+    #[set = "pub"]
     v: f64,
 }
 

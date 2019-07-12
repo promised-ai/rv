@@ -15,6 +15,7 @@ use crate::impl_display;
 use crate::misc::pflip;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::Rng;
 use special::Gamma as _;
 
@@ -33,12 +34,14 @@ use special::Gamma as _;
 ///
 /// assert_eq!(partition.len(), 10);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Crp {
     /// Discount parameter
+    #[set = "pub"]
     alpha: f64,
     /// number of items in the partition
+    #[set = "pub"]
     n: usize,
 }
 

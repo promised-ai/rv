@@ -5,6 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::Rng;
 use special::Beta as _;
 use special::Gamma as _;
@@ -37,10 +38,12 @@ use std::f64;
 /// let p_pred_heads = beta.pp(&true, &DataOrSuffStat::Data(&flips)); // 9/15
 /// assert!((p_pred_heads - 3.0/5.0).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Beta {
+    #[set = "pub"]
     alpha: f64,
+    #[set = "pub"]
     beta: f64,
 }
 

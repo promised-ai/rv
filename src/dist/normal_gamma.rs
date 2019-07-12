@@ -8,18 +8,23 @@ use crate::dist::{Gamma, Gaussian};
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::Rng;
 
 /// Prior for Gaussian
 ///
 /// Given `x ~ N(μ, σ)`, the Normal Gamma prior implies that `μ ~ N(m, 1/(rρ))`
 /// and `ρ ~ Gamma(ν/2, s/2)`.
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct NormalGamma {
+    #[set = "pub"]
     m: f64,
+    #[set = "pub"]
     r: f64,
+    #[set = "pub"]
     s: f64,
+    #[set = "pub"]
     v: f64,
 }
 

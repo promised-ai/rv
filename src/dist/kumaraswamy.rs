@@ -191,6 +191,16 @@ impl Kumaraswamy {
     pub fn b(&self) -> f64 {
         self.b
     }
+
+    pub fn set_a(&mut self, a: f64) {
+        self.a = a;
+        self.ab_ln = self.a.ln() + self.b.ln();
+    }
+
+    pub fn set_b(&mut self, b: f64) {
+        self.b = b;
+        self.ab_ln = self.a.ln() + self.b.ln();
+    }
 }
 
 fn invcdf(p: f64, a: f64, b: f64) -> f64 {
@@ -410,25 +420,51 @@ mod tests {
             .iter()
             .for_each(|p: &f64| equiv(p + 1_f64))
     }
-}
 
-#[test]
-fn no_mode_for_a_or_b_less_than_1() {
-    assert!(Kumaraswamy::new(0.5, 2.0).unwrap().mode().is_none());
-    assert!(Kumaraswamy::new(2.0, 0.99999).unwrap().mode().is_none());
-    assert!(Kumaraswamy::new(1.0, 0.99999).unwrap().mode().is_none());
-}
+    #[test]
+    fn no_mode_for_a_or_b_less_than_1() {
+        assert!(Kumaraswamy::new(0.5, 2.0).unwrap().mode().is_none());
+        assert!(Kumaraswamy::new(2.0, 0.99999).unwrap().mode().is_none());
+        assert!(Kumaraswamy::new(1.0, 0.99999).unwrap().mode().is_none());
+    }
 
-#[test]
-fn no_mode_for_a_and_b_equal_to_1() {
-    assert!(Kumaraswamy::new(1.0, 1.0).unwrap().mode().is_none());
-}
+    #[test]
+    fn no_mode_for_a_and_b_equal_to_1() {
+        assert!(Kumaraswamy::new(1.0, 1.0).unwrap().mode().is_none());
+    }
 
-#[test]
-fn uniform_entropy_should_be_higheest() {
-    // XXX: This doesn't test values
-    let kuma_u = Kumaraswamy::uniform();
-    let kuma_m = Kumaraswamy::centered(3.0).unwrap();
+    #[test]
+    fn uniform_entropy_should_be_higheest() {
+        // XXX: This doesn't test values
+        let kuma_u = Kumaraswamy::uniform();
+        let kuma_m = Kumaraswamy::centered(3.0).unwrap();
 
-    assert!(kuma_u.entropy() > kuma_m.entropy());
+        assert!(kuma_u.entropy() > kuma_m.entropy());
+    }
+
+    #[test]
+    fn set_a() {
+        let mut kuma = Kumaraswamy::uniform();
+        assert::close(kuma.pdf(&0.3), 1.0, 1E-10);
+
+        kuma.set_a(2.0);
+        assert::close(
+            kuma.pdf(&0.3),
+            Beta::new(2.0, 1.0).unwrap().pdf(&0.3_f64),
+            1E-10,
+        );
+    }
+
+    #[test]
+    fn set_b() {
+        let mut kuma = Kumaraswamy::uniform();
+        assert::close(kuma.pdf(&0.3), 1.0, 1E-10);
+
+        kuma.set_b(2.0);
+        assert::close(
+            kuma.pdf(&0.3),
+            Beta::new(1.0, 2.0).unwrap().pdf(&0.3_f64),
+            1E-10,
+        );
+    }
 }

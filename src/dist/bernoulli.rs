@@ -6,6 +6,7 @@ use crate::data::BernoulliSuffStat;
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::distributions::Uniform;
 use rand::Rng;
 use std::f64;
@@ -16,10 +17,9 @@ use std::f64;
 /// # Example
 ///
 /// ```
-/// use rv::prelude::*;
-///
+/// # use rv::prelude::*;
 /// let b = Bernoulli::new(0.75).unwrap();
-/// assert!((b.pmf(&true) - 0.75).abs() < 1E-12);
+/// assert::close(b.pmf(&true), 0.75, 1E-12);
 /// ```
 ///
 /// The following example panics because 2 is out of outside the Bernoulli
@@ -33,10 +33,11 @@ use std::f64;
 /// b.pmf(&2_u8); // panics
 /// ```
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Bernoulli {
     /// Probability of a success (x=1)
+    #[set = "pub"]
     p: f64,
 }
 
@@ -670,5 +671,15 @@ mod tests {
             }
         });
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn set_p() {
+        let mut bern = Bernoulli::new(0.6).unwrap();
+        assert::close(bern.pmf(&true), 0.6, 1E-10);
+
+        bern.set_p(0.5);
+
+        assert::close(bern.pmf(&true), 0.5, 1E-10);
     }
 }
