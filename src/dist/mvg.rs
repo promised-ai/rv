@@ -118,6 +118,96 @@ impl MvGaussian {
     pub fn cov(&self) -> &DMatrix<f64> {
         &self.cov
     }
+
+    /// Set the mean
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::prelude::*;
+    /// # use nalgebra::{DVector, DMatrix};
+    /// let mut mvg = MvGaussian::standard(3).unwrap();
+    /// let x = DVector::<f64>::zeros(3);
+    ///
+    /// assert::close(mvg.ln_f(&x), -2.756815599614018, 1E-8);
+    ///
+    /// let cov_vals = vec![
+    ///     1.01742788,
+    ///     0.36586652,
+    ///     -0.65620486,
+    ///     0.36586652,
+    ///     1.00564553,
+    ///     -0.42597261,
+    ///     -0.65620486,
+    ///     -0.42597261,
+    ///     1.27247972,
+    /// ];
+    /// let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
+    /// let mu = DVector::<f64>::from_column_slice(3, &vec![0.5, 3.1, -6.2]);
+    ///
+    /// mvg.set_mu(mu).unwrap();
+    /// mvg.set_cov(cov).unwrap();
+    ///
+    /// assert::close(mvg.ln_f(&x), -24.602370253215661, 1E-8);
+    /// ```
+    pub fn set_mu(&mut self, mu: DVector<f64>) -> result::Result<()> {
+        if mu.len() != self.cov.nrows() {
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let msg = "Number of dimensions in μ and Σ must match";
+            let err = result::Error::new(err_kind, msg);
+            Err(err)
+        } else {
+            self.mu = mu;
+            Ok(())
+        }
+    }
+
+    /// Set the covariance matrix
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rv::prelude::*;
+    /// # use nalgebra::{DVector, DMatrix};
+    /// let mut mvg = MvGaussian::standard(3).unwrap();
+    /// let x = DVector::<f64>::zeros(3);
+    ///
+    /// assert::close(mvg.ln_f(&x), -2.756815599614018, 1E-8);
+    ///
+    /// let cov_vals = vec![
+    ///     1.01742788,
+    ///     0.36586652,
+    ///     -0.65620486,
+    ///     0.36586652,
+    ///     1.00564553,
+    ///     -0.42597261,
+    ///     -0.65620486,
+    ///     -0.42597261,
+    ///     1.27247972,
+    /// ];
+    /// let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
+    /// let mu = DVector::<f64>::from_column_slice(3, &vec![0.5, 3.1, -6.2]);
+    ///
+    /// mvg.set_mu(mu).unwrap();
+    /// mvg.set_cov(cov).unwrap();
+    ///
+    /// assert::close(mvg.ln_f(&x), -24.602370253215661, 1E-8);
+    /// ```
+    pub fn set_cov(&mut self, cov: DMatrix<f64>) -> result::Result<()> {
+        if self.mu.len() != cov.nrows() {
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let msg = "Number of dimensions in μ and Σ must match";
+            let err = result::Error::new(err_kind, msg);
+            Err(err)
+        } else if cov.nrows() != cov.ncols() {
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let err = result::Error::new(err_kind, "Σ must be square");
+            Err(err)
+        } else {
+            self.cov = cov;
+            Ok(())
+        }
+    }
 }
 
 impl From<&MvGaussian> for String {
