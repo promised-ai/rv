@@ -80,6 +80,11 @@ impl Beta {
         }
     }
 
+    /// Creates a new Beta without checking whether the parameters are valid.
+    pub fn new_unchecked(alpha: f64, beta: f64) -> Self {
+        Beta { alpha, beta }
+    }
+
     /// Create a `Beta` distribution with even density over (0, 1).
     ///
     /// # Example

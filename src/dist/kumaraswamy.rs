@@ -22,8 +22,8 @@ use std::f64;
 /// let kuma = Kumaraswamy::new(2.1, 3.4).unwrap();
 ///
 /// let x = 0.6_f64;
-/// let p = kuma.cdf(&x);
-/// let y = kuma.invcdf(p);
+/// let p: f64 = kuma.cdf(&x);
+/// let y: f64 = kuma.invcdf(p);
 ///
 /// assert::close(x, y, 1E-10);
 /// ```
@@ -96,6 +96,16 @@ impl Kumaraswamy {
         }
     }
 
+    /// Creates a new Kumaraswamy without checking whether the parameters are
+    /// valid.
+    pub fn new_unchecked(a: f64, b: f64) -> Self {
+        Kumaraswamy {
+            a,
+            b,
+            ab_ln: a.ln() + b.ln(),
+        }
+    }
+
     /// Create a `Kumaraswamy` distribution with even density over (0, 1).
     ///
     /// # Example
@@ -127,13 +137,15 @@ impl Kumaraswamy {
     /// # use rv::traits::{Rv, Cdf, Median};
     /// // Bowl-shaped
     /// let kuma_1 = Kumaraswamy::centered(0.5).unwrap();
-    /// assert::close(kuma_1.median().unwrap(), 0.5, 1E-10);
+    /// let median_1: f64 = kuma_1.median().unwrap();
+    /// assert::close(median_1, 0.5, 1E-10);
     /// assert::close(kuma_1.cdf(&0.5), 0.5, 1E-10);
     /// assert::close(kuma_1.b(), 0.5644763825137, 1E-10);
     ///
     /// // Cone-shaped
     /// let kuma_2 = Kumaraswamy::centered(2.0).unwrap();
-    /// assert::close(kuma_2.median().unwrap(), 0.5, 1E-10);
+    /// let median_2: f64 = kuma_2.median().unwrap();
+    /// assert::close(median_2, 0.5, 1E-10);
     /// assert::close(kuma_2.cdf(&0.5), 0.5, 1E-10);
     /// assert::close(kuma_2.b(), 2.409420839653209, 1E-10);
     /// ```
@@ -207,66 +219,79 @@ fn invcdf(p: f64, a: f64, b: f64) -> f64 {
     (1.0 - (1.0 - p).powf(b.recip())).powf(a.recip())
 }
 
-impl Rv<f64> for Kumaraswamy {
-    fn ln_f(&self, x: &f64) -> f64 {
-        let a = self.a;
-        let b = self.b;
-        self.ab_ln + (a - 1.0) * x.ln() + (b - 1.0) * (1.0 - x.powf(a)).ln()
-    }
+macro_rules! impl_kumaraswamy {
+    ($kind: ty) => {
+        impl Rv<$kind> for Kumaraswamy {
+            fn ln_f(&self, x: &$kind) -> f64 {
+                let xf = *x as f64;
+                let a = self.a;
+                let b = self.b;
+                self.ab_ln
+                    + (a - 1.0) * xf.ln()
+                    + (b - 1.0) * (1.0 - xf.powf(a)).ln()
+            }
 
-    fn draw<R: Rng>(&self, rng: &mut R) -> f64 {
-        let p: f64 = rng.gen();
-        invcdf(p, self.a, self.b)
-    }
-}
-
-impl Support<f64> for Kumaraswamy {
-    fn supports(&self, x: &f64) -> bool {
-        x.is_finite() && 0.0 < *x && *x < 1.0
-    }
-}
-
-impl ContinuousDistr<f64> for Kumaraswamy {}
-
-impl Cdf<f64> for Kumaraswamy {
-    fn cdf(&self, x: &f64) -> f64 {
-        1.0 - (1.0 - x.powf(self.a)).powf(self.b)
-    }
-}
-
-impl InverseCdf<f64> for Kumaraswamy {
-    fn invcdf(&self, p: f64) -> f64 {
-        invcdf(p, self.a, self.b)
-    }
-}
-
-impl Mean<f64> for Kumaraswamy {
-    fn mean(&self) -> Option<f64> {
-        let b = self.b;
-        let ar1 = 1.0 + self.a.recip();
-        Some(b * ar1.gamma() * b.gamma() / (ar1 + b).gamma())
-    }
-}
-
-impl Median<f64> for Kumaraswamy {
-    fn median(&self) -> Option<f64> {
-        Some((1.0 - 2_f64.powf(-self.b.recip())).powf(self.a.recip()))
-    }
-}
-
-impl Mode<f64> for Kumaraswamy {
-    fn mode(&self) -> Option<f64> {
-        if self.a < 1.0 || self.b < 1.0 {
-            None
-        } else if self.a == 1.0 && self.b == 1.0 {
-            None
-        } else {
-            Some(
-                ((self.a - 1.0) / (self.a * self.b - 1.0)).powf(self.a.recip()),
-            )
+            fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
+                let p: f64 = rng.gen();
+                invcdf(p, self.a, self.b) as $kind
+            }
         }
-    }
+
+        impl Support<$kind> for Kumaraswamy {
+            fn supports(&self, x: &$kind) -> bool {
+                x.is_finite() && 0.0 < *x && *x < 1.0
+            }
+        }
+
+        impl ContinuousDistr<$kind> for Kumaraswamy {}
+
+        impl Cdf<$kind> for Kumaraswamy {
+            fn cdf(&self, x: &$kind) -> f64 {
+                1.0 - (1.0 - (*x as f64).powf(self.a)).powf(self.b)
+            }
+        }
+
+        impl InverseCdf<$kind> for Kumaraswamy {
+            fn invcdf(&self, p: f64) -> $kind {
+                invcdf(p, self.a, self.b) as $kind
+            }
+        }
+
+        impl Mean<$kind> for Kumaraswamy {
+            fn mean(&self) -> Option<$kind> {
+                let b = self.b;
+                let ar1 = 1.0 + self.a.recip();
+                let mean = b * ar1.gamma() * b.gamma() / (ar1 + b).gamma();
+                Some(mean as $kind)
+            }
+        }
+
+        impl Median<$kind> for Kumaraswamy {
+            fn median(&self) -> Option<$kind> {
+                let median =
+                    (1.0 - 2_f64.powf(-self.b.recip())).powf(self.a.recip());
+                Some(median as $kind)
+            }
+        }
+
+        impl Mode<$kind> for Kumaraswamy {
+            fn mode(&self) -> Option<$kind> {
+                if self.a < 1.0 || self.b < 1.0 {
+                    None
+                } else if self.a == 1.0 && self.b == 1.0 {
+                    None
+                } else {
+                    let mode = ((self.a - 1.0) / (self.a * self.b - 1.0))
+                        .powf(self.a.recip());
+                    Some(mode as $kind)
+                }
+            }
+        }
+    };
 }
+
+impl_kumaraswamy!(f64);
+impl_kumaraswamy!(f32);
 
 impl Entropy for Kumaraswamy {
     fn entropy(&self) -> f64 {
@@ -346,7 +371,7 @@ mod tests {
 
     #[test]
     fn median_for_centered_should_be_one_half() {
-        fn k_centered(a: f64) -> Kumaraswamy {
+        fn k_centered(a: f64) -> impl Median<f64> {
             Kumaraswamy::centered(a).unwrap()
         }
         assert::close(k_centered(2.0).median().unwrap(), 0.5, 1E-10);
@@ -358,8 +383,8 @@ mod tests {
 
     #[test]
     fn mean_for_uniform_should_be_one_half() {
-        let kuma = Kumaraswamy::uniform();
-        assert::close(kuma.mean().unwrap(), 0.5, 1E-10)
+        let mean: f64 = Kumaraswamy::uniform().mean().unwrap();
+        assert::close(mean, 0.5, 1E-10)
     }
 
     #[test]
@@ -423,14 +448,18 @@ mod tests {
 
     #[test]
     fn no_mode_for_a_or_b_less_than_1() {
-        assert!(Kumaraswamy::new(0.5, 2.0).unwrap().mode().is_none());
-        assert!(Kumaraswamy::new(2.0, 0.99999).unwrap().mode().is_none());
-        assert!(Kumaraswamy::new(1.0, 0.99999).unwrap().mode().is_none());
+        fn mode(a: f64, b: f64) -> Option<f64> {
+            Kumaraswamy::new(a, b).unwrap().mode()
+        }
+        assert!(mode(0.5, 2.0).is_none());
+        assert!(mode(2.0, 0.99999).is_none());
+        assert!(mode(1.0, 0.99999).is_none());
     }
 
     #[test]
     fn no_mode_for_a_and_b_equal_to_1() {
-        assert!(Kumaraswamy::new(1.0, 1.0).unwrap().mode().is_none());
+        let mode: Option<f64> = Kumaraswamy::new(1.0, 1.0).unwrap().mode();
+        assert!(mode.is_none());
     }
 
     #[test]

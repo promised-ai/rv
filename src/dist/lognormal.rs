@@ -44,6 +44,12 @@ impl LogNormal {
         }
     }
 
+    /// Creates a new LogNormal without checking whether the parameters are
+    /// valid.
+    pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
+        LogNormal { mu, sigma }
+    }
+
     /// LogNorma(0, 1)
     ///
     /// # Example

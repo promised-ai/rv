@@ -34,6 +34,12 @@ impl StudentsT {
         }
     }
 
+    /// Creates a new StudentsT without checking whether the parameter is
+    /// valid.
+    pub fn new_unchecked(v: f64) -> Self {
+        StudentsT { v }
+    }
+
     /// Get the degrees of freedom, v
     pub fn v(&self) -> f64 {
         self.v

@@ -36,6 +36,7 @@ pub struct Laplace {
 }
 
 impl Laplace {
+    /// Create a new Laplace distribution.
     pub fn new(mu: f64, b: f64) -> result::Result<Self> {
         if !mu.is_finite() {
             let err_kind = result::ErrorKind::InvalidParameterError;
@@ -48,6 +49,12 @@ impl Laplace {
         } else {
             Ok(Laplace { mu, b })
         }
+    }
+
+    /// Creates a new Laplace without checking whether the parameters are
+    /// valid.
+    pub fn new_unchecked(mu: f64, b: f64) -> Self {
+        Laplace { mu, b }
     }
 
     /// Get the mu parameter
@@ -80,7 +87,7 @@ impl Laplace {
 /// Laplace with mean 0 and variance 1
 impl Default for Laplace {
     fn default() -> Self {
-        Laplace::new(0.0, FRAC_1_SQRT_2).unwrap()
+        Laplace::new_unchecked(0.0, FRAC_1_SQRT_2)
     }
 }
 

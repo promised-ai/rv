@@ -49,6 +49,11 @@ impl Poisson {
         }
     }
 
+    /// Creates a new Poisson without checking whether the parameter is valid.
+    pub fn new_unchecked(rate: f64) -> Self {
+        Poisson { rate }
+    }
+
     /// Get the rate parameter
     ///
     /// # Example

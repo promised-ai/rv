@@ -94,6 +94,12 @@ impl BetaBinomial {
         }
     }
 
+    /// Creates a new BetaBinomial without checking whether the parameters are
+    /// valid.
+    pub fn new_unchecked(n: u32, alpha: f64, beta: f64) -> Self {
+        BetaBinomial { n, alpha, beta }
+    }
+
     /// Get `n`, the number of trials.
     ///
     /// # Example

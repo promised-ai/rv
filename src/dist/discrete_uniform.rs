@@ -39,6 +39,12 @@ impl<T: DuParam> DiscreteUniform<T> {
         }
     }
 
+    /// Creates a new DiscreteUniform without checking whether the parameters
+    /// are valid.
+    pub fn new_unchecked(a: T, b: T) -> Self {
+        Self { a, b }
+    }
+
     /// Get lower bound parameter, a
     ///
     /// # Example

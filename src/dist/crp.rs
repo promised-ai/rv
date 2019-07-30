@@ -69,6 +69,11 @@ impl Crp {
         }
     }
 
+    /// Create a new Crp without checking whether the parametes are valid.
+    pub fn new_unchecked(alpha: f64, n: usize) -> Self {
+        Crp { alpha, n }
+    }
+
     /// Get the discount parameter, `alpha`.
     ///
     /// # Example

@@ -53,6 +53,11 @@ impl Gev {
         }
     }
 
+    /// Creates a new Gev without checking whether the parameters are valid.
+    pub fn new_unchecked(loc: f64, scale: f64, shape: f64) -> Self {
+        Gev { loc, scale, shape }
+    }
+
     /// Get the location parameter
     ///
     /// # Example

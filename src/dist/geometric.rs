@@ -48,6 +48,12 @@ impl Geometric {
         }
     }
 
+    /// Creates a new Geometric without checking whether the parameter is
+    /// valid.
+    pub fn new_unchecked(p: f64) -> Self {
+        Geometric { p }
+    }
+
     /// Get the p parameter
     pub fn p(&self) -> f64 {
         self.p

@@ -89,6 +89,8 @@ impl Categorical {
         }
     }
 
+    /// Creates a new Categorical without checking whether the ln weights are
+    /// valid.
     fn new_unchecked(ln_weights: Vec<f64>) -> Self {
         Categorical { ln_weights }
     }

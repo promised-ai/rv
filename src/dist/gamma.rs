@@ -46,6 +46,11 @@ impl Gamma {
         }
     }
 
+    /// Creates a new Gamma without checking whether the parameters are valid.
+    pub fn new_unchecked(shape: f64, rate: f64) -> Self {
+        Gamma { shape, rate }
+    }
+
     /// Get the shape parameter
     ///
     /// # Example

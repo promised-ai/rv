@@ -47,6 +47,12 @@ impl Exponential {
         }
     }
 
+    /// Creates a new Exponential without checking whether the parameter is
+    /// valid.
+    pub fn new_unchecked(rate: f64) -> Self {
+        Exponential { rate }
+    }
+
     /// Get the rate parameter
     ///
     /// # Example

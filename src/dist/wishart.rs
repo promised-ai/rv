@@ -51,6 +51,12 @@ impl InvWishart {
         }
     }
 
+    /// Creates a new InvWishart without checking whether the parameters are
+    /// valid.
+    pub fn new_unchecked(inv_scale: DMatrix<f64>, df: usize) -> Self {
+        InvWishart { inv_scale, df }
+    }
+
     /// Create an Inverse Wishart distribution, W<sup>-1</sup>(**I**<sup>p</sup>,
     /// p)
     pub fn identity(dims: usize) -> Self {
@@ -87,6 +93,10 @@ impl InvWishart {
                 Ok(())
             }
         }
+    }
+
+    pub fn set_inv_scale_unchecked(&mut self, inv_scale: DMatrix<f64>) {
+        self.inv_scale = inv_scale;
     }
 }
 
