@@ -7,6 +7,7 @@ use crate::impl_display;
 use crate::misc::logsumexp;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::distributions::Cauchy as RCauchy;
 use rand::Rng;
 use std::f64::consts::PI;
@@ -23,12 +24,14 @@ use std::f64::consts::PI;
 ///
 /// assert!((ln_fx + 2.4514716152673368).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Cauchy {
     /// location, x<sub>0</sub>, in (-∞, ∞)
+    #[set = "pub"]
     loc: f64,
     /// scale, γ, in (0, ∞)
+    #[set = "pub"]
     scale: f64,
 }
 

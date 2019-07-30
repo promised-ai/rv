@@ -5,6 +5,7 @@ use crate::dist::{InvWishart, MvGaussian};
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
 
@@ -34,17 +35,39 @@ use rand::Rng;
 ///
 /// let mvg: MvGaussian = niw.draw(&mut rng);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct NormalInvWishart {
     /// The mean of μ, μ<sub>0</sub>
     mu: DVector<f64>,
     /// A scale factor on Σ, κ<sub>0</sub>
+    #[set = "pub"]
     k: f64,
     /// The degrees of freedom, ν > |μ| - 1
+    #[set = "pub"]
     df: usize,
     /// The positive-definite scale matrix, Ψ
     scale: DMatrix<f64>,
+}
+
+fn validate_params<'a>(
+    mu: &DVector<f64>,
+    k: f64,
+    df: usize,
+    scale: &DMatrix<f64>,
+) -> Option<&'a str> {
+    let dims = mu.len();
+    if k <= 0.0 {
+        Some("k must be > 0.0")
+    } else if df < dims {
+        Some("df must be >= the number of dimensions")
+    } else if !scale.is_square() {
+        Some("scale must be square")
+    } else if dims != scale.nrows() {
+        Some("dimensions in mu and scale must match")
+    } else {
+        None
+    }
 }
 
 impl NormalInvWishart {
@@ -61,20 +84,7 @@ impl NormalInvWishart {
         df: usize,
         scale: DMatrix<f64>,
     ) -> result::Result<Self> {
-        let dims = mu.len();
-        let err = if k <= 0.0 {
-            Some("k must be > 0.0")
-        } else if df < dims {
-            Some("df must be >= the number of dimensions")
-        } else if !scale.is_square() {
-            Some("scale must be square")
-        } else if dims != scale.nrows() {
-            Some("dimensions in mu and scale must match")
-        } else if scale.clone().cholesky().is_none() {
-            Some("scale is not positive definite")
-        } else {
-            None
-        };
+        let err = validate_params(&mu, k, df, &scale);
 
         match err {
             Some(msg) => Err(result::Error::new(
@@ -108,6 +118,38 @@ impl NormalInvWishart {
     /// Get a reference to the scale matrix
     pub fn scale(&self) -> &DMatrix<f64> {
         &self.scale
+    }
+
+    /// Set the scale parameter
+    pub fn set_scale(&mut self, scale: DMatrix<f64>) -> result::Result<()> {
+        let err = validate_params(&self.mu, self.k, self.df, &scale);
+
+        match err {
+            Some(msg) => Err(result::Error::new(
+                result::ErrorKind::InvalidParameterError,
+                msg,
+            )),
+            None => {
+                self.scale = scale;
+                Ok(())
+            }
+        }
+    }
+
+    /// Set the scale parameter
+    pub fn set_mu(&mut self, mu: DVector<f64>) -> result::Result<()> {
+        let err = validate_params(&mu, self.k, self.df, &self.scale);
+
+        match err {
+            Some(msg) => Err(result::Error::new(
+                result::ErrorKind::InvalidParameterError,
+                msg,
+            )),
+            None => {
+                self.mu = mu;
+                Ok(())
+            }
+        }
     }
 }
 

@@ -39,8 +39,7 @@ impl<Fx> Mixture<Fx> {
     /// - components: The componen distributions.
     pub fn new(weights: Vec<f64>, components: Vec<Fx>) -> result::Result<Self> {
         let weights_ok = weights.iter().all(|&w| w >= 0.0)
-            && (weights.iter().fold(0.0, |acc, &w| acc + w) - 1.0).abs()
-                < 1E-12;
+            && (weights.iter().sum::<f64>() - 1.0).abs() < 1E-12;
 
         if weights.is_empty() || components.is_empty() {
             let err_kind = result::ErrorKind::EmptyContainerError;
@@ -111,6 +110,41 @@ impl<Fx> Mixture<Fx> {
     /// Get a reference to the components
     pub fn components(&self) -> &Vec<Fx> {
         &self.components
+    }
+
+    pub fn set_weights(&mut self, weights: Vec<f64>) -> result::Result<()> {
+        let weights_ok = weights.iter().all(|&w| w >= 0.0)
+            && (weights.iter().sum::<f64>() - 1.0).abs() < 1E-12;
+
+        if weights.len() != self.k() {
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let msg = "weights.len() != components.len()";
+            let err = result::Error::new(err_kind, msg);
+            Err(err)
+        } else if !weights_ok {
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let msg = "weights must be positive and sum to 1";
+            let err = result::Error::new(err_kind, msg);
+            Err(err)
+        } else {
+            self.weights = weights;
+            Ok(())
+        }
+    }
+
+    pub fn set_components(
+        &mut self,
+        components: Vec<Fx>,
+    ) -> result::Result<()> {
+        if components.len() != self.k() {
+            let err_kind = result::ErrorKind::InvalidParameterError;
+            let msg = "There must be a component for each weight";
+            let err = result::Error::new(err_kind, msg);
+            Err(err)
+        } else {
+            self.components = components;
+            Ok(())
+        }
     }
 }
 

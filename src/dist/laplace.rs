@@ -5,6 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::Rng;
 use std::f64::consts::{E, FRAC_1_SQRT_2, LN_2};
 
@@ -23,12 +24,14 @@ use std::f64::consts::{E, FRAC_1_SQRT_2, LN_2};
 /// let xs: Vec<f64> = laplace.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Laplace {
     /// Location in (-∞, ∞)
+    #[set = "pub"]
     mu: f64,
     /// Scale in (0, ∞)
+    #[set = "pub"]
     b: f64,
 }
 

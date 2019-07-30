@@ -5,6 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::distributions::Poisson as RPossion;
 use rand::Rng;
 use special::Gamma as _;
@@ -28,9 +29,10 @@ use special::Gamma as _;
 /// let xs: Vec<u32> = pois.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Poisson {
+    #[set = "pub"]
     rate: f64,
 }
 

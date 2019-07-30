@@ -5,6 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::Rng;
 use std::f64;
 
@@ -19,10 +20,12 @@ use std::f64;
 /// f(x|α, x_m) = ---------
 ///               x^(α + 1)
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Pareto {
+    #[set = "pub"]
     shape: f64,
+    #[set = "pub"]
     scale: f64,
 }
 

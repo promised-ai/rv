@@ -6,6 +6,7 @@ use crate::impl_display;
 use crate::misc::vec_to_string;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::distributions::Gamma as RGamma;
 use rand::Rng;
 use special::Gamma as _;
@@ -16,9 +17,10 @@ use special::Gamma as _;
 /// `SymmetricDirichlet { alpha, k }` is mathematicall equivalent to
 /// `Dirichlet { alphas: vec![alpha; k] }`. This version has some extra
 /// optimizations to seep up computing the PDF and drawing random vectors.
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SymmetricDirichlet {
+    #[set = "pub"]
     alpha: f64,
     k: usize,
 }

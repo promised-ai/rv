@@ -5,6 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::distributions;
 use rand::Rng;
 use special::Gamma as _;
@@ -17,12 +18,14 @@ use special::Gamma as _;
 /// f(x|α, β) = ----  x^(-α-1) e^(-β/x)
 ///             Γ(α)
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct InvGamma {
     // shape parameter, α
+    #[set = "pub"]
     shape: f64,
     // scale parameter, β
+    #[set = "pub"]
     scale: f64,
 }
 

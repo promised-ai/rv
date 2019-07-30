@@ -5,6 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::distributions::Exp;
 use rand::Rng;
 use std::f64::consts::LN_2;
@@ -22,10 +23,11 @@ use std::f64::consts::LN_2;
 /// let expon = Exponential::new(1.5).unwrap();
 /// let interval: (f64, f64) = expon.interval(0.5);  // (0.19, 0.92)
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Exponential {
     /// λ > 0, rate or inverse scale
+    #[set = "pub"]
     rate: f64,
 }
 

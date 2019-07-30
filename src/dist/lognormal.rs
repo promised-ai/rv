@@ -6,6 +6,7 @@ use crate::consts::*;
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::distributions::Normal;
 use rand::Rng;
 use special::Error as _;
@@ -13,12 +14,14 @@ use std::f64::consts::SQRT_2;
 
 /// [LogNormal Distribution](https://en.wikipedia.org/wiki/Log-normal_distribution)
 /// If x ~ Normal(μ, σ), then e^x ~ LogNormal(μ, σ).
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct LogNormal {
     /// log scale mean
+    #[set = "pub"]
     mu: f64,
     /// log scale standard deviation
+    #[set = "pub"]
     sigma: f64,
 }
 

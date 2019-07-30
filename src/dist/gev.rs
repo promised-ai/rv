@@ -6,6 +6,7 @@ use crate::dist;
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::Rng;
 use special::Gamma;
 use std::f32;
@@ -24,11 +25,14 @@ use std::f64::consts::{LN_2, PI};
 /// t(x) = ⎰ (1 + ξ ((x - μ) / σ))^(-1/ξ) if ξ ≠ 0
 ///        ⎱ e^{(μ - x) / σ}              if ξ = 0
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gev {
+    #[set = "pub"]
     loc: f64,
+    #[set = "pub"]
     scale: f64,
+    #[set = "pub"]
     shape: f64,
 }
 

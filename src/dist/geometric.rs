@@ -6,6 +6,7 @@ use crate::dist::Uniform;
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use num::{Bounded, FromPrimitive, Integer, Saturating, ToPrimitive, Unsigned};
 use rand::Rng;
 
@@ -25,9 +26,10 @@ use rand::Rng;
 /// let xs: Vec<u32> = geom.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
-#[derive(Debug, Clone, PartialOrd, PartialEq)]
+#[derive(Debug, Clone, PartialOrd, PartialEq, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Geometric {
+    #[set = "pub"]
     p: f64,
 }
 

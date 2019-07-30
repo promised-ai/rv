@@ -5,6 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
+use getset::Setters;
 use rand::distributions;
 use rand::Rng;
 use special::Gamma as _;
@@ -20,10 +21,11 @@ use std::f64::consts::LN_2;
 ///
 /// let x2 = ChiSquared::new(2.0).unwrap();
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct ChiSquared {
     /// Degrees of freedom in (0, ∞)
+    #[set = "pub"]
     k: f64,
 }
 
