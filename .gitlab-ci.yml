@@ -7,6 +7,10 @@ before_script:
 
 test:cargo-nightly:
     image: "rustlang/rust:nightly"
+    before_script:
+        - rustup install nightly-2019-07-09 --no-self-update
+        - rustup override set nightly-2019-07-09
+        - rustup component add rustfmt --toolchain nightly-2019-07-09
     script:
         - rustc --version && cargo --version
         - cargo fmt --all -- --check
