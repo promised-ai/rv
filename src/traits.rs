@@ -391,7 +391,9 @@ pub trait HasSuffStat<X> {
 /// Is a [sufficient statistic](https://en.wikipedia.org/wiki/Sufficient_statistic) for a
 /// distribution.
 ///
-/// # Example
+/// # Examples
+///
+/// Basic suffstat useage.
 ///
 /// ```
 /// use rv::data::BernoulliSuffStat;
@@ -411,6 +413,32 @@ pub trait HasSuffStat<X> {
 ///
 /// stat.forget_many(&vec![false, true]);  // forget `true` and `false`
 /// assert!(stat.n() == 0 && stat.k() == 0);
+/// ```
+///
+/// Conjugate analysis of coin flips using Bernoulli with a Beta prior on the
+/// success probability.
+///
+/// ```
+/// use rv::traits::SuffStat;
+/// use rv::traits::ConjugatePrior;
+/// use rv::data::BernoulliSuffStat;
+/// use rv::dist::{Bernoulli, Beta};
+///
+/// let flips = vec![true, false, false];
+///
+/// // Pack the data into a sufficient statistic that holds the number of
+/// // trials and the number of successes
+/// let mut stat = BernoulliSuffStat::new();
+/// stat.observe_many(&flips);
+///
+/// let prior = Beta::jeffreys();
+///
+/// // If we observe more false than true, the posterior predictive
+/// // probability of true decreases.
+/// let pp_no_obs = prior.pp(&true, &(&BernoulliSuffStat::new()).into());
+/// let pp_obs = prior.pp(&true, &(&flips).into());
+///
+/// assert!(pp_obs < pp_no_obs);
 /// ```
 pub trait SuffStat<X> {
     /// Returns the number of observations
@@ -434,6 +462,26 @@ pub trait SuffStat<X> {
 }
 
 /// A prior on `Fx` that induces a posterior that is the same form as the prior
+///
+/// # Example
+///
+/// Conjugate analysis of coin flips using Bernoulli with a Beta prior on the
+/// success probability.
+///
+/// ```
+/// use rv::traits::ConjugatePrior;
+/// use rv::dist::{Bernoulli, Beta};
+///
+/// let flips = vec![true, false, false];
+/// let prior = Beta::jeffreys();
+///
+/// // If we observe more false than true, the posterior predictive
+/// // probability of true decreases.
+/// let pp_no_obs = prior.pp(&true, &(&vec![]).into());
+/// let pp_obs = prior.pp(&true, &(&flips).into());
+///
+/// assert!(pp_obs < pp_no_obs);
+/// ```
 pub trait ConjugatePrior<X, Fx>: Rv<Fx>
 where
     Fx: Rv<X> + HasSuffStat<X>,

@@ -2,11 +2,14 @@
 use serde_derive::{Deserialize, Serialize};
 
 use crate::data::CategoricalDatum;
+use crate::data::DataOrSuffStat;
+use crate::dist::{Bernoulli, Categorical, Gaussian};
 use crate::traits::SuffStat;
 use nalgebra::{DMatrix, DVector};
 
-// Bernoulli
-// ---------
+/// Sufficent statistic for the Bernoulli distribution.
+///
+/// Contains the number of trials and the number of successes.
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct BernoulliSuffStat {
@@ -83,8 +86,34 @@ impl SuffStat<bool> for BernoulliSuffStat {
     }
 }
 
+impl<'a> Into<DataOrSuffStat<'a, bool, Bernoulli>> for &'a BernoulliSuffStat {
+    fn into(self) -> DataOrSuffStat<'a, bool, Bernoulli> {
+        DataOrSuffStat::SuffStat(self)
+    }
+}
+
+impl<'a> Into<DataOrSuffStat<'a, bool, Bernoulli>> for &'a Vec<bool> {
+    fn into(self) -> DataOrSuffStat<'a, bool, Bernoulli> {
+        DataOrSuffStat::Data(self)
+    }
+}
+
 macro_rules! impl_bernoulli_suffstat {
     ($kind:ty) => {
+        impl<'a> Into<DataOrSuffStat<'a, $kind, Bernoulli>>
+            for &'a BernoulliSuffStat
+        {
+            fn into(self) -> DataOrSuffStat<'a, $kind, Bernoulli> {
+                DataOrSuffStat::SuffStat(self)
+            }
+        }
+
+        impl<'a> Into<DataOrSuffStat<'a, $kind, Bernoulli>> for &'a Vec<$kind> {
+            fn into(self) -> DataOrSuffStat<'a, $kind, Bernoulli> {
+                DataOrSuffStat::Data(self)
+            }
+        }
+
         impl SuffStat<$kind> for BernoulliSuffStat {
             fn n(&self) -> usize {
                 self.n
@@ -118,8 +147,10 @@ impl_bernoulli_suffstat!(i32);
 impl_bernoulli_suffstat!(i64);
 impl_bernoulli_suffstat!(isize);
 
-// Categorical
-// -----------
+/// Categorical distribution sufficient statistic.
+///
+/// Store the number of observations and the count of observations of each
+/// instance.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct CategoricalSuffStat {
@@ -174,6 +205,34 @@ impl CategoricalSuffStat {
     }
 }
 
+impl<'a, X> Into<DataOrSuffStat<'a, X, Categorical>> for &'a CategoricalSuffStat
+where
+    X: CategoricalDatum,
+{
+    fn into(self) -> DataOrSuffStat<'a, X, Categorical> {
+        DataOrSuffStat::SuffStat(self)
+    }
+}
+
+// XXX Can't just implement for X: CategoricalDatum because of orphan type rule
+macro_rules! impl_into_dos_for_categorical {
+    ($kind: ty) => {
+        impl<'a> Into<DataOrSuffStat<'a, $kind, Categorical>>
+            for &'a Vec<$kind>
+        {
+            fn into(self) -> DataOrSuffStat<'a, $kind, Categorical> {
+                DataOrSuffStat::Data(self)
+            }
+        }
+    };
+}
+
+impl_into_dos_for_categorical!(bool);
+impl_into_dos_for_categorical!(usize);
+impl_into_dos_for_categorical!(u8);
+impl_into_dos_for_categorical!(u16);
+impl_into_dos_for_categorical!(u32);
+
 impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
     fn n(&self) -> usize {
         self.n
@@ -192,8 +251,10 @@ impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
     }
 }
 
-// Gaussian
-// --------
+/// Gaussian sufficient statistic.
+///
+/// Holds the number of observations, their sum, and the sum of their squared
+/// values.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct GaussianSuffStat {
@@ -238,6 +299,20 @@ impl Default for GaussianSuffStat {
 
 macro_rules! impl_gaussian_suffstat {
     ($kind:ty) => {
+        impl<'a> Into<DataOrSuffStat<'a, $kind, Gaussian>>
+            for &'a GaussianSuffStat
+        {
+            fn into(self) -> DataOrSuffStat<'a, $kind, Gaussian> {
+                DataOrSuffStat::SuffStat(self)
+            }
+        }
+
+        impl<'a> Into<DataOrSuffStat<'a, $kind, Gaussian>> for &'a Vec<$kind> {
+            fn into(self) -> DataOrSuffStat<'a, $kind, Gaussian> {
+                DataOrSuffStat::Data(self)
+            }
+        }
+
         // TODO: store in a more nuerically stable form
         impl SuffStat<$kind> for GaussianSuffStat {
             fn n(&self) -> usize {

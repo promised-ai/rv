@@ -7,14 +7,13 @@ use rv::ConjugateModel;
 use std::sync::Arc;
 
 fn main() {
-    let u = rand::distributions::Open01;
     let mut rng = rand::thread_rng();
 
     // Generate some 1000 coin flips from a coin that will come up head 70%
     // of the time.
     let flips: Vec<bool> = (0..1000)
         .map(|_| {
-            let x: f64 = rng.sample(u);
+            let x: f64 = rng.gen();
             x < 0.7
         })
         .collect();
