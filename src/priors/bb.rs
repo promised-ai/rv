@@ -24,18 +24,15 @@ impl Support<Bernoulli> for Beta {
 
 impl ContinuousDistr<Bernoulli> for Beta {}
 
-impl ConjugatePrior<bool, Bernoulli> for Beta {
-    type Posterior = Self;
-    fn posterior(&self, x: &DataOrSuffStat<bool, Bernoulli>) -> Self {
-        let (n, k) = match x {
-            DataOrSuffStat::Data(ref xs) => {
-                let mut stat = BernoulliSuffStat::new();
-                xs.iter().for_each(|x| stat.observe(x));
-                (stat.n(), stat.k())
-            }
-            DataOrSuffStat::SuffStat(ref stat) => (stat.n(), stat.k()),
-            DataOrSuffStat::None => (0, 0),
-        };
+impl<'a> ConjugatePrior<'a, bool, Bernoulli> for Beta {
+    type Posterior = Beta;
+    fn posterior<S>(&self, x: &S) -> Beta
+    where
+        S: Into<&'a BernoulliSuffStat>,
+    {
+        let stat: &BernoulliSuffStat = x.into();
+        let n = stat.n();
+        let k = stat.k();
 
         let a = self.alpha() + k as f64;
         let b = self.beta() + (n - k) as f64;
@@ -43,14 +40,23 @@ impl ConjugatePrior<bool, Bernoulli> for Beta {
         Beta::new(a, b).expect("Invalid posterior parameters")
     }
 
-    fn ln_m(&self, x: &DataOrSuffStat<bool, Bernoulli>) -> f64 {
-        let post = self.posterior(x);
+    fn ln_m<S>(&self, x: &S) -> f64
+    where
+        S: Into<&'a BernoulliSuffStat>,
+    {
+        let post =
+            <Beta as ConjugatePrior<bool, Bernoulli>>::posterior(self, x);
+
         post.alpha().ln_beta(post.beta()) - self.alpha().ln_beta(self.beta())
     }
 
-    fn ln_pp(&self, y: &bool, x: &DataOrSuffStat<bool, Bernoulli>) -> f64 {
+    fn ln_pp<S>(&self, y: &bool, x: &S) -> f64
+    where
+        S: Into<&'a BernoulliSuffStat>,
+    {
         //  P(y=1 | xs) happens to be the posterior mean
-        let post = self.posterior(x);
+        let post =
+            <Beta as ConjugatePrior<bool, Bernoulli>>::posterior(self, x);
         let p: f64 = post.mean().expect("Mean undefined");
         if *y {
             p.ln()
@@ -62,18 +68,15 @@ impl ConjugatePrior<bool, Bernoulli> for Beta {
 
 macro_rules! impl_int_traits {
     ($kind:ty) => {
-        impl ConjugatePrior<$kind, Bernoulli> for Beta {
+        impl<'a> ConjugatePrior<'a, $kind, Bernoulli> for Beta {
             type Posterior = Self;
-            fn posterior(&self, x: &DataOrSuffStat<$kind, Bernoulli>) -> Self {
-                let (n, k) = match x {
-                    DataOrSuffStat::Data(ref xs) => {
-                        let mut stat = BernoulliSuffStat::new();
-                        xs.iter().for_each(|x| stat.observe(x));
-                        (stat.n(), stat.k())
-                    }
-                    DataOrSuffStat::SuffStat(ref stat) => (stat.n(), stat.k()),
-                    DataOrSuffStat::None => (0, 0),
-                };
+            fn posterior<S>(&self, x: &S) -> Self
+            where
+                S: Into<&'a BernoulliSuffStat>,
+            {
+                let stat: BernoulliSuffStat = x.into();
+                let n = stat.n();
+                let k = stat.k();
 
                 let a = self.alpha() + k as f64;
                 let b = self.beta() + (n - k) as f64;
@@ -81,19 +84,27 @@ macro_rules! impl_int_traits {
                 Beta::new(a, b).expect("Invalid posterior parameters")
             }
 
-            fn ln_m(&self, x: &DataOrSuffStat<$kind, Bernoulli>) -> f64 {
-                let post = self.posterior(x);
+            fn ln_m<S>(&self, x: &S) -> f64
+            where
+                S: Into<&'a BernoulliSuffStat>,
+            {
+                let post =
+                    <Beta as ConjugatePrior<$kind, Bernoulli>>::posterior(
+                        self, x,
+                    );
                 post.alpha().ln_beta(post.beta())
                     - self.alpha().ln_beta(self.beta())
             }
 
-            fn ln_pp(
-                &self,
-                y: &$kind,
-                x: &DataOrSuffStat<$kind, Bernoulli>,
-            ) -> f64 {
+            fn ln_pp<S>(&self, y: &$kind, x: &S) -> f64
+            where
+                S: Into<&'a BernoulliSuffStat>,
+            {
                 //  P(y=1 | xs) happens to be the posterior mean
-                let post = self.posterior(x);
+                let post =
+                    <Beta as ConjugatePrior<$kind, Bernoulli>>::posterior(
+                        self, x,
+                    );
                 let p: f64 = post.mean().expect("Mean undefined");
                 if *y == 1 {
                     p.ln()

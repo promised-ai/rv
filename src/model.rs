@@ -12,22 +12,24 @@ use std::sync::Arc;
 /// `Fx`: The type of the likelihood, *f(x|θ)*
 /// `Pr`: The type of the prior on the parameters of `Fx`, π(θ)
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
-pub struct ConjugateModel<X, Fx, Pr>
+pub struct ConjugateModel<'a, X, Fx, Pr>
 where
+    Fx::Stat: 'a,
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: ConjugatePrior<'a, X, Fx>,
 {
     /// Pointer to an `Rv` implementing `ConjugatePrior` for `Fx`
     prior: Arc<Pr>,
     /// A `SuffStat` for `Fx`
     suffstat: Fx::Stat,
-    _phantom: PhantomData<X>,
+    _phantom: PhantomData<&'a X>,
 }
 
-impl<X, Fx, Pr> ConjugateModel<X, Fx, Pr>
+impl<'a, X, Fx, Pr> ConjugateModel<'a, X, Fx, Pr>
 where
+    Fx::Stat: 'a,
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: ConjugatePrior<'a, X, Fx>,
 {
     /// Create a new conjugate model
     ///
@@ -57,12 +59,12 @@ where
 
     /// Log marginal likelihood, *f(obs)*
     pub fn ln_m(&self) -> f64 {
-        self.prior.ln_m(&self.obs())
+        self.prior.ln_m(self.obs())
     }
 
     /// Log posterior predictive, *f(y|obs)*
     pub fn ln_pp(&self, y: &X) -> f64 {
-        self.prior.ln_pp(&y, &self.obs())
+        self.prior.ln_pp(&y, self.obs())
     }
 
     /// Return the posterior distribution
@@ -87,19 +89,20 @@ where
     /// assert_eq!(post, Beta::new(3.0, 5.0).unwrap());
     /// ```
     pub fn posterior(&self) -> Pr::Posterior {
-        self.prior.posterior(&self.obs())
+        self.prior.posterior(self.obs())
     }
 
     /// Return the observations
-    fn obs(&self) -> DataOrSuffStat<X, Fx> {
-        DataOrSuffStat::SuffStat(&self.suffstat)
+    fn obs(&self) -> &Fx::Stat {
+        &self.suffstat
     }
 }
 
-impl<X, Fx, Pr> SuffStat<X> for ConjugateModel<X, Fx, Pr>
+impl<'a, X, Fx, Pr> SuffStat<X> for ConjugateModel<'a, X, Fx, Pr>
 where
+    Fx::Stat: 'a,
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: ConjugatePrior<'a, X, Fx>,
 {
     fn n(&self) -> usize {
         self.suffstat.n()
@@ -114,13 +117,14 @@ where
     }
 }
 
-impl<X, Fx, Pr> Rv<X> for ConjugateModel<X, Fx, Pr>
+impl<'a, X, Fx, Pr> Rv<X> for ConjugateModel<'a, X, Fx, Pr>
 where
+    Fx::Stat: 'a,
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: ConjugatePrior<'a, X, Fx>,
 {
     fn ln_f(&self, x: &X) -> f64 {
-        self.prior.ln_pp(&x, &self.obs())
+        self.prior.ln_pp(&x, self.obs())
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {

@@ -482,28 +482,29 @@ pub trait SuffStat<X> {
 ///
 /// assert!(pp_obs < pp_no_obs);
 /// ```
-pub trait ConjugatePrior<X, Fx>: Rv<Fx>
+pub trait ConjugatePrior<'a, X, Fx>: Rv<Fx>
 where
     Fx: Rv<X> + HasSuffStat<X>,
+    Fx::Stat: 'a,
 {
     type Posterior: Rv<Fx>;
 
     /// Computes the posterior distribution from the data
-    fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
+    fn posterior<S: Into<&'a Fx::Stat>>(&self, x: &S) -> Self::Posterior;
 
     /// Log marginal likelihood
-    fn ln_m(&self, x: &DataOrSuffStat<X, Fx>) -> f64;
+    fn ln_m<S: Into<&'a Fx::Stat>>(&self, x: &S) -> f64;
 
     /// Log posterior predictive of y given x
-    fn ln_pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64;
+    fn ln_pp<S: Into<&'a Fx::Stat>>(&self, y: &X, x: &S) -> f64;
 
     /// Marginal likelihood of x
-    fn m(&self, x: &DataOrSuffStat<X, Fx>) -> f64 {
+    fn m<S: Into<&'a Fx::Stat>>(&self, x: &S) -> f64 {
         self.ln_m(x).exp()
     }
 
     /// Posterior Predictive distribution
-    fn pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64 {
+    fn pp<S: Into<&'a Fx::Stat>>(&self, y: &X, x: &S) -> f64 {
         self.ln_pp(&y, x).exp()
     }
 }

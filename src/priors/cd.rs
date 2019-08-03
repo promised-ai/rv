@@ -17,54 +17,45 @@ impl Rv<Categorical> for SymmetricDirichlet {
     }
 }
 
-macro_rules! extract_stat_then {
-    ($k: expr, $x: ident, $func: expr) => {{
-        match $x {
-            DataOrSuffStat::SuffStat(ref stat) => $func(&stat),
-            DataOrSuffStat::Data(xs) => {
-                let mut stat = CategoricalSuffStat::new($k);
-                xs.iter().for_each(|y| stat.observe(y));
-                $func(&stat)
-            }
-            DataOrSuffStat::None => {
-                let stat = CategoricalSuffStat::new($k);
-                $func(&stat)
-            }
-        }
-    }};
-}
-
-impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
+impl<'a, X: CategoricalDatum> ConjugatePrior<'a, X, Categorical>
     for SymmetricDirichlet
 {
     type Posterior = Dirichlet;
-    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
-        extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
-            let alphas: Vec<f64> =
-                stat.counts().iter().map(|&ct| self.alpha() + ct).collect();
 
-            Dirichlet::new(alphas).unwrap()
-        })
+    fn posterior<S>(&self, x: &S) -> Self::Posterior
+    where
+        S: Into<&'a CategoricalSuffStat>,
+    {
+        let stat: CategoricalSuffStat = x.into();
+        let alphas: Vec<f64> =
+            stat.counts().iter().map(|&ct| self.alpha() + ct).collect();
+
+        Dirichlet::new(alphas).unwrap()
     }
 
-    fn ln_m(&self, x: &CategoricalData<X>) -> f64 {
+    fn ln_m<S>(&self, x: &S) -> f64
+    where
+        S: Into<&'a CategoricalSuffStat>,
+    {
         let sum_alpha = self.alpha() * self.k() as f64;
-        extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
-            // terms
-            let a = sum_alpha.ln_gamma().0;
-            let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
-            let c = stat
-                .counts()
-                .iter()
-                .fold(0.0, |acc, &ct| acc + (self.alpha() + ct).ln_gamma().0);
-            let d = self.alpha().ln_gamma().0 * self.k() as f64;
 
-            a - b + c - d
-        })
+        let stat: CategoricalSuffStat = x.into();
+        let a = sum_alpha.ln_gamma().0;
+        let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
+        let c = stat
+            .counts()
+            .iter()
+            .fold(0.0, |acc, &ct| acc + (self.alpha() + ct).ln_gamma().0);
+        let d = self.alpha().ln_gamma().0 * self.k() as f64;
+
+        a - b + c - d
     }
 
-    fn ln_pp(&self, y: &X, x: &CategoricalData<X>) -> f64 {
-        let post = self.posterior(x);
+    fn ln_pp<S>(&self, y: &X, x: &S) -> f64
+    where
+        S: Into<&'a CategoricalSuffStat>,
+    {
+        let post = <Self as ConjugatePrior<X, Categorical>>::posterior(self, x);
         let norm = post.alphas().iter().fold(0.0, |acc, &a| acc + a);
         let ix = y.into_usize();
         post.alphas()[ix].ln() - norm.ln()
@@ -82,43 +73,51 @@ impl Rv<Categorical> for Dirichlet {
     }
 }
 
-impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
+impl<'a, X: CategoricalDatum> ConjugatePrior<'a, X, Categorical> for Dirichlet {
     type Posterior = Self;
-    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
-        extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
-            let alphas: Vec<f64> = self
-                .alphas()
-                .iter()
-                .zip(stat.counts().iter())
-                .map(|(&a, &ct)| a + ct)
-                .collect();
+    fn posterior<S>(&self, x: &S) -> Self::Posterior
+    where
+        S: Into<&'a CategoricalSuffStat>,
+    {
+        let stat: CategoricalSuffStat = x.into();
+        let alphas: Vec<f64> = self
+            .alphas()
+            .iter()
+            .zip(stat.counts().iter())
+            .map(|(&a, &ct)| a + ct)
+            .collect();
 
-            Dirichlet::new(alphas).unwrap()
-        })
+        Dirichlet::new(alphas).unwrap()
     }
 
-    fn ln_m(&self, x: &CategoricalData<X>) -> f64 {
+    fn ln_m<S>(&self, x: &S) -> f64
+    where
+        S: Into<&'a CategoricalSuffStat>,
+    {
         let sum_alpha = self.alphas().iter().fold(0.0, |acc, &a| acc + a);
-        extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
-            // terms
-            let a = sum_alpha.ln_gamma().0;
-            let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
-            let c = self
-                .alphas()
-                .iter()
-                .zip(stat.counts().iter())
-                .fold(0.0, |acc, (&a, &ct)| acc + (a + ct).ln_gamma().0);
-            let d = self
-                .alphas()
-                .iter()
-                .fold(0.0, |acc, &a| acc + a.ln_gamma().0);
+        let stat: CategoricalSuffStat = x.into();
 
-            a - b + c - d
-        })
+        // terms
+        let a = sum_alpha.ln_gamma().0;
+        let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
+        let c = self
+            .alphas()
+            .iter()
+            .zip(stat.counts().iter())
+            .fold(0.0, |acc, (&a, &ct)| acc + (a + ct).ln_gamma().0);
+        let d = self
+            .alphas()
+            .iter()
+            .fold(0.0, |acc, &a| acc + a.ln_gamma().0);
+
+        a - b + c - d
     }
 
-    fn ln_pp(&self, y: &X, x: &CategoricalData<X>) -> f64 {
-        let post = self.posterior(x);
+    fn ln_pp<S>(&self, y: &X, x: &S) -> f64
+    where
+        S: Into<&'a CategoricalSuffStat>,
+    {
+        let post = <Self as ConjugatePrior<X, Categorical>>::posterior(self, x);
         let norm = post.alphas().iter().fold(0.0, |acc, &a| acc + a);
         let ix: usize = y.into_usize();
         post.alphas()[ix].ln() - norm.ln()

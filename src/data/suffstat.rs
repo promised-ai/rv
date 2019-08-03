@@ -98,6 +98,14 @@ impl<'a> Into<DataOrSuffStat<'a, bool, Bernoulli>> for &'a Vec<bool> {
     }
 }
 
+impl Into<BernoulliSuffStat> for &Vec<bool> {
+    fn into(self) -> BernoulliSuffStat {
+        let mut stat = BernoulliSuffStat::new();
+        stat.observe_many(self);
+        stat
+    }
+}
+
 macro_rules! impl_bernoulli_suffstat {
     ($kind:ty) => {
         impl<'a> Into<DataOrSuffStat<'a, $kind, Bernoulli>>
@@ -105,6 +113,14 @@ macro_rules! impl_bernoulli_suffstat {
         {
             fn into(self) -> DataOrSuffStat<'a, $kind, Bernoulli> {
                 DataOrSuffStat::SuffStat(self)
+            }
+        }
+
+        impl Into<BernoulliSuffStat> for &Vec<$kind> {
+            fn into(self) -> BernoulliSuffStat {
+                let mut stat = BernoulliSuffStat::new();
+                stat.observe_many(self);
+                stat
             }
         }
 

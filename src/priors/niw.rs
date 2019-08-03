@@ -36,46 +36,57 @@ fn ln_z(k: f64, df: usize, scale: &DMatrix<f64>) -> f64 {
 impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
     type Posterior = NormalInvWishart;
 
-    fn posterior(&self, x: &MvgData) -> NormalInvWishart {
-        if x.n() == 0 {
+    fn posterior<S>(&self, x: &S) -> NormalInvWishart
+    where
+        S: Into<MvGaussianSuffStat>,
+    {
+        let stat: MvGaussianSuffStat = (*x).into();
+
+        if stat.n() == 0 {
             return self.clone();
         }
 
-        let nf = x.n() as f64;
-        extract_stat_then!(self.dims(), x, |stat: &MvGaussianSuffStat| {
-            let xbar = stat.sum_x() / stat.n() as f64;
-            let diff = &xbar - self.mu();
-            let s = stat.sum_x_sq() - nf * (&xbar * &xbar.transpose());
+        let nf = stat.n() as f64;
 
-            let kn = self.k() + stat.n() as f64;
-            let vn = self.df() + stat.n();
-            let mn = (self.k() * self.mu() + stat.sum_x()) / kn;
-            let sn = self.scale()
-                + s
-                + (self.k() * stat.n() as f64) / kn * &diff * &diff.transpose();
+        let xbar = stat.sum_x() / stat.n() as f64;
+        let diff = &xbar - self.mu();
+        let s = stat.sum_x_sq() - nf * (&xbar * &xbar.transpose());
 
-            NormalInvWishart::new(mn, kn, vn, sn)
-                .expect("Invalid posterior parameters")
-        })
+        let kn = self.k() + stat.n() as f64;
+        let vn = self.df() + stat.n();
+        let mn = (self.k() * self.mu() + stat.sum_x()) / kn;
+        let sn = self.scale()
+            + s
+            + (self.k() * stat.n() as f64) / kn * &diff * &diff.transpose();
+
+        NormalInvWishart::new(mn, kn, vn, sn)
+            .expect("Invalid posterior parameters")
     }
 
-    fn ln_m(&self, x: &MvgData) -> f64 {
-        let post = self.posterior(&x);
+    fn ln_m<S>(&self, x: &S) -> f64
+    where
+        S: Into<MvGaussianSuffStat>,
+    {
+        let stat: MvGaussianSuffStat = (*x).into();
+        let post = self.posterior(&stat);
         let z0 = ln_z(self.k(), self.df(), self.scale());
         let zn = ln_z(post.k(), post.df(), post.scale());
 
-        let nd: f64 = (self.dims() as f64) * (x.n() as f64);
+        let nd: f64 = (self.dims() as f64) * (stat.n() as f64);
 
         zn - z0 - nd / 2.0 * LN_2PI
     }
 
-    fn ln_pp(&self, y: &DVector<f64>, x: &MvgData) -> f64 {
+    fn ln_pp<S>(&self, y: &DVector<f64>, x: &S) -> f64
+    where
+        S: Into<MvGaussianSuffStat>,
+    {
+        let stat: MvGaussianSuffStat = (*x).into();
         let mut y_stat = MvGaussianSuffStat::new(self.dims());
         y_stat.observe(&y);
-        let y_packed = DataOrSuffStat::SuffStat(&y_stat);
 
-        let post = self.posterior(&x);
-        let pred = post.posterior(&y_packed);
+        let post = self.posterior(&stat);
+        let pred = post.posterior(&y_stat);
 
         let zn = ln_z(post.k(), post.df(), post.scale());
         let zm = ln_z(pred.k(), pred.df(), pred.scale());
