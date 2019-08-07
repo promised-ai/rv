@@ -114,6 +114,45 @@ mod tests {
     }
 
     #[test]
+    fn ln_m_no_data() {
+        let dist = Gamma::new(1.0, 1.0).unwrap();
+        let data: DataOrSuffStat<u8, Poisson> = DataOrSuffStat::None;
+        assert::close(dist.ln_m(&data), 0.0, TOL);
+    }
+
+    #[test]
+    fn ln_m_data() {
+        let dist = Gamma::new(1.0, 1.0).unwrap();
+        let inputs: [u8; 5] = [0, 1, 2, 3, 4];
+        let expected: [f64; 5] = [
+            -0.6931471805599453,
+            -2.1972245773362196,
+            -4.446565155811452,
+            -7.171720824816601,
+            -10.267902068569033,
+        ];
+
+        // Then test on the sequence of inputs
+        let suff_stats: Vec<PoissonSuffStat> = inputs
+            .iter()
+            .scan(PoissonSuffStat::new(), |acc, x| {
+                acc.observe(x);
+                Some(acc.clone())
+            })
+            .collect();
+
+        suff_stats
+            .iter()
+            .zip(expected.iter())
+            .for_each(|(ss, exp)| {
+                let data: DataOrSuffStat<u8, Poisson> =
+                    DataOrSuffStat::SuffStat(ss);
+                let r = dist.ln_m(&data);
+                assert::close(r, *exp, TOL);
+            });
+    }
+
+    #[test]
     fn ln_pp_no_data() {
         let dist = Gamma::new(1.0, 1.0).unwrap();
         let inputs: [u8; 5] = [0, 1, 2, 3, 4];
