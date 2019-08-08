@@ -7,6 +7,7 @@ pub use suffstat::BernoulliSuffStat;
 pub use suffstat::CategoricalSuffStat;
 pub use suffstat::GaussianSuffStat;
 pub use suffstat::MvGaussianSuffStat;
+pub use suffstat::PoissonSuffStat;
 
 use crate::traits::{HasSuffStat, SuffStat};
 
