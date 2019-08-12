@@ -98,10 +98,10 @@ mod tests {
         let x2v = vec![-1.34988694015652, 0.714742903826096];
         let x3v = vec![3.03492346633185, -0.204966058299775];
 
-        let x0 = DVector::<f64>::from_column_slice(2, &x0v);
-        let x1 = DVector::<f64>::from_column_slice(2, &x1v);
-        let x2 = DVector::<f64>::from_column_slice(2, &x2v);
-        let x3 = DVector::<f64>::from_column_slice(2, &x3v);
+        let x0 = DVector::<f64>::from_column_slice(&x0v);
+        let x1 = DVector::<f64>::from_column_slice(&x1v);
+        let x2 = DVector::<f64>::from_column_slice(&x2v);
+        let x3 = DVector::<f64>::from_column_slice(&x3v);
 
         let mut stat = MvGaussianSuffStat::new(1);
 

@@ -88,6 +88,7 @@ pub mod misc;
 mod model;
 pub mod prelude;
 mod priors;
+pub mod process;
 pub mod result;
 pub mod traits;
 
