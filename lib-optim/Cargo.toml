@@ -1,0 +1,15 @@
+[package]
+name = "optim"
+description = "An optimization library for Rust"
+license = "MIT"
+version = "0.0.1"
+edition = "2018"
+authors = ["Michael Schmidt <schmidmt@gmail.com>"]
+workspace = ".."
+
+[dependencies]
+nalgebra = "0.18"
+
+[dev-dependencies]
+assert = "0.7"
+criterion = "0.2"

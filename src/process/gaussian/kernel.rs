@@ -1,10 +1,9 @@
 //! Gaussian Processes
+use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::base::EuclideanNorm;
 use nalgebra::base::Norm;
-use nalgebra::{DMatrix, DVector, Dim, Matrix, Vector};
-use nalgebra::base::constraint::{ShapeConstraint, SameNumberOfColumns};
-
+use nalgebra::{DMatrix, DVector, Dim, Matrix};
 use std::f64;
 
 /// Kernel Function
@@ -33,6 +32,8 @@ pub trait Kernel {
         S: Storage<f64, R, C>;
     /// Return the corresponding parameter vector
     fn parameters(&self) -> DVector<f64>;
+    /// Create a new kernel of the given type from the provided parameters.
+    fn from_parameters(param_vec: DVector<f64>) -> Self;
 }
 /*
 /// Kernel representing the sum of two other kernels
@@ -157,7 +158,6 @@ impl RBFKernel {
 }
 
 impl Kernel for RBFKernel {
-
     fn covariance<R1, R2, C1, C2, S1, S2>(
         &self,
         x1: &Matrix<f64, R1, C1, S1>,
@@ -170,7 +170,7 @@ impl Kernel for RBFKernel {
         C2: Dim,
         S1: Storage<f64, R1, C1>,
         S2: Storage<f64, R2, C2>,
-        ShapeConstraint: SameNumberOfColumns<C1, C2>
+        ShapeConstraint: SameNumberOfColumns<C1, C2>,
     {
         let m = x1.nrows();
         let n = x2.nrows();
@@ -204,6 +204,11 @@ impl Kernel for RBFKernel {
 
     fn parameters(&self) -> DVector<f64> {
         DVector::from_column_slice(&[self.sigma_f, self.l])
+    }
+
+    fn from_parameters(param_vec: DVector<f64>) -> Self {
+        assert_eq!(param_vec.len(), 2);
+        Self::new(param_vec[0], param_vec[1])
     }
 }
 
@@ -309,13 +314,30 @@ mod tests {
         use nalgebra::Matrix4x2;
 
         let kernel = RBFKernel::new(1.0, 1.0);
-        let xs = Matrix4x2::from_column_slice(&[0., 1., 2., 3., 4., 5., 6., 7.]);
-        let expected_cov = DMatrix::from_column_slice(4, 4, &[
-            1.00000000e+00, 3.67879441e-01, 1.83156389e-02, 1.23409804e-04,
-            3.67879441e-01, 1.00000000e+00, 3.67879441e-01, 1.83156389e-02,
-            1.83156389e-02, 3.67879441e-01, 1.00000000e+00, 3.67879441e-01,
-            1.23409804e-04, 1.83156389e-02, 3.67879441e-01, 1.00000000e+00
-        ]);
+        let xs =
+            Matrix4x2::from_column_slice(&[0., 1., 2., 3., 4., 5., 6., 7.]);
+        let expected_cov = DMatrix::from_column_slice(
+            4,
+            4,
+            &[
+                1.00000000e+00,
+                3.67879441e-01,
+                1.83156389e-02,
+                1.23409804e-04,
+                3.67879441e-01,
+                1.00000000e+00,
+                3.67879441e-01,
+                1.83156389e-02,
+                1.83156389e-02,
+                3.67879441e-01,
+                1.00000000e+00,
+                3.67879441e-01,
+                1.23409804e-04,
+                1.83156389e-02,
+                3.67879441e-01,
+                1.00000000e+00,
+            ],
+        );
 
         let cov = kernel.covariance(&xs, &xs);
         assert!(expected_cov.relative_eq(&cov, 1E-8, 1E-8));
@@ -327,26 +349,69 @@ mod tests {
         let kernel = RBFKernel::new(1.0, 1.0);
 
         let x1 = Matrix5x1::from_column_slice(&[-4., -3., -2., -1., 1.]);
-        let x2 = DMatrix::from_column_slice(10, 1, &[
-            -5., -4., -3., -2., -1., 0., 1., 2., 3., 4.
-        ]);
-        
+        let x2 = DMatrix::from_column_slice(
+            10,
+            1,
+            &[-5., -4., -3., -2., -1., 0., 1., 2., 3., 4.],
+        );
+
         let cov = kernel.covariance(&x1, &x2);
-        let expected_cov = DMatrix::from_row_slice(5, 10, &[
-            6.06530660e-01, 1.00000000e+00, 6.06530660e-01, 1.35335283e-01,
-            1.11089965e-02, 3.35462628e-04, 3.72665317e-06, 1.52299797e-08,
-            2.28973485e-11, 1.26641655e-14,
-            1.35335283e-01, 6.06530660e-01, 1.00000000e+00, 6.06530660e-01,
-            1.35335283e-01, 1.11089965e-02, 3.35462628e-04, 3.72665317e-06,
-            1.52299797e-08, 2.28973485e-11,
-            1.11089965e-02, 1.35335283e-01, 6.06530660e-01, 1.00000000e+00,
-            6.06530660e-01, 1.35335283e-01, 1.11089965e-02, 3.35462628e-04,
-            3.72665317e-06, 1.52299797e-08,
-            3.35462628e-04, 1.11089965e-02, 1.35335283e-01, 6.06530660e-01,
-            1.00000000e+00, 6.06530660e-01, 1.35335283e-01, 1.11089965e-02,
-            3.35462628e-04, 3.72665317e-06,
-            1.52299797e-08, 3.72665317e-06, 3.35462628e-04, 1.11089965e-02, 1.35335283e-01, 6.06530660e-01, 1.00000000e+00, 6.06530660e-01, 1.35335283e-01, 1.11089965e-02
-        ]);
+        let expected_cov = DMatrix::from_row_slice(
+            5,
+            10,
+            &[
+                6.06530660e-01,
+                1.00000000e+00,
+                6.06530660e-01,
+                1.35335283e-01,
+                1.11089965e-02,
+                3.35462628e-04,
+                3.72665317e-06,
+                1.52299797e-08,
+                2.28973485e-11,
+                1.26641655e-14,
+                1.35335283e-01,
+                6.06530660e-01,
+                1.00000000e+00,
+                6.06530660e-01,
+                1.35335283e-01,
+                1.11089965e-02,
+                3.35462628e-04,
+                3.72665317e-06,
+                1.52299797e-08,
+                2.28973485e-11,
+                1.11089965e-02,
+                1.35335283e-01,
+                6.06530660e-01,
+                1.00000000e+00,
+                6.06530660e-01,
+                1.35335283e-01,
+                1.11089965e-02,
+                3.35462628e-04,
+                3.72665317e-06,
+                1.52299797e-08,
+                3.35462628e-04,
+                1.11089965e-02,
+                1.35335283e-01,
+                6.06530660e-01,
+                1.00000000e+00,
+                6.06530660e-01,
+                1.35335283e-01,
+                1.11089965e-02,
+                3.35462628e-04,
+                3.72665317e-06,
+                1.52299797e-08,
+                3.72665317e-06,
+                3.35462628e-04,
+                1.11089965e-02,
+                1.35335283e-01,
+                6.06530660e-01,
+                1.00000000e+00,
+                6.06530660e-01,
+                1.35335283e-01,
+                1.11089965e-02,
+            ],
+        );
         assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
     }
 }

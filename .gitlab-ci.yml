@@ -10,5 +10,5 @@ test:cargo-stable:
     script:
         - rustc --version && cargo --version
         - cargo build  --features serde_support
-        - time cargo test --jobs 1
-        - cargo bench -- --test
+        - time cargo test --jobs 1 --all
+        - cargo bench --all -- --test

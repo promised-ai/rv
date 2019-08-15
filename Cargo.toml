@@ -26,6 +26,7 @@ quadrature = "0.1"
 doc-comment = "0.3"
 getset = "0.0.7"
 once_cell = "0.2.6"
+optim = { path = "./lib-optim" }
 
 serde = {version = "1", optional = true}
 serde_derive = {version = "1", optional = true}
@@ -34,6 +35,11 @@ serde_derive = {version = "1", optional = true}
 assert = "0.7"
 criterion = "0.2"
 
+
+[workspace]
+members = [
+    "lib-optim"
+]
 
 # Benchmarks
 # ==========
