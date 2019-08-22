@@ -12,7 +12,7 @@ use special::Gamma;
 /// // The observed counts/frequencies
 /// let f_obs: Vec<u32> = vec![28, 31, 40, 35];
 ///
-/// // The probabilty with which each entry should occur
+/// // The probability with which each entry should occur
 /// let ps: Vec<f64> = vec![0.25; 4];
 ///
 /// let (stat, p) = x2_test(&f_obs, &ps);
@@ -20,7 +20,7 @@ use special::Gamma;
 /// ```
 pub fn x2_test(f_obs: &[u32], ps: &[f64]) -> (f64, f64) {
     let k = f_obs.len();
-    let nf = f_obs.iter().fold(0, |acc, ct| acc + ct) as f64;
+    let nf = f64::from(f_obs.iter().sum::<u32>());
     let x2 = nf
         * f_obs.iter().zip(ps.iter()).fold(0.0, |acc, (&o, &p)| {
             acc + (f64::from(o) / nf - p).powi(2) / p

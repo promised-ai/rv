@@ -110,7 +110,7 @@ where
 
     fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<X> {
         let d = rand::distributions::Uniform::new_inclusive(self.a, self.b);
-        rng.sample_iter(&d).take(n).map(|t| X::from(t)).collect()
+        rng.sample_iter(&d).take(n).map(X::from).collect()
     }
 }
 

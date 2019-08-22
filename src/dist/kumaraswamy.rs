@@ -278,7 +278,9 @@ macro_rules! impl_kumaraswamy {
             fn mode(&self) -> Option<$kind> {
                 if self.a < 1.0 || self.b < 1.0 {
                     None
-                } else if self.a == 1.0 && self.b == 1.0 {
+                } else if (self.a - 1.0).abs() < f64::EPSILON
+                    && (self.b - 1.0).abs() < f64::EPSILON
+                {
                     None
                 } else {
                     let mode = ((self.a - 1.0) / (self.a * self.b - 1.0))

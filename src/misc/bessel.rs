@@ -1,3 +1,5 @@
+#[allow(clippy::unreadable_literal)]
+#[allow(clippy::excessive_precision)]
 const BESSI0_COEFFS_A: [f64; 30] = [
     -4.41534164647933937950E-18,
     3.33079451882223809783E-17,
@@ -31,6 +33,8 @@ const BESSI0_COEFFS_A: [f64; 30] = [
     6.76795274409476084995E-1,
 ];
 
+#[allow(clippy::unreadable_literal)]
+#[allow(clippy::excessive_precision)]
 const BESSI0_COEFFS_B: [f64; 25] = [
     -7.23318048787475395456E-18,
     -4.83050448594418207126E-18,
@@ -59,6 +63,8 @@ const BESSI0_COEFFS_B: [f64; 25] = [
     8.04490411014108831608E-1,
 ];
 
+#[allow(clippy::unreadable_literal)]
+#[allow(clippy::excessive_precision)]
 const BESSI1_COEFFS_A: [f64; 29] = [
     2.77791411276104639959E-18,
     -2.11142121435816608115E-17,
@@ -91,6 +97,8 @@ const BESSI1_COEFFS_A: [f64; 29] = [
     2.52587186443633654823E-1,
 ];
 
+#[allow(clippy::unreadable_literal)]
+#[allow(clippy::excessive_precision)]
 const BESSI1_COEFFS_B: [f64; 25] = [
     7.51729631084210481353E-18,
     4.41434832307170791151E-18,

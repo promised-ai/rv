@@ -199,7 +199,7 @@ macro_rules! impl_int_traits {
 
 impl Mean<f64> for BetaBinomial {
     fn mean(&self) -> Option<f64> {
-        let nf = self.n as f64;
+        let nf = f64::from(self.n);
         let m = self.alpha / (self.alpha + self.beta);
         Some(nf * m)
     }
@@ -207,7 +207,7 @@ impl Mean<f64> for BetaBinomial {
 
 impl Variance<f64> for BetaBinomial {
     fn variance(&self) -> Option<f64> {
-        let nf = self.n as f64;
+        let nf = f64::from(self.n);
         let apb = self.alpha + self.beta;
         let v_numer = nf * self.alpha * self.beta * (apb + nf);
         let v_denom = apb * apb * (apb + 1.0);
