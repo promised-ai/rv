@@ -9,11 +9,81 @@ use once_cell::sync::OnceCell;
 use crate::dist::MvGaussian;
 use crate::result;
 use crate::traits::Rv;
+use crate::consts::HALF_LN_2PI;
+use crate::dist::Gamma;
 
 pub mod kernel;
-use kernel::*;
+use kernel::Kernel;
 
-use optim::bfgs;
+use optim::bfgs::{outer_product_self, BFGSParams, bfgs};
+use optim::OptimizeError;
+
+impl From<OptimizeError> for result::Error {
+    fn from(optimize_error: OptimizeError) -> result::Error {
+        result::Error::new(
+            result::ErrorKind::InvalidParameterError,
+            &format!("Optimization Failed: {:?}", optimize_error)
+        )
+    }
+}
+
+
+/// Model of noise to use in Gaussian Process
+pub enum NoiseModel<'a> {
+    /// The same noise is applied to all values
+    Uniform(f64),
+    /// Different noise values are applied to each y-value
+    PerPoint(&'a DVector<f64>),
+}
+
+impl<'a> Default for NoiseModel<'a> {
+    fn default() -> Self {
+        NoiseModel::Uniform(1E-10)
+    }
+}
+
+impl<'a> NoiseModel<'a> {
+    /// Enact the given noise model onto the given covariance matrix
+    pub fn add_noise_to_kernel(&self, cov: &DMatrix<f64>) -> DMatrix<f64> {
+        match self {
+            NoiseModel::Uniform(noise) => {
+                let diag = DVector::from_element(cov.nrows(), noise.powi(2));
+                cov + &DMatrix::from_diagonal(&diag)
+            },
+            NoiseModel::PerPoint(sigma) => {
+                assert_eq!(cov.nrows(), sigma.nrows(), "Per point noise must be the same size as y_train");
+                let s = sigma.map(|e| e * e);
+                cov + &DMatrix::from_diagonal(&s)
+            }
+        }
+    }
+}
+
+/// Parameters for running GaussianProcess
+pub struct GaussianProcessParams<'a> {
+    /// Type of noise
+    noise_model: NoiseModel<'a>,
+    /// Optimization parameters
+    bfgs_params: BFGSParams,
+}
+
+impl<'a> GaussianProcessParams<'a> {
+    pub fn with_bfgs_params(self, bfgs_params: BFGSParams) -> Self {
+        Self {
+            bfgs_params,
+            ..self
+        }
+    }
+}
+
+impl<'a> Default for GaussianProcessParams<'a> {
+    fn default() -> Self {
+        Self {
+            noise_model:  NoiseModel::default(),
+            bfgs_params: BFGSParams::default(),
+        }
+    }
+}
 
 pub struct GaussianProcess<'a, K>
 where
@@ -23,40 +93,37 @@ where
     l: Cholesky<f64, Dynamic>,
     /// Dual coefficients of training data in kernel space.
     alpha: DVector<f64>,
-    kernel: &'a K,
+    /// Covariance Kernel
+    kernel: K,
+    /// x values used in training
     x_train: &'a DMatrix<f64>,
+    /// y values used in training
     y_train: &'a DVector<f64>,
+    /// Inverse covariance matrix
     k_inv: OnceCell<DMatrix<f64>>,
+    /// Given parameters
+    params: GaussianProcessParams<'a>,
 }
 
 impl<'a, K> GaussianProcess<'a, K>
 where
     K: Kernel,
 {
+    /// Train a Gaussian Process on the given data points
+    ///
+    /// # Arguments
+    /// * `kernel` - Kernel to use to determine covariance
+    /// * `x_train` - Values to use for input into `f`
+    /// * `y_train` - Known values for `f(x)`
+    /// * `params` - GaussianProcessParams to use. Can just use `GaussianProcessParams::default()`.
+    /// 
     pub fn train(
-        kernel: &'a K,
+        kernel: K,
         x_train: &'a DMatrix<f64>,
         y_train: &'a DVector<f64>,
-        y_train_sigma: Option<&DVector<f64>>,
+        params: GaussianProcessParams<'a>,
     ) -> result::Result<Self> {
-        let eps: f64 = 1E-10;
-        let k: DMatrix<f64> = {
-            let k_no_noise = kernel.covariance(x_train, x_train);
-            match y_train_sigma {
-                Some(sigma) => {
-                    let s = sigma.map(|e| e * e);
-                    k_no_noise + &DMatrix::from_diagonal(&s)
-                }
-                None => {
-                    k_no_noise
-                        + eps
-                            * &DMatrix::identity(
-                                x_train.nrows(),
-                                x_train.nrows(),
-                            )
-                }
-            }
-        };
+        let k = params.noise_model.add_noise_to_kernel(&kernel.covariance(x_train, x_train));
 
         // Decompose K into Cholesky lower lower triangular matrix
         let l = match Cholesky::new(k) {
@@ -78,6 +145,7 @@ where
             x_train,
             y_train,
             k_inv: OnceCell::new(),
+            params,
         })
     }
 
@@ -96,12 +164,91 @@ where
         &(self.kernel)
     }
 
-    /*
     /// Return the log marginal likelihood
-    pub fn ln_m(&self) -> f64 {
-        let k = self.kernel(self.x_train);
+    pub fn ln_m(&mut self) -> Option<f64> {
+        let l = self.l();
+        let dlog_sum = l.l_dirty().diagonal().map(|x| x.ln()).sum();
+        let n: f64 = self.x_train.nrows() as f64;
+        let k_inv = self.k_inv().clone();
+        let y_train = self.y_train;
+        let alpha = k_inv * y_train;
+        Some(-0.5 * self.y_train.dot(&alpha) - dlog_sum - n * HALF_LN_2PI)
     }
-    */
+
+    /// Log-marginal likelihood 
+    pub fn ln_m_with_parameters(&self, theta: &DVector<f64>) -> Option<(f64, DVector<f64>)> {
+        let kernel = K::from_parameters(theta);
+
+        // GPML Equation 2.30
+        let (k, k_grad) = kernel.covariance_with_gradient(self.x_train);
+        let k = self.params.noise_model.add_noise_to_kernel(&k);
+
+        let m = k.nrows();
+        let k_chol = Cholesky::new(k)?;
+        let alpha = k_chol.solve(self.y_train);
+        let dlog_sum = k_chol.l_dirty().diagonal().map(|x| x.ln()).sum();
+        let n: f64 = self.x_train.nrows() as f64;
+        let ln_m = -0.5 * self.y_train.dot(&alpha) - dlog_sum - n * HALF_LN_2PI;
+
+        // GPML Equation 5.9
+        let aat_kinv = &outer_product_self(&alpha) - &k_chol.inverse();
+        let mut grad_ln_m = DVector::zeros(theta.len());
+        for i in 0..theta.len() {
+            let theta_i_grad = DMatrix::from_column_slice(m, m, k_grad.column(i).as_slice());
+            let mut sum = 0.0;
+            for j in 0..m {
+                sum += (aat_kinv.row(j) * theta_i_grad.column(j))[0];
+            }
+            grad_ln_m[i] = 0.5 * sum;
+        }
+        Some((ln_m, grad_ln_m))
+    }
+
+    /// Optimize kernel parameters s.t. ln_m is maximized
+    pub fn optimize<RNG: Rng>(self, n_tries: usize, rng: &mut RNG) -> result::Result<Self> {
+        let objective = |th: &DVector<f64>| {
+            let (ln_m, grad_ln_m) = self.ln_m_with_parameters(th)
+                .unwrap_or((
+                    std::f64::NEG_INFINITY,
+                    DVector::zeros(th.nrows())
+                ));
+            let grad_ln_m = grad_ln_m.map(|x| -x);
+            (-ln_m, grad_ln_m)
+        };
+
+        // Try optimization on given parameters
+        let (mut best_theta, mut best_ln_m) = match bfgs(self.kernel.parameters(), &self.params.bfgs_params, objective) {
+            Ok(opt_theta) => {
+                let opt_ln_m =  self.ln_m_with_parameters(&opt_theta)
+                    .map(|x| x.0)
+                    .unwrap_or(std::f64::NEG_INFINITY);
+                (opt_theta, opt_ln_m)
+            },
+            Err(e) => return Err(e.into()),
+        };
+
+        // Draw random numbers from gamma(2, 1) dist as parameters for the kernel
+        let dist = Gamma::new(2.0, 1.0).unwrap();
+        for _n_try in 0..n_tries {
+            let theta: DVector<f64> = DVector::from_column_slice(&dist.sample(best_theta.nrows(), rng));
+            match bfgs(theta, &self.params.bfgs_params, objective) {
+                Ok(opt_theta) => {
+                    let opt_ln_m =  self.ln_m_with_parameters(&opt_theta)
+                        .map(|x| x.0)
+                        .unwrap_or(std::f64::NEG_INFINITY);
+                    if opt_ln_m > best_ln_m {
+                        best_ln_m = opt_ln_m;
+                        best_theta = opt_theta;
+                    }
+                },
+                Err(_) => {}
+            }
+        }
+
+        let new_kernel = K::from_parameters(&best_theta);
+        let new_gp = GaussianProcess::train(new_kernel, self.x_train, self.y_train, self.params);
+        new_gp
+    }
 
     /// Return a `GaussianProcessPrediction` to preform prediction on.
     pub fn predict<'b>(
@@ -124,15 +271,22 @@ where
     }
 }
 
+/// Structure for making GP preditions
 pub struct GaussianProcessPrediction<'a, K>
 where
     K: Kernel,
 {
+    /// Parent GP
     gp: &'a mut GaussianProcess<'a, K>,
+    /// Mean of y values
     y_mean: DVector<f64>,
+    /// Intermediate matrix
     k_trans: DMatrix<f64>,
+    /// Values to predict `f(x)` against.
     xs: &'a DMatrix<f64>,
+    /// Covariance matrix
     cov: OnceCell<DMatrix<f64>>,
+    /// Output Distribution
     dist: OnceCell<MvGaussian>,
 }
 
@@ -168,6 +322,7 @@ where
         y_var.map(|e| e.sqrt())
     }
 
+    /// Return the MV Gaussian distribution which shows the predicted values
     pub fn dist(&mut self) -> &MvGaussian {
         let mean = (self.mean()).clone();
         let cov = (self.cov()).clone();
@@ -175,10 +330,12 @@ where
             .get_or_init(|| MvGaussian::new(mean, cov).unwrap())
     }
 
+    /// Draw a single value from the corresponding MV Gaussian
     pub fn draw<RNG: Rng>(&mut self, rng: &mut RNG) -> DVector<f64> {
         self.dist().draw(rng)
     }
 
+    /// Return a number of samples from the MV Gaussian
     pub fn sample<RNG: Rng>(
         &mut self,
         size: usize,
@@ -192,6 +349,8 @@ where
 mod tests {
     use super::*;
     use crate::process::gaussian::kernel::RBFKernel;
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
 
     fn arange(start: f64, stop: f64, step_size: f64) -> DMatrix<f64> {
         let size = ((stop - start) / step_size).floor() as usize;
@@ -207,7 +366,7 @@ mod tests {
 
         let kernel = RBFKernel::new(1.0, 1.0);
         let mut gp =
-            GaussianProcess::train(&kernel, &x_train, &y_train, None).unwrap();
+            GaussianProcess::train(kernel, &x_train, &y_train, GaussianProcessParams::default()).unwrap();
 
         let xs: DMatrix<f64> = arange(-5.0, 5.0, 1.0);
         let mut pred = gp.predict(&xs);
@@ -341,5 +500,65 @@ mod tests {
 
         let cov = pred.cov();
         assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7))
+    }
+
+    #[test]
+    fn log_marginal() {
+        let x_train: DMatrix<f64> =
+            DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
+        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+
+        let kernel = RBFKernel::new(1.0, 1.0);
+        let parameters = kernel.parameters();
+        let gp =
+            GaussianProcess::train(kernel, &x_train, &y_train, GaussianProcessParams::default()).unwrap();
+        let (ln_m, grad_ln_m) = gp.ln_m_with_parameters(&parameters).expect("Should be Some");
+
+        assert::close(ln_m, -5.0291400410702, 1E-7);
+        assert!(grad_ln_m.relative_eq(&DVector::from_column_slice(&[-2.382220635221591, 2.068285412616592]), 1E-10, 1E-10));
+    }
+
+    #[test]
+    fn ln_m() {
+        let x_train: DMatrix<f64> =
+            DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
+        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+
+        let kernel = RBFKernel::new(1.1050632308871875, 1.9948920586236607);
+        let mut gp =
+            GaussianProcess::train(kernel, &x_train, &y_train, GaussianProcessParams::default()).unwrap();
+
+        assert::close(gp.ln_m().unwrap(), -3.41487008, 1E-7);
+    }
+
+    #[test]
+    fn optimize_gp() {
+        let mut rng = StdRng::seed_from_u64(0x1234);
+        let x_train: DMatrix<f64> =
+            DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
+        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+
+        let kernel = RBFKernel::new(1.0, 1.0);
+        let gp_params = GaussianProcessParams::default()
+            .with_bfgs_params(
+                BFGSParams::default()
+                    .with_accuracy(1E-5)
+            );
+            
+        let gp =
+            GaussianProcess::train(kernel, &x_train, &y_train, gp_params).unwrap();
+
+        let mut gp = gp.optimize(10, &mut rng).expect("Failed to optimize");
+        let opt_params = gp.kernel().parameters();
+
+        assert!(
+            opt_params.relative_eq(
+                &DVector::from_column_slice(&[1.1050632308871875, 1.9948920586236607]),
+                1E-5,
+                1E-5
+            )
+        );
+        assert::close(gp.ln_m_with_parameters(&opt_params).unwrap().0, -3.41487008, 1E-5);
+        assert::close(gp.ln_m().unwrap(), -3.41487008, 1E-5);
     }
 }

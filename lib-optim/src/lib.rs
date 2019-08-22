@@ -3,6 +3,7 @@
 pub mod bfgs;
 pub mod line_search;
 pub mod root_finding;
+//pub mod lbfgsb;
 
 pub type Result<T> = std::result::Result<T, OptimizeError>;
 

@@ -7,9 +7,10 @@ use nalgebra::base::Norm;
 use nalgebra::{DMatrix, DVector};
 use crate::line_search::{WolfeParams, wolfe_search};
 use crate::OptimizeError;
+use log::debug;
 
 #[inline]
-fn outer_product_self(col: &DVector<f64>) -> DMatrix<f64> {
+pub fn outer_product_self(col: &DVector<f64>) -> DMatrix<f64> {
     let row = DMatrix::from_row_slice(1, col.nrows(), col.as_slice());
     col * row
 }
@@ -17,9 +18,11 @@ fn outer_product_self(col: &DVector<f64>) -> DMatrix<f64> {
 /// Parameters for the BFGS Optimizer
 pub struct BFGSParams {
     /// Maximum number of iterations to run
-    max_iter: usize,
+    pub max_iter: usize,
     /// Parameters given to the Wolfe line search algorithm.
-    wolfe_params: WolfeParams,
+    pub wolfe_params: WolfeParams,
+    /// Exit accuracy
+    pub accuracy: f64,
 }
 
 impl Default for BFGSParams {
@@ -27,13 +30,36 @@ impl Default for BFGSParams {
         Self {
             max_iter: 1000,
             wolfe_params: WolfeParams::default(),
+            accuracy: 1E-7,
+        }
+    }
+}
+
+impl BFGSParams {
+    pub fn with_accuracy(self, accuracy: f64) -> Self {
+        Self {
+            accuracy,
+            ..self
+        }
+    }
+
+    pub fn with_max_iter(self, max_iter: usize) -> Self {
+        Self {
+            max_iter,
+            ..self
+        }
+    }
+
+    pub fn with_wofle_params(self, wolfe_params: WolfeParams) -> Self {
+        Self {
+            wolfe_params,
+            ..self
         }
     }
 }
 
 pub fn bfgs<F>(
     x0: DVector<f64>,
-    g_tol: f64,
     params: &BFGSParams,
     f: F,
 ) -> Result<DVector<f64>, OptimizeError>
@@ -45,9 +71,9 @@ where
     let mut x = x0;
     let mut g_x = f(&x).1;
     let metric = EuclideanNorm {};
-    for _ in 0..params.max_iter {
+    for i in 0..params.max_iter {
         let search_dir = -1.0 * &b_inv * &g_x;
-        // println!("bfgs: i = {}, x = {}, search_dir = {}, b_inv = {}, g_x = {}", i, x, search_dir, b_inv, g_x);
+        debug!("bfgs: i = {}, x = {}, search_dir = {}, b_inv = {}, g_x = {}", i, x, search_dir, b_inv, g_x);
 
         let epsilon = wolfe_search(&params.wolfe_params, |e| {
             let offset = &search_dir * e;
@@ -58,13 +84,13 @@ where
 
         x += epsilon * &search_dir;
 
-        // println!("Wolfe Update: x = {}", x);
+        debug!("Wolfe Update: x = {}", x);
 
         let g_x_last = g_x.clone();
         g_x = f(&x).1;
 
         // Check stopping condition
-        if metric.norm(&g_x) < g_tol {
+        if metric.norm(&g_x) < params.accuracy {
             return Ok(x);
         }
 
@@ -89,7 +115,7 @@ mod tests {
 
     #[test]
     fn bfgs_x_cubed() {
-        let res = bfgs(DVector::zeros(1), 1E-5, &BFGSParams::default(), |v| {
+        let res = bfgs(DVector::zeros(1), &BFGSParams::default(), |v| {
             let x = v[0];
             let y = -(x-1.0).powi(3)- (x-1.0).powi(2);
             let dy_dx = -3.0 * x.powi(2) + 4.0 * x - 1.0;
@@ -111,7 +137,7 @@ mod tests {
             (y, DVector::from_column_slice(&[gx, gy]))
         };
 
-        let xmin = bfgs(x0, 1E-5, &BFGSParams::default(), f);
+        let xmin = bfgs(x0, &BFGSParams::default(), f);
         assert!(xmin.is_ok());
         let expected = DVector::from_column_slice(&[1.0, 1.0]);
         assert!(xmin.unwrap().relative_eq(&expected, 1E-5, 1E-5));

@@ -33,8 +33,23 @@ pub trait Kernel {
     /// Return the corresponding parameter vector
     fn parameters(&self) -> DVector<f64>;
     /// Create a new kernel of the given type from the provided parameters.
-    fn from_parameters(param_vec: DVector<f64>) -> Self;
+    fn from_parameters(param_vec: &DVector<f64>) -> Self;
+
+    /// Covariance and Gradient.
+    /// Gradient is in the form (n*n, m) where n is the length of the input
+    /// matrix and m is the number of parameters on the kernel.
+    /// If the gradient is G_{ij}, then j represents the parameter number and i is the row-
+    /// major index.
+    fn covariance_with_gradient<R, C, S>(
+        &self, 
+        x: &Matrix<f64, R, C, S>,
+    ) -> (DMatrix<f64>, DMatrix<f64>)
+        where
+            R: Dim,
+            C: Dim,
+            S: Storage<f64, R, C>;
 }
+
 /*
 /// Kernel representing the sum of two other kernels
 pub struct AddKernel<A, B>
@@ -139,7 +154,7 @@ impl<A, B> Kernel for ProductKernel<A, B>
 /// The distance metric here is L2 (Euclidean).
 ///
 /// ```math
-///     K(\mathbf{x}, \mathbf{x'}) = \exp\left(-\frac{\|\mathbf{x} - \mathbf{x'}\|^2}{2\sigma^2}\right)
+///     K(\mathbf{x}, \mathbf{x'}) = \sigma_f^2 \exp\left(-\frac{\|\mathbf{x} - \mathbf{x'}\|^2}{2\sigma^2}\right)
 /// ```
 ///
 /// # Parameters
@@ -204,11 +219,61 @@ impl Kernel for RBFKernel {
 
     fn parameters(&self) -> DVector<f64> {
         DVector::from_column_slice(&[self.sigma_f, self.l])
+        // DVector::from_column_slice(&[self.l])
     }
 
-    fn from_parameters(param_vec: DVector<f64>) -> Self {
-        assert_eq!(param_vec.len(), 2);
+    fn from_parameters(param_vec: &DVector<f64>) -> Self {
+        assert_eq!(param_vec.len(), 2, "The parameter vector for RBFKernel must be of length 2");
         Self::new(param_vec[0], param_vec[1])
+        // assert_eq!(param_vec.len(), 1, "The parameter vector for RBFKernel must be of length 1");
+        // Self::new(1.0, param_vec[0])
+    }
+
+    fn covariance_with_gradient<R, C, S>(
+        &self, 
+        x: &Matrix<f64, R, C, S>,
+    ) -> (DMatrix<f64>, DMatrix<f64>)
+        where
+            R: Dim,
+            C: Dim,
+            S: Storage<f64, R, C>,
+    {
+        let n = x.nrows();
+
+        let metric = EuclideanNorm {};
+        let mut dm = DMatrix::zeros(n, n);
+        let mut grad = DMatrix::zeros(n * n, 2);
+        // let mut grad = DMatrix::zeros(n * n, 1);
+
+        let s2 = self.sigma_f * self.sigma_f;
+        for i in 0..n {
+            for j in 0..=i {
+                // Save covariance
+                let d = metric.metric_distance(&x.row(i), &x.row(j)) / self.l;
+                let d2 = d * d;
+                let exp_d2 = (-d2 / 2.0).exp();
+                let cov_ij = s2 * exp_d2;
+
+                dm[(i, j)] = cov_ij;
+                if i != j {
+                    dm[(j, i)] = cov_ij;
+                }
+
+                // Save gradient
+                let dc_ds = 2.0 * self.sigma_f * exp_d2;
+                let dc_dl = d2 * cov_ij / self.l;
+                grad[(i * n + j, 0)] = dc_ds;
+                grad[(i * n + j, 1)] = dc_dl;
+                // grad[(i * n + j, 0)] = dc_dl;
+                if i != j {
+                    grad[(j * n + i, 0)] = dc_ds;
+                    grad[(j * n + i, 1)] = dc_dl;
+                    // grad[(j * n + i, 0)] = dc_dl;
+                }
+            }
+        }
+
+        (dm, grad)
     }
 }
 
@@ -413,5 +478,55 @@ mod tests {
             ],
         );
         assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
+    }
+
+    #[test]
+    fn rbf_gradient() {
+        const E: f64 = std::f64::consts::E;
+        let x = DMatrix::from_column_slice(2, 2, &[1.0, 3.0, 2.0, 4.0]);
+        // x: 
+        // ┌     ┐
+        // │ 1 2 │
+        // │ 3 4 │
+        // └     ┘
+
+        // RBF(1, 1)
+        let r = RBFKernel::new(1.0, 1.0);
+        let (cov, grad) = r.covariance_with_gradient(&x);
+
+        let expected_cov = DMatrix::from_row_slice(2, 2, &[
+          1.0, 1.0 / E.powi(4),
+          1.0 / E.powi(4) , 1.0,
+        ]);
+
+        let expected_grad = DMatrix::from_row_slice(4, 2, &[
+            2.0, 0.0,
+            2.0 / E.powi(4), 8.0 / E.powi(4),
+            2.0 / E.powi(4), 8.0 / E.powi(4),
+            2.0, 0.0,
+        ]);
+
+        assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
+        assert!(grad.relative_eq(&expected_grad, 1E-5, 1E-5));
+
+        // RBF(3, 4)
+        let r = RBFKernel::new(3.0, 4.0);
+
+        let (cov, grad) = r.covariance_with_gradient(&x);
+
+        let expected_cov = DMatrix::from_row_slice(2, 2, &[
+          9.0, 9.0 / E.powf(1.0 / 4.0),
+          9.0 / E.powf(1.0 / 4.0), 9.0,
+        ]);
+
+        let expected_grad = DMatrix::from_row_slice(4, 2, &[
+            6.0, 0.0,
+            6.0 / E.powf(0.25), (9.0 / 8.0) / E.powf(0.25),
+            6.0 / E.powf(0.25), (9.0 / 8.0) / E.powf(0.25),
+            6.0, 0.0,
+        ]);
+
+        assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
+        assert!(grad.relative_eq(&expected_grad, 1E-5, 1E-5));
     }
 }

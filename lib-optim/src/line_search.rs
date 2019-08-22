@@ -1,22 +1,23 @@
 //! Line search methods
 
 use crate::OptimizeError;
+use log::debug;
 
 /// Wolfe Algorithm Parameters
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct WolfeParams {
     /// Slope coefficient number 1
-    c1: f64,
+    pub c1: f64,
     /// Slope coefficient number 2
-    c2: f64,
+    pub c2: f64,
     /// Minimum acceptable value of x.
-    amin: f64,
+    pub amin: f64,
     /// Maximal acceptable value of x.
-    amax: f64,
+    pub amax: f64,
     /// Desired tolerance
-    xtol: f64,
+    pub xtol: f64,
     /// Maximum number of iterators 
-    max_iter: usize,
+    pub max_iter: usize,
 }
 
 impl Default for WolfeParams {
@@ -78,12 +79,17 @@ fn cubic_min(
     if radical < 0.0 {
         None
     } else {
-        Some(a + (-c1 + radical.sqrt()) / (3.0 * c2))
+        let res = a + (-c1 + radical.sqrt()) / (3.0 * c2);
+        if res.is_nan() {
+            None
+        } else {
+            Some(res)
+        }
     }
 }
 
 /// Wolfe Zoom function
-/// Reference: Algorithm 3.3 of Numerical Optimization, Jorge Nocedal & Stephen Wright, 1960.
+/// Reference: Algorithm 3.6 of Numerical Optimization, Jorge Nocedal & Stephen Wright, 1960.
 fn zoom<F>(
     alpha_lo: f64,
     alpha_hi: f64,
@@ -94,13 +100,13 @@ fn zoom<F>(
     derphi_0: f64,
     c1: f64,
     c2: f64,
+    max_iter: usize,
     f: F,
 ) -> Result<f64, OptimizeError>
 where
     F: Fn(f64) -> (f64, f64),
 {
-    // println!("        zoom(a_lo = {}, a_hi = {}, phi_lo = {}, derphi_lo = {}, phi_hi = {}, phi_0 = {}, derphi_0 = {})", alpha_lo, alpha_hi, phi_lo, derphi_lo, phi_hi, phi_0, derphi_0);
-    const MAX_ITER: usize = 10;
+    debug!("zoom(a_lo = {}, a_hi = {}, phi_lo = {}, derphi_lo = {}, phi_hi = {}, phi_0 = {}, derphi_0 = {})", alpha_lo, alpha_hi, phi_lo, derphi_lo, phi_hi, phi_0, derphi_0);
     const DELTA1: f64 = 0.2;
     const DELTA2: f64 = 0.1;
 
@@ -115,10 +121,10 @@ where
     let mut aj: Option<f64> = None;
     let mut cchk: f64 = 0.0;
 
-    for i in 0..MAX_ITER {
-        // println!("        zoom: i = {}, a_lo = {:0.3}, a_rec = {:0.3}, a_hi = {:0.3}, a_j = {:0.3}",
-        //     i, alpha_lo, alpha_rec, alpha_hi, aj.unwrap_or(-1.0)
-        // );
+    for i in 0..max_iter {
+        debug!("iteration = {}, a_lo = {:0.3}, a_rec = {:0.3}, a_hi = {:0.3}, a_j = {:0.3}",
+            i, alpha_lo, alpha_rec, alpha_hi, aj.unwrap_or(-1.0)
+        );
         let delta_alpha = alpha_hi - alpha_lo;
         let (a, b) = if delta_alpha < 0.0 {
             (alpha_hi, alpha_lo)
@@ -132,25 +138,29 @@ where
                 alpha_lo, phi_lo, derphi_lo, alpha_hi, phi_hi, alpha_rec,
                 phi_rec,
             );
-            // println!("            cubic guess = {}", aj.unwrap_or(-1.0));
+            debug!("cubic guess = {}", aj.unwrap_or(-1.0));
         }
 
         if i == 0
             || aj.is_none()
+            || aj.unwrap().is_nan()
             || aj.unwrap() > b - cchk
             || aj.unwrap() < a + cchk
         {
             let qchk = DELTA2 * delta_alpha;
             aj = quad_min(alpha_lo, phi_lo, derphi_lo, alpha_hi, phi_hi);
             // println!("            quad guess = {}", aj.unwrap_or(-1.0));
-            if aj.is_none() || aj.unwrap() > b - qchk || aj.unwrap() < a + qchk
+            if aj.is_none() || aj.unwrap().is_nan() || aj.unwrap() > b - qchk || aj.unwrap() < a + qchk
             {
                 aj = Some(alpha_lo + 0.5 * delta_alpha);
-                // println!("            bisect guess = {}", aj.unwrap_or(-1.0));
+                debug!("bisect guess = {}", aj.unwrap_or(-1.0));
             }
         }
 
         let (phi_aj, derphi_aj) = f(aj.unwrap());
+        debug!("phi_aj = {}, derphi_aj = {}", phi_aj, derphi_aj);
+        debug!("phi_0 + c1 * aj * derphi_0 = {}", phi_0 + c1 * aj.unwrap() * derphi_0);
+        debug!("del = {}", phi_aj - (phi_0 + c1 * aj.unwrap() * derphi_0));
 
         if phi_aj > phi_0 + c1 * aj.unwrap() * derphi_0 || phi_aj >= phi_lo {
             alpha_rec = alpha_hi;
@@ -158,6 +168,7 @@ where
             alpha_hi = aj.unwrap();
             phi_hi = phi_aj;
         } else {
+            // println!("            -c2 * derphi_0 = {}", -c2 * derphi_0);
             if derphi_aj.abs() <= -c2 * derphi_0 {
                 return Ok(aj.unwrap());
             } else if derphi_aj * delta_alpha >= 0.0 {
@@ -191,10 +202,10 @@ where
     let (mut phi_a0, mut derphi_a0) = (phi_0, derphi_0);
     let (mut phi_a1, mut derphi_a1) = f(alpha1);
 
-    // println!("    wolfe_search (init): phi_0 = {}, derphi_0 = {}", phi_0, derphi_0);
+    debug!("wolfe_search (init): phi_0 = {}, derphi_0 = {}", phi_0, derphi_0);
 
     for i in 0..params.max_iter {
-        // println!("    wolfe_search: i = {}, alpha0 = {}, alpha1 = {}", i, alpha0, alpha1);
+        debug!("    wolfe_search: i = {}, alpha0 = {}, alpha1 = {}", i, alpha0, alpha1);
         if alpha1 == 0.0 {
             return Err(OptimizeError::RoundingError);
         }
@@ -204,7 +215,7 @@ where
         {
             return zoom(
                 alpha0, alpha1, phi_a0, derphi_a0, phi_a1, phi_0,
-                derphi_0, params.c1, params.c2, f
+                derphi_0, params.c1, params.c2, params.max_iter, f
             );
         }
 
@@ -215,7 +226,7 @@ where
         if derphi_a1 >= 0.0 {
             return zoom(
                 alpha1, alpha0, phi_a1, derphi_a1, phi_a0, phi_0,
-                derphi_0, params.c1, params.c2, f
+                derphi_0, params.c1, params.c2, params.max_iter, f
             );
         }
         let alpha2 = (2.0 * alpha1).max(params.amax);
