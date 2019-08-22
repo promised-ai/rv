@@ -26,6 +26,8 @@ impl ContinuousDistr<Bernoulli> for Beta {}
 
 impl ConjugatePrior<bool, Bernoulli> for Beta {
     type Posterior = Self;
+
+    #[allow(clippy::many_single_char_names)]
     fn posterior(&self, x: &DataOrSuffStat<bool, Bernoulli>) -> Self {
         let (n, k) = match x {
             DataOrSuffStat::Data(ref xs) => {

@@ -18,7 +18,7 @@ use std::ops::AddAssign;
 /// assert_eq!(vec_to_string(&xs, 5).as_str(), "[0, 1, 2, 3, ... , 5]");
 ///
 /// ```
-pub fn vec_to_string<T: Debug>(xs: &Vec<T>, max_entries: usize) -> String {
+pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
     let mut out = String::new();
     out += "[";
     let n = xs.len();

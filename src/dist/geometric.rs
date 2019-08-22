@@ -67,7 +67,7 @@ impl Geometric {
     {
         let u: f64 = Uniform::new(0.0, 1.0).unwrap().draw(rng);
         X::from_f64(((1.0 - u).ln() / (1.0 - p).ln()).ceil() - 1.0)
-            .unwrap_or(X::max_value())
+            .unwrap_or_else(X::max_value)
     }
 
     // Increase the value until the cdf surpasses the given p value.
