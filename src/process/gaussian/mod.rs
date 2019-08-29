@@ -194,7 +194,7 @@ where
         let aat_kinv = &outer_product_self(&alpha) - &k_chol.inverse();
         let mut grad_ln_m = DVector::zeros(theta.len());
         for i in 0..theta.len() {
-            let theta_i_grad = DMatrix::from_column_slice(m, m, k_grad.column(i).as_slice());
+            let theta_i_grad = &k_grad[i];
             let mut sum = 0.0;
             for j in 0..m {
                 sum += (aat_kinv.row(j) * theta_i_grad.column(j))[0];
@@ -348,7 +348,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::process::gaussian::kernel::RBFKernel;
+    use crate::process::gaussian::kernel::*;
     use rand::SeedableRng;
     use rand::rngs::StdRng;
 
@@ -364,7 +364,7 @@ mod tests {
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
 
-        let kernel = RBFKernel::new(1.0, 1.0);
+        let kernel = RBFKernel::new(1.0);
         let mut gp =
             GaussianProcess::train(kernel, &x_train, &y_train, GaussianProcessParams::default()).unwrap();
 
@@ -508,7 +508,7 @@ mod tests {
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
 
-        let kernel = RBFKernel::new(1.0, 1.0);
+        let kernel = RBFKernel::new(1.0);
         let parameters = kernel.parameters();
         let gp =
             GaussianProcess::train(kernel, &x_train, &y_train, GaussianProcessParams::default()).unwrap();
@@ -524,10 +524,12 @@ mod tests {
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
 
-        let kernel = RBFKernel::new(1.1050632308871875, 1.9948920586236607);
-        let mut gp =
-            GaussianProcess::train(kernel, &x_train, &y_train, GaussianProcessParams::default()).unwrap();
+        let kernel = ProductKernel::new(
+            ConstantKernel::new(1.1050632308871875),
+            RBFKernel::new(1.9948920586236607)
+        );
 
+        let mut gp = GaussianProcess::train(kernel, &x_train, &y_train, GaussianProcessParams::default()).unwrap();
         assert::close(gp.ln_m().unwrap(), -3.41487008, 1E-7);
     }
 
@@ -538,7 +540,7 @@ mod tests {
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
 
-        let kernel = RBFKernel::new(1.0, 1.0);
+        let kernel = RBFKernel::new(1.0);
         let gp_params = GaussianProcessParams::default()
             .with_bfgs_params(
                 BFGSParams::default()
