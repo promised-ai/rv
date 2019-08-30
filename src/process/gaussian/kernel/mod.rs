@@ -339,7 +339,7 @@ impl<A, B> Kernel for AddKernel<A, B>
         let a = self.a.parameters();
         let b = self.b.parameters();
 
-        DVector::from_columns(&[a, b])
+        DVector::from_column_slice(&[a.as_slice(), b.as_slice()].concat())
     }
 
     fn from_parameters(param_vec: &DVector<f64>) -> Self {
@@ -438,7 +438,7 @@ impl<A, B> Kernel for ProductKernel<A, B>
         let a = self.a.parameters();
         let b = self.b.parameters();
 
-        DVector::from_columns(&[a, b])
+        DVector::from_column_slice(&[a.as_slice(), b.as_slice()].concat())
     }
 
     fn from_parameters(param_vec: &DVector<f64>) -> Self {
@@ -466,10 +466,9 @@ impl<A, B> Kernel for ProductKernel<A, B>
         let (cov_b, grad_b) = self.b.covariance_with_gradient(x);
 
         let new_cov = cov_a.component_mul(&cov_b);
-        let new_grad = grad_a
-            .left_mul(&cov_b)
+        let new_grad = grad_a.component_mul(&cov_b)
             .concat_cols(
-                &grad_b.right_mul(&cov_a)
+                &grad_b.component_mul(&cov_a)
             );
 
         (new_cov, new_grad)
@@ -645,12 +644,12 @@ impl Kernel for WhiteKernel {
     }
 
     fn parameters(&self) -> DVector<f64> {
-        DVector::from_column_slice(&[self.noise_level])
+        DVector::from_column_slice(&[self.noise_level.ln()])
     }
 
     fn from_parameters(param_vec: &DVector<f64>) -> Self {
         assert_eq!(param_vec.nrows(), 1, "Only one parameter expected");
-        Self::new(param_vec[0])
+        Self::new(param_vec[0].exp())
     }
 
     fn consume_parameters(param_vec: &DVector<f64>) -> (Self, DVector<f64>) {
@@ -733,13 +732,13 @@ impl Kernel for RationalQuadratic
     }
 
     fn parameters(&self) -> DVector<f64> {
-        DVector::from_column_slice(&[self.scale, self.mixture])
+        DVector::from_column_slice(&[self.scale.ln(), self.mixture.ln()])
     }
 
     fn from_parameters(param_vec: &DVector<f64>) -> Self {
         assert_eq!(param_vec.nrows(), 2, "");
-        let scale = param_vec[0];
-        let mixture = param_vec[1];
+        let scale = param_vec[0].exp();
+        let mixture = param_vec[1].exp();
         Self::new(scale, mixture)
     }
 
@@ -970,7 +969,7 @@ mod tests {
                 1.11089965e-02,
             ],
         );
-        assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
+        assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
     }
 
     #[test]
@@ -994,8 +993,8 @@ mod tests {
             8.0 / E.powi(4),
             0.0,
         ]);
-        assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
-        assert!(grad.relative_eq(&expected_grad, 1E-5, 1E-5));
+        assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
+        assert!(grad.relative_eq(&expected_grad, 1E-8, 1E-8));
 
         let r = RBFKernel::new(4.0);
         let (cov, grad) = r.covariance_with_gradient(&x);
@@ -1012,14 +1011,24 @@ mod tests {
             0.0,
         ]);
 
-        assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
-        assert!(grad.relative_eq(&expected_grad, 1E-5, 1E-5));
+        assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
+        assert!(grad.relative_eq(&expected_grad, 1E-8, 1E-8));
     }
 
     #[test]
     fn constant_kernel() {
         let kernel = ConstantKernel::new(3.0);
         assert::close(kernel.parameters()[0], 3.0_f64.ln(), 1E-10);
+
+        assert!(
+            kernel.parameters().relative_eq(
+                &ConstantKernel::from_parameters(
+                    &DVector::from_column_slice(&[3.0_f64.ln()])
+                ).parameters(),
+                1E-10,
+                1E-10
+            )
+        );
 
         let x = DMatrix::from_column_slice(2, 2, &[1.0, 3.0, 2.0, 4.0]);
         let y = DMatrix::from_column_slice(2, 2, &[5.0, 6.0, 7.0, 8.0]);
@@ -1036,20 +1045,33 @@ mod tests {
             3.0, 3.0,
         ]);
         
-        assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
-        assert!(grad.relative_eq(&expected_grad, 1E-5, 1E-5));
+        assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
+        assert!(grad.relative_eq(&expected_grad, 1E-8, 1E-8));
 
         let cov = kernel.covariance(&x, &y);
         let expected_cov = DMatrix::from_row_slice(2, 2, &[
             3.0, 3.0,
             3.0, 3.0
         ]);
-        assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
+        assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
     }
 
     #[test]
     fn rational_quadratic() {
         let kernel = RationalQuadratic::new(3.0, 5.0);
+        assert::close(kernel.parameters()[0], 3.0_f64.ln(), 1E-10);
+        assert::close(kernel.parameters()[1], 5.0_f64.ln(), 1E-10);
+        
+        assert!(
+            kernel.parameters().relative_eq(
+                &RationalQuadratic::from_parameters(
+                    &DVector::from_column_slice(&[3.0_f64.ln(), 5.0_f64.ln()])
+                ).parameters(),
+                1E-10,
+                1E-10
+            )
+        );
+
         let x = DMatrix::from_row_slice(2, 2, &[
             1.0, 2.0,
             3.0, 4.0
@@ -1064,7 +1086,7 @@ mod tests {
             5_904_900_000.0 / 38_579_489_651.0, 5_904_900_000.0 / 78_502_725_751.0,
             5_904_900_000.0 / 11_592_740_742.0, 1_889_568.0 / 6_436_343.0
         ]);
-        assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
+        assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
 
         let (cov, grad) = kernel.covariance_with_gradient(&x);
 
@@ -1081,14 +1103,28 @@ mod tests {
             0.0, eg_a,
             eg_a, 0.0
         ]);
-        assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
-        assert!(grad.relative_eq(&expected_grad, 1E-5, 1E-5));
+        assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
+        assert!(grad.relative_eq(&expected_grad, 1E-8, 1E-8));
     }
 
 
     #[test]
     fn white_kernel() {
         let kernel = WhiteKernel::new(3.0);
+
+        assert::close(kernel.parameters()[0], 3.0_f64.ln(), 1E-10);
+        
+        assert!(
+            kernel.parameters().relative_eq(
+                &WhiteKernel::from_parameters(
+                    &DVector::from_column_slice(&[3.0_f64.ln()])
+                ).parameters(),
+                1E-10,
+                1E-10
+            )
+        );
+
+
         let x = DMatrix::from_row_slice(2, 2, &[
             1.0, 2.0,
             3.0, 4.0
@@ -1103,7 +1139,7 @@ mod tests {
             3.0, 0.0,
             0.0, 3.0,
         ]);
-        assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
+        assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
 
         let (cov, grad) = kernel.covariance_with_gradient(&x);
 
@@ -1116,7 +1152,41 @@ mod tests {
             3.0, 0.0,
             0.0, 3.0,
         ]);
-        assert!(cov.relative_eq(&expected_cov, 1E-5, 1E-5));
-        assert!(grad.relative_eq(&expected_grad, 1E-5, 1E-5));
+        assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
+        assert!(grad.relative_eq(&expected_grad, 1E-8, 1E-8));
+    }
+
+    #[test]
+    fn product_kernel() {
+        let kernel = ProductKernel::new(
+            ConstantKernel::new(3.0),
+            WhiteKernel::new(1.0)
+        );
+        let x = DMatrix::from_row_slice(2, 2, &[
+            1.0, 2.0,
+            3.0, 4.0
+        ]);
+
+        let expected_cov = DMatrix::from_row_slice(2, 2, &[
+            3.0, 0.0,
+            0.0, 3.0
+        ]);
+
+        let expected_grad = CovGrad::new(&[
+            DMatrix::from_row_slice(2, 2, &[
+                3.0, 0.0,
+                0.0, 3.0
+            ]),
+            DMatrix::from_row_slice(2, 2, &[
+                3.0, 0.0,
+                0.0, 3.0
+            ]),
+        ]);
+
+        let (cov, grad) = kernel.covariance_with_gradient(&x);
+        println!("cov = {}, grad = {}", cov, grad);
+
+        assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7));
+        assert!(grad.relative_eq(&expected_grad, 1E-7, 1E-7));
     }
 }

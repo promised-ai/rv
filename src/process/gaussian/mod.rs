@@ -165,14 +165,14 @@ where
     }
 
     /// Return the log marginal likelihood
-    pub fn ln_m(&mut self) -> Option<f64> {
+    pub fn ln_m(&mut self) -> f64 {
         let l = self.l();
         let dlog_sum = l.l_dirty().diagonal().map(|x| x.ln()).sum();
         let n: f64 = self.x_train.nrows() as f64;
         let k_inv = self.k_inv().clone();
         let y_train = self.y_train;
         let alpha = k_inv * y_train;
-        Some(-0.5 * self.y_train.dot(&alpha) - dlog_sum - n * HALF_LN_2PI)
+        -0.5 * self.y_train.dot(&alpha) - dlog_sum - n * HALF_LN_2PI
     }
 
     /// Log-marginal likelihood 
@@ -351,6 +351,11 @@ mod tests {
     use crate::process::gaussian::kernel::*;
     use rand::SeedableRng;
     use rand::rngs::StdRng;
+    use env_logger;
+
+    fn logging_init() {
+        let _ = env_logger::builder().is_test(true).try_init();
+    }
 
     fn arange(start: f64, stop: f64, step_size: f64) -> DMatrix<f64> {
         let size = ((stop - start) / step_size).floor() as usize;
@@ -510,31 +515,25 @@ mod tests {
 
         let kernel = RBFKernel::new(1.0);
         let parameters = kernel.parameters();
-        let gp =
+        
+        let expected_ln_m = -5.029140040847684;
+        let expected_grad = DVector::from_column_slice(&[2.06828541]);
+
+        let mut gp =
             GaussianProcess::train(kernel, &x_train, &y_train, GaussianProcessParams::default()).unwrap();
+        // Without Gradient
+        assert::close(gp.ln_m(), expected_ln_m, 1E-7);
+
+        // With Gradient
         let (ln_m, grad_ln_m) = gp.ln_m_with_parameters(&parameters).expect("Should be Some");
-
-        assert::close(ln_m, -5.0291400410702, 1E-7);
-        assert!(grad_ln_m.relative_eq(&DVector::from_column_slice(&[-2.382220635221591, 2.068285412616592]), 1E-10, 1E-10));
+        assert::close(ln_m, expected_ln_m, 1E-7);
+        assert!(grad_ln_m.relative_eq(&expected_grad, 1E-7, 1E-7));
     }
 
     #[test]
-    fn ln_m() {
-        let x_train: DMatrix<f64> =
-            DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+    fn optimize_gp_1_param() {
+        logging_init();
 
-        let kernel = ProductKernel::new(
-            ConstantKernel::new(1.1050632308871875),
-            RBFKernel::new(1.9948920586236607)
-        );
-
-        let mut gp = GaussianProcess::train(kernel, &x_train, &y_train, GaussianProcessParams::default()).unwrap();
-        assert::close(gp.ln_m().unwrap(), -3.41487008, 1E-7);
-    }
-
-    #[test]
-    fn optimize_gp() {
         let mut rng = StdRng::seed_from_u64(0x1234);
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
@@ -555,12 +554,49 @@ mod tests {
 
         assert!(
             opt_params.relative_eq(
-                &DVector::from_column_slice(&[1.1050632308871875, 1.9948920586236607]),
+                &DVector::from_column_slice(&[0.6578541991730281]),
+                1E-7,
+                1E-7
+            )
+        );
+        assert::close(gp.ln_m(), -3.4449378334620895, 1E-7);
+    }
+
+    #[test]
+    fn optimize_gp_2_param() {
+        logging_init();
+
+        let mut rng = StdRng::seed_from_u64(0x1234);
+        let x_train: DMatrix<f64> =
+            DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
+        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+
+        let kernel = ProductKernel::new(
+            ConstantKernel::new(1.0),
+            RBFKernel::new(1.0)
+        );
+        let gp_params = GaussianProcessParams::default()
+            .with_bfgs_params(
+                BFGSParams::default()
+                    .with_accuracy(1E-5)
+            );
+            
+        let gp =
+            GaussianProcess::train(kernel, &x_train, &y_train, gp_params).unwrap();
+
+        let mut gp = gp.optimize(10, &mut rng).expect("Failed to optimize");
+        let opt_params = gp.kernel().parameters();
+        println!("Found Opt Params = {}", opt_params);
+        println!("Found ln_m = {}", gp.ln_m());
+
+
+        assert!(
+            opt_params.relative_eq(
+                &DVector::from_column_slice(&[0.19980395, 0.69058964]),
                 1E-5,
                 1E-5
             )
         );
-        assert::close(gp.ln_m_with_parameters(&opt_params).unwrap().0, -3.41487008, 1E-5);
-        assert::close(gp.ln_m().unwrap(), -3.41487008, 1E-5);
+        assert::close(gp.ln_m(), -3.414870095916784, 1E-7);
     }
 }
