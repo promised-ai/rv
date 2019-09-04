@@ -2,7 +2,6 @@
 
 use crate::{OptimizeError, Result};
 
-
 /// Newton-Raphson root finding algorithm.
 pub fn newton_raphson<F>(
     x0: f64,

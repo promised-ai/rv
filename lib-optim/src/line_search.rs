@@ -16,7 +16,7 @@ pub struct WolfeParams {
     pub amax: f64,
     /// Desired tolerance
     pub xtol: f64,
-    /// Maximum number of iterators 
+    /// Maximum number of iterators
     pub max_iter: usize,
 }
 
@@ -150,7 +150,10 @@ where
             let qchk = DELTA2 * delta_alpha;
             aj = quad_min(alpha_lo, phi_lo, derphi_lo, alpha_hi, phi_hi);
             // println!("            quad guess = {}", aj.unwrap_or(-1.0));
-            if aj.is_none() || aj.unwrap().is_nan() || aj.unwrap() > b - qchk || aj.unwrap() < a + qchk
+            if aj.is_none()
+                || aj.unwrap().is_nan()
+                || aj.unwrap() > b - qchk
+                || aj.unwrap() < a + qchk
             {
                 aj = Some(alpha_lo + 0.5 * delta_alpha);
                 debug!("bisect guess = {}", aj.unwrap_or(-1.0));
@@ -159,7 +162,10 @@ where
 
         let (phi_aj, derphi_aj) = f(aj.unwrap());
         debug!("phi_aj = {}, derphi_aj = {}", phi_aj, derphi_aj);
-        debug!("phi_0 + c1 * aj * derphi_0 = {}", phi_0 + c1 * aj.unwrap() * derphi_0);
+        debug!(
+            "phi_0 + c1 * aj * derphi_0 = {}",
+            phi_0 + c1 * aj.unwrap() * derphi_0
+        );
         debug!("del = {}", phi_aj - (phi_0 + c1 * aj.unwrap() * derphi_0));
 
         if phi_aj > phi_0 + c1 * aj.unwrap() * derphi_0 || phi_aj >= phi_lo {
@@ -202,10 +208,16 @@ where
     let (mut phi_a0, mut derphi_a0) = (phi_0, derphi_0);
     let (mut phi_a1, mut derphi_a1) = f(alpha1);
 
-    debug!("wolfe_search (init): phi_0 = {}, derphi_0 = {}", phi_0, derphi_0);
+    debug!(
+        "wolfe_search (init): phi_0 = {}, derphi_0 = {}",
+        phi_0, derphi_0
+    );
 
     for i in 0..params.max_iter {
-        debug!("    wolfe_search: i = {}, alpha0 = {}, alpha1 = {}", i, alpha0, alpha1);
+        debug!(
+            "    wolfe_search: i = {}, alpha0 = {}, alpha1 = {}",
+            i, alpha0, alpha1
+        );
         if alpha1 == 0.0 {
             return Err(OptimizeError::RoundingError);
         }
@@ -214,8 +226,17 @@ where
             || (phi_a1 >= phi_a0 && i > 0)
         {
             return zoom(
-                alpha0, alpha1, phi_a0, derphi_a0, phi_a1, phi_0,
-                derphi_0, params.c1, params.c2, params.max_iter, f
+                alpha0,
+                alpha1,
+                phi_a0,
+                derphi_a0,
+                phi_a1,
+                phi_0,
+                derphi_0,
+                params.c1,
+                params.c2,
+                params.max_iter,
+                f,
             );
         }
 
@@ -225,8 +246,17 @@ where
 
         if derphi_a1 >= 0.0 {
             return zoom(
-                alpha1, alpha0, phi_a1, derphi_a1, phi_a0, phi_0,
-                derphi_0, params.c1, params.c2, params.max_iter, f
+                alpha1,
+                alpha0,
+                phi_a1,
+                derphi_a1,
+                phi_a0,
+                phi_0,
+                derphi_0,
+                params.c1,
+                params.c2,
+                params.max_iter,
+                f,
             );
         }
         let alpha2 = (2.0 * alpha1).max(params.amax);
@@ -261,7 +291,7 @@ mod tests {
     #[test]
     fn wolfe_search_x_cubed() {
         let res = wolfe_search(&WolfeParams::default(), |x| {
-            let y = -(x-1.0).powi(3)- (x-1.0).powi(2);
+            let y = -(x - 1.0).powi(3) - (x - 1.0).powi(2);
             let dy_dx = -3.0 * x.powi(2) + 4.0 * x - 1.0;
             (y, dy_dx)
         });
@@ -275,7 +305,9 @@ mod tests {
         let res = wolfe_search(&WolfeParams::default(), |x| {
             let pi: f64 = std::f64::consts::PI;
             let y = (-x).exp() * (2.0 * pi * x - pi / 2.0).sin().powi(2);
-            let dy_dx = - (-x).exp() * (2.0 * pi * x).cos() * (4.0 * pi * (2.0 * pi * x).sin() + (2.0 * pi * x).cos());
+            let dy_dx = -(-x).exp()
+                * (2.0 * pi * x).cos()
+                * (4.0 * pi * (2.0 * pi * x).sin() + (2.0 * pi * x).cos());
             (y, dy_dx)
         });
 

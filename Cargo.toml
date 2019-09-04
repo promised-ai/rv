@@ -27,6 +27,7 @@ doc-comment = "0.3"
 getset = "0.0.7"
 once_cell = "0.2.6"
 optim = { path = "./lib-optim" }
+log = "0.4.8"
 
 serde = {version = "1", optional = true}
 serde_derive = {version = "1", optional = true}

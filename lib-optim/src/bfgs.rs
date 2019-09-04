@@ -1,13 +1,13 @@
 //! Broyden–Fletcher–Goldfarb–Shanno algorithm
 //! Optimizes a twice differentiable function
 
+use crate::line_search::{wolfe_search, WolfeParams};
+use crate::OptimizeError;
+use log::debug;
 use nalgebra;
 use nalgebra::base::EuclideanNorm;
 use nalgebra::base::Norm;
 use nalgebra::{DMatrix, DVector};
-use crate::line_search::{WolfeParams, wolfe_search};
-use crate::OptimizeError;
-use log::debug;
 
 #[inline]
 pub fn outer_product_self(col: &DVector<f64>) -> DMatrix<f64> {
@@ -30,24 +30,18 @@ impl Default for BFGSParams {
         Self {
             max_iter: 1000,
             wolfe_params: WolfeParams::default(),
-            accuracy: 1E-7,
+            accuracy: 1E-5,
         }
     }
 }
 
 impl BFGSParams {
     pub fn with_accuracy(self, accuracy: f64) -> Self {
-        Self {
-            accuracy,
-            ..self
-        }
+        Self { accuracy, ..self }
     }
 
     pub fn with_max_iter(self, max_iter: usize) -> Self {
-        Self {
-            max_iter,
-            ..self
-        }
+        Self { max_iter, ..self }
     }
 
     pub fn with_wofle_params(self, wolfe_params: WolfeParams) -> Self {
@@ -73,7 +67,10 @@ where
     let metric = EuclideanNorm {};
     for i in 0..params.max_iter {
         let search_dir = -1.0 * &b_inv * &g_x;
-        debug!("bfgs: i = {}, x = {}, search_dir = {}, b_inv = {}, g_x = {}", i, x, search_dir, b_inv, g_x);
+        debug!(
+            "bfgs: i = {}, x = {}, b_inv = {}, g_x = {}, search_dir = {}",
+            i, x, b_inv, g_x, search_dir
+        );
 
         let epsilon = wolfe_search(&params.wolfe_params, |e| {
             let offset = &search_dir * e;
@@ -105,7 +102,7 @@ where
             (&b_inv * &y * &s.transpose() + &s * &y.transpose() * &b_inv) / sty;
 
         b_inv += &add - &sub;
-    };
+    }
     Err(OptimizeError::MaxIterationReached)
 }
 
@@ -117,12 +114,12 @@ mod tests {
     fn bfgs_x_cubed() {
         let res = bfgs(DVector::zeros(1), &BFGSParams::default(), |v| {
             let x = v[0];
-            let y = -(x-1.0).powi(3)- (x-1.0).powi(2);
+            let y = -(x - 1.0).powi(3) - (x - 1.0).powi(2);
             let dy_dx = -3.0 * x.powi(2) + 4.0 * x - 1.0;
             let g = DVector::from_column_slice(&[dy_dx]);
             (y, g)
         });
-        
+
         assert!(res.is_ok());
         assert::close(res.unwrap()[0], 1.0 / 3.0, 1E-5);
     }
@@ -131,9 +128,10 @@ mod tests {
     fn bfgs_rosenbrock() {
         let x0: DVector<f64> = DVector::zeros(2);
         let f = |x: &DVector<f64>| {
-            let y = (1.0 - x[0]).powi(2) + 100.0 * (x[1] - x[0].powi(2)).powi(2);
+            let y =
+                (1.0 - x[0]).powi(2) + 100.0 * (x[1] - x[0].powi(2)).powi(2);
             let gx = -400.0 * (x[1] - x[0].powi(2)) * x[0] - 2.0 * (1.0 - x[0]);
-            let gy =  200.0 * (x[1] - x[0].powi(2));
+            let gy = 200.0 * (x[1] - x[0].powi(2));
             (y, DVector::from_column_slice(&[gx, gy]))
         };
 
