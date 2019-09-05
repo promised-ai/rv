@@ -1,12 +1,14 @@
 //! Gaussian Processes
-use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
+use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint, SameNumberOfRows};
 use nalgebra::base::storage::Storage;
-use nalgebra::base::EuclideanNorm;
-use nalgebra::base::Norm;
-use nalgebra::{DMatrix, DVector, Dim, Matrix};
+use nalgebra::base::{Norm, EuclideanNorm};
+use nalgebra::{DMatrix, DVector, Dim, Matrix, ComplexField};
+use num::Zero;
 use std::f64;
 use std::fmt;
 use std::ops::{Index, IndexMut};
+
+const E2METRIC: Euclidean2Norm = Euclidean2Norm {};
 
 #[derive(Clone, Debug)]
 pub struct CovGrad {
@@ -100,6 +102,46 @@ impl CovGrad {
 
         Self { slices }
     }
+}
+
+struct Euclidean2Norm;
+
+impl<N: ComplexField> Norm<N> for Euclidean2Norm {
+    #[inline]
+    fn norm<R, C, S>(&self, m: &Matrix<N, R, C, S>) -> N::RealField
+        where 
+            R: Dim,
+            C: Dim,
+            S: Storage<N, R, C>
+    {
+        m.norm_squared()
+    }
+    #[inline]
+    fn metric_distance<R1, C1, S1, R2, C2, S2>(&self, m1: &Matrix<N, R1, C1, S1>, m2: &Matrix<N, R2, C2, S2>) -> N::RealField
+        where
+            R1: Dim, C1: Dim, S1: Storage<N, R1, C1>,
+            R2: Dim, C2: Dim, S2: Storage<N, R2, C2>,
+            ShapeConstraint: SameNumberOfRows<R1, R2> + SameNumberOfColumns<C1, C2>
+    {
+        m1.zip_fold(m2, N::RealField::zero(), |acc, a, b| {
+            let diff = a - b;
+            acc + diff.modulus_squared()
+        })
+    }
+}
+
+#[inline]
+fn e2_norm<N, R1, C1, S1, R2, C2, S2>(m1: &Matrix<N, R1, C1, S1>, m2: &Matrix<N, R2, C2, S2>, scale: N) -> N::RealField
+        where
+            N: ComplexField,
+            R1: Dim, C1: Dim, S1: Storage<N, R1, C1>,
+            R2: Dim, C2: Dim, S2: Storage<N, R2, C2>,
+            ShapeConstraint: SameNumberOfRows<R1, R2> + SameNumberOfColumns<C1, C2>
+{
+    m1.zip_fold(m2, N::RealField::zero(), |acc, a, b| {
+        let diff = (a - b) / scale;
+        acc + diff.modulus_squared()
+    })
 }
 
 impl Index<usize> for CovGrad {
@@ -257,7 +299,7 @@ impl Kernel for ConstantKernel {
         C: Dim,
         S: Storage<f64, R, C>,
     {
-        DVector::from_element(x.ncols(), self.value)
+        DVector::from_element(x.nrows(), self.value)
     }
 
     fn parameters(&self) -> DVector<f64> {
@@ -370,7 +412,10 @@ where
         S2: Storage<f64, R2, C2>,
         ShapeConstraint: SameNumberOfColumns<C1, C2>,
     {
-        self.a.covariance(x1, x2) + self.b.covariance(x1, x2)
+        let a = self.a.covariance(x1, x2);
+        let b = self.b.covariance(x1, x2);
+        assert_eq!(a.shape(), b.shape());
+        a + b
     }
 
     fn diag<R, C, S>(&self, x: &Matrix<f64, R, C, S>) -> DVector<f64>
@@ -506,6 +551,7 @@ where
     {
         let a = self.a.diag(x);
         let b = self.b.diag(x);
+        assert_eq!(a.shape(), b.shape());
         a.zip_map(&b, |y1, y2| y1 * y2)
     }
 
@@ -590,12 +636,10 @@ impl Kernel for RBFKernel {
 
         let mut dm: DMatrix<f64> = DMatrix::zeros(m, n);
 
-        let metric = EuclideanNorm {};
         for i in 0..m {
             for j in 0..n {
-                let d = metric.metric_distance(&x1.row(i), &x2.row(j))
-                    / self.length_scale;
-                dm[(i, j)] = d * d;
+                let d = e2_norm(&x1.row(i), &x2.row(j), self.length_scale);
+                dm[(i, j)] = d;
             }
         }
 
@@ -646,24 +690,21 @@ impl Kernel for RBFKernel {
     {
         let n = x.nrows();
 
-        let metric = EuclideanNorm {};
         let mut dm = DMatrix::zeros(n, n);
         let mut grad = CovGrad::zeros(n, 1);
 
         for i in 0..n {
             for j in 0..i {
                 // Save covariance
-                let d = metric.metric_distance(&x.row(i), &x.row(j));
-                let l2 = self.length_scale.powi(2);
-                let d2 = d * d;
-                let exp_d2 = (-d2 / (2.0 * l2)).exp();
+                let d2 = e2_norm(&x.row(i), &x.row(j), self.length_scale);
+                let exp_d2 = (-d2 / 2.0).exp();
                 let cov_ij = exp_d2;
 
                 dm[(i, j)] = cov_ij;
                 dm[(j, i)] = cov_ij;
 
                 // Save gradient
-                let dc_dl = d2 * cov_ij / l2;
+                let dc_dl = d2 * cov_ij;
                 grad[(i, j, 0)] = dc_dl;
                 grad[(j, i, 0)] = dc_dl;
             }
@@ -691,7 +732,7 @@ impl Kernel for WhiteKernel {
     fn covariance<R1, R2, C1, C2, S1, S2>(
         &self,
         x1: &Matrix<f64, R1, C1, S1>,
-        _x2: &Matrix<f64, R2, C2, S2>,
+        x2: &Matrix<f64, R2, C2, S2>,
     ) -> DMatrix<f64>
     where
         R1: Dim,
@@ -702,8 +743,7 @@ impl Kernel for WhiteKernel {
         S2: Storage<f64, R2, C2>,
         ShapeConstraint: SameNumberOfColumns<C1, C2>,
     {
-        let n = x1.nrows();
-        DMatrix::zeros(n, n)
+        DMatrix::zeros(x1.nrows(), x2.nrows())
     }
 
     fn is_stationary(&self) -> bool {
@@ -791,10 +831,9 @@ impl Kernel for RationalQuadratic {
         S2: Storage<f64, R2, C2>,
         ShapeConstraint: SameNumberOfColumns<C1, C2>,
     {
-        let metric = EuclideanNorm {};
-        let d = 2.0 * self.scale * self.scale * self.mixture;
+        let d = (2.0 * self.scale * self.scale * self.mixture).sqrt();
         DMatrix::from_fn(x1.nrows(), x2.nrows(), |i, j| {
-            let t = metric.metric_distance(&x1.row(i), &x2.row(j)).powi(2) / d;
+            let t = e2_norm(&x1.row(i), &x2.row(j), d) ;
             (1.0 + t).powf(-self.mixture)
         })
     }
@@ -846,11 +885,10 @@ impl Kernel for RationalQuadratic {
         let mut cov = DMatrix::zeros(n, n);
         let mut grad = CovGrad::zeros(n, 2);
         let d = 2.0 * self.mixture * self.scale.powi(2);
-        let metric = EuclideanNorm {};
         for i in 0..n {
             // off-diagnols
             for j in 0..i {
-                let d2 = metric.metric_distance(&x.row(i), &x.row(j)).powi(2);
+                let d2 = E2METRIC.metric_distance(&x.row(i), &x.row(j));
                 let temp = d2 / d;
                 let base = 1.0 + temp;
                 let k = base.powf(-self.mixture);
@@ -1373,15 +1411,30 @@ mod tests {
 
     #[test]
     fn product_kernel() {
-        let kernel =
-            ProductKernel::new(ConstantKernel::new(3.0), WhiteKernel::new(1.0));
+        let kernel = ConstantKernel::new(3.0) * RBFKernel::new(5.0);
         let x = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0]);
+        let y = DMatrix::from_row_slice(2, 2, &[5.0, 7.0, 6.0, 8.0]);
 
-        let expected_cov = DMatrix::from_row_slice(2, 2, &[3.0, 0.0, 0.0, 3.0]);
+        let expected_cov = DMatrix::from_row_slice(2, 2, &[
+            1.3212949635179978,
+            0.8856905007720425,
+            2.313154757410699,
+            1.8195919791379003,
+        ]);
+        let cov = kernel.covariance(&x, &y);
+        assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7));
+
+        // Symmetric Cov and Grad
+        let expected_cov = DMatrix::from_row_slice(2, 2, &[
+            3.0,
+            2.556431366898634,
+            2.556431366898634,
+            3.0,
+        ]);
 
         let expected_grad = CovGrad::new(&[
-            DMatrix::from_row_slice(2, 2, &[3.0, 0.0, 0.0, 3.0]),
-            DMatrix::from_row_slice(2, 2, &[3.0, 0.0, 0.0, 3.0]),
+            DMatrix::from_row_slice(2, 2, &[3.0, 2.556431366898634, 2.556431366898634, 3.0]),
+            DMatrix::from_row_slice(2, 2, &[0.0, 0.8180580374075628, 0.8180580374075628, 0.0]),
         ]);
 
         let (cov, grad) = kernel.covariance_with_gradient(&x);

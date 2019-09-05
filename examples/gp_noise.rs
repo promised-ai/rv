@@ -65,9 +65,8 @@ pub fn main() {
         0.3107528300748319,
     ]);
 
-    let kernel = // ConstantKernel::new(1.0) * RBFKernel::new(1.0)
-        //ConstantKernel::new(1.0) * ExpSineSquaredKernel::new(1.0, 1.0)
-        ConstantKernel::new(1.0) * RationalQuadratic::new(1.0, 1.0)
+    let kernel =
+        ConstantKernel::new(1.0) * ExpSineSquaredKernel::new(1.0, 1.0)
         + WhiteKernel::new(1.0);
 
     let gp_params = GaussianProcessParams::default()
@@ -84,4 +83,18 @@ pub fn main() {
 
     println!("Optimized Kernel = {:#?}", gp.kernel());
     println!("Optimized ln_m = {:?}", gp.ln_m());
+    println!("Optimized grad_ln_m = {}", gp.ln_m_with_parameters(&gp.kernel().parameters()).unwrap().1);
+
+    println!("Predicting");
+    let xs_pred = DMatrix::from_column_slice(5, 1, &[
+        0.0, 1.0, 2.0, 3.0, 4.0
+    ]);
+    let prediction = gp.predict(&xs_pred);
+    let mean = prediction.mean();
+    let std = prediction.std();
+
+    println!("\nX   Mu        Std\n-------------------");
+    for i in 0..xs_pred.nrows() {
+        println!("{:.1} {:6.3} +- {:.3}", xs_pred[(i, 0)], mean[i], std[i]);
+    }
 }

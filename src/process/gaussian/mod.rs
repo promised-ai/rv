@@ -164,7 +164,7 @@ where
     }
 
     /// Return the inverse of K.
-    pub fn k_inv(&mut self) -> &DMatrix<f64> {
+    pub fn k_inv(&self) -> &DMatrix<f64> {
         self.k_inv.get_or_init(|| self.k_chol.inverse())
     }
 
@@ -179,7 +179,7 @@ where
     }
 
     /// Return the log marginal likelihood
-    pub fn ln_m(&mut self) -> f64 {
+    pub fn ln_m(&self) -> f64 {
         let k_chol = self.k_chol();
         let dlog_sum = k_chol.l_dirty().diagonal().map(|x| x.ln()).sum();
         let n: f64 = self.x_train.nrows() as f64;
@@ -337,7 +337,7 @@ where
     }
 
     /// Return the covariance of the posterior
-    pub fn cov(&mut self) -> &DMatrix<f64> {
+    pub fn cov(&self) -> &DMatrix<f64> {
         self.cov.get_or_init(|| {
             let v = self.gp.k_chol().solve(&(self.k_trans.transpose()));
             let kernel = self.gp.kernel();
@@ -346,21 +346,20 @@ where
     }
 
     /// Return the standard deviation of posterior.
-    pub fn std(&mut self) -> DVector<f64> {
+    pub fn std(&self) -> DVector<f64> {
         let kernel = self.gp.kernel();
-        let mut y_var: DVector<f64> = kernel.diag(self.xs);
         let k_inv = self.gp.k_inv();
         let k_ti = &(self.k_trans) * k_inv;
 
-        for i in 0..y_var.len() {
-            y_var[i] -= k_ti.row(i).iter().sum::<f64>();
+        let mut y_var: DVector<f64> = kernel.diag(self.xs);
+        for i in 0..y_var.nrows() {
+            y_var[i] -= (0..k_inv.ncols()).map(|j| k_ti[(i, j)] * self.k_trans[(i, j)]).sum::<f64>();
         }
-
         y_var.map(|e| e.sqrt())
     }
 
     /// Return the MV Gaussian distribution which shows the predicted values
-    pub fn dist(&mut self) -> &MvGaussian {
+    pub fn dist(&self) -> &MvGaussian {
         let mean = (self.mean()).clone();
         let cov = (self.cov()).clone();
         self.dist
@@ -368,13 +367,13 @@ where
     }
 
     /// Draw a single value from the corresponding MV Gaussian
-    pub fn draw<RNG: Rng>(&mut self, rng: &mut RNG) -> DVector<f64> {
+    pub fn draw<RNG: Rng>(&self, rng: &mut RNG) -> DVector<f64> {
         self.dist().draw(rng)
     }
 
     /// Return a number of samples from the MV Gaussian
     pub fn sample<RNG: Rng>(
-        &mut self,
+        &self,
         size: usize,
         rng: &mut RNG,
     ) -> Vec<DVector<f64>> {

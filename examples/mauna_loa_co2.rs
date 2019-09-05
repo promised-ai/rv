@@ -43,11 +43,11 @@ pub fn main() -> io::Result<()> {
     println!("Loaded {} datapoints", xs.len());
 
     // Create GaussianProcess
-    let kernel = ConstantKernel::new(34.4_f64.powi(2)) * RBFKernel::new(41.8)
-      + ConstantKernel::new(3.27_f64.powi(2)) * RBFKernel::new(180.0) * ExpSineSquaredKernel::new(1.44, 1.0)
-      + ConstantKernel::new(0.446_f64.powi(2)) * RationalQuadratic::new(0.957, 17.7)
-      + ConstantKernel::new(0.197_f64.powi(2)) * RBFKernel::new(0.139)
-      + WhiteKernel::new(0.0336);
+    let kernel = ConstantKernel::new(34.4_f64.powi(2)) * RBFKernel::new(41.8);
+      // + ConstantKernel::new(3.27_f64.powi(2)) * RBFKernel::new(180.0) * ExpSineSquaredKernel::new(1.44, 1.0)
+      // + ConstantKernel::new(0.446_f64.powi(2)) * RationalQuadratic::new(0.957, 17.7)
+      // + ConstantKernel::new(0.197_f64.powi(2)) * RBFKernel::new(0.139)
+      // + WhiteKernel::new(0.0336);
     
     println!("kernel = {:#?}", kernel);
     println!("kernel theta = {}", kernel.parameters());
@@ -63,12 +63,12 @@ pub fn main() -> io::Result<()> {
         .with_bfgs_params(
             BFGSParams::default().with_accuracy(1E-4).with_wofle_params(
                 WolfeParams {
-                    max_iter: 50,
+                    max_iter: 10,
                     ..WolfeParams::default()
                 },
             ),
         );
-    let mut gp = GaussianProcess::train(kernel, &xs, &ys, gp_params).unwrap();
+    let gp = GaussianProcess::train(kernel, &xs, &ys, gp_params).unwrap();
 
     let (ln_m, grad_ln_m) =
         gp.ln_m_with_parameters(&gp.kernel().parameters()).unwrap();
