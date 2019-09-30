@@ -64,6 +64,14 @@ impl<Fx> Mixture<Fx> {
         }
     }
 
+    /// Creates a new Mixture without checking whether the parameters are valid.
+    pub fn new_unchecked(weights: Vec<f64>, components: Vec<Fx>) -> Self {
+        Mixture {
+            weights,
+            components,
+        }
+    }
+
     /// Assume uniform component weights
     ///
     /// Given a n-length vector of components, automatically sets the component
@@ -132,6 +140,10 @@ impl<Fx> Mixture<Fx> {
         }
     }
 
+    pub fn set_weights_unchecked(&mut self, weights: Vec<f64>) {
+        self.weights = weights;
+    }
+
     pub fn set_components(
         &mut self,
         components: Vec<Fx>,
@@ -145,6 +157,10 @@ impl<Fx> Mixture<Fx> {
             self.components = components;
             Ok(())
         }
+    }
+
+    pub fn set_components_unchecked(&mut self, components: Vec<Fx>) {
+        self.components = components;
     }
 }
 

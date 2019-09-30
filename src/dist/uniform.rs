@@ -53,6 +53,12 @@ impl Uniform {
         }
     }
 
+    /// Creates a new Uniform without checking whether the parameters are
+    /// valid.
+    pub fn new_unchecked(a: f64, b: f64) -> Self {
+        Uniform { a, b }
+    }
+
     /// Get the lower bound, a
     ///
     /// # Example
@@ -82,7 +88,7 @@ impl Uniform {
 
 impl Default for Uniform {
     fn default() -> Self {
-        Uniform::new(0.0, 1.0).unwrap()
+        Uniform::new_unchecked(0.0, 1.0)
     }
 }
 

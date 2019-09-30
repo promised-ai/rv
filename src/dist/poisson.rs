@@ -2,6 +2,7 @@
 #[cfg(feature = "serde_support")]
 use serde_derive::{Deserialize, Serialize};
 
+use crate::data::PoissonSuffStat;
 use crate::impl_display;
 use crate::result;
 use crate::traits::*;
@@ -47,6 +48,11 @@ impl Poisson {
                 result::Error::new(err_kind, "rate must be greater than 0");
             Err(err)
         }
+    }
+
+    /// Creates a new Poisson without checking whether the parameter is valid.
+    pub fn new_unchecked(rate: f64) -> Self {
+        Poisson { rate }
     }
 
     /// Get the rate parameter
@@ -103,6 +109,13 @@ macro_rules! impl_traits {
             fn cdf(&self, x: &$kind) -> f64 {
                 let kf = f64::from(*x);
                 1.0 - (self.rate).inc_gamma(kf + 1.0)
+            }
+        }
+
+        impl HasSuffStat<$kind> for Poisson {
+            type Stat = PoissonSuffStat;
+            fn empty_suffstat(&self) -> Self::Stat {
+                PoissonSuffStat::new()
             }
         }
     };

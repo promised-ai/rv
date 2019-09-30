@@ -90,6 +90,8 @@ fn mpow(xs: &[Vec<f64>], ea: i32, n: usize) -> (Vec<Vec<f64>>, i32) {
 // Wang, J., Tsang, W. W., & Marsaglia, G. (2003). Evaluating Kolmogorov's
 //     distribution. Journal of Statistical Software, 8(18).
 // They are not rusty. Please feel free to make them rusty 😘
+#[allow(clippy::needless_range_loop)]
+#[allow(clippy::many_single_char_names)]
 fn ks_cdf(n: usize, d: f64) -> f64 {
     let nf = n as f64;
     let s: f64 = d * d * nf;

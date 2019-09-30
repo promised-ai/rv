@@ -50,6 +50,12 @@ impl SymmetricDirichlet {
         }
     }
 
+    /// Create a new SymmetricDirichlet without checking whether the parmaeters
+    /// are valid.
+    pub fn new_unchecked(alpha: f64, k: usize) -> Self {
+        SymmetricDirichlet { alpha, k }
+    }
+
     /// The Jeffrey's Dirichlet prior for Categorical distributions
     ///
     /// # Example
@@ -164,6 +170,8 @@ impl Dirichlet {
         }
     }
 
+    /// Creates a new Dirichlet without checking whether the parameters are
+    /// valid.
     fn new_unchecked(alphas: Vec<f64>) -> Self {
         Dirichlet { alphas }
     }

@@ -75,6 +75,12 @@ impl Binomial {
         }
     }
 
+    /// Creates a new Binomial without checking whether the parameters are
+    /// valid.
+    pub fn new_unchecked(n: u64, p: f64) -> Self {
+        Binomial { n, p }
+    }
+
     /// A Binomial distribution with a 50% chance of success
     ///
     /// # Example
@@ -85,7 +91,7 @@ impl Binomial {
     /// assert_eq!(binom.p(), 0.5);
     /// ```
     pub fn uniform(n: u64) -> Self {
-        Binomial::new(n, 0.5).unwrap()
+        Binomial::new_unchecked(n, 0.5)
     }
 
     /// Get the number of trials

@@ -45,6 +45,11 @@ impl Pareto {
         }
     }
 
+    /// Creates a new Pareto without checking whether the parameters are valid.
+    pub fn new_unchecked(shape: f64, scale: f64) -> Self {
+        Pareto { shape, scale }
+    }
+
     /// Get shape parameter
     ///
     /// # Example

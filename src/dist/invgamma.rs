@@ -48,6 +48,12 @@ impl InvGamma {
         }
     }
 
+    /// Creates a new InvGamma without checking whether the parameters are
+    /// valid.
+    pub fn new_unchecked(shape: f64, scale: f64) -> Self {
+        InvGamma { shape, scale }
+    }
+
     /// Get the shape paramter
     ///
     /// # Example

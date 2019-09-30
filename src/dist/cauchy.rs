@@ -58,6 +58,11 @@ impl Cauchy {
         }
     }
 
+    /// Create a new Cauchy without checking whether the parameters are valid.
+    pub fn new_unchecked(loc: f64, scale: f64) -> Self {
+        Cauchy { loc, scale }
+    }
+
     /// Get the location parameter
     ///
     /// # Example
@@ -87,7 +92,7 @@ impl Cauchy {
 
 impl Default for Cauchy {
     fn default() -> Self {
-        Cauchy::new(0.0, 1.0).unwrap()
+        Cauchy::new_unchecked(0.0, 1.0)
     }
 }
 

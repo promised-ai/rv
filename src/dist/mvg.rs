@@ -82,6 +82,12 @@ impl MvGaussian {
         }
     }
 
+    /// Creates a new MvGaussian without checking whether the parameters are
+    /// valid.
+    pub fn new_unchecked(mu: DVector<f64>, cov: DMatrix<f64>) -> Self {
+        MvGaussian { mu, cov }
+    }
+
     /// Create a standard Gaussian distribution with zero mean and identiry
     /// covariance matrix.
     pub fn standard(dims: usize) -> result::Result<Self> {
@@ -162,6 +168,10 @@ impl MvGaussian {
         }
     }
 
+    pub fn set_mu_unchecked(&mut self, mu: DVector<f64>) {
+        self.mu = mu;
+    }
+
     /// Set the covariance matrix
     ///
     /// # Example
@@ -207,6 +217,10 @@ impl MvGaussian {
             self.cov = cov;
             Ok(())
         }
+    }
+
+    pub fn set_cov_unchecked(&mut self, cov: DMatrix<f64>) {
+        self.cov = cov;
     }
 }
 

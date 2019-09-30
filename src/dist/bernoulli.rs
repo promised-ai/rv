@@ -75,6 +75,12 @@ impl Bernoulli {
         }
     }
 
+    /// Creates a new Bernoulli without checking whether parameter value is
+    /// valid.
+    pub fn new_unchecked(p: f64) -> Self {
+        Bernoulli { p }
+    }
+
     /// A Bernoulli distribution with a 50% chance of success
     ///
     /// # Example

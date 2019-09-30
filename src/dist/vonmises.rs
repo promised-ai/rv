@@ -61,6 +61,13 @@ impl VonMises {
         }
     }
 
+    /// Creates a new VonMises without checking whether the parameters are
+    /// valid.
+    pub fn new_unchecked(mu: f64, k: f64) -> Self {
+        let i0_k = bessel::i0(k);
+        VonMises { mu, k, i0_k }
+    }
+
     /// Get the mean parameter, mu
     ///
     /// # Example

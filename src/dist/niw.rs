@@ -95,6 +95,17 @@ impl NormalInvWishart {
         }
     }
 
+    /// Creates a new NormalInvWishart without checking whether the parameters
+    /// are valid.
+    pub fn new_unchecked(
+        mu: DVector<f64>,
+        k: f64,
+        df: usize,
+        scale: DMatrix<f64>,
+    ) -> Self {
+        NormalInvWishart { mu, k, df, scale }
+    }
+
     /// Get the number of dimensions
     pub fn dims(&self) -> usize {
         self.mu.len()
@@ -136,6 +147,10 @@ impl NormalInvWishart {
         }
     }
 
+    pub fn set_scale_unnchecked(&mut self, scale: DMatrix<f64>) {
+        self.scale = scale;
+    }
+
     /// Set the scale parameter
     pub fn set_mu(&mut self, mu: DVector<f64>) -> result::Result<()> {
         let err = validate_params(&mu, self.k, self.df, &self.scale);
@@ -150,6 +165,10 @@ impl NormalInvWishart {
                 Ok(())
             }
         }
+    }
+
+    pub fn set_mu_unchecked(&mut self, mu: DVector<f64>) {
+        self.mu = mu;
     }
 }
 

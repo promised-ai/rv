@@ -55,6 +55,12 @@ impl NormalGamma {
         }
     }
 
+    /// Creates a new NormalGamma without checking whether the parameters are
+    /// valid.
+    pub fn new_unchecked(m: f64, r: f64, s: f64, v: f64) -> Self {
+        NormalGamma { m, r, s, v }
+    }
+
     /// Get the m parameter
     pub fn m(&self) -> f64 {
         self.m
