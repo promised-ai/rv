@@ -21,7 +21,7 @@ maintenance = { status = "actively-developed" }
 num = "0.2"
 rand = "0.6"
 special = "0.8"
-nalgebra = "0.16"
+nalgebra = "0.18"
 quadrature = "0.1"
 doc-comment = "0.3"
 getset = "0.0.7"
