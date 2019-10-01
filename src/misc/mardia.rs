@@ -87,7 +87,7 @@ mod test {
             .zip(ys.iter())
             .map(|(&x, &y)| {
                 let xyv = vec![x, y];
-                DVector::from_row_slice(2, &xyv)
+                DVector::from_row_slice(&xyv)
             })
             .collect();
         let (pa, pb) = mardia(&xys);
