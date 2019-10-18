@@ -434,6 +434,5 @@ mod tests {
                 assert!(symdir.supports(&x));
             }
         }
-
     }
 }
