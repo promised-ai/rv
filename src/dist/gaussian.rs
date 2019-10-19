@@ -60,6 +60,7 @@ impl Gaussian {
             let err = result::Error::new(err_kind, "mu must be finite");
             Err(err)
         } else if !sigma_ok {
+            println!("{}", sigma);
             let err_kind = result::ErrorKind::InvalidParameterError;
             let msg = "sigma must be finite and greater than zero";
             let err = result::Error::new(err_kind, msg);

@@ -10,6 +10,7 @@ use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use rand::Rng;
+use std::f64::{MAX, MIN, MIN_POSITIVE};
 
 /// Prior for Gaussian
 ///
@@ -93,28 +94,33 @@ impl From<&NormalGamma> for String {
 
 impl_display!(NormalGamma);
 
+// NOTE: We could use f64::clamp(MIN, MAX) to confine values if we were on
+// nightly. Maybe we could do some conditional compilation?
 impl Rv<Gaussian> for NormalGamma {
     fn ln_f(&self, x: &Gaussian) -> f64 {
-        let rho = x.sigma().powi(2).recip();
+        let rho = x.sigma().recip().powi(2);
         let lnf_rho =
             Gamma::new(self.v / 2.0, self.s / 2.0).unwrap().ln_f(&rho);
-        let prior_sigma = (self.r * rho).recip().sqrt();
+        let prior_sigma =
+            (self.r * rho).recip().sqrt().max(MIN_POSITIVE).min(MAX);
         let lnf_mu = Gaussian::new(self.m, prior_sigma).unwrap().ln_f(&x.mu());
         lnf_rho + lnf_mu - HALF_LN_2PI
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
-        // NOTE: The parameter errors in this fn shouldn't happen if the prior
-        // parameters are valid.
         let rho: f64 = Gamma::new(self.v / 2.0, self.s / 2.0)
             .expect("Invalid σ posterior params")
             .draw(&mut rng);
-        let post_sigma: f64 = (self.r * rho).recip().sqrt();
+        let post_sigma: f64 =
+            (self.r * rho).recip().sqrt().max(MIN_POSITIVE).min(MAX);
         let mu: f64 = Gaussian::new(self.m, post_sigma)
             .expect("Invalid μ posterior params")
             .draw(&mut rng);
+        let mu_clamped = mu.max(MIN).min(MAX);
 
-        Gaussian::new(mu, rho.sqrt().recip()).expect("Invalid params")
+        // XXX: Underflow is a problem here
+        let sigma = rho.recip().sqrt().max(MIN_POSITIVE).min(MAX);
+        Gaussian::new(mu_clamped, sigma).expect("Invalid params")
     }
 }
 
@@ -134,3 +140,27 @@ impl HasSuffStat<f64> for NormalGamma {
 }
 
 impl ContinuousDistr<Gaussian> for NormalGamma {}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn never_a_bad_draw() {
+        let mut rng = rand::thread_rng();
+        let ng_inf = NormalGamma::new(0.0, 0.000_1, 1_000.0, 0.000_1).unwrap();
+
+        for _ in 0..100_000 {
+            let gauss: Gaussian = ng_inf.draw(&mut rng);
+            assert!(gauss.sigma() > 0.0);
+        }
+
+        let ng_zero = NormalGamma::new(0.0, 1e84, 1e-75, 1e84).unwrap();
+
+        for _ in 0..100_000 {
+            let gauss: Gaussian = ng_zero.draw(&mut rng);
+            assert!(gauss.sigma() > 0.0);
+        }
+    }
+}
