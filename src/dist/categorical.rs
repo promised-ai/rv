@@ -5,7 +5,6 @@ use serde_derive::{Deserialize, Serialize};
 use crate::data::{CategoricalDatum, CategoricalSuffStat};
 use crate::impl_display;
 use crate::misc::{argmax, ln_pflip, logsumexp, vec_to_string};
-use crate::result;
 use crate::traits::*;
 use rand::Rng;
 
@@ -18,13 +17,24 @@ pub struct Categorical {
     ln_weights: Vec<f64>,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// One or more of the weights is infinite or NaN
+    NonFiniteWeightError,
+    /// One or more of the weights is less than zero
+    SubZeroWeightError,
+    /// The weights do not sum to 1
+    WeightsDoNotSumToOneError,
+}
+
 impl Categorical {
     /// Construct a new Categorical distribution from weights
     ///
     /// # Arguments
     /// - weights: A vector describing the proportional likelihood of each
     ///   outcome. The weights must all be positive, but do not need to sum to
-    ///   1.
+    ///   1 because they will be normalized in the constructor.
     ///
     /// # Examples
     ///
@@ -40,18 +50,24 @@ impl Categorical {
     ///
     /// assert::close(cat.pmf(&0_u8), 0.4, 1E-12);
     /// ```
-    pub fn new(weights: &[f64]) -> result::Result<Self> {
-        if weights.iter().any(|&w| !w.is_finite()) {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "Weights must be finite");
-            Err(err)
-        } else {
-            let ln_weights: Vec<f64> = weights.iter().map(|w| w.ln()).collect();
-            let ln_norm = logsumexp(&ln_weights);
-            let normed_weights =
-                ln_weights.iter().map(|lnw| lnw - ln_norm).collect();
-            Ok(Categorical::new_unchecked(normed_weights))
-        }
+    pub fn new(weights: &[f64]) -> Result<Self, Error> {
+        weights.iter().fold(Ok(()), |acc, &w| {
+            if acc.is_err() {
+                acc
+            } else if w < 0.0 {
+                Err(Error::SubZeroWeightError)
+            } else if !w.is_finite() {
+                Err(Error::NonFiniteWeightError)
+            } else {
+                Ok(())
+            }
+        })?;
+
+        let ln_weights: Vec<f64> = weights.iter().map(|w| w.ln()).collect();
+        let ln_norm = logsumexp(&ln_weights);
+        let normed_weights =
+            ln_weights.iter().map(|lnw| lnw - ln_norm).collect();
+        Ok(Categorical::new_unchecked(normed_weights))
     }
 
     /// Build a Categorical distribution from normalized log weights
@@ -79,13 +95,11 @@ impl Categorical {
     /// assert::close(cat.pmf(&2_u8), 0.3, 1E-12);
     /// assert::close(cat.pmf(&3_u8), 0.4, 1E-12);
     /// ```
-    pub fn from_ln_weights(ln_weights: Vec<f64>) -> result::Result<Self> {
+    pub fn from_ln_weights(ln_weights: Vec<f64>) -> Result<Self, Error> {
         if logsumexp(&ln_weights).abs() < 10E-12 {
             Ok(Categorical { ln_weights })
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "Weights not normalized");
-            Err(err)
+            Err(Error::WeightsDoNotSumToOneError)
         }
     }
 

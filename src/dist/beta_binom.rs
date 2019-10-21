@@ -4,7 +4,6 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::{ln_binom, ln_pflip};
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use rand::Rng;
@@ -63,6 +62,21 @@ pub struct BetaBinomial {
     beta: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// The alpha parameter is less than zero
+    AlphaLessThanZeroError,
+    /// The alpha parameter is infinite or NaN
+    AlphaNotFiniteError,
+    /// The beta parameter is less than zero
+    BetaLessThanZeroError,
+    /// The beta parameter is infinite or NaN
+    BetaNotFiniteError,
+    /// The number of trails is zero
+    NIsZeroError,
+}
+
 impl BetaBinomial {
     /// Create a beta-binomal distirbution
     ///
@@ -71,24 +85,17 @@ impl BetaBinomial {
     /// - n: the total number of trials
     /// - alpha: the prior pseudo obersvations of success
     /// - beta: the prior pseudo obersvations of failure
-    pub fn new(n: u32, alpha: f64, beta: f64) -> result::Result<Self> {
-        let alpha_ok = alpha.is_finite() && alpha > 0.0;
-        let beta_ok = beta.is_finite() && beta > 0.0;
-        let n_ok = n > 0;
-        if !(alpha_ok && beta_ok) {
-            let msg = "'alpha' and 'beta' must be in (0, ∞)";
-            let err = result::Error::new(
-                result::ErrorKind::InvalidParameterError,
-                msg,
-            );
-            Err(err)
-        } else if !n_ok {
-            let msg = "'n' must be greater than 0";
-            let err = result::Error::new(
-                result::ErrorKind::InvalidParameterError,
-                msg,
-            );
-            Err(err)
+    pub fn new(n: u32, alpha: f64, beta: f64) -> Result<Self, Error> {
+        if alpha < 0.0 {
+            return Err(Error::AlphaLessThanZeroError);
+        } else if !alpha.is_finite() {
+            return Err(Error::AlphaNotFiniteError);
+        } else if beta < 0.0 {
+            return Err(Error::BetaLessThanZeroError);
+        } else if !beta.is_finite() {
+            return Err(Error::BetaNotFiniteError);
+        } else if n == 0 {
+            return Err(Error::NIsZeroError);
         } else {
             Ok(BetaBinomial { n, alpha, beta })
         }

@@ -2,9 +2,7 @@
 use serde_derive::{Deserialize, Serialize};
 
 use crate::consts;
-use crate::dist;
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use rand::Rng;
@@ -36,20 +34,32 @@ pub struct Gev {
     shape: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// The location parameter is infinite or NaN
+    LocNotFiniteError,
+    /// The shape parameter is infinite or NaN
+    ShapeNotFiniteError,
+    /// The scale parameter is infinite or NaN
+    ScaleNotFiniteError,
+    /// The scale parameter is less than or equal to zero
+    ScaleTooLowError,
+}
+
 impl Gev {
     /// Create a new `Gev` distribution with location, scale, and shape.
-    pub fn new(loc: f64, scale: f64, shape: f64) -> result::Result<Self> {
-        let scale_ok = scale > 0.0 && scale.is_finite();
-        let loc_ok = loc.is_finite();
-        let shape_ok = shape.is_finite();
-
-        if scale_ok && loc_ok && shape_ok {
-            Ok(Gev { loc, scale, shape })
+    pub fn new(loc: f64, scale: f64, shape: f64) -> Result<Self, Error> {
+        if scale <= 0.0 {
+            Err(Error::ScaleTooLowError)
+        } else if !scale.is_finite() {
+            Err(Error::ScaleNotFiniteError)
+        } else if !shape.is_finite() {
+            Err(Error::ShapeNotFiniteError)
+        } else if !loc.is_finite() {
+            Err(Error::LocNotFiniteError)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "location, shape, and scale must all be finite and scale must be greater than zero.";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Ok(Gev { loc, scale, shape })
         }
     }
 
@@ -126,8 +136,8 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let uni = dist::Uniform::new(0.0, 1.0).unwrap();
-                let u: f64 = uni.draw(rng);
+                let uni = rand_distr::Open01;
+                let u: f64 = rng.sample(uni);
                 let lnu = -u.ln();
                 if self.shape == 0.0 {
                     (self.loc - self.scale * lnu.ln()) as $kind

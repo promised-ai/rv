@@ -3,7 +3,6 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::dist::{InvWishart, MvGaussian};
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use nalgebra::{DMatrix, DVector};
@@ -50,23 +49,36 @@ pub struct NormalInvWishart {
     scale: DMatrix<f64>,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// The k parameter is less than or equal to zero
+    KTooLowError,
+    /// The df parameter is less than the number of dimensions
+    DfLowerThanDimensionsError,
+    /// The scale matrix is not square
+    ScaleMatrixNotSquareError,
+    /// The dimensions of the mu vector and the scale matrix do not align
+    MuScaleDimensionMismatch,
+}
+
 fn validate_params<'a>(
     mu: &DVector<f64>,
     k: f64,
     df: usize,
     scale: &DMatrix<f64>,
-) -> Option<&'a str> {
+) -> Result<(), Error> {
     let dims = mu.len();
     if k <= 0.0 {
-        Some("k must be > 0.0")
+        Err(Error::KTooLowError)
     } else if df < dims {
-        Some("df must be >= the number of dimensions")
+        Err(Error::DfLowerThanDimensionsError)
     } else if !scale.is_square() {
-        Some("scale must be square")
+        Err(Error::ScaleMatrixNotSquareError)
     } else if dims != scale.nrows() {
-        Some("dimensions in mu and scale must match")
+        Err(Error::MuScaleDimensionMismatch)
     } else {
-        None
+        Ok(())
     }
 }
 
@@ -83,16 +95,9 @@ impl NormalInvWishart {
         k: f64,
         df: usize,
         scale: DMatrix<f64>,
-    ) -> result::Result<Self> {
-        let err = validate_params(&mu, k, df, &scale);
-
-        match err {
-            Some(msg) => Err(result::Error::new(
-                result::ErrorKind::InvalidParameterError,
-                msg,
-            )),
-            None => Ok(NormalInvWishart { mu, k, df, scale }),
-        }
+    ) -> Result<Self, Error> {
+        validate_params(&mu, k, df, &scale)?;
+        Ok(NormalInvWishart { mu, k, df, scale })
     }
 
     /// Creates a new NormalInvWishart without checking whether the parameters
@@ -132,19 +137,10 @@ impl NormalInvWishart {
     }
 
     /// Set the scale parameter
-    pub fn set_scale(&mut self, scale: DMatrix<f64>) -> result::Result<()> {
-        let err = validate_params(&self.mu, self.k, self.df, &scale);
-
-        match err {
-            Some(msg) => Err(result::Error::new(
-                result::ErrorKind::InvalidParameterError,
-                msg,
-            )),
-            None => {
-                self.scale = scale;
-                Ok(())
-            }
-        }
+    pub fn set_scale(&mut self, scale: DMatrix<f64>) -> Result<(), Error> {
+        validate_params(&self.mu, self.k, self.df, &scale)?;
+        self.scale = scale;
+        Ok(())
     }
 
     pub fn set_scale_unnchecked(&mut self, scale: DMatrix<f64>) {
@@ -152,19 +148,10 @@ impl NormalInvWishart {
     }
 
     /// Set the scale parameter
-    pub fn set_mu(&mut self, mu: DVector<f64>) -> result::Result<()> {
-        let err = validate_params(&mu, self.k, self.df, &self.scale);
-
-        match err {
-            Some(msg) => Err(result::Error::new(
-                result::ErrorKind::InvalidParameterError,
-                msg,
-            )),
-            None => {
-                self.mu = mu;
-                Ok(())
-            }
-        }
+    pub fn set_mu(&mut self, mu: DVector<f64>) -> Result<(), Error> {
+        validate_params(&mu, self.k, self.df, &self.scale)?;
+        self.mu = mu;
+        Ok(())
     }
 
     pub fn set_mu_unchecked(&mut self, mu: DVector<f64>) {

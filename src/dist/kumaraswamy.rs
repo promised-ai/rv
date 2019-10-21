@@ -4,7 +4,6 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::consts::EULER_MASCERONI;
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use rand::Rng;
 use special::Gamma as _;
@@ -49,6 +48,19 @@ pub struct Kumaraswamy {
     ab_ln: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// The a parameter is less than or equal to zero
+    ATooLowError,
+    /// The a parameter is infinite or NaN
+    ANotFiniteError,
+    /// The b parameter is less than or equal to zero
+    BTooLowError,
+    /// The b parameter is infinite or NaN
+    BNotFiniteError,
+}
+
 impl Default for Kumaraswamy {
     fn default() -> Self {
         Kumaraswamy::uniform()
@@ -78,21 +90,21 @@ impl Kumaraswamy {
     /// let kuma_bad  = Kumaraswamy::new(-5.0, 1.0);
     /// assert!(kuma_bad.is_err());
     /// ```
-    pub fn new(a: f64, b: f64) -> result::Result<Self> {
-        let a_ok = a > 0.0 && a.is_finite();
-        let b_ok = b > 0.0 && b.is_finite();
-
-        if a_ok && b_ok {
+    pub fn new(a: f64, b: f64) -> Result<Self, Error> {
+        if a <= 0.0 {
+            Err(Error::ATooLowError)
+        } else if !a.is_finite() {
+            Err(Error::ANotFiniteError)
+        } else if b <= 0.0 {
+            Err(Error::BTooLowError)
+        } else if !b.is_finite() {
+            Err(Error::ANotFiniteError)
+        } else {
             Ok(Kumaraswamy {
                 a,
                 b,
                 ab_ln: a.ln() + b.ln(),
             })
-        } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "a and b must be finite and greater than 0";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
         }
     }
 
@@ -162,19 +174,18 @@ impl Kumaraswamy {
     /// let kuma = Kumaraswamy::centered(2.0).unwrap();
     /// assert!(absolute_error(kuma.f(&0.1), kuma.f(&0.9)) > 1E-8);
     /// ```
-    pub fn centered(a: f64) -> result::Result<Self> {
-        if a > 0.0 && a.is_finite() {
+    pub fn centered(a: f64) -> Result<Self, Error> {
+        if a <= 0.0 {
+            Err(Error::ATooLowError)
+        } else if !a.is_finite() {
+            Err(Error::ANotFiniteError)
+        } else {
             let b = 0.5_f64.ln() / (1.0 - 0.5_f64.powf(a)).ln();
             Ok(Kumaraswamy {
                 a,
                 b,
                 ab_ln: a.ln() + b.ln(),
             })
-        } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "a must be finite and greater than 0";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
         }
     }
 

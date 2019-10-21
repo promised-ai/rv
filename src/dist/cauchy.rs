@@ -5,11 +5,10 @@ use serde_derive::{Deserialize, Serialize};
 use crate::consts::LN_PI;
 use crate::impl_display;
 use crate::misc::logsumexp;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
-use rand::distributions::Cauchy as RCauchy;
 use rand::Rng;
+use rand_distr::Cauchy as RCauchy;
 use std::f64::consts::PI;
 
 /// [Cauchy distribution](https://en.wikipedia.org/wiki/Cauchy_distribution)
@@ -35,26 +34,32 @@ pub struct Cauchy {
     scale: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// Location parameter is infinite or NaN
+    LocNotFiniteError,
+    /// Scale parameter is less than or equal to zero
+    ScaleTooLowError,
+    /// Scale parameter is infinite or NaN
+    ScaleNotFiniteError,
+}
+
 impl Cauchy {
     /// Createa a new Cauchy distribution
     ///
     /// # Arguments
     /// - loc: location, x<sub>0</sub>, in (-∞, ∞)
     /// - scale: scale, γ, in (0, ∞)
-    pub fn new(loc: f64, scale: f64) -> result::Result<Self> {
-        let loc_ok = loc.is_finite();
-        let scale_ok = scale > 0.0 && scale.is_finite();
-        if loc_ok && scale_ok {
-            Ok(Cauchy { loc, scale })
-        } else if !loc_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "loc must be finite");
-            Err(err)
+    pub fn new(loc: f64, scale: f64) -> Result<Self, Error> {
+        if !loc.is_finite() {
+            Err(Error::LocNotFiniteError)
+        } else if scale <= 0.0 {
+            Err(Error::ScaleTooLowError)
+        } else if !scale.is_finite() {
+            Err(Error::ScaleNotFiniteError)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "scale must be finite and greater than zero";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Ok(Cauchy { loc, scale })
         }
     }
 
@@ -116,12 +121,12 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let cauchy = RCauchy::new(self.loc, self.scale);
+                let cauchy = RCauchy::new(self.loc, self.scale).unwrap();
                 rng.sample(cauchy) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let cauchy = RCauchy::new(self.loc, self.scale);
+                let cauchy = RCauchy::new(self.loc, self.scale).unwrap();
                 (0..n).map(|_| rng.sample(cauchy) as $kind).collect()
             }
         }

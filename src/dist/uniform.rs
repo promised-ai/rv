@@ -3,7 +3,6 @@
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use rand::Rng;
 use std::f64;
@@ -33,21 +32,23 @@ pub struct Uniform {
     b: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    InvalidIntervalError,
+    ANotFiniteError,
+    BNotFiniteError,
+}
+
 impl Uniform {
     /// Create a new uniform distribution on [a, b]
-    pub fn new(a: f64, b: f64) -> result::Result<Self> {
-        let a_ok = a.is_finite();
-        let b_ok = b.is_finite() && b > a;
-        if !a_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "a must be finite";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
-        } else if !b_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "b must be finite and greater than a";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+    pub fn new(a: f64, b: f64) -> Result<Self, Error> {
+        if a >= b {
+            Err(Error::InvalidIntervalError)
+        } else if !a.is_finite() {
+            Err(Error::ANotFiniteError)
+        } else if !b.is_finite() {
+            Err(Error::BNotFiniteError)
         } else {
             Ok(Uniform { a, b })
         }
@@ -113,12 +114,12 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let u = rand::distributions::Uniform::new(self.a, self.b);
+                let u = rand_distr::Uniform::new(self.a, self.b);
                 rng.sample(u) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let u = rand::distributions::Uniform::new(self.a, self.b);
+                let u = rand_distr::Uniform::new(self.a, self.b);
                 (0..n).map(|_| rng.sample(u) as $kind).collect()
             }
         }

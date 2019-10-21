@@ -4,11 +4,10 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::vec_to_string;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
-use rand::distributions::Gamma as RGamma;
 use rand::Rng;
+use rand_distr::Gamma as RGamma;
 use special::Gamma as _;
 
 /// Symmetric [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
@@ -25,26 +24,32 @@ pub struct SymmetricDirichlet {
     k: usize,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// alpha vector is empty
+    AlphasEmptyError,
+    /// k parameter is zero
+    KIsZeroError,
+    /// alpha parameter(s) is less than or equal to zero
+    AlphaTooLowError,
+    /// alpha parameter(s) is infinite or NaN
+    AlphaNotFiniteError,
+}
+
 impl SymmetricDirichlet {
     /// Create a new symmetric Dirichlet distributon
     ///
     /// # Arguments
     /// - alpha: The Dirichlet weight.
     /// - k : The number of weights. `alpha` will be replicated `k` times.
-    pub fn new(alpha: f64, k: usize) -> result::Result<Self> {
-        let k_ok = k > 0;
-        let alpha_ok = alpha > 0.0 && alpha.is_finite();
-
-        if !k_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err =
-                result::Error::new(err_kind, "k must be greater than zero");
-            Err(err)
-        } else if !alpha_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "Alpha must be finite and greater than zero";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+    pub fn new(alpha: f64, k: usize) -> Result<Self, Error> {
+        if k == 0 {
+            Err(Error::KIsZeroError)
+        } else if alpha <= 0.0 {
+            Err(Error::AlphaTooLowError)
+        } else if !alpha.is_finite() {
+            Err(Error::AlphaNotFiniteError)
         } else {
             Ok(SymmetricDirichlet { alpha, k })
         }
@@ -65,12 +70,9 @@ impl SymmetricDirichlet {
     /// let symdir = SymmetricDirichlet::jeffreys(4).unwrap();
     /// assert_eq!(symdir, SymmetricDirichlet::new(0.5, 4).unwrap());
     /// ```
-    pub fn jeffreys(k: usize) -> result::Result<Self> {
+    pub fn jeffreys(k: usize) -> Result<Self, Error> {
         if k == 0 {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err =
-                result::Error::new(err_kind, "k must be greater than zero");
-            Err(err)
+            Err(Error::KIsZeroError)
         } else {
             Ok(SymmetricDirichlet { alpha: 0.5, k })
         }
@@ -113,7 +115,7 @@ impl_display!(SymmetricDirichlet);
 
 impl Rv<Vec<f64>> for SymmetricDirichlet {
     fn draw<R: Rng>(&self, rng: &mut R) -> Vec<f64> {
-        let g = RGamma::new(self.alpha, 1.0);
+        let g = RGamma::new(self.alpha, 1.0).unwrap();
         let xs: Vec<f64> = (0..self.k).map(|_| rng.sample(g)).collect();
         let z = xs.iter().fold(0.0, |acc, x| acc + x);
         xs.iter().map(|x| x / z).collect()
@@ -154,20 +156,24 @@ impl From<&SymmetricDirichlet> for Dirichlet {
 
 impl Dirichlet {
     /// Creates a `Dirichlet` with a given `alphas` vector
-    pub fn new(alphas: Vec<f64>) -> result::Result<Self> {
+    pub fn new(alphas: Vec<f64>) -> Result<Self, Error> {
         if alphas.is_empty() {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err =
-                result::Error::new(err_kind, "k must be greater than zero");
-            Err(err)
-        } else if alphas.iter().any(|&a| !(a > 0.0 && a.is_finite())) {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "All alphas must be finite and greater than zero";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
-        } else {
-            Ok(Dirichlet { alphas })
+            return Err(Error::AlphasEmptyError);
         }
+
+        alphas.iter().fold(Ok(()), |acc, &alpha| {
+            if acc.is_err() {
+                acc
+            } else if alpha <= 0.0 {
+                Err(Error::AlphaTooLowError)
+            } else if !alpha.is_finite() {
+                Err(Error::AlphaNotFiniteError)
+            } else {
+                Ok(())
+            }
+        })?;
+
+        Ok(Dirichlet { alphas })
     }
 
     /// Creates a new Dirichlet without checking whether the parameters are
@@ -196,12 +202,13 @@ impl Dirichlet {
     /// let x: Vec<f64> = vec![0.1, 0.4, 0.3, 0.2];
     /// assert::close(dir.ln_f(&x), symdir.ln_f(&x), 1E-12);
     /// ```
-    pub fn symmetric(alpha: f64, k: usize) -> result::Result<Self> {
+    pub fn symmetric(alpha: f64, k: usize) -> Result<Self, Error> {
         if k == 0 {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err =
-                result::Error::new(err_kind, "k must be greater than zero");
-            Err(err)
+            Err(Error::KIsZeroError)
+        } else if alpha <= 0.0 {
+            Err(Error::AlphaTooLowError)
+        } else if !alpha.is_finite() {
+            Err(Error::AlphaNotFiniteError)
         } else {
             Ok(Dirichlet {
                 alphas: vec![alpha; k],
@@ -230,7 +237,7 @@ impl Dirichlet {
     /// let x: Vec<f64> = vec![0.1, 0.4, 0.5];
     /// assert::close(dir.ln_f(&x), symdir.ln_f(&x), 1E-12);
     /// ```
-    pub fn jeffreys(k: usize) -> result::Result<Self> {
+    pub fn jeffreys(k: usize) -> Result<Self, Error> {
         Dirichlet::symmetric(0.5, k)
     }
 
@@ -269,10 +276,10 @@ impl Support<Vec<f64>> for SymmetricDirichlet {
 impl Rv<Vec<f64>> for Dirichlet {
     fn draw<R: Rng>(&self, rng: &mut R) -> Vec<f64> {
         // TODO: offload to Gamma distribution
-        let gammas: Vec<RGamma> = self
+        let gammas: Vec<RGamma<f64>> = self
             .alphas
             .iter()
-            .map(|&alpha| RGamma::new(alpha, 1.0))
+            .map(|&alpha| RGamma::new(alpha, 1.0).unwrap())
             .collect();
         let xs: Vec<f64> = gammas.iter().map(|g| rng.sample(g)).collect();
         let z = xs.iter().fold(0.0, |acc, x| acc + x);

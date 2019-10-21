@@ -3,7 +3,6 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::data::MvGaussianSuffStat;
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
@@ -58,25 +57,30 @@ pub struct MvGaussian {
     cov: DMatrix<f64>,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// The mu and cov parameters have incompatible dimensions
+    MuCovDimensionMismatchError,
+    /// The cov matrix is not square
+    CovNotSquareError,
+    /// Cov is not a positive semi-definite matrix
+    CovNotPositiveSemiDefiniteError,
+    /// Requested dimension is too low
+    ZeroDimensionError,
+}
+
 impl MvGaussian {
     /// Create a new multivariate Gaussian distribution
     ///
     /// # Arguments
     /// - mu: k-length mean vector
     /// - cov: k-by-k positive-definite covariance matrix
-    pub fn new(mu: DVector<f64>, cov: DMatrix<f64>) -> result::Result<Self> {
-        let cov_square = cov.nrows() == cov.ncols();
-        let dims_match = mu.len() == cov.nrows();
-
-        if !dims_match {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "Number of dimensions in μ and Σ must match";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
-        } else if !cov_square {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "Σ must be square");
-            Err(err)
+    pub fn new(mu: DVector<f64>, cov: DMatrix<f64>) -> Result<Self, Error> {
+        if cov.nrows() != cov.ncols() {
+            Err(Error::CovNotSquareError)
+        } else if mu.len() != cov.nrows() {
+            Err(Error::MuCovDimensionMismatchError)
         } else {
             Ok(MvGaussian { mu, cov })
         }
@@ -90,11 +94,9 @@ impl MvGaussian {
 
     /// Create a standard Gaussian distribution with zero mean and identiry
     /// covariance matrix.
-    pub fn standard(dims: usize) -> result::Result<Self> {
+    pub fn standard(dims: usize) -> Result<Self, Error> {
         if dims == 0 {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "ndims must be >= 1");
-            Err(err)
+            Err(Error::ZeroDimensionError)
         } else {
             let mu = DVector::zeros(dims);
             let cov = DMatrix::identity(dims, dims);
@@ -156,12 +158,9 @@ impl MvGaussian {
     ///
     /// assert::close(mvg.ln_f(&x), -24.602370253215661, 1E-8);
     /// ```
-    pub fn set_mu(&mut self, mu: DVector<f64>) -> result::Result<()> {
+    pub fn set_mu(&mut self, mu: DVector<f64>) -> Result<(), Error> {
         if mu.len() != self.cov.nrows() {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "Number of dimensions in μ and Σ must match";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Err(Error::MuCovDimensionMismatchError)
         } else {
             self.mu = mu;
             Ok(())
@@ -203,16 +202,11 @@ impl MvGaussian {
     ///
     /// assert::close(mvg.ln_f(&x), -24.602370253215661, 1E-8);
     /// ```
-    pub fn set_cov(&mut self, cov: DMatrix<f64>) -> result::Result<()> {
+    pub fn set_cov(&mut self, cov: DMatrix<f64>) -> Result<(), Error> {
         if self.mu.len() != cov.nrows() {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "Number of dimensions in μ and Σ must match";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Err(Error::MuCovDimensionMismatchError)
         } else if cov.nrows() != cov.ncols() {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "Σ must be square");
-            Err(err)
+            Err(Error::CovNotSquareError)
         } else {
             self.cov = cov;
             Ok(())
@@ -247,7 +241,7 @@ impl Rv<DVector<f64>> for MvGaussian {
 
     fn draw<R: Rng>(&self, rng: &mut R) -> DVector<f64> {
         let dims = self.mu.len();
-        let norm = rand::distributions::Normal::new(0.0, 1.0);
+        let norm = rand_distr::StandardNormal;
         let vals: Vec<f64> = (0..dims).map(|_| rng.sample(norm)).collect();
 
         let a: DMatrix<f64> = self
@@ -324,13 +318,7 @@ mod tests {
         let cov = DMatrix::identity(4, 4);
         let mvg = MvGaussian::new(mu, cov);
 
-        match mvg {
-            Err(err) => {
-                let msg = err.description();
-                assert!(msg.contains("dimensions"));
-            }
-            Ok(..) => panic!("Should've failed"),
-        }
+        assert_eq!(mvg, Err(Error::MuCovDimensionMismatchError))
     }
 
     #[test]
@@ -338,14 +326,7 @@ mod tests {
         let mu = DVector::zeros(3);
         let cov = DMatrix::identity(2, 2);
         let mvg = MvGaussian::new(mu, cov);
-
-        match mvg {
-            Err(err) => {
-                let msg = err.description();
-                assert!(msg.contains("dimensions"));
-            }
-            Ok(..) => panic!("Should've failed"),
-        }
+        assert_eq!(mvg, Err(Error::MuCovDimensionMismatchError))
     }
 
     #[test]
@@ -353,14 +334,7 @@ mod tests {
         let mu = DVector::zeros(3);
         let cov = DMatrix::identity(3, 2);
         let mvg = MvGaussian::new(mu, cov);
-
-        match mvg {
-            Err(err) => {
-                let msg = err.description();
-                assert!(msg.contains("square"));
-            }
-            Ok(..) => panic!("Should've failed"),
-        }
+        assert_eq!(mvg, Err(Error::CovNotSquareError));
     }
 
     #[test]

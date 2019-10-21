@@ -4,7 +4,6 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_binom;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use rand::Rng;
@@ -52,6 +51,19 @@ pub struct Binomial {
     p: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// The number of trials is zero
+    NIsZeroError,
+    /// Bernoulli p is less than zero
+    PLessThanZeroError,
+    /// Bernoulli p is greater than one
+    PGreaterThanOneError,
+    /// Bernoulli p is infinite or NaN
+    PNotFiniteError,
+}
+
 impl Binomial {
     /// Create a new Binomial distribution
     ///
@@ -59,17 +71,15 @@ impl Binomial {
     ///
     /// - n: the total number of trials
     /// - p: the pobability of success
-    pub fn new(n: u64, p: f64) -> result::Result<Self> {
-        let p_ok = p.is_finite() && 0.0 < p && p < 1.0;
-        let n_ok = n > 0;
-        if !p_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "p must be in [0, 1]");
-            Err(err)
-        } else if !n_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "n must be > 0");
-            Err(err)
+    pub fn new(n: u64, p: f64) -> Result<Self, Error> {
+        if n == 0 {
+            Err(Error::NIsZeroError)
+        } else if p < 0.0 {
+            Err(Error::PLessThanZeroError)
+        } else if p > 1.0 {
+            Err(Error::PLessThanZeroError)
+        } else if !p.is_finite() {
+            Err(Error::PNotFiniteError)
         } else {
             Ok(Binomial { n, p })
         }
@@ -157,7 +167,7 @@ macro_rules! impl_int_traits {
             // is faster to draw using alias tables or some other method.
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 // TODO: This is really awful.
-                let b = rand::distributions::Binomial::new(self.n, self.p);
+                let b = rand_distr::Binomial::new(self.n, self.p).unwrap();
                 rng.sample(b) as $kind
             }
         }

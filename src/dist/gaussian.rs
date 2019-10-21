@@ -5,11 +5,10 @@ use serde_derive::{Deserialize, Serialize};
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
-use rand::distributions::Normal;
 use rand::Rng;
+use rand_distr::Normal;
 use special::Error as _;
 use std::f64::consts::SQRT_2;
 
@@ -46,24 +45,30 @@ pub struct Gaussian {
     sigma: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// The mu parameter is infinite or NaN
+    MuNotFiniteError,
+    /// The sigma parameter is less than or equal to zero
+    SigmaTooLowError,
+    /// The sigma parameter is infinite or NaN
+    SigmaNotFiniteError,
+}
+
 impl Gaussian {
     /// Create a new Gaussian distribution
     ///
     /// # Aruments
     /// - mu: mean
     /// - sigma: standard deviation
-    pub fn new(mu: f64, sigma: f64) -> result::Result<Self> {
-        let mu_ok = mu.is_finite();
-        let sigma_ok = sigma > 0.0 && sigma.is_finite();
-        if !mu_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "mu must be finite");
-            Err(err)
-        } else if !sigma_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "sigma must be finite and greater than zero";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+    pub fn new(mu: f64, sigma: f64) -> Result<Self, Error> {
+        if !mu.is_finite() {
+            Err(Error::MuNotFiniteError)
+        } else if sigma <= 0.0 {
+            Err(Error::SigmaTooLowError)
+        } else if !sigma.is_finite() {
+            Err(Error::SigmaNotFiniteError)
         } else {
             Ok(Gaussian { mu, sigma })
         }
@@ -144,12 +149,12 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let g = Normal::new(self.mu, self.sigma);
+                let g = Normal::new(self.mu, self.sigma).unwrap();
                 rng.sample(g) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let g = Normal::new(self.mu, self.sigma);
+                let g = Normal::new(self.mu, self.sigma).unwrap();
                 (0..n).map(|_| rng.sample(g) as $kind).collect()
             }
         }

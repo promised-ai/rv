@@ -3,7 +3,6 @@
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use rand::Rng;
@@ -47,6 +46,19 @@ pub struct Beta {
     beta: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// The alpha parameter is less than or equal too zero
+    AlphaTooLowError,
+    /// The alpha parameter is infinite or NaN
+    AlphaNotFiniteError,
+    /// The beta parameter is less than or equal to zero
+    BetaTooLowError,
+    /// The beta parameter is infinite or NaN
+    BetaNotFiniteError,
+}
+
 impl Beta {
     /// Create a `Beta` distribution with even density over (0, 1).
     ///
@@ -66,17 +78,17 @@ impl Beta {
     /// let beta_nope  = Beta::new(-5.0, 1.0);
     /// assert!(beta_nope.is_err());
     /// ```
-    pub fn new(alpha: f64, beta: f64) -> result::Result<Self> {
-        let alpha_ok = alpha > 0.0 && alpha.is_finite();
-        let beta_ok = beta > 0.0 && beta.is_finite();
-
-        if alpha_ok && beta_ok {
-            Ok(Beta { alpha, beta })
+    pub fn new(alpha: f64, beta: f64) -> Result<Self, Error> {
+        if alpha <= 0.0 {
+            return Err(Error::AlphaTooLowError);
+        } else if !alpha.is_finite() {
+            return Err(Error::AlphaNotFiniteError);
+        } else if beta <= 0.0 {
+            return Err(Error::BetaTooLowError);
+        } else if !beta.is_finite() {
+            return Err(Error::BetaNotFiniteError);
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "α and β must be finite and greater than 0";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Ok(Beta { alpha, beta })
         }
     }
 
@@ -169,12 +181,12 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let b = rand::distributions::Beta::new(self.alpha, self.beta);
+                let b = rand_distr::Beta::new(self.alpha, self.beta).unwrap();
                 rng.sample(b) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let b = rand::distributions::Beta::new(self.alpha, self.beta);
+                let b = rand_distr::Beta::new(self.alpha, self.beta).unwrap();
                 (0..n).map(|_| rng.sample(b) as $kind).collect()
             }
         }

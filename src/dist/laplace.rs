@@ -3,7 +3,6 @@
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use rand::Rng;
@@ -35,17 +34,26 @@ pub struct Laplace {
     b: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// The mu parameter is infinite or NaN
+    MuNotFiniteError,
+    /// The b parameter less than or equal to zero
+    BTooLowError,
+    /// The b parameter is infinite or NaN
+    BNotFiniteError,
+}
+
 impl Laplace {
     /// Create a new Laplace distribution.
-    pub fn new(mu: f64, b: f64) -> result::Result<Self> {
+    pub fn new(mu: f64, b: f64) -> Result<Self, Error> {
         if !mu.is_finite() {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "mu must be finite");
-            Err(err)
-        } else if b <= 0.0 || !b.is_finite() {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "b must be in (0, ∞)");
-            Err(err)
+            Err(Error::MuNotFiniteError)
+        } else if !b.is_finite() {
+            Err(Error::BNotFiniteError)
+        } else if b <= 0.0 {
+            Err(Error::BTooLowError)
         } else {
             Ok(Laplace { mu, b })
         }
@@ -113,7 +121,7 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let u = rng.sample(rand::distributions::OpenClosed01);
+                let u = rng.sample(rand_distr::OpenClosed01);
                 (self.mu - self.b * laplace_partial_draw(u)) as $kind
             }
         }

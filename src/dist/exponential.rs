@@ -3,11 +3,10 @@
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
-use rand::distributions::Exp;
 use rand::Rng;
+use rand_distr::Exp;
 use std::f64::consts::LN_2;
 
 /// [Exponential distribution](https://en.wikipedia.org/wiki/Exponential_distribution),
@@ -31,19 +30,27 @@ pub struct Exponential {
     rate: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// rate parameter is less than or equal to zero
+    RateTooLowError,
+    /// rate parameter is infinite or zero
+    RateNotFiniteError,
+}
+
 impl Exponential {
     /// Create a new exponential distribution
     ///
     /// # Arguments
     /// - rate: λ > 0, rate or inverse scale
-    pub fn new(rate: f64) -> result::Result<Self> {
-        if rate > 0.0 && rate.is_finite() {
-            Ok(Exponential { rate })
+    pub fn new(rate: f64) -> Result<Self, Error> {
+        if rate <= 0.0 {
+            Err(Error::RateTooLowError)
+        } else if !rate.is_finite() {
+            Err(Error::RateNotFiniteError)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "rate must be finite and greater than zero";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Ok(Exponential { rate })
         }
     }
 
@@ -83,12 +90,12 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let expdist = Exp::new(self.rate);
+                let expdist = Exp::new(self.rate).unwrap();
                 rng.sample(expdist) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let expdist = Exp::new(self.rate);
+                let expdist = Exp::new(self.rate).unwrap();
                 (0..n).map(|_| rng.sample(expdist) as $kind).collect()
             }
         }

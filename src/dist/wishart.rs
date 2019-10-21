@@ -3,7 +3,6 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::dist::MvGaussian;
 use crate::misc::lnmv_gamma;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use nalgebra::{DMatrix, DVector};
@@ -22,13 +21,23 @@ pub struct InvWishart {
     df: usize,
 }
 
-fn validate_inv_scale(inv_scale: &DMatrix<f64>, df: usize) -> Option<&str> {
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    ScaleMatrixNotSquareError,
+    DfTooLowError,
+}
+
+fn validate_inv_scale(
+    inv_scale: &DMatrix<f64>,
+    df: usize,
+) -> Result<(), Error> {
     if !inv_scale.is_square() {
-        Some("scale matrix not square")
+        Err(Error::ScaleMatrixNotSquareError)
     } else if (df as usize) < inv_scale.nrows() {
-        Some("df too low, must be >= ndims")
+        Err(Error::DfTooLowError)
     } else {
-        None
+        Ok(())
     }
 }
 
@@ -39,16 +48,9 @@ impl InvWishart {
     /// # Arguments
     /// - inv_scale: p-dimensional inverse scale matrix, **Ψ**
     /// - df: Degrees of freedom, ν > p - 1
-    pub fn new(inv_scale: DMatrix<f64>, df: usize) -> result::Result<Self> {
-        let err = validate_inv_scale(&inv_scale, df);
-
-        match err {
-            Some(msg) => Err(result::Error::new(
-                result::ErrorKind::InvalidParameterError,
-                msg,
-            )),
-            None => Ok(InvWishart { inv_scale, df }),
-        }
+    pub fn new(inv_scale: DMatrix<f64>, df: usize) -> Result<Self, Error> {
+        validate_inv_scale(&inv_scale, df)?;
+        Ok(InvWishart { inv_scale, df })
     }
 
     /// Creates a new InvWishart without checking whether the parameters are
@@ -80,19 +82,10 @@ impl InvWishart {
     pub fn set_inv_scale(
         &mut self,
         inv_scale: DMatrix<f64>,
-    ) -> result::Result<()> {
-        let err = validate_inv_scale(&inv_scale, self.df);
-
-        match err {
-            Some(msg) => Err(result::Error::new(
-                result::ErrorKind::InvalidParameterError,
-                msg,
-            )),
-            None => {
-                self.inv_scale = inv_scale;
-                Ok(())
-            }
-        }
+    ) -> Result<(), Error> {
+        validate_inv_scale(&inv_scale, self.df)?;
+        self.inv_scale = inv_scale;
+        Ok(())
     }
 
     pub fn set_inv_scale_unchecked(&mut self, inv_scale: DMatrix<f64>) {
@@ -184,25 +177,19 @@ mod tests {
         let inv_scale = DMatrix::identity(4, 4);
         assert!(InvWishart::new(inv_scale.clone(), 4).is_ok());
         assert!(InvWishart::new(inv_scale.clone(), 5).is_ok());
-        match InvWishart::new(inv_scale.clone(), 3) {
-            Err(err) => {
-                let msg = err.description();
-                assert!(msg.contains("df too low"));
-            }
-            Ok(..) => panic!("Should've failed"),
-        }
+        assert_eq!(
+            InvWishart::new(inv_scale.clone(), 3),
+            Err(Error::DfTooLowError)
+        );
     }
 
     #[test]
     fn new_should_reject_non_square_scale() {
         let inv_scale = DMatrix::identity(4, 3);
-        match InvWishart::new(inv_scale, 5) {
-            Err(err) => {
-                let msg = err.description();
-                assert!(msg.contains("square"));
-            }
-            Ok(..) => panic!("Should've failed"),
-        }
+        assert_eq!(
+            InvWishart::new(inv_scale, 5),
+            Err(Error::ScaleMatrixNotSquareError)
+        );
     }
 
     #[test]

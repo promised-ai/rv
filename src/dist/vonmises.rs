@@ -4,7 +4,6 @@ use serde_derive::{Deserialize, Serialize};
 use crate::consts::LN_2PI;
 use crate::impl_display;
 use crate::misc::{bessel, mod_euc, quad};
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use rand::Rng;
@@ -41,20 +40,30 @@ pub struct VonMises {
     i0_k: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// The mu parameter is less than zero or greater than `2*PI`
+    MuOutOfBoundsError,
+    /// The mu parameter is infinite or NaN
+    MuNotFiniteError,
+    /// The k parameter is less than or equal to zero
+    KTooLowError,
+    /// The k parameter is infinite or NaN
+    KNotFiniteError,
+}
+
 impl VonMises {
     /// Create a new VonMises distribution with mean mu, and precision, k.
-    pub fn new(mu: f64, k: f64) -> result::Result<Self> {
-        let mu_ok = 0.0 <= mu && mu <= 2.0 * PI && mu.is_finite();
-        let k_ok = k > 0.0 && k.is_finite();
-        if !mu_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "mu must be in [0, 2π]");
-            Err(err)
-        } else if !k_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "k must be finite and greater than zero";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+    pub fn new(mu: f64, k: f64) -> Result<Self, Error> {
+        if 2.0 * PI < mu || mu < 0.0 {
+            Err(Error::MuOutOfBoundsError)
+        } else if !mu.is_finite() {
+            Err(Error::MuNotFiniteError)
+        } else if k <= 0.0 {
+            Err(Error::KTooLowError)
+        } else if !k.is_finite() {
+            Err(Error::KNotFiniteError)
         } else {
             let i0_k = bessel::i0(k);
             Ok(VonMises { mu, k, i0_k })
@@ -110,12 +119,9 @@ impl VonMises {
     /// let v2: f64 = vm.variance().unwrap();
     /// assert::close(v2, 0.3022253420359917, 1E-10);
     /// ```
-    pub fn set_k(&mut self, k: f64) -> result::Result<()> {
+    pub fn set_k(&mut self, k: f64) -> Result<(), Error> {
         if k <= 0.0 {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "k must be finite and greater than zero";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Err(Error::KTooLowError)
         } else {
             self.k = k;
             self.i0_k = bessel::i0(k);

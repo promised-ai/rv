@@ -3,10 +3,8 @@
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
-use rand::distributions;
 use rand::Rng;
 use special::Gamma as _;
 use std::f64::consts::LN_2;
@@ -29,19 +27,27 @@ pub struct ChiSquared {
     k: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// k parameter is less than or equal to zero
+    KTooLowError,
+    /// k parameter is infinite or NaN
+    KNotFiniteError,
+}
+
 impl ChiSquared {
     /// Create a new Chi-squared distribution
     ///
     /// # Arguments
     /// - k: Degrees of freedom in (0, ∞)
-    pub fn new(k: f64) -> result::Result<Self> {
-        if k > 0.0 && k.is_finite() {
-            Ok(ChiSquared { k })
+    pub fn new(k: f64) -> Result<Self, Error> {
+        if k <= 0.0 {
+            Err(Error::KTooLowError)
+        } else if !k.is_finite() {
+            Err(Error::KNotFiniteError)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "k must be finite and greater than 0";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Ok(ChiSquared { k })
         }
     }
 
@@ -83,12 +89,12 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let x2 = distributions::ChiSquared::new(self.k);
+                let x2 = rand_distr::ChiSquared::new(self.k).unwrap();
                 rng.sample(x2) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let x2 = distributions::ChiSquared::new(self.k);
+                let x2 = rand_distr::ChiSquared::new(self.k).unwrap();
                 (0..n).map(|_| rng.sample(x2) as $kind).collect()
             }
         }

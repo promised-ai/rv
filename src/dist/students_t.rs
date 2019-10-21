@@ -2,10 +2,8 @@
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
-use rand::distributions;
 use rand::Rng;
 use special::Gamma as SGamma;
 use std::f64::consts::PI;
@@ -21,16 +19,24 @@ pub struct StudentsT {
     v: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// The v parameter is infinite or NaN
+    VNotFiniteError,
+    /// The v parameter is less than or equal to zero
+    VTooLowError,
+}
+
 impl StudentsT {
     /// Create a new Student's T distribtuion with degrees of freedom, v.
-    pub fn new(v: f64) -> result::Result<Self> {
-        if v > 0.0 && v.is_finite() {
-            Ok(StudentsT { v })
+    pub fn new(v: f64) -> Result<Self, Error> {
+        if v <= 0.0 {
+            Err(Error::VTooLowError)
+        } else if !v.is_finite() {
+            Err(Error::VNotFiniteError)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "v must be finite and greater than 0";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Ok(StudentsT { v })
         }
     }
 
@@ -73,12 +79,12 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let t = distributions::StudentT::new(self.v);
+                let t = rand_distr::StudentT::new(self.v).unwrap();
                 rng.sample(t) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let t = distributions::StudentT::new(self.v);
+                let t = rand_distr::StudentT::new(self.v).unwrap();
                 (0..n).map(|_| rng.sample(t) as $kind).collect()
             }
         }

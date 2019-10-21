@@ -161,7 +161,7 @@ mod tests {
             // TODO: should probably implement Rv<usize> for Poisson...
             let n: usize = <Poisson as Rv<u32>>::draw(&pois, &mut rng) as usize;
 
-            let components: Vec<Gaussian> = (0..n)
+            let components: Vec<Gaussian> = (0..=n)
                 .map(|_| {
                     let mu: f64 = mu_prior.draw(&mut rng);
                     let sigma: f64 = sigma_prior.draw(&mut rng);
