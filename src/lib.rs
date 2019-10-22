@@ -88,11 +88,9 @@ pub mod misc;
 mod model;
 pub mod prelude;
 mod priors;
-pub mod result;
 pub mod traits;
 
 pub use crate::model::ConjugateModel;
-pub use crate::result::{Error, ErrorKind, Result};
 
 #[macro_export]
 macro_rules! impl_display {
