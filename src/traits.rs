@@ -81,6 +81,29 @@ pub trait Rv<X> {
     }
 }
 
+// Auto impl for deref types
+impl<Fx, X> Rv<X> for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: Rv<X>,
+{
+    fn ln_f(&self, x: &X) -> f64 {
+        self.deref().ln_f(x)
+    }
+
+    fn f(&self, x: &X) -> f64 {
+        self.deref().f(x)
+    }
+
+    fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
+        self.deref().draw(&mut rng)
+    }
+
+    fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<X> {
+        self.deref().sample(n, &mut rng)
+    }
+}
+
 /// Identifies the support of the Rv
 pub trait Support<X> {
     /// Returns `true` if `x` is in the support of the `Rv`
@@ -99,6 +122,16 @@ pub trait Support<X> {
     /// assert!(!u.supports(&1.1_f64));
     /// ```
     fn supports(&self, x: &X) -> bool;
+}
+
+impl<Fx, X> Support<X> for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: Support<X>,
+{
+    fn supports(&self, x: &X) -> bool {
+        self.deref().supports(x)
+    }
 }
 
 /// Is a continuous probability distributions
@@ -168,6 +201,13 @@ pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
     }
 }
 
+impl<Fx, X> ContinuousDistr<X> for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: ContinuousDistr<X>,
+{
+}
+
 /// Has a cumulative distribution function (CDF)
 pub trait Cdf<X>: Rv<X> {
     /// The value of the Cumulative Density Function at `x`
@@ -190,6 +230,20 @@ pub trait Cdf<X>: Rv<X> {
     /// Survival function, `1 - CDF(x)`
     fn sf(&self, x: &X) -> f64 {
         1.0 - self.cdf(x)
+    }
+}
+
+impl<Fx, X> Cdf<X> for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: Cdf<X>,
+{
+    fn cdf(&self, x: &X) -> f64 {
+        self.deref().cdf(x)
+    }
+
+    fn sf(&self, x: &X) -> f64 {
+        self.deref().sf(x)
     }
 }
 
@@ -245,6 +299,24 @@ pub trait InverseCdf<X>: Rv<X> + Support<X> {
     }
 }
 
+impl<Fx, X> InverseCdf<X> for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: InverseCdf<X>,
+{
+    fn invcdf(&self, p: f64) -> X {
+        self.deref().invcdf(p)
+    }
+
+    fn quantile(&self, p: f64) -> X {
+        self.deref().quantile(p)
+    }
+
+    fn interval(&self, p: f64) -> (X, X) {
+        self.deref().interval(p)
+    }
+}
+
 /// Is a discrete probability distribution
 pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
     /// Probability mass function (PMF) at `x`
@@ -297,10 +369,27 @@ pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
     }
 }
 
+impl<Fx, X> DiscreteDistr<X> for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: DiscreteDistr<X>,
+{
+}
+
 /// Defines the distribution mean
 pub trait Mean<X> {
     /// Returns `None` if the mean is undefined
     fn mean(&self) -> Option<X>;
+}
+
+impl<Fx, X> Mean<X> for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: Mean<X>,
+{
+    fn mean(&self) -> Option<X> {
+        self.deref().mean()
+    }
 }
 
 /// Defines the distribution median
@@ -309,10 +398,30 @@ pub trait Median<X> {
     fn median(&self) -> Option<X>;
 }
 
+impl<Fx, X> Median<X> for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: Median<X>,
+{
+    fn median(&self) -> Option<X> {
+        self.deref().median()
+    }
+}
+
 /// Defines the distribution mode
 pub trait Mode<X> {
     /// Returns `None` if the mode is undefined or is not a single value
     fn mode(&self) -> Option<X>;
+}
+
+impl<Fx, X> Mode<X> for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: Mode<X>,
+{
+    fn mode(&self) -> Option<X> {
+        self.deref().mode()
+    }
 }
 
 /// Defines the distribution variance
@@ -321,18 +430,58 @@ pub trait Variance<X> {
     fn variance(&self) -> Option<X>;
 }
 
+impl<Fx, X> Variance<X> for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: Variance<X>,
+{
+    fn variance(&self) -> Option<X> {
+        self.deref().variance()
+    }
+}
+
 /// Defines the distribution entropy
 pub trait Entropy {
     /// The entropy, *H(X)*
     fn entropy(&self) -> f64;
 }
 
+impl<Fx> Entropy for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: Entropy,
+{
+    fn entropy(&self) -> f64 {
+        self.deref().entropy()
+    }
+}
+
 pub trait Skewness {
     fn skewness(&self) -> Option<f64>;
 }
 
+impl<Fx> Skewness for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: Skewness,
+{
+    fn skewness(&self) -> Option<f64> {
+        self.deref().skewness()
+    }
+}
+
 pub trait Kurtosis {
     fn kurtosis(&self) -> Option<f64>;
+}
+
+impl<Fx> Kurtosis for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: Kurtosis,
+{
+    fn kurtosis(&self) -> Option<f64> {
+        self.deref().kurtosis()
+    }
 }
 
 /// KL divergences
@@ -382,10 +531,36 @@ pub trait KlDivergence {
     }
 }
 
+impl<Fx> KlDivergence for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: KlDivergence,
+{
+    fn kl(&self, other: &Self) -> f64 {
+        self.deref().kl(other)
+    }
+
+    fn kl_sym(&self, other: &Self) -> f64 {
+        self.deref().kl_sym(other)
+    }
+}
+
 /// The data for this distribution can be summarized by a statistic
 pub trait HasSuffStat<X> {
     type Stat: SuffStat<X>;
     fn empty_suffstat(&self) -> Self::Stat;
+}
+
+impl<Fx, X> HasSuffStat<X> for Fx
+where
+    Fx: std::ops::Deref,
+    Fx::Target: HasSuffStat<X>,
+{
+    type Stat = <<Fx as std::ops::Deref>::Target as HasSuffStat<X>>::Stat;
+
+    fn empty_suffstat(&self) -> Self::Stat {
+        self.deref().empty_suffstat()
+    }
 }
 
 /// Is a [sufficient statistic](https://en.wikipedia.org/wiki/Sufficient_statistic) for a
@@ -458,6 +633,32 @@ pub trait SuffStat<X> {
     /// Forget several observations
     fn forget_many(&mut self, xs: &[X]) {
         xs.iter().for_each(|x| self.forget(x));
+    }
+}
+
+impl<S, X> SuffStat<X> for S
+where
+    S: std::ops::DerefMut,
+    S::Target: SuffStat<X>,
+{
+    fn n(&self) -> usize {
+        self.deref().n()
+    }
+
+    fn observe(&mut self, x: &X) {
+        self.deref_mut().observe(x)
+    }
+
+    fn forget(&mut self, x: &X) {
+        self.deref_mut().forget(x)
+    }
+
+    fn observe_many(&mut self, xs: &[X]) {
+        self.deref_mut().observe_many(xs)
+    }
+
+    fn forget_many(&mut self, xs: &[X]) {
+        self.deref_mut().forget_many(xs)
     }
 }
 
