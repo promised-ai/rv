@@ -2,6 +2,7 @@ use crate::consts::LN_PI;
 use rand::distributions::Open01;
 use rand::Rng;
 use special::Gamma;
+use std::cmp::Ordering;
 use std::cmp::PartialOrd;
 use std::fmt::Debug;
 use std::ops::AddAssign;
@@ -219,11 +220,13 @@ pub fn argmax<T: PartialOrd>(xs: &[T]) -> Vec<usize> {
         let mut maxval = &xs[0];
         let mut max_ixs: Vec<usize> = vec![0];
         for (i, x) in xs.iter().enumerate().skip(1) {
-            if x > maxval {
-                maxval = x;
-                max_ixs = vec![i];
-            } else if x == maxval {
-                max_ixs.push(i);
+            match x.partial_cmp(maxval) {
+                Some(Ordering::Greater) => {
+                    maxval = x;
+                    max_ixs = vec![i];
+                }
+                Some(Ordering::Equal) => max_ixs.push(i),
+                _ => (),
             }
         }
         max_ixs

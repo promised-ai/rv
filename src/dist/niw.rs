@@ -62,7 +62,7 @@ pub enum Error {
     MuScaleDimensionMismatch,
 }
 
-fn validate_params<'a>(
+fn validate_params(
     mu: &DVector<f64>,
     k: f64,
     df: usize,

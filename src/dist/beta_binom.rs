@@ -87,15 +87,15 @@ impl BetaBinomial {
     /// - beta: the prior pseudo obersvations of failure
     pub fn new(n: u32, alpha: f64, beta: f64) -> Result<Self, Error> {
         if alpha < 0.0 {
-            return Err(Error::AlphaLessThanZeroError);
+            Err(Error::AlphaLessThanZeroError)
         } else if !alpha.is_finite() {
-            return Err(Error::AlphaNotFiniteError);
+            Err(Error::AlphaNotFiniteError)
         } else if beta < 0.0 {
-            return Err(Error::BetaLessThanZeroError);
+            Err(Error::BetaLessThanZeroError)
         } else if !beta.is_finite() {
-            return Err(Error::BetaNotFiniteError);
+            Err(Error::BetaNotFiniteError)
         } else if n == 0 {
-            return Err(Error::NIsZeroError);
+            Err(Error::NIsZeroError)
         } else {
             Ok(BetaBinomial { n, alpha, beta })
         }

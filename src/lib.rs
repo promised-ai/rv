@@ -15,9 +15,6 @@
 //! bunch of things
 //!
 //! ```
-//! extern crate rand;
-//! extern crate rv;
-//!
 //! use rv::prelude::*;
 //!
 //! // Beta(0.5, 0.5)
@@ -45,33 +42,25 @@
 //! ## Conjugate analysis of coin flips
 //!
 //! ```rust
-//! extern crate rand;
-//! extern crate rv;
+//! let mut rng = rand::thread_rng();
 //!
-//! use rand::Rng;
-//! use rv::prelude::*;
+//! // A sequence of observations
+//! let flips = vec![true, false, true, true, true, false, true];
 //!
-//! fn main() {
-//!     let mut rng = rand::thread_rng();
+//! // Construct the Jeffreys prior of Beta(0.5, 0.5)
+//! let prior = Beta::jeffreys();
 //!
-//!     // A sequence of observations
-//!     let flips = vec![true, false, true, true, true, false, true];
+//! // Packages the data in a wrapper that marks it as having come from
+//! // Bernoulli trials.
+//! let obs: BernoulliData<bool> = DataOrSuffStat::Data(&flips);
 //!
-//!     // Construct the Jeffreys prior of Beta(0.5, 0.5)
-//!     let prior = Beta::jeffreys();
+//! // Generate the posterior distribution P(θ|x); the distribution of
+//! // probable coin weights
+//! let posterior: Beta = prior.posterior(&obs);
 //!
-//!     // Packages the data in a wrapper that marks it as having come from
-//!     // Bernoulli trials.
-//!     let obs: BernoulliData<bool> = DataOrSuffStat::Data(&flips);
-//!
-//!     // Generate the posterior distribution P(θ|x); the distribution of
-//!     // probable coin weights
-//!     let posterior: Beta = prior.posterior(&obs);
-//!
-//!     // What is the probability that the next flip would come up heads
-//!     // (true) given the observed flips (posterior predictive)?
-//!     let p_heads = prior.pp(&true, &obs);
-//! }
+//! // What is the probability that the next flip would come up heads
+//! // (true) given the observed flips (posterior predictive)?
+//! let p_heads = prior.pp(&true, &obs);
 //! ```
 #[cfg(feature = "serde_support")]
 extern crate serde_derive;

@@ -77,7 +77,7 @@ impl Binomial {
         } else if p < 0.0 {
             Err(Error::PLessThanZeroError)
         } else if p > 1.0 {
-            Err(Error::PLessThanZeroError)
+            Err(Error::PGreaterThanOneError)
         } else if !p.is_finite() {
             Err(Error::PNotFiniteError)
         } else {

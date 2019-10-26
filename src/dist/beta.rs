@@ -80,13 +80,13 @@ impl Beta {
     /// ```
     pub fn new(alpha: f64, beta: f64) -> Result<Self, Error> {
         if alpha <= 0.0 {
-            return Err(Error::AlphaTooLowError);
+            Err(Error::AlphaTooLowError)
         } else if !alpha.is_finite() {
-            return Err(Error::AlphaNotFiniteError);
+            Err(Error::AlphaNotFiniteError)
         } else if beta <= 0.0 {
-            return Err(Error::BetaTooLowError);
+            Err(Error::BetaTooLowError)
         } else if !beta.is_finite() {
-            return Err(Error::BetaNotFiniteError);
+            Err(Error::BetaNotFiniteError)
         } else {
             Ok(Beta { alpha, beta })
         }
