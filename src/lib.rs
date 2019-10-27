@@ -42,6 +42,8 @@
 //! ## Conjugate analysis of coin flips
 //!
 //! ```rust
+//! use rv::prelude::*;
+//!
 //! let mut rng = rand::thread_rng();
 //!
 //! // A sequence of observations
