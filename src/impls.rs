@@ -24,17 +24,6 @@ impl Entropy for Mixture<Categorical> {
     }
 }
 
-// Exact computation for categorical
-impl Entropy for Mixture<Mixture<Categorical>> {
-    fn entropy(&self) -> f64 {
-        let k = self.components()[0].components()[0].k();
-        (0..k).fold(0.0, |acc, x| {
-            let ln_f = self.ln_f(&x);
-            acc - ln_f.exp() * ln_f
-        })
-    }
-}
-
 macro_rules! dual_step_quad_bounds {
     ($kind: ty) => {
         impl QuadBounds for $kind {
@@ -84,10 +73,10 @@ macro_rules! quadrature_entropy {
 }
 
 dual_step_quad_bounds!(Mixture<Gaussian>);
-dual_step_quad_bounds!(Mixture<Mixture<Gaussian>>);
+dual_step_quad_bounds!(Mixture<&Gaussian>);
 
 quadrature_entropy!(Mixture<Gaussian>);
-quadrature_entropy!(Mixture<Mixture<Gaussian>>);
+quadrature_entropy!(Mixture<&Gaussian>);
 
 #[cfg(test)]
 mod tests {
