@@ -24,6 +24,16 @@ impl Entropy for Mixture<Categorical> {
     }
 }
 
+// Exact computation for categorical
+impl Entropy for Mixture<&Categorical> {
+    fn entropy(&self) -> f64 {
+        (0..self.components()[0].k()).fold(0.0, |acc, x| {
+            let ln_f = self.ln_f(&x);
+            acc - ln_f.exp() * ln_f
+        })
+    }
+}
+
 macro_rules! dual_step_quad_bounds {
     ($kind: ty) => {
         impl QuadBounds for $kind {
@@ -88,29 +98,6 @@ mod tests {
     #[test]
     fn gauss_mixture_entropy() {
         let components = vec![Gaussian::standard(), Gaussian::standard()];
-        let weights = vec![0.5, 0.5];
-        let mm = Mixture::new(weights, components).unwrap();
-
-        let h: f64 = mm.entropy();
-        assert::close(h, 1.4189385332046727, TOL);
-    }
-
-    #[test]
-    fn gauss_mixture_mixture_entropy() {
-        let components = vec![
-            {
-                let components =
-                    vec![Gaussian::standard(), Gaussian::standard()];
-                let weights = vec![0.5, 0.5];
-                Mixture::new(weights, components).unwrap()
-            },
-            {
-                let components =
-                    vec![Gaussian::standard(), Gaussian::standard()];
-                let weights = vec![0.5, 0.5];
-                Mixture::new(weights, components).unwrap()
-            },
-        ];
         let weights = vec![0.5, 0.5];
         let mm = Mixture::new(weights, components).unwrap();
 
