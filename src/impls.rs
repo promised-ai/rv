@@ -3,14 +3,9 @@ use crate::dist::Gaussian;
 use crate::dist::Mixture;
 use crate::traits::*;
 
-trait QuadBounds {
-    fn quad_bounds(&self) -> (f64, f64);
-}
-
 impl QuadBounds for Gaussian {
     fn quad_bounds(&self) -> (f64, f64) {
-        let span = self.mu() + 6.0 * self.sigma();
-        (-span, span)
+        self.interval(0.99999999999)
     }
 }
 
@@ -39,27 +34,19 @@ macro_rules! dual_step_quad_bounds {
         impl QuadBounds for $kind {
             fn quad_bounds(&self) -> (f64, f64) {
                 let center: f64 = self.mean().unwrap();
-                let step: f64 = self.variance().unwrap().sqrt();
-                let mut lower = center - 4.0 * step;
-                let mut upper = center + 4.0 * step;
-
-                loop {
-                    if self.pdf(&lower) < 1E-16 {
-                        break;
-                    } else {
-                        lower -= step;
-                    }
-                }
-
-                loop {
-                    if self.pdf(&upper) < 1E-16 {
-                        break;
-                    } else {
-                        upper += step;
-                    }
-                }
-
-                (lower, upper)
+                self.components().iter().fold(
+                    (center, center),
+                    |(mut left, mut right), cpnt| {
+                        let (a, b) = cpnt.quad_bounds();
+                        if a < left {
+                            left = a;
+                        }
+                        if b > right {
+                            right = b;
+                        }
+                        (left, right)
+                    },
+                )
             }
         }
     };
@@ -147,10 +134,15 @@ mod tests {
 
             let mm = Mixture::uniform(components).unwrap();
             let (a, b) = mm.quad_bounds();
+            let pdf_a = mm.pdf(&a);
+            let pdf_b = mm.pdf(&b);
 
-            mm.pdf(&a).abs() > 1E-16 || mm.pdf(&b).abs() > 1E-16
+            println!("({}, {}) => ({}, {})", a, b, pdf_a, pdf_b);
+
+            pdf_a > 1E-10 || pdf_b > 1E-10
         });
 
+        println!("{:?}", bad_bounds);
         assert!(bad_bounds.is_none());
     }
 

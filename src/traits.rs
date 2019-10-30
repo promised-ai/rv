@@ -708,3 +708,8 @@ where
         self.ln_pp(&y, x).exp()
     }
 }
+
+/// Get the quad bounds of a univariate real distribution
+pub trait QuadBounds {
+    fn quad_bounds(&self) -> (f64, f64);
+}
