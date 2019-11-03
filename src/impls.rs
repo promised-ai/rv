@@ -93,7 +93,7 @@ mod tests {
     }
 
     #[test]
-    fn categorical_mixture_entropy() {
+    fn categorical_mixture_entropy_0() {
         let components = vec![
             {
                 let weights: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
@@ -108,6 +108,46 @@ mod tests {
         let mm = Mixture::new(weights, components).unwrap();
         let h: f64 = mm.entropy();
         assert::close(h, 1.2798542258336676, TOL);
+    }
+
+    #[test]
+    fn categorical_mixture_entropy_1() {
+        let components = vec![
+            {
+                let weights: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
+                Categorical::new(&weights).unwrap()
+            },
+            {
+                let weights: Vec<f64> = vec![4.0, 3.0, 2.0, 1.0];
+                Categorical::new(&weights).unwrap()
+            },
+        ];
+        let weights = vec![0.5, 0.5];
+        let mm = Mixture::new(weights, components).unwrap();
+        let h: f64 = mm.entropy();
+        assert::close(h, -0.25_f64.ln(), TOL);
+    }
+
+    #[test]
+    fn categorical_mixture_entropy_after_comibe() {
+        let m1 = {
+            let weights: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
+            let cat = Categorical::new(&weights).unwrap();
+            let components = vec![cat];
+            Mixture::new(vec![1.0], components).unwrap()
+        };
+
+        let m2 = {
+            let weights: Vec<f64> = vec![4.0, 3.0, 2.0, 1.0];
+            let cat = Categorical::new(&weights).unwrap();
+            let components = vec![cat];
+            Mixture::new(vec![1.0], components).unwrap()
+        };
+
+        let mm = Mixture::combine(vec![m1, m2]);
+
+        let h: f64 = mm.entropy();
+        assert::close(h, -0.25_f64.ln(), TOL);
     }
 
     #[test]
