@@ -1,12 +1,46 @@
 #[cfg(feature = "serde_support")]
 use serde_derive::{Deserialize, Serialize};
 
+use crate::consts::LN_2PI;
 use crate::data::MvGaussianSuffStat;
 use crate::impl_display;
 use crate::traits::*;
-use nalgebra::{DMatrix, DVector};
+use crate::consts::HALF_LN_2PI_E;
+use nalgebra::linalg::Cholesky;
+use nalgebra::{DMatrix, DVector, Dynamic};
 use rand::Rng;
-use std::f64::consts::{E, PI};
+use once_cell::unsync::OnceCell;
+
+/// Cache for MvGaussian Internals
+#[derive(Clone, Debug)]
+struct MVGCache {
+    /// Covariant Matrix Cholesky Decomposition
+    pub cov_chol: Cholesky<f64, Dynamic>,
+    /// Inverse of Covariance Matrix
+    pub cov_inv: DMatrix<f64>,
+}
+
+impl MVGCache {
+    pub fn from_cov(cov: &DMatrix<f64>) -> Result<Self, Error> {
+        match cov.clone().cholesky() {
+            None => Err(Error::CovNotPositiveSemiDefiniteError),
+            Some(cov_chol) => {
+                let cov_inv = cov_chol.inverse();
+                Ok(MVGCache { cov_chol, cov_inv })
+            }
+        }
+    }
+
+    pub fn from_chol(cov_chol: Cholesky<f64, Dynamic>) -> Self {
+        let cov_inv = cov_chol.inverse();
+        MVGCache { cov_chol, cov_inv }
+    }
+
+    pub fn cov(&self) -> DMatrix<f64> {
+        let l = self.cov_chol.l();
+        &l * &l.transpose()
+    }
+}
 
 /// [Multivariate Gaussian/Normal Distribution](https://en.wikipedia.org/wiki/Multivariate_normal_distribution),
 /// 𝒩(μ, Σ).
@@ -48,13 +82,26 @@ use std::f64::consts::{E, PI};
 /// // decomposition.
 /// assert!(mat.cholesky().is_some());
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct MvGaussian {
     // Mean vector
     mu: DVector<f64>,
-    // Covariance matrix
+    // Covariance Matrix
     cov: DMatrix<f64>,
+    // Cached values for computations
+    #[cfg_attr(feature = "serde_support", serde(skip, default="default_cache_none"))]
+    cache: OnceCell<MVGCache>,
+}
+
+fn default_cache_none() -> OnceCell<MVGCache> {
+    OnceCell::new()
+}
+
+impl PartialEq for MvGaussian {
+    fn eq(&self, other: &MvGaussian) -> bool {
+        self.mu == other.mu && self.cov == other.cov
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
@@ -82,14 +129,66 @@ impl MvGaussian {
         } else if mu.len() != cov.nrows() {
             Err(Error::MuCovDimensionMismatchError)
         } else {
-            Ok(MvGaussian { mu, cov })
+            let cache = OnceCell::from(MVGCache::from_cov(&cov)?);
+            Ok(MvGaussian {
+                mu,
+                cov,
+                cache
+            })
         }
     }
 
-    /// Creates a new MvGaussian without checking whether the parameters are
-    /// valid.
+    /// Create a new multivariate Gaussian distribution from Cholesky factorized Dov
+    ///
+    /// # Arguments
+    /// - mu: k-length mean vector
+    /// - cov_chol: Choleksy decomposition of k-by-k positive-definite covariance matrix
+    /// ```rust
+    /// use nalgebra::{DMatrix, DVector};
+    /// use rv::prelude::*;
+    ///
+    /// let mu = DVector::zeros(3);
+    /// let cov = DMatrix::from_row_slice(3, 3, &[
+    ///     2.0, 1.0, 0.0,
+    ///     1.0, 2.0, 0.0,
+    ///     0.0, 0.0, 1.0
+    /// ]);
+    ///
+    /// let chol = cov.clone().cholesky().unwrap();
+    /// let mvg_r = MvGaussian::new_cholesky(mu, chol);
+    ///
+    /// assert!(mvg_r.is_ok());
+    /// let mvg = mvg_r.unwrap();
+    /// assert!(cov.relative_eq(mvg.cov(), 1E-8, 1E-8));
+    /// ```
+    pub fn new_cholesky(mu: DVector<f64>, cov_chol: Cholesky<f64, Dynamic>) -> Result<Self, Error> {
+        let l = cov_chol.l();
+        let cov = &l * &l.transpose();
+        if mu.len() != cov.nrows() {
+            Err(Error::MuCovDimensionMismatchError)
+        } else {
+            let cache = OnceCell::from(MVGCache::from_chol(cov_chol));
+            Ok(MvGaussian { mu, cov, cache })
+        }
+    }
+
+
+    /// Creates a new MvGaussian from mean and covariance without checking
+    /// whether the parameters are valid.
     pub fn new_unchecked(mu: DVector<f64>, cov: DMatrix<f64>) -> Self {
-        MvGaussian { mu, cov }
+        let cache = OnceCell::from(MVGCache::from_cov(&cov).unwrap());
+        MvGaussian { mu, cov, cache }
+    }
+
+    /// Creates a new MvGaussian from mean and covariance's Cholesky factorization
+    /// without checking whether the parameters are valid.
+    pub fn new_cholesky_unchecked(
+        mu: DVector<f64>,
+        cov_chol: Cholesky<f64, Dynamic>,
+    ) -> Self {
+        let cache = OnceCell::from(MVGCache::from_chol(cov_chol));
+        let cov = cache.get().unwrap().cov();
+        MvGaussian { mu, cov, cache }
     }
 
     /// Create a standard Gaussian distribution with zero mean and identiry
@@ -100,7 +199,9 @@ impl MvGaussian {
         } else {
             let mu = DVector::zeros(dims);
             let cov = DMatrix::identity(dims, dims);
-            Ok(MvGaussian { mu, cov })
+            let cov_chol = cov.clone().cholesky().unwrap();
+            let cache = OnceCell::from(MVGCache::from_chol(cov_chol));
+            Ok(MvGaussian { mu, cov, cache })
         }
     }
 
@@ -159,7 +260,7 @@ impl MvGaussian {
     /// assert::close(mvg.ln_f(&x), -24.602370253215661, 1E-8);
     /// ```
     pub fn set_mu(&mut self, mu: DVector<f64>) -> Result<(), Error> {
-        if mu.len() != self.cov.nrows() {
+        if mu.len() != self.cache().cov_chol.l_dirty().nrows() {
             Err(Error::MuCovDimensionMismatchError)
         } else {
             self.mu = mu;
@@ -208,13 +309,25 @@ impl MvGaussian {
         } else if cov.nrows() != cov.ncols() {
             Err(Error::CovNotSquareError)
         } else {
+            let cache = MVGCache::from_cov(&cov)?;
             self.cov = cov;
+            self.cache = OnceCell::new();
+            self.cache.set(cache).unwrap();
             Ok(())
         }
     }
 
     pub fn set_cov_unchecked(&mut self, cov: DMatrix<f64>) {
+        let cache = MVGCache::from_cov(&cov).unwrap();
         self.cov = cov;
+        self.cache = OnceCell::from(cache);
+    }
+
+    #[inline]
+    fn cache(&self) -> &MVGCache {
+        self.cache.get_or_try_init(|| {
+            MVGCache::from_cov(&self.cov)
+        }).unwrap()
     }
 }
 
@@ -229,14 +342,18 @@ impl_display!(MvGaussian);
 impl Rv<DVector<f64>> for MvGaussian {
     fn ln_f(&self, x: &DVector<f64>) -> f64 {
         let diff = x - &self.mu;
-        let det: f64 = (2.0 * PI * &self.cov).determinant();
-        let inv = self
-            .cov
-            .clone()
-            .try_inverse()
-            .expect("Failed to invert cov");
-        let term: f64 = (0.5 * diff.transpose() * inv * diff)[0];
-        -0.5 * det.ln() - term
+        let det: f64 = self
+            .cache()
+            .cov_chol
+            .l_dirty()
+            .diagonal()
+            .row_iter()
+            .fold(1.0, |acc, y| acc * y[0])
+            .powi(2);
+
+        let inv = &(self.cache().cov_inv);
+        let term: f64 = (diff.transpose() * inv * &diff)[0];
+        -0.5 * (det.ln() + term + (diff.nrows() as f64) * LN_2PI)
     }
 
     fn draw<R: Rng>(&self, rng: &mut R) -> DVector<f64> {
@@ -244,15 +361,16 @@ impl Rv<DVector<f64>> for MvGaussian {
         let norm = rand_distr::StandardNormal;
         let vals: Vec<f64> = (0..dims).map(|_| rng.sample(norm)).collect();
 
-        let a: DMatrix<f64> = self
-            .cov
-            .clone()
-            .cholesky()
-            .expect("Cholesky decomp failed")
-            .unpack();
+        let a = self.cache().cov_chol.l_dirty();
         let z: DVector<f64> = DVector::from_column_slice(&vals);
 
-        self.mu.clone() + a * z
+        DVector::from_fn(dims, |i, _| {
+            let mut out: f64 = self.mu[i];
+            for j in 0..=i {
+                out += a[(i, j)] * z[j];
+            }
+            out
+        })
     }
 }
 
@@ -284,7 +402,15 @@ impl Variance<DMatrix<f64>> for MvGaussian {
 
 impl Entropy for MvGaussian {
     fn entropy(&self) -> f64 {
-        0.5 * (2.0 * PI * E * &self.cov).determinant().ln()
+        let det: f64 = self
+            .cache()
+            .cov_chol
+            .l_dirty()
+            .diagonal()
+            .row_iter()
+            .fold(1.0, |acc, x| acc * x[0])
+            .powi(2);
+        0.5 * det.ln() + HALF_LN_2PI_E * (self.cov.nrows() as f64)
     }
 }
 impl HasSuffStat<DVector<f64>> for MvGaussian {
