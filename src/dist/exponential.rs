@@ -8,6 +8,7 @@ use getset::Setters;
 use rand::Rng;
 use rand_distr::Exp;
 use std::f64::consts::LN_2;
+use std::f64;
 
 /// [Exponential distribution](https://en.wikipedia.org/wiki/Exponential_distribution),
 /// Exp(λ) over x in [0, ∞).
@@ -86,7 +87,11 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Exponential {
             fn ln_f(&self, x: &$kind) -> f64 {
-                self.rate.ln() - self.rate * f64::from(*x)
+                if x < &0.0 {
+                    f64::NEG_INFINITY
+                } else {
+                    self.rate.ln() - self.rate * f64::from(*x)
+                }
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -202,6 +207,15 @@ mod tests {
         assert!(Exponential::new(f64::MIN_POSITIVE).is_ok());
         assert!(Exponential::new(0.0).is_err());
         assert!(Exponential::new(-f64::MIN_POSITIVE).is_err());
+    }
+
+    #[test]
+    fn ln_f() {
+        let expon = Exponential::new_unchecked(1.5);
+        assert::close(expon.ln_f(&1.2_f64), -1.3945348918918357, TOL);
+        assert::close(expon.ln_f(&0.2_f64), 0.1054651081081644, TOL);
+        assert::close(expon.ln_f(&4.4_f64), -6.1945348918918359, TOL);
+        assert_eq!(expon.ln_f(&-1.0_f64), f64::NEG_INFINITY);
     }
 
     #[test]
