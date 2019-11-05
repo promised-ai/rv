@@ -129,7 +129,7 @@ mod tests {
     }
 
     #[test]
-    fn categorical_mixture_entropy_after_comibe() {
+    fn categorical_mixture_entropy_after_combine() {
         let m1 = {
             let weights: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
             let cat = Categorical::new(&weights).unwrap();
