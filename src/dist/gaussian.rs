@@ -1,16 +1,18 @@
 //! Gaussian/Normal distribution over x in (-∞, ∞)
+use std::f64::consts::SQRT_2;
+
 #[cfg(feature = "serde_support")]
 use serde_derive::{Deserialize, Serialize};
+use getset::Setters;
+use rand::Rng;
+use rand_distr::Normal;
+use special::Error as _;
+use once_cell::unsync::OnceCell;
 
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
-use rand::Rng;
-use rand_distr::Normal;
-use special::Error as _;
-use std::f64::consts::SQRT_2;
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.
@@ -34,7 +36,7 @@ use std::f64::consts::SQRT_2;
 /// let kl_sym = gauss_1.kl_sym(&gauss_2);
 /// assert!((kl_sym - (kl_12 + kl_21)).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
+#[derive(Debug, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gaussian {
     /// Mean
@@ -43,6 +45,25 @@ pub struct Gaussian {
     /// Standard deviation
     #[set = "pub"]
     sigma: f64,
+    #[cfg_attr(feature = "serde_support", serde(skip))]
+    /// Cached log(sigma)
+    ln_sigma: OnceCell<f64>
+}
+
+impl Clone for Gaussian {
+    fn clone(&self) -> Self {
+        Self {
+            mu: self.mu,
+            sigma: self.sigma,
+            ln_sigma: OnceCell::from(self.ln_sigma()),
+        }
+    }
+}
+
+impl PartialEq for Gaussian {
+    fn eq(&self, other: &Gaussian) -> bool {
+        self.mu == other.mu && self.sigma == other.sigma
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
@@ -70,14 +91,14 @@ impl Gaussian {
         } else if !sigma.is_finite() {
             Err(Error::SigmaNotFiniteError)
         } else {
-            Ok(Gaussian { mu, sigma })
+            Ok(Gaussian { mu, sigma, ln_sigma: OnceCell::new() })
         }
     }
 
     /// Creates a new Gaussian without checking whether the parameters are
     /// valid.
     pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
-        Gaussian { mu, sigma }
+        Gaussian { mu, sigma, ln_sigma: OnceCell::new() }
     }
 
     /// Standard normal
@@ -94,6 +115,7 @@ impl Gaussian {
         Gaussian {
             mu: 0.0,
             sigma: 1.0,
+            ln_sigma: OnceCell::from(0.0),
         }
     }
 
@@ -124,6 +146,14 @@ impl Gaussian {
     pub fn sigma(&self) -> f64 {
         self.sigma
     }
+
+    /// Evaluate or fetch cached log sigma
+    #[inline]
+    fn ln_sigma(&self) -> f64 {
+        *self.ln_sigma.get_or_init(|| {
+            self.sigma.ln()
+        })
+    }
 }
 
 impl Default for Gaussian {
@@ -145,7 +175,7 @@ macro_rules! impl_traits {
         impl Rv<$kind> for Gaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k = (f64::from(*x) - self.mu) / self.sigma;
-                -self.sigma.ln() - 0.5 * k * k - HALF_LN_2PI
+                -self.ln_sigma() - 0.5 * k * k - HALF_LN_2PI
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -221,7 +251,7 @@ impl Variance<f64> for Gaussian {
 
 impl Entropy for Gaussian {
     fn entropy(&self) -> f64 {
-        HALF_LN_2PI_E + self.sigma.ln()
+        HALF_LN_2PI_E + self.ln_sigma()
     }
 }
 
