@@ -1,13 +1,13 @@
 //! Gaussian/Normal distribution over x in (-∞, ∞)
 use std::f64::consts::SQRT_2;
 
-#[cfg(feature = "serde_support")]
-use serde_derive::{Deserialize, Serialize};
 use getset::Setters;
+use once_cell::unsync::OnceCell;
 use rand::Rng;
 use rand_distr::Normal;
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
 use special::Error as _;
-use once_cell::unsync::OnceCell;
 
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
@@ -43,11 +43,10 @@ pub struct Gaussian {
     #[set = "pub"]
     mu: f64,
     /// Standard deviation
-    #[set = "pub"]
     sigma: f64,
     #[cfg_attr(feature = "serde_support", serde(skip))]
     /// Cached log(sigma)
-    ln_sigma: OnceCell<f64>
+    ln_sigma: OnceCell<f64>,
 }
 
 impl Clone for Gaussian {
@@ -91,14 +90,23 @@ impl Gaussian {
         } else if !sigma.is_finite() {
             Err(Error::SigmaNotFiniteError)
         } else {
-            Ok(Gaussian { mu, sigma, ln_sigma: OnceCell::new() })
+            Ok(Gaussian {
+                mu,
+                sigma,
+                ln_sigma: OnceCell::new(),
+            })
         }
     }
 
     /// Creates a new Gaussian without checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
-        Gaussian { mu, sigma, ln_sigma: OnceCell::new() }
+        Gaussian {
+            mu,
+            sigma,
+            ln_sigma: OnceCell::new(),
+        }
     }
 
     /// Standard normal
@@ -111,6 +119,7 @@ impl Gaussian {
     ///
     /// assert_eq!(gauss, Gaussian::new(0.0, 1.0).unwrap());
     /// ```
+    #[inline]
     pub fn standard() -> Self {
         Gaussian {
             mu: 0.0,
@@ -129,6 +138,7 @@ impl Gaussian {
     ///
     /// assert_eq!(gauss.mu(), 2.0);
     /// ```
+    #[inline]
     pub fn mu(&self) -> f64 {
         self.mu
     }
@@ -143,16 +153,35 @@ impl Gaussian {
     ///
     /// assert_eq!(gauss.sigma(), 1.5);
     /// ```
+    #[inline]
     pub fn sigma(&self) -> f64 {
         self.sigma
+    }
+
+    /// Set the value of sigma
+    #[inline]
+    pub fn set_sigma(&mut self, sigma: f64) -> Result<(), Error> {
+        if sigma <= 0.0 {
+            Err(Error::SigmaTooLowError)
+        } else if !sigma.is_finite() {
+            Err(Error::SigmaNotFiniteError)
+        } else {
+            self.set_sigma_unchecked(sigma);
+            Ok(())
+        }
+    }
+
+    /// Set the value of sigma
+    #[inline]
+    pub fn set_sigma_unchecked(&mut self, sigma: f64) {
+        self.sigma = sigma;
+        self.ln_sigma = OnceCell::new();
     }
 
     /// Evaluate or fetch cached log sigma
     #[inline]
     fn ln_sigma(&self) -> f64 {
-        *self.ln_sigma.get_or_init(|| {
-            self.sigma.ln()
-        })
+        *self.ln_sigma.get_or_init(|| self.sigma.ln())
     }
 }
 
@@ -488,5 +517,23 @@ mod tests {
         let g2 = Gaussian::new(2.0, 1.0).unwrap();
         let kl = 0.5_f64.ln() + 5.0 / 2.0 - 0.5;
         assert::close(g1.kl(&g2), kl, TOL);
+    }
+
+    #[test]
+    fn ln_f_after_set_mu_works() {
+        let mut gauss = Gaussian::standard();
+        assert::close(gauss.ln_pdf(&0.0_f64), -0.91893853320467267, TOL);
+
+        gauss.set_mu(1.0);
+        assert::close(gauss.ln_pdf(&1.0_f64), -0.91893853320467267, TOL);
+    }
+
+    #[test]
+    fn ln_f_after_set_sigm_works() {
+        let mut gauss = Gaussian::new(-1.2, 5.0).unwrap();
+
+        gauss.set_sigma(0.33).unwrap();
+        assert::close(gauss.ln_pdf(&-1.2_f64), 0.18972409131693846, TOL);
+        assert::close(gauss.ln_pdf(&0.0_f32), -6.4218461566169447, TOL);
     }
 }
