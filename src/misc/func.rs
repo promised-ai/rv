@@ -292,7 +292,7 @@ mod tests {
     #[test]
     fn argmax_empty_is_empty() {
         let xs: Vec<f64> = vec![];
-        assert_eq!(argmax(&xs), vec![]);
+        assert_eq!(argmax(&xs), Vec::<usize>::new());
     }
 
     #[test]

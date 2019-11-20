@@ -34,6 +34,8 @@ serde_derive = {version = "1", optional = true}
 [dev-dependencies]
 assert = "0.7"
 criterion = "0.2"
+indoc = "0.3"
+serde_yaml = "0.8"
 
 
 # Benchmarks

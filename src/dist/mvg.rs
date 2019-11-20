@@ -1,15 +1,15 @@
 #[cfg(feature = "serde_support")]
 use serde_derive::{Deserialize, Serialize};
 
+use crate::consts::HALF_LN_2PI_E;
 use crate::consts::LN_2PI;
 use crate::data::MvGaussianSuffStat;
 use crate::impl_display;
 use crate::traits::*;
-use crate::consts::HALF_LN_2PI_E;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dynamic};
-use rand::Rng;
 use once_cell::unsync::OnceCell;
+use rand::Rng;
 
 /// Cache for MvGaussian Internals
 #[derive(Clone, Debug)]
@@ -90,7 +90,10 @@ pub struct MvGaussian {
     // Covariance Matrix
     cov: DMatrix<f64>,
     // Cached values for computations
-    #[cfg_attr(feature = "serde_support", serde(skip, default="default_cache_none"))]
+    #[cfg_attr(
+        feature = "serde_support",
+        serde(skip, default = "default_cache_none")
+    )]
     cache: OnceCell<MVGCache>,
 }
 
@@ -130,11 +133,7 @@ impl MvGaussian {
             Err(Error::MuCovDimensionMismatchError)
         } else {
             let cache = OnceCell::from(MVGCache::from_cov(&cov)?);
-            Ok(MvGaussian {
-                mu,
-                cov,
-                cache
-            })
+            Ok(MvGaussian { mu, cov, cache })
         }
     }
 
@@ -161,7 +160,10 @@ impl MvGaussian {
     /// let mvg = mvg_r.unwrap();
     /// assert!(cov.relative_eq(mvg.cov(), 1E-8, 1E-8));
     /// ```
-    pub fn new_cholesky(mu: DVector<f64>, cov_chol: Cholesky<f64, Dynamic>) -> Result<Self, Error> {
+    pub fn new_cholesky(
+        mu: DVector<f64>,
+        cov_chol: Cholesky<f64, Dynamic>,
+    ) -> Result<Self, Error> {
         let l = cov_chol.l();
         let cov = &l * &l.transpose();
         if mu.len() != cov.nrows() {
@@ -171,7 +173,6 @@ impl MvGaussian {
             Ok(MvGaussian { mu, cov, cache })
         }
     }
-
 
     /// Creates a new MvGaussian from mean and covariance without checking
     /// whether the parameters are valid.
@@ -325,9 +326,9 @@ impl MvGaussian {
 
     #[inline]
     fn cache(&self) -> &MVGCache {
-        self.cache.get_or_try_init(|| {
-            MVGCache::from_cov(&self.cov)
-        }).unwrap()
+        self.cache
+            .get_or_try_init(|| MVGCache::from_cov(&self.cov))
+            .unwrap()
     }
 }
 

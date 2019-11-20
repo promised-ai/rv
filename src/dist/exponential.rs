@@ -7,8 +7,8 @@ use crate::traits::*;
 use getset::Setters;
 use rand::Rng;
 use rand_distr::Exp;
-use std::f64::consts::LN_2;
 use std::f64;
+use std::f64::consts::LN_2;
 
 /// [Exponential distribution](https://en.wikipedia.org/wiki/Exponential_distribution),
 /// Exp(λ) over x in [0, ∞).
