@@ -22,7 +22,7 @@ fn main() {
     let prior = Beta::jeffreys();
     let xs: BernoulliData<bool> = DataOrSuffStat::Data(&flips);
 
-    // Generate the posterior distributoin P(θ|x)
+    // Generate the posterior distribution P(θ|x)
     let posterior = prior.posterior(&xs);
 
     // Print the mean. The posterior mean for Bernoulli likelihood with Beta
