@@ -2,7 +2,7 @@
 #[cfg(feature = "serde_support")]
 use serde_derive::{Deserialize, Serialize};
 
-use crate::data::BernoulliSuffStat;
+use crate::data::{BernoulliSuffStat, Booleable};
 use crate::impl_display;
 use crate::traits::*;
 use getset::Setters;
@@ -151,96 +151,84 @@ impl From<&Bernoulli> for String {
 
 impl_display!(Bernoulli);
 
-macro_rules! impl_int_traits {
-    ($kind:ty) => {
-        impl Rv<$kind> for Bernoulli {
-            fn f(&self, x: &$kind) -> f64 {
-                if *x == 1 {
-                    self.p
-                } else if *x == 0 {
-                    1.0_f64 - self.p
-                } else {
-                    panic!("Invalid value: x was not 0 or 1");
-                }
-            }
+impl<X: Booleable> Rv<X> for Bernoulli {
+    fn f(&self, x: &X) -> f64 {
+        let val: bool = x.into_bool();
+        if val {
+            self.p
+        } else {
+            1.0_f64 - self.p
+        }
+    }
 
-            fn ln_f(&self, x: &$kind) -> f64 {
-                self.f(x).ln()
-            }
+    fn ln_f(&self, x: &X) -> f64 {
+        self.f(x).ln()
+    }
 
-            fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let u = rand_distr::Open01;
+    fn draw<R: Rng>(&self, rng: &mut R) -> X {
+        let u = rand_distr::Open01;
+        let x: f64 = rng.sample(u);
+        X::from_bool(x < self.p)
+    }
+
+    fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<X> {
+        let u = rand_distr::Open01;
+        (0..n)
+            .map(|_| {
                 let x: f64 = rng.sample(u);
-                if x < self.p {
-                    1
-                } else {
-                    0
-                }
-            }
+                X::from_bool(x < self.p)
+            })
+            .collect()
+    }
+}
 
-            fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let u = rand_distr::Open01;
-                (0..n)
-                    .map(|_| {
-                        let x: f64 = rng.sample(u);
-                        if x < self.p {
-                            1
-                        } else {
-                            0
-                        }
-                    })
-                    .collect()
-            }
+impl<X: Booleable> Support<X> for Bernoulli {
+    fn supports(&self, x: &X) -> bool {
+        x.try_into_bool().is_some()
+    }
+}
+
+impl<X: Booleable> DiscreteDistr<X> for Bernoulli {
+    fn pmf(&self, x: &X) -> f64 {
+        let val: bool = x.into_bool();
+        self.f(&val)
+    }
+
+    fn ln_pmf(&self, x: &X) -> f64 {
+        let val: bool = x.into_bool();
+        self.ln_f(&val)
+    }
+}
+
+impl<X: Booleable> Cdf<X> for Bernoulli {
+    fn cdf(&self, x: &X) -> f64 {
+        let val: bool = x.into_bool();
+        if val {
+            1.0
+        } else {
+            self.q()
         }
+    }
+}
 
-        impl Support<$kind> for Bernoulli {
-            fn supports(&self, x: &$kind) -> bool {
-                *x == 0 || *x == 1
-            }
+impl<X: Booleable> Mode<X> for Bernoulli {
+    fn mode(&self) -> Option<X> {
+        let q = self.q();
+        if self.p < q {
+            Some(X::from_bool(false))
+        } else if (self.p - q).abs() < f64::EPSILON {
+            None
+        } else {
+            Some(X::from_bool(true))
         }
+    }
+}
 
-        impl DiscreteDistr<$kind> for Bernoulli {
-            fn pmf(&self, x: &$kind) -> f64 {
-                self.f(x)
-            }
-
-            fn ln_pmf(&self, x: &$kind) -> f64 {
-                self.ln_f(x)
-            }
-        }
-
-        impl Cdf<$kind> for Bernoulli {
-            fn cdf(&self, x: &$kind) -> f64 {
-                if *x == 0 {
-                    self.q()
-                } else if *x > 0 {
-                    1.0
-                } else {
-                    0.0
-                }
-            }
-        }
-
-        impl Mode<$kind> for Bernoulli {
-            fn mode(&self) -> Option<$kind> {
-                let q = self.q();
-                if self.p < q {
-                    Some(0)
-                } else if (self.p - q).abs() < f64::EPSILON {
-                    None
-                } else {
-                    Some(1)
-                }
-            }
-        }
-
-        impl HasSuffStat<$kind> for Bernoulli {
-            type Stat = BernoulliSuffStat;
-            fn empty_suffstat(&self) -> Self::Stat {
-                BernoulliSuffStat::new()
-            }
-        }
-    };
+impl<X: Booleable> HasSuffStat<X> for Bernoulli {
+    type Stat = BernoulliSuffStat;
+    fn empty_suffstat(&self) -> Self::Stat {
+        BernoulliSuffStat::new()
+    }
 }
 
 impl KlDivergence for Bernoulli {
@@ -370,18 +358,6 @@ impl HasSuffStat<bool> for Bernoulli {
         BernoulliSuffStat::new()
     }
 }
-
-impl_int_traits!(u8);
-impl_int_traits!(u16);
-impl_int_traits!(u32);
-impl_int_traits!(u64);
-impl_int_traits!(usize);
-
-impl_int_traits!(i8);
-impl_int_traits!(i16);
-impl_int_traits!(i32);
-impl_int_traits!(i64);
-impl_int_traits!(isize);
 
 #[cfg(test)]
 mod tests {
@@ -556,9 +532,10 @@ mod tests {
     }
 
     #[test]
-    fn cmf_less_than_zero_is_zero() {
+    #[should_panic]
+    fn cmf_less_than_zero_fails() {
         let b = Bernoulli::new(0.1).unwrap();
-        assert::close(b.cdf(&-1_i16), 0.0, TOL);
+        let _p = b.cdf(&-1_i16);
     }
 
     #[test]

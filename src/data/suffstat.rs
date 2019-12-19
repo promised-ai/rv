@@ -1,6 +1,7 @@
 #[cfg(feature = "serde_support")]
 use serde_derive::{Deserialize, Serialize};
 
+use crate::data::Booleable;
 use crate::data::CategoricalDatum;
 use crate::data::DataOrSuffStat;
 use crate::dist::{Bernoulli, Categorical, Gaussian, Poisson};
@@ -43,7 +44,7 @@ impl BernoulliSuffStat {
         self.n
     }
 
-    /// Get the number of successfuk trials, k.
+    /// Get the number of successful trials, k.
     ///
     /// # Example
     ///
@@ -100,54 +101,40 @@ impl<'a> Into<DataOrSuffStat<'a, bool, Bernoulli>> for &'a Vec<bool> {
     }
 }
 
-macro_rules! impl_bernoulli_suffstat {
-    ($kind:ty) => {
-        impl<'a> Into<DataOrSuffStat<'a, $kind, Bernoulli>>
-            for &'a BernoulliSuffStat
-        {
-            fn into(self) -> DataOrSuffStat<'a, $kind, Bernoulli> {
-                DataOrSuffStat::SuffStat(self)
-            }
-        }
-
-        impl<'a> Into<DataOrSuffStat<'a, $kind, Bernoulli>> for &'a Vec<$kind> {
-            fn into(self) -> DataOrSuffStat<'a, $kind, Bernoulli> {
-                DataOrSuffStat::Data(self)
-            }
-        }
-
-        impl SuffStat<$kind> for BernoulliSuffStat {
-            fn n(&self) -> usize {
-                self.n
-            }
-
-            fn observe(&mut self, x: &$kind) {
-                self.n += 1;
-                if *x == 1 {
-                    self.k += 1
-                }
-            }
-
-            fn forget(&mut self, x: &$kind) {
-                self.n -= 1;
-                if *x == 1 {
-                    self.k -= 1
-                }
-            }
-        }
-    };
+// FOR BOOLABOLE
+impl<'a, X: Booleable> Into<DataOrSuffStat<'a, X, Bernoulli>>
+    for &'a BernoulliSuffStat
+{
+    fn into(self) -> DataOrSuffStat<'a, X, Bernoulli> {
+        DataOrSuffStat::SuffStat(self)
+    }
 }
 
-impl_bernoulli_suffstat!(u8);
-impl_bernoulli_suffstat!(u16);
-impl_bernoulli_suffstat!(u32);
-impl_bernoulli_suffstat!(u64);
-impl_bernoulli_suffstat!(usize);
-impl_bernoulli_suffstat!(i8);
-impl_bernoulli_suffstat!(i16);
-impl_bernoulli_suffstat!(i32);
-impl_bernoulli_suffstat!(i64);
-impl_bernoulli_suffstat!(isize);
+impl<'a, X: Booleable> Into<DataOrSuffStat<'a, X, Bernoulli>> for &'a Vec<X> {
+    fn into(self) -> DataOrSuffStat<'a, X, Bernoulli> {
+        DataOrSuffStat::Data(self)
+    }
+}
+
+impl<X: Booleable> SuffStat<X> for BernoulliSuffStat {
+    fn n(&self) -> usize {
+        self.n
+    }
+
+    fn observe(&mut self, x: &X) {
+        self.n += 1;
+        if x.into_bool() {
+            self.k += 1
+        }
+    }
+
+    fn forget(&mut self, x: &X) {
+        self.n -= 1;
+        if x.into_bool() {
+            self.k -= 1
+        }
+    }
+}
 
 /// Categorical distribution sufficient statistic.
 ///
