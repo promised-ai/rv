@@ -34,7 +34,7 @@ pub struct Mixture<Fx> {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum MixtureError {
     /// The weights vector is empty
     WeightsEmptyError,
     /// The weights to not sum to one
@@ -54,17 +54,20 @@ impl<Fx> Mixture<Fx> {
     /// - weights: The weights for each component distribution. All entries
     ///   must be positive and sum to 1.
     /// - components: The componen distributions.
-    pub fn new(weights: Vec<f64>, components: Vec<Fx>) -> Result<Self, Error> {
+    pub fn new(
+        weights: Vec<f64>,
+        components: Vec<Fx>,
+    ) -> Result<Self, MixtureError> {
         if weights.is_empty() {
-            Err(Error::WeightsEmptyError)
+            Err(MixtureError::WeightsEmptyError)
         } else if components.is_empty() {
-            Err(Error::ComponentsEmptyError)
+            Err(MixtureError::ComponentsEmptyError)
         } else if components.len() != weights.len() {
-            Err(Error::ComponentWeightDimensionMismatchError)
+            Err(MixtureError::ComponentWeightDimensionMismatchError)
         } else if weights.iter().any(|&w| w <= 0.0) {
-            Err(Error::WeightTooLowError)
+            Err(MixtureError::WeightTooLowError)
         } else if (weights.iter().sum::<f64>() - 1.0).abs() > 1E-12 {
-            Err(Error::WeightsDoNotSumToOneError)
+            Err(MixtureError::WeightsDoNotSumToOneError)
         } else {
             Ok(Mixture {
                 weights,
@@ -85,9 +88,9 @@ impl<Fx> Mixture<Fx> {
     ///
     /// Given a n-length vector of components, automatically sets the component
     /// weights to 1/n.
-    pub fn uniform(components: Vec<Fx>) -> Result<Self, Error> {
+    pub fn uniform(components: Vec<Fx>) -> Result<Self, MixtureError> {
         if components.is_empty() {
-            Err(Error::ComponentsEmptyError)
+            Err(MixtureError::ComponentsEmptyError)
         } else {
             let k = components.len();
             let weights = vec![1.0 / k as f64; k];
@@ -133,13 +136,16 @@ impl<Fx> Mixture<Fx> {
         &self.components
     }
 
-    pub fn set_weights(&mut self, weights: Vec<f64>) -> Result<(), Error> {
+    pub fn set_weights(
+        &mut self,
+        weights: Vec<f64>,
+    ) -> Result<(), MixtureError> {
         if weights.len() != self.k() {
-            Err(Error::ComponentWeightDimensionMismatchError)
+            Err(MixtureError::ComponentWeightDimensionMismatchError)
         } else if weights.iter().any(|&w| w <= 0.0) {
-            Err(Error::WeightTooLowError)
+            Err(MixtureError::WeightTooLowError)
         } else if (weights.iter().sum::<f64>() - 1.0).abs() > 1E-12 {
-            Err(Error::WeightsDoNotSumToOneError)
+            Err(MixtureError::WeightsDoNotSumToOneError)
         } else {
             self.weights = weights;
             Ok(())
@@ -150,9 +156,12 @@ impl<Fx> Mixture<Fx> {
         self.weights = weights;
     }
 
-    pub fn set_components(&mut self, components: Vec<Fx>) -> Result<(), Error> {
+    pub fn set_components(
+        &mut self,
+        components: Vec<Fx>,
+    ) -> Result<(), MixtureError> {
         if components.len() != self.k() {
-            Err(Error::ComponentWeightDimensionMismatchError)
+            Err(MixtureError::ComponentWeightDimensionMismatchError)
         } else {
             self.components = components;
             Ok(())

@@ -46,7 +46,7 @@ pub struct Crp {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum CrpError {
     /// n parameter is zero
     NIsZeroError,
     /// alpha parameter is less than or equal to zero
@@ -61,13 +61,13 @@ impl Crp {
     /// # Arguments
     /// - alpha: Discount parameter in (0, Infinity)
     /// - n: the number of items in the partition
-    pub fn new(alpha: f64, n: usize) -> Result<Self, Error> {
+    pub fn new(alpha: f64, n: usize) -> Result<Self, CrpError> {
         if n == 0 {
-            Err(Error::NIsZeroError)
+            Err(CrpError::NIsZeroError)
         } else if alpha <= 0.0 {
-            Err(Error::AlphaTooLowError)
+            Err(CrpError::AlphaTooLowError)
         } else if !alpha.is_finite() {
-            Err(Error::AlphaNotFiniteError)
+            Err(CrpError::AlphaNotFiniteError)
         } else {
             Ok(Crp { alpha, n })
         }

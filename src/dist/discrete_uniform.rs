@@ -23,7 +23,7 @@ pub struct DiscreteUniform<T: DuParam> {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum DiscreteUniformError {
     /// a is greater than or equal to b
     InvalidIntervalError,
 }
@@ -34,11 +34,11 @@ impl<T: DuParam> DiscreteUniform<T> {
     /// # Arguments
     /// - a: lower bound
     /// - b : upper bound
-    pub fn new(a: T, b: T) -> Result<Self, Error> {
+    pub fn new(a: T, b: T) -> Result<Self, DiscreteUniformError> {
         if a < b {
             Ok(Self { a, b })
         } else {
-            Err(Error::InvalidIntervalError)
+            Err(DiscreteUniformError::InvalidIntervalError)
         }
     }
 

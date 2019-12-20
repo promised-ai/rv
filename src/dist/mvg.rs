@@ -13,27 +13,27 @@ use rand::Rng;
 
 /// Cache for MvGaussian Internals
 #[derive(Clone, Debug)]
-struct MVGCache {
+struct MvgCache {
     /// Covariant Matrix Cholesky Decomposition
     pub cov_chol: Cholesky<f64, Dynamic>,
     /// Inverse of Covariance Matrix
     pub cov_inv: DMatrix<f64>,
 }
 
-impl MVGCache {
-    pub fn from_cov(cov: &DMatrix<f64>) -> Result<Self, Error> {
+impl MvgCache {
+    pub fn from_cov(cov: &DMatrix<f64>) -> Result<Self, MvGaussianError> {
         match cov.clone().cholesky() {
-            None => Err(Error::CovNotPositiveSemiDefiniteError),
+            None => Err(MvGaussianError::CovNotPositiveSemiDefiniteError),
             Some(cov_chol) => {
                 let cov_inv = cov_chol.inverse();
-                Ok(MVGCache { cov_chol, cov_inv })
+                Ok(MvgCache { cov_chol, cov_inv })
             }
         }
     }
 
     pub fn from_chol(cov_chol: Cholesky<f64, Dynamic>) -> Self {
         let cov_inv = cov_chol.inverse();
-        MVGCache { cov_chol, cov_inv }
+        MvgCache { cov_chol, cov_inv }
     }
 
     pub fn cov(&self) -> DMatrix<f64> {
@@ -94,10 +94,10 @@ pub struct MvGaussian {
         feature = "serde_support",
         serde(skip, default = "default_cache_none")
     )]
-    cache: OnceCell<MVGCache>,
+    cache: OnceCell<MvgCache>,
 }
 
-fn default_cache_none() -> OnceCell<MVGCache> {
+fn default_cache_none() -> OnceCell<MvgCache> {
     OnceCell::new()
 }
 
@@ -109,7 +109,7 @@ impl PartialEq for MvGaussian {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum MvGaussianError {
     /// The mu and cov parameters have incompatible dimensions
     MuCovDimensionMismatchError,
     /// The cov matrix is not square
@@ -126,13 +126,16 @@ impl MvGaussian {
     /// # Arguments
     /// - mu: k-length mean vector
     /// - cov: k-by-k positive-definite covariance matrix
-    pub fn new(mu: DVector<f64>, cov: DMatrix<f64>) -> Result<Self, Error> {
+    pub fn new(
+        mu: DVector<f64>,
+        cov: DMatrix<f64>,
+    ) -> Result<Self, MvGaussianError> {
         if cov.nrows() != cov.ncols() {
-            Err(Error::CovNotSquareError)
+            Err(MvGaussianError::CovNotSquareError)
         } else if mu.len() != cov.nrows() {
-            Err(Error::MuCovDimensionMismatchError)
+            Err(MvGaussianError::MuCovDimensionMismatchError)
         } else {
-            let cache = OnceCell::from(MVGCache::from_cov(&cov)?);
+            let cache = OnceCell::from(MvgCache::from_cov(&cov)?);
             Ok(MvGaussian { mu, cov, cache })
         }
     }
@@ -163,13 +166,13 @@ impl MvGaussian {
     pub fn new_cholesky(
         mu: DVector<f64>,
         cov_chol: Cholesky<f64, Dynamic>,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, MvGaussianError> {
         let l = cov_chol.l();
         let cov = &l * &l.transpose();
         if mu.len() != cov.nrows() {
-            Err(Error::MuCovDimensionMismatchError)
+            Err(MvGaussianError::MuCovDimensionMismatchError)
         } else {
-            let cache = OnceCell::from(MVGCache::from_chol(cov_chol));
+            let cache = OnceCell::from(MvgCache::from_chol(cov_chol));
             Ok(MvGaussian { mu, cov, cache })
         }
     }
@@ -177,7 +180,7 @@ impl MvGaussian {
     /// Creates a new MvGaussian from mean and covariance without checking
     /// whether the parameters are valid.
     pub fn new_unchecked(mu: DVector<f64>, cov: DMatrix<f64>) -> Self {
-        let cache = OnceCell::from(MVGCache::from_cov(&cov).unwrap());
+        let cache = OnceCell::from(MvgCache::from_cov(&cov).unwrap());
         MvGaussian { mu, cov, cache }
     }
 
@@ -187,21 +190,21 @@ impl MvGaussian {
         mu: DVector<f64>,
         cov_chol: Cholesky<f64, Dynamic>,
     ) -> Self {
-        let cache = OnceCell::from(MVGCache::from_chol(cov_chol));
+        let cache = OnceCell::from(MvgCache::from_chol(cov_chol));
         let cov = cache.get().unwrap().cov();
         MvGaussian { mu, cov, cache }
     }
 
     /// Create a standard Gaussian distribution with zero mean and identiry
     /// covariance matrix.
-    pub fn standard(dims: usize) -> Result<Self, Error> {
+    pub fn standard(dims: usize) -> Result<Self, MvGaussianError> {
         if dims == 0 {
-            Err(Error::ZeroDimensionError)
+            Err(MvGaussianError::ZeroDimensionError)
         } else {
             let mu = DVector::zeros(dims);
             let cov = DMatrix::identity(dims, dims);
             let cov_chol = cov.clone().cholesky().unwrap();
-            let cache = OnceCell::from(MVGCache::from_chol(cov_chol));
+            let cache = OnceCell::from(MvgCache::from_chol(cov_chol));
             Ok(MvGaussian { mu, cov, cache })
         }
     }
@@ -260,9 +263,9 @@ impl MvGaussian {
     ///
     /// assert::close(mvg.ln_f(&x), -24.602370253215661, 1E-8);
     /// ```
-    pub fn set_mu(&mut self, mu: DVector<f64>) -> Result<(), Error> {
+    pub fn set_mu(&mut self, mu: DVector<f64>) -> Result<(), MvGaussianError> {
         if mu.len() != self.cache().cov_chol.l_dirty().nrows() {
-            Err(Error::MuCovDimensionMismatchError)
+            Err(MvGaussianError::MuCovDimensionMismatchError)
         } else {
             self.mu = mu;
             Ok(())
@@ -304,13 +307,16 @@ impl MvGaussian {
     ///
     /// assert::close(mvg.ln_f(&x), -24.602370253215661, 1E-8);
     /// ```
-    pub fn set_cov(&mut self, cov: DMatrix<f64>) -> Result<(), Error> {
+    pub fn set_cov(
+        &mut self,
+        cov: DMatrix<f64>,
+    ) -> Result<(), MvGaussianError> {
         if self.mu.len() != cov.nrows() {
-            Err(Error::MuCovDimensionMismatchError)
+            Err(MvGaussianError::MuCovDimensionMismatchError)
         } else if cov.nrows() != cov.ncols() {
-            Err(Error::CovNotSquareError)
+            Err(MvGaussianError::CovNotSquareError)
         } else {
-            let cache = MVGCache::from_cov(&cov)?;
+            let cache = MvgCache::from_cov(&cov)?;
             self.cov = cov;
             self.cache = OnceCell::new();
             self.cache.set(cache).unwrap();
@@ -319,15 +325,15 @@ impl MvGaussian {
     }
 
     pub fn set_cov_unchecked(&mut self, cov: DMatrix<f64>) {
-        let cache = MVGCache::from_cov(&cov).unwrap();
+        let cache = MvgCache::from_cov(&cov).unwrap();
         self.cov = cov;
         self.cache = OnceCell::from(cache);
     }
 
     #[inline]
-    fn cache(&self) -> &MVGCache {
+    fn cache(&self) -> &MvgCache {
         self.cache
-            .get_or_try_init(|| MVGCache::from_cov(&self.cov))
+            .get_or_try_init(|| MvgCache::from_cov(&self.cov))
             .unwrap()
     }
 }
@@ -445,7 +451,7 @@ mod tests {
         let cov = DMatrix::identity(4, 4);
         let mvg = MvGaussian::new(mu, cov);
 
-        assert_eq!(mvg, Err(Error::MuCovDimensionMismatchError))
+        assert_eq!(mvg, Err(MvGaussianError::MuCovDimensionMismatchError))
     }
 
     #[test]
@@ -453,7 +459,7 @@ mod tests {
         let mu = DVector::zeros(3);
         let cov = DMatrix::identity(2, 2);
         let mvg = MvGaussian::new(mu, cov);
-        assert_eq!(mvg, Err(Error::MuCovDimensionMismatchError))
+        assert_eq!(mvg, Err(MvGaussianError::MuCovDimensionMismatchError))
     }
 
     #[test]
@@ -461,7 +467,7 @@ mod tests {
         let mu = DVector::zeros(3);
         let cov = DMatrix::identity(3, 2);
         let mvg = MvGaussian::new(mu, cov);
-        assert_eq!(mvg, Err(Error::CovNotSquareError));
+        assert_eq!(mvg, Err(MvGaussianError::CovNotSquareError));
     }
 
     #[test]

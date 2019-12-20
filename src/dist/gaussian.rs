@@ -67,7 +67,7 @@ impl PartialEq for Gaussian {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum GaussianError {
     /// The mu parameter is infinite or NaN
     MuNotFiniteError,
     /// The sigma parameter is less than or equal to zero
@@ -82,13 +82,13 @@ impl Gaussian {
     /// # Aruments
     /// - mu: mean
     /// - sigma: standard deviation
-    pub fn new(mu: f64, sigma: f64) -> Result<Self, Error> {
+    pub fn new(mu: f64, sigma: f64) -> Result<Self, GaussianError> {
         if !mu.is_finite() {
-            Err(Error::MuNotFiniteError)
+            Err(GaussianError::MuNotFiniteError)
         } else if sigma <= 0.0 {
-            Err(Error::SigmaTooLowError)
+            Err(GaussianError::SigmaTooLowError)
         } else if !sigma.is_finite() {
-            Err(Error::SigmaNotFiniteError)
+            Err(GaussianError::SigmaNotFiniteError)
         } else {
             Ok(Gaussian {
                 mu,
@@ -160,11 +160,11 @@ impl Gaussian {
 
     /// Set the value of sigma
     #[inline]
-    pub fn set_sigma(&mut self, sigma: f64) -> Result<(), Error> {
+    pub fn set_sigma(&mut self, sigma: f64) -> Result<(), GaussianError> {
         if sigma <= 0.0 {
-            Err(Error::SigmaTooLowError)
+            Err(GaussianError::SigmaTooLowError)
         } else if !sigma.is_finite() {
-            Err(Error::SigmaNotFiniteError)
+            Err(GaussianError::SigmaNotFiniteError)
         } else {
             self.set_sigma_unchecked(sigma);
             Ok(())

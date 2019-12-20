@@ -23,19 +23,22 @@ pub struct InvWishart {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum InvWishartError {
+    /// The scale matrix is not square
     ScaleMatrixNotSquareError,
+    /// Degrees of freedom is less than the number of dimension of the scale
+    /// matrix.
     DfTooLowError,
 }
 
 fn validate_inv_scale(
     inv_scale: &DMatrix<f64>,
     df: usize,
-) -> Result<(), Error> {
+) -> Result<(), InvWishartError> {
     if !inv_scale.is_square() {
-        Err(Error::ScaleMatrixNotSquareError)
+        Err(InvWishartError::ScaleMatrixNotSquareError)
     } else if (df as usize) < inv_scale.nrows() {
-        Err(Error::DfTooLowError)
+        Err(InvWishartError::DfTooLowError)
     } else {
         Ok(())
     }
@@ -48,7 +51,10 @@ impl InvWishart {
     /// # Arguments
     /// - inv_scale: p-dimensional inverse scale matrix, **Ψ**
     /// - df: Degrees of freedom, ν > p - 1
-    pub fn new(inv_scale: DMatrix<f64>, df: usize) -> Result<Self, Error> {
+    pub fn new(
+        inv_scale: DMatrix<f64>,
+        df: usize,
+    ) -> Result<Self, InvWishartError> {
         validate_inv_scale(&inv_scale, df)?;
         Ok(InvWishart { inv_scale, df })
     }
@@ -82,7 +88,7 @@ impl InvWishart {
     pub fn set_inv_scale(
         &mut self,
         inv_scale: DMatrix<f64>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), InvWishartError> {
         validate_inv_scale(&inv_scale, self.df)?;
         self.inv_scale = inv_scale;
         Ok(())
@@ -179,7 +185,7 @@ mod tests {
         assert!(InvWishart::new(inv_scale.clone(), 5).is_ok());
         assert_eq!(
             InvWishart::new(inv_scale.clone(), 3),
-            Err(Error::DfTooLowError)
+            Err(InvWishartError::DfTooLowError)
         );
     }
 
@@ -188,7 +194,7 @@ mod tests {
         let inv_scale = DMatrix::identity(4, 3);
         assert_eq!(
             InvWishart::new(inv_scale, 5),
-            Err(Error::ScaleMatrixNotSquareError)
+            Err(InvWishartError::ScaleMatrixNotSquareError)
         );
     }
 

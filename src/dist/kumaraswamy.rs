@@ -69,7 +69,7 @@ impl PartialEq for Kumaraswamy {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum KumaraswamyError {
     /// The a parameter is less than or equal to zero
     ATooLowError,
     /// The a parameter is infinite or NaN
@@ -109,15 +109,15 @@ impl Kumaraswamy {
     /// let kuma_bad  = Kumaraswamy::new(-5.0, 1.0);
     /// assert!(kuma_bad.is_err());
     /// ```
-    pub fn new(a: f64, b: f64) -> Result<Self, Error> {
+    pub fn new(a: f64, b: f64) -> Result<Self, KumaraswamyError> {
         if a <= 0.0 {
-            Err(Error::ATooLowError)
+            Err(KumaraswamyError::ATooLowError)
         } else if !a.is_finite() {
-            Err(Error::ANotFiniteError)
+            Err(KumaraswamyError::ANotFiniteError)
         } else if b <= 0.0 {
-            Err(Error::BTooLowError)
+            Err(KumaraswamyError::BTooLowError)
         } else if !b.is_finite() {
-            Err(Error::ANotFiniteError)
+            Err(KumaraswamyError::ANotFiniteError)
         } else {
             Ok(Kumaraswamy {
                 a,
@@ -193,11 +193,11 @@ impl Kumaraswamy {
     /// let kuma = Kumaraswamy::centered(2.0).unwrap();
     /// assert!(absolute_error(kuma.f(&0.1), kuma.f(&0.9)) > 1E-8);
     /// ```
-    pub fn centered(a: f64) -> Result<Self, Error> {
+    pub fn centered(a: f64) -> Result<Self, KumaraswamyError> {
         if a <= 0.0 {
-            Err(Error::ATooLowError)
+            Err(KumaraswamyError::ATooLowError)
         } else if !a.is_finite() {
-            Err(Error::ANotFiniteError)
+            Err(KumaraswamyError::ANotFiniteError)
         } else {
             let b = 0.5_f64.ln() / (1.0 - 0.5_f64.powf(a)).ln();
             Ok(Kumaraswamy {

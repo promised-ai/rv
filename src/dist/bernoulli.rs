@@ -41,7 +41,7 @@ pub struct Bernoulli {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum BernoulliError {
     /// Bernoulli p is less than zero
     PLessThanZeroError,
     /// Bernoulli p is greater than one
@@ -74,13 +74,13 @@ impl Bernoulli {
     /// assert!(Bernoulli::new(-1.0).is_err());
     /// assert!(Bernoulli::new(1.1).is_err());
     /// ```
-    pub fn new(p: f64) -> Result<Self, Error> {
+    pub fn new(p: f64) -> Result<Self, BernoulliError> {
         if !p.is_finite() {
-            Err(Error::PNotFiniteError)
+            Err(BernoulliError::PNotFiniteError)
         } else if p > 1.0 {
-            Err(Error::PGreaterThanOneError)
+            Err(BernoulliError::PGreaterThanOneError)
         } else if p < 0.0 {
-            Err(Error::PLessThanZeroError)
+            Err(BernoulliError::PLessThanZeroError)
         } else {
             Ok(Bernoulli { p })
         }
@@ -379,14 +379,26 @@ mod tests {
     fn new_should_reject_oob_p() {
         assert!(Bernoulli::new(0.0).is_ok());
         assert!(Bernoulli::new(1.0).is_ok());
-        assert_eq!(Bernoulli::new(-0.001), Err(Error::PLessThanZeroError));
-        assert_eq!(Bernoulli::new(1.001), Err(Error::PGreaterThanOneError));
+        assert_eq!(
+            Bernoulli::new(-0.001),
+            Err(BernoulliError::PLessThanZeroError)
+        );
+        assert_eq!(
+            Bernoulli::new(1.001),
+            Err(BernoulliError::PGreaterThanOneError)
+        );
     }
 
     #[test]
     fn new_should_reject_non_finite_p() {
-        assert_eq!(Bernoulli::new(f64::NAN), Err(Error::PNotFiniteError));
-        assert_eq!(Bernoulli::new(f64::INFINITY), Err(Error::PNotFiniteError));
+        assert_eq!(
+            Bernoulli::new(f64::NAN),
+            Err(BernoulliError::PNotFiniteError)
+        );
+        assert_eq!(
+            Bernoulli::new(f64::INFINITY),
+            Err(BernoulliError::PNotFiniteError)
+        );
     }
 
     #[test]

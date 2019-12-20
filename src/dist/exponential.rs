@@ -33,7 +33,7 @@ pub struct Exponential {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum ExponentialError {
     /// rate parameter is less than or equal to zero
     RateTooLowError,
     /// rate parameter is infinite or zero
@@ -45,11 +45,11 @@ impl Exponential {
     ///
     /// # Arguments
     /// - rate: λ > 0, rate or inverse scale
-    pub fn new(rate: f64) -> Result<Self, Error> {
+    pub fn new(rate: f64) -> Result<Self, ExponentialError> {
         if rate <= 0.0 {
-            Err(Error::RateTooLowError)
+            Err(ExponentialError::RateTooLowError)
         } else if !rate.is_finite() {
-            Err(Error::RateNotFiniteError)
+            Err(ExponentialError::RateNotFiniteError)
         } else {
             Ok(Exponential { rate })
         }

@@ -36,7 +36,7 @@ pub struct Gev {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum GevError {
     /// The location parameter is infinite or NaN
     LocNotFiniteError,
     /// The shape parameter is infinite or NaN
@@ -49,15 +49,15 @@ pub enum Error {
 
 impl Gev {
     /// Create a new `Gev` distribution with location, scale, and shape.
-    pub fn new(loc: f64, scale: f64, shape: f64) -> Result<Self, Error> {
+    pub fn new(loc: f64, scale: f64, shape: f64) -> Result<Self, GevError> {
         if scale <= 0.0 {
-            Err(Error::ScaleTooLowError)
+            Err(GevError::ScaleTooLowError)
         } else if !scale.is_finite() {
-            Err(Error::ScaleNotFiniteError)
+            Err(GevError::ScaleNotFiniteError)
         } else if !shape.is_finite() {
-            Err(Error::ShapeNotFiniteError)
+            Err(GevError::ShapeNotFiniteError)
         } else if !loc.is_finite() {
-            Err(Error::LocNotFiniteError)
+            Err(GevError::LocNotFiniteError)
         } else {
             Ok(Gev { loc, scale, shape })
         }

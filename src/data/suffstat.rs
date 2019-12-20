@@ -101,7 +101,6 @@ impl<'a> Into<DataOrSuffStat<'a, bool, Bernoulli>> for &'a Vec<bool> {
     }
 }
 
-// FOR BOOLABOLE
 impl<'a, X: Booleable> Into<DataOrSuffStat<'a, X, Bernoulli>>
     for &'a BernoulliSuffStat
 {

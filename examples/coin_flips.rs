@@ -20,6 +20,9 @@ fn main() {
 
     // Use the Jeffreys prior of Beta(0.5, 0.5)
     let prior = Beta::jeffreys();
+
+    // Store the data in a data structure that allows for vectors of data
+    // or sufficient statistics
     let xs: BernoulliData<bool> = DataOrSuffStat::Data(&flips);
 
     // Generate the posterior distribution P(θ|x)
@@ -33,7 +36,7 @@ fn main() {
         posterior_mean
     );
 
-    // Samw thing, only using ConjugateModel
+    // Same thing, only using ConjugateModel
     let mut model: ConjugateModel<bool, Bernoulli, Beta> =
         ConjugateModel::new(&Bernoulli::uniform(), Arc::new(prior));
 

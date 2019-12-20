@@ -29,7 +29,7 @@ pub struct InvGamma {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum InvGammaError {
     /// Shape parameter is less than or equal to zero
     ShapeTooLowError,
     /// Shape parameter is infinite or NaN
@@ -46,15 +46,15 @@ impl InvGamma {
     /// # Arguments
     /// - shape: shape parameter, α
     /// - scale scale parameter, β
-    pub fn new(shape: f64, scale: f64) -> Result<Self, Error> {
+    pub fn new(shape: f64, scale: f64) -> Result<Self, InvGammaError> {
         if shape <= 0.0 {
-            Err(Error::ShapeTooLowError)
+            Err(InvGammaError::ShapeTooLowError)
         } else if scale <= 0.0 {
-            Err(Error::ScaleTooLowError)
+            Err(InvGammaError::ScaleTooLowError)
         } else if !shape.is_finite() {
-            Err(Error::ShapeNotFintieError)
+            Err(InvGammaError::ShapeNotFintieError)
         } else if !scale.is_finite() {
-            Err(Error::ScaleNotFintieError)
+            Err(InvGammaError::ScaleNotFintieError)
         } else {
             Ok(InvGamma { shape, scale })
         }

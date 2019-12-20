@@ -19,7 +19,7 @@ pub struct Categorical {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum CategoricalError {
     /// One or more of the weights is infinite or NaN
     NonFiniteWeightError,
     /// One or more of the weights is less than zero
@@ -50,14 +50,14 @@ impl Categorical {
     ///
     /// assert::close(cat.pmf(&0_u8), 0.4, 1E-12);
     /// ```
-    pub fn new(weights: &[f64]) -> Result<Self, Error> {
+    pub fn new(weights: &[f64]) -> Result<Self, CategoricalError> {
         weights.iter().fold(Ok(()), |acc, &w| {
             if acc.is_err() {
                 acc
             } else if w < 0.0 {
-                Err(Error::SubZeroWeightError)
+                Err(CategoricalError::SubZeroWeightError)
             } else if !w.is_finite() {
-                Err(Error::NonFiniteWeightError)
+                Err(CategoricalError::NonFiniteWeightError)
             } else {
                 Ok(())
             }
@@ -95,11 +95,13 @@ impl Categorical {
     /// assert::close(cat.pmf(&2_u8), 0.3, 1E-12);
     /// assert::close(cat.pmf(&3_u8), 0.4, 1E-12);
     /// ```
-    pub fn from_ln_weights(ln_weights: Vec<f64>) -> Result<Self, Error> {
+    pub fn from_ln_weights(
+        ln_weights: Vec<f64>,
+    ) -> Result<Self, CategoricalError> {
         if logsumexp(&ln_weights).abs() < 10E-12 {
             Ok(Categorical { ln_weights })
         } else {
-            Err(Error::WeightsDoNotSumToOneError)
+            Err(CategoricalError::WeightsDoNotSumToOneError)
         }
     }
 

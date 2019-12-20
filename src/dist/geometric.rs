@@ -34,7 +34,7 @@ pub struct Geometric {
 
 #[derive(Debug, Clone, PartialOrd, PartialEq, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum GeometricError {
     /// The p parameter is infinite or NaN
     PNotFiniteError,
     /// The p parameter is less than or equal to zero
@@ -45,13 +45,13 @@ pub enum Error {
 
 impl Geometric {
     /// Create a new geometric distribution
-    pub fn new(p: f64) -> Result<Self, Error> {
+    pub fn new(p: f64) -> Result<Self, GeometricError> {
         if !p.is_finite() {
-            Err(Error::PNotFiniteError)
+            Err(GeometricError::PNotFiniteError)
         } else if p <= 0.0 {
-            Err(Error::PTooLowError)
+            Err(GeometricError::PTooLowError)
         } else if p > 1.0 {
-            Err(Error::PGreaterThanOneError)
+            Err(GeometricError::PGreaterThanOneError)
         } else {
             Ok(Geometric { p })
         }

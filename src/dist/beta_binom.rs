@@ -64,7 +64,7 @@ pub struct BetaBinomial {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum BetaBinomialError {
     /// The alpha parameter is less than zero
     AlphaLessThanZeroError,
     /// The alpha parameter is infinite or NaN
@@ -85,17 +85,21 @@ impl BetaBinomial {
     /// - n: the total number of trials
     /// - alpha: the prior pseudo obersvations of success
     /// - beta: the prior pseudo obersvations of failure
-    pub fn new(n: u32, alpha: f64, beta: f64) -> Result<Self, Error> {
+    pub fn new(
+        n: u32,
+        alpha: f64,
+        beta: f64,
+    ) -> Result<Self, BetaBinomialError> {
         if alpha < 0.0 {
-            Err(Error::AlphaLessThanZeroError)
+            Err(BetaBinomialError::AlphaLessThanZeroError)
         } else if !alpha.is_finite() {
-            Err(Error::AlphaNotFiniteError)
+            Err(BetaBinomialError::AlphaNotFiniteError)
         } else if beta < 0.0 {
-            Err(Error::BetaLessThanZeroError)
+            Err(BetaBinomialError::BetaLessThanZeroError)
         } else if !beta.is_finite() {
-            Err(Error::BetaNotFiniteError)
+            Err(BetaBinomialError::BetaNotFiniteError)
         } else if n == 0 {
-            Err(Error::NIsZeroError)
+            Err(BetaBinomialError::NIsZeroError)
         } else {
             Ok(BetaBinomial { n, alpha, beta })
         }

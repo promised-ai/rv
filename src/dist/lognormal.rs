@@ -25,7 +25,7 @@ pub struct LogNormal {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum LogNormalError {
     /// The mu parameter is infinite or NaN
     MuNotFiniteError,
     /// The sigma parameter is less than or equal to zero
@@ -40,13 +40,13 @@ impl LogNormal {
     /// # Arguments
     /// - mu: log scale mean
     /// - sigma: log scale standard deviation
-    pub fn new(mu: f64, sigma: f64) -> Result<Self, Error> {
+    pub fn new(mu: f64, sigma: f64) -> Result<Self, LogNormalError> {
         if !mu.is_finite() {
-            Err(Error::MuNotFiniteError)
+            Err(LogNormalError::MuNotFiniteError)
         } else if sigma <= 0.0 {
-            Err(Error::SigmaTooLowError)
+            Err(LogNormalError::SigmaTooLowError)
         } else if !sigma.is_finite() {
-            Err(Error::SigmaNotFiniteError)
+            Err(LogNormalError::SigmaNotFiniteError)
         } else {
             Ok(LogNormal { mu, sigma })
         }

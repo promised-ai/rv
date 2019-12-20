@@ -48,7 +48,7 @@ pub struct Beta {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum BetaError {
     /// The alpha parameter is less than or equal too zero
     AlphaTooLowError,
     /// The alpha parameter is infinite or NaN
@@ -78,15 +78,15 @@ impl Beta {
     /// let beta_nope  = Beta::new(-5.0, 1.0);
     /// assert!(beta_nope.is_err());
     /// ```
-    pub fn new(alpha: f64, beta: f64) -> Result<Self, Error> {
+    pub fn new(alpha: f64, beta: f64) -> Result<Self, BetaError> {
         if alpha <= 0.0 {
-            Err(Error::AlphaTooLowError)
+            Err(BetaError::AlphaTooLowError)
         } else if !alpha.is_finite() {
-            Err(Error::AlphaNotFiniteError)
+            Err(BetaError::AlphaNotFiniteError)
         } else if beta <= 0.0 {
-            Err(Error::BetaTooLowError)
+            Err(BetaError::BetaTooLowError)
         } else if !beta.is_finite() {
-            Err(Error::BetaNotFiniteError)
+            Err(BetaError::BetaNotFiniteError)
         } else {
             Ok(Beta { alpha, beta })
         }

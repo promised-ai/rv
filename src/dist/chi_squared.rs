@@ -29,7 +29,7 @@ pub struct ChiSquared {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum ChiSquaredError {
     /// k parameter is less than or equal to zero
     KTooLowError,
     /// k parameter is infinite or NaN
@@ -41,11 +41,11 @@ impl ChiSquared {
     ///
     /// # Arguments
     /// - k: Degrees of freedom in (0, ∞)
-    pub fn new(k: f64) -> Result<Self, Error> {
+    pub fn new(k: f64) -> Result<Self, ChiSquaredError> {
         if k <= 0.0 {
-            Err(Error::KTooLowError)
+            Err(ChiSquaredError::KTooLowError)
         } else if !k.is_finite() {
-            Err(Error::KNotFiniteError)
+            Err(ChiSquaredError::KNotFiniteError)
         } else {
             Ok(ChiSquared { k })
         }

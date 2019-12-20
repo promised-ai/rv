@@ -26,7 +26,7 @@ pub struct SymmetricDirichlet {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum DirichletError {
     /// alpha vector is empty
     AlphasEmptyError,
     /// k parameter is zero
@@ -43,13 +43,13 @@ impl SymmetricDirichlet {
     /// # Arguments
     /// - alpha: The Dirichlet weight.
     /// - k : The number of weights. `alpha` will be replicated `k` times.
-    pub fn new(alpha: f64, k: usize) -> Result<Self, Error> {
+    pub fn new(alpha: f64, k: usize) -> Result<Self, DirichletError> {
         if k == 0 {
-            Err(Error::KIsZeroError)
+            Err(DirichletError::KIsZeroError)
         } else if alpha <= 0.0 {
-            Err(Error::AlphaTooLowError)
+            Err(DirichletError::AlphaTooLowError)
         } else if !alpha.is_finite() {
-            Err(Error::AlphaNotFiniteError)
+            Err(DirichletError::AlphaNotFiniteError)
         } else {
             Ok(SymmetricDirichlet { alpha, k })
         }
@@ -70,9 +70,9 @@ impl SymmetricDirichlet {
     /// let symdir = SymmetricDirichlet::jeffreys(4).unwrap();
     /// assert_eq!(symdir, SymmetricDirichlet::new(0.5, 4).unwrap());
     /// ```
-    pub fn jeffreys(k: usize) -> Result<Self, Error> {
+    pub fn jeffreys(k: usize) -> Result<Self, DirichletError> {
         if k == 0 {
-            Err(Error::KIsZeroError)
+            Err(DirichletError::KIsZeroError)
         } else {
             Ok(SymmetricDirichlet { alpha: 0.5, k })
         }
@@ -156,18 +156,18 @@ impl From<&SymmetricDirichlet> for Dirichlet {
 
 impl Dirichlet {
     /// Creates a `Dirichlet` with a given `alphas` vector
-    pub fn new(alphas: Vec<f64>) -> Result<Self, Error> {
+    pub fn new(alphas: Vec<f64>) -> Result<Self, DirichletError> {
         if alphas.is_empty() {
-            return Err(Error::AlphasEmptyError);
+            return Err(DirichletError::AlphasEmptyError);
         }
 
         alphas.iter().fold(Ok(()), |acc, &alpha| {
             if acc.is_err() {
                 acc
             } else if alpha <= 0.0 {
-                Err(Error::AlphaTooLowError)
+                Err(DirichletError::AlphaTooLowError)
             } else if !alpha.is_finite() {
-                Err(Error::AlphaNotFiniteError)
+                Err(DirichletError::AlphaNotFiniteError)
             } else {
                 Ok(())
             }
@@ -202,13 +202,13 @@ impl Dirichlet {
     /// let x: Vec<f64> = vec![0.1, 0.4, 0.3, 0.2];
     /// assert::close(dir.ln_f(&x), symdir.ln_f(&x), 1E-12);
     /// ```
-    pub fn symmetric(alpha: f64, k: usize) -> Result<Self, Error> {
+    pub fn symmetric(alpha: f64, k: usize) -> Result<Self, DirichletError> {
         if k == 0 {
-            Err(Error::KIsZeroError)
+            Err(DirichletError::KIsZeroError)
         } else if alpha <= 0.0 {
-            Err(Error::AlphaTooLowError)
+            Err(DirichletError::AlphaTooLowError)
         } else if !alpha.is_finite() {
-            Err(Error::AlphaNotFiniteError)
+            Err(DirichletError::AlphaNotFiniteError)
         } else {
             Ok(Dirichlet {
                 alphas: vec![alpha; k],
@@ -237,7 +237,7 @@ impl Dirichlet {
     /// let x: Vec<f64> = vec![0.1, 0.4, 0.5];
     /// assert::close(dir.ln_f(&x), symdir.ln_f(&x), 1E-12);
     /// ```
-    pub fn jeffreys(k: usize) -> Result<Self, Error> {
+    pub fn jeffreys(k: usize) -> Result<Self, DirichletError> {
         Dirichlet::symmetric(0.5, k)
     }
 

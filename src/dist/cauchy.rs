@@ -36,7 +36,7 @@ pub struct Cauchy {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum CauchyError {
     /// Location parameter is infinite or NaN
     LocNotFiniteError,
     /// Scale parameter is less than or equal to zero
@@ -51,13 +51,13 @@ impl Cauchy {
     /// # Arguments
     /// - loc: location, x<sub>0</sub>, in (-∞, ∞)
     /// - scale: scale, γ, in (0, ∞)
-    pub fn new(loc: f64, scale: f64) -> Result<Self, Error> {
+    pub fn new(loc: f64, scale: f64) -> Result<Self, CauchyError> {
         if !loc.is_finite() {
-            Err(Error::LocNotFiniteError)
+            Err(CauchyError::LocNotFiniteError)
         } else if scale <= 0.0 {
-            Err(Error::ScaleTooLowError)
+            Err(CauchyError::ScaleTooLowError)
         } else if !scale.is_finite() {
-            Err(Error::ScaleNotFiniteError)
+            Err(CauchyError::ScaleNotFiniteError)
         } else {
             Ok(Cauchy { loc, scale })
         }

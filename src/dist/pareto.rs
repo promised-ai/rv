@@ -30,7 +30,7 @@ pub struct Pareto {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum ParetoError {
     ShapeTooLowError,
     ShapeNotFiniteError,
     ScaleTooLowError,
@@ -39,15 +39,15 @@ pub enum Error {
 
 impl Pareto {
     /// Create a new `Pareto` distribution with shape (α) and scale (x_m).
-    pub fn new(shape: f64, scale: f64) -> Result<Self, Error> {
+    pub fn new(shape: f64, scale: f64) -> Result<Self, ParetoError> {
         if shape <= 0.0 {
-            Err(Error::ShapeTooLowError)
+            Err(ParetoError::ShapeTooLowError)
         } else if !shape.is_finite() {
-            Err(Error::ShapeNotFiniteError)
+            Err(ParetoError::ShapeNotFiniteError)
         } else if scale <= 0.0 {
-            Err(Error::ScaleTooLowError)
+            Err(ParetoError::ScaleTooLowError)
         } else if !scale.is_finite() {
-            Err(Error::ScaleNotFiniteError)
+            Err(ParetoError::ScaleNotFiniteError)
         } else {
             Ok(Pareto { shape, scale })
         }

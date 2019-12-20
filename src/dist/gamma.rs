@@ -30,7 +30,7 @@ pub struct Gamma {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum GammaError {
     /// Shape parameter is less than or equal to zero
     ShapeTooLowError,
     /// Shape parameter is infinite or NaN
@@ -43,15 +43,15 @@ pub enum Error {
 
 impl Gamma {
     /// Create a new `Gamma` distribution with shape (α) and rate (β).
-    pub fn new(shape: f64, rate: f64) -> Result<Self, Error> {
+    pub fn new(shape: f64, rate: f64) -> Result<Self, GammaError> {
         if shape <= 0.0 {
-            Err(Error::ShapeTooLowError)
+            Err(GammaError::ShapeTooLowError)
         } else if rate <= 0.0 {
-            Err(Error::RateTooLowError)
+            Err(GammaError::RateTooLowError)
         } else if !shape.is_finite() {
-            Err(Error::ShapeNotFintieError)
+            Err(GammaError::ShapeNotFintieError)
         } else if !rate.is_finite() {
-            Err(Error::RateNotFintieError)
+            Err(GammaError::RateNotFintieError)
         } else {
             Ok(Gamma { shape, rate })
         }

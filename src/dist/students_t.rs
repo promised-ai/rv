@@ -21,7 +21,7 @@ pub struct StudentsT {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum StudentsTError {
     /// The v parameter is infinite or NaN
     VNotFiniteError,
     /// The v parameter is less than or equal to zero
@@ -30,11 +30,11 @@ pub enum Error {
 
 impl StudentsT {
     /// Create a new Student's T distribtuion with degrees of freedom, v.
-    pub fn new(v: f64) -> Result<Self, Error> {
+    pub fn new(v: f64) -> Result<Self, StudentsTError> {
         if v <= 0.0 {
-            Err(Error::VTooLowError)
+            Err(StudentsTError::VTooLowError)
         } else if !v.is_finite() {
-            Err(Error::VNotFiniteError)
+            Err(StudentsTError::VNotFiniteError)
         } else {
             Ok(StudentsT { v })
         }

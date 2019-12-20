@@ -34,7 +34,7 @@ pub struct Uniform {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum UniformError {
     InvalidIntervalError,
     ANotFiniteError,
     BNotFiniteError,
@@ -42,13 +42,13 @@ pub enum Error {
 
 impl Uniform {
     /// Create a new uniform distribution on [a, b]
-    pub fn new(a: f64, b: f64) -> Result<Self, Error> {
+    pub fn new(a: f64, b: f64) -> Result<Self, UniformError> {
         if a >= b {
-            Err(Error::InvalidIntervalError)
+            Err(UniformError::InvalidIntervalError)
         } else if !a.is_finite() {
-            Err(Error::ANotFiniteError)
+            Err(UniformError::ANotFiniteError)
         } else if !b.is_finite() {
-            Err(Error::BNotFiniteError)
+            Err(UniformError::BNotFiniteError)
         } else {
             Ok(Uniform { a, b })
         }

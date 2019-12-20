@@ -38,7 +38,7 @@ pub struct Poisson {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum PoissonError {
     /// The rate parameter is less than or equal to zero
     RateTooLowError,
     /// The rate parameter is infinite or NaN
@@ -47,11 +47,11 @@ pub enum Error {
 
 impl Poisson {
     /// Create a new Possion distribution with given rate
-    pub fn new(rate: f64) -> Result<Self, Error> {
+    pub fn new(rate: f64) -> Result<Self, PoissonError> {
         if rate <= 0.0 {
-            Err(Error::RateTooLowError)
+            Err(PoissonError::RateTooLowError)
         } else if !rate.is_finite() {
-            Err(Error::RateNotFiniteError)
+            Err(PoissonError::RateNotFiniteError)
         } else {
             Ok(Poisson { rate })
         }

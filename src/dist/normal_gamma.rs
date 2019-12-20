@@ -29,7 +29,7 @@ pub struct NormalGamma {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum NormalGammaError {
     /// The m parameter is infinite or NaN
     MNotFiniteError,
     /// The r parameter is less than or equal to zero
@@ -54,21 +54,26 @@ impl NormalGamma {
     /// - r: Relative precision of μ versus data
     /// - s: The mean of rho (the precision) is v/s.
     /// - v: Degrees of freedom of precision of rho
-    pub fn new(m: f64, r: f64, s: f64, v: f64) -> Result<Self, Error> {
+    pub fn new(
+        m: f64,
+        r: f64,
+        s: f64,
+        v: f64,
+    ) -> Result<Self, NormalGammaError> {
         if !m.is_finite() {
-            Err(Error::MNotFiniteError)
+            Err(NormalGammaError::MNotFiniteError)
         } else if !r.is_finite() {
-            Err(Error::RNotFiniteError)
+            Err(NormalGammaError::RNotFiniteError)
         } else if !s.is_finite() {
-            Err(Error::SNotFiniteError)
+            Err(NormalGammaError::SNotFiniteError)
         } else if !v.is_finite() {
-            Err(Error::VNotFiniteError)
+            Err(NormalGammaError::VNotFiniteError)
         } else if r <= 0.0 {
-            Err(Error::RTooLowError)
+            Err(NormalGammaError::RTooLowError)
         } else if s <= 0.0 {
-            Err(Error::STooLowError)
+            Err(NormalGammaError::STooLowError)
         } else if v <= 0.0 {
-            Err(Error::VTooLowError)
+            Err(NormalGammaError::VTooLowError)
         } else {
             Ok(NormalGamma { m, r, s, v })
         }

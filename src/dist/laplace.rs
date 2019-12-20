@@ -36,7 +36,7 @@ pub struct Laplace {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum LaplaceError {
     /// The mu parameter is infinite or NaN
     MuNotFiniteError,
     /// The b parameter less than or equal to zero
@@ -47,13 +47,13 @@ pub enum Error {
 
 impl Laplace {
     /// Create a new Laplace distribution.
-    pub fn new(mu: f64, b: f64) -> Result<Self, Error> {
+    pub fn new(mu: f64, b: f64) -> Result<Self, LaplaceError> {
         if !mu.is_finite() {
-            Err(Error::MuNotFiniteError)
+            Err(LaplaceError::MuNotFiniteError)
         } else if !b.is_finite() {
-            Err(Error::BNotFiniteError)
+            Err(LaplaceError::BNotFiniteError)
         } else if b <= 0.0 {
-            Err(Error::BTooLowError)
+            Err(LaplaceError::BTooLowError)
         } else {
             Ok(Laplace { mu, b })
         }

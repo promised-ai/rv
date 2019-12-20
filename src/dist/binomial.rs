@@ -53,7 +53,7 @@ pub struct Binomial {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum BinomialError {
     /// The number of trials is zero
     NIsZeroError,
     /// Bernoulli p is less than zero
@@ -71,15 +71,15 @@ impl Binomial {
     ///
     /// - n: the total number of trials
     /// - p: the pobability of success
-    pub fn new(n: u64, p: f64) -> Result<Self, Error> {
+    pub fn new(n: u64, p: f64) -> Result<Self, BinomialError> {
         if n == 0 {
-            Err(Error::NIsZeroError)
+            Err(BinomialError::NIsZeroError)
         } else if p < 0.0 {
-            Err(Error::PLessThanZeroError)
+            Err(BinomialError::PLessThanZeroError)
         } else if p > 1.0 {
-            Err(Error::PGreaterThanOneError)
+            Err(BinomialError::PGreaterThanOneError)
         } else if !p.is_finite() {
-            Err(Error::PNotFiniteError)
+            Err(BinomialError::PNotFiniteError)
         } else {
             Ok(Binomial { n, p })
         }

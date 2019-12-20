@@ -51,7 +51,7 @@ pub struct NormalInvWishart {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
+pub enum NormalInvWishartError {
     /// The k parameter is less than or equal to zero
     KTooLowError,
     /// The df parameter is less than the number of dimensions
@@ -67,16 +67,16 @@ fn validate_params(
     k: f64,
     df: usize,
     scale: &DMatrix<f64>,
-) -> Result<(), Error> {
+) -> Result<(), NormalInvWishartError> {
     let dims = mu.len();
     if k <= 0.0 {
-        Err(Error::KTooLowError)
+        Err(NormalInvWishartError::KTooLowError)
     } else if df < dims {
-        Err(Error::DfLowerThanDimensionsError)
+        Err(NormalInvWishartError::DfLowerThanDimensionsError)
     } else if !scale.is_square() {
-        Err(Error::ScaleMatrixNotSquareError)
+        Err(NormalInvWishartError::ScaleMatrixNotSquareError)
     } else if dims != scale.nrows() {
-        Err(Error::MuScaleDimensionMismatch)
+        Err(NormalInvWishartError::MuScaleDimensionMismatch)
     } else {
         Ok(())
     }
@@ -95,7 +95,7 @@ impl NormalInvWishart {
         k: f64,
         df: usize,
         scale: DMatrix<f64>,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, NormalInvWishartError> {
         validate_params(&mu, k, df, &scale)?;
         Ok(NormalInvWishart { mu, k, df, scale })
     }
@@ -137,7 +137,10 @@ impl NormalInvWishart {
     }
 
     /// Set the scale parameter
-    pub fn set_scale(&mut self, scale: DMatrix<f64>) -> Result<(), Error> {
+    pub fn set_scale(
+        &mut self,
+        scale: DMatrix<f64>,
+    ) -> Result<(), NormalInvWishartError> {
         validate_params(&self.mu, self.k, self.df, &scale)?;
         self.scale = scale;
         Ok(())
@@ -148,7 +151,10 @@ impl NormalInvWishart {
     }
 
     /// Set the scale parameter
-    pub fn set_mu(&mut self, mu: DVector<f64>) -> Result<(), Error> {
+    pub fn set_mu(
+        &mut self,
+        mu: DVector<f64>,
+    ) -> Result<(), NormalInvWishartError> {
         validate_params(&mu, self.k, self.df, &self.scale)?;
         self.mu = mu;
         Ok(())
