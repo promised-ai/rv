@@ -98,6 +98,7 @@ pub struct MvGaussian {
 }
 
 #[allow(dead_code)]
+#[cfg(feature = "serde_support")]
 fn default_cache_none() -> OnceCell<MvgCache> {
     OnceCell::new()
 }
