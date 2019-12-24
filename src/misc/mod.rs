@@ -8,7 +8,7 @@ mod seq;
 mod x2;
 
 pub use func::*;
-pub use ks::ks_test;
+pub use ks::*;
 pub use mardia::mardia;
 pub use quad::quad;
 pub use seq::*;
