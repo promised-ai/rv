@@ -8,7 +8,7 @@ use crate::impl_display;
 use crate::traits::*;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dynamic};
-use once_cell::unsync::OnceCell;
+use once_cell::sync::OnceCell;
 use rand::Rng;
 
 /// Cache for MvGaussian Internals

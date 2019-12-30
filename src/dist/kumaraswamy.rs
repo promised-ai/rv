@@ -5,7 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::consts::EULER_MASCERONI;
 use crate::impl_display;
 use crate::traits::*;
-use once_cell::unsync::OnceCell;
+use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;
