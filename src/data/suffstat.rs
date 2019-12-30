@@ -120,6 +120,7 @@ impl<'a, X: Booleable> Into<DataOrSuffStat<'a, X, Bernoulli>> for &'a Vec<X> {
 }
 
 // TODO: Get rid of this when the above is implemented
+#[allow(unused_macros)]
 macro_rules! impl_into_dos_for_booleables {
     ($kind: ty) => {
         impl<'a> Into<DataOrSuffStat<'a, $kind, Bernoulli>> for &'a Vec<$kind> {
@@ -251,6 +252,7 @@ impl<'a, X: CategoricalDatum> Into<DataOrSuffStat<'a, X, Categorical>>
 }
 
 // TODO: Get rid of this when the above is implemented
+#[allow(unused_macros)]
 macro_rules! impl_into_dos_for_categorical {
     ($kind: ty) => {
         impl<'a> Into<DataOrSuffStat<'a, $kind, Categorical>>
