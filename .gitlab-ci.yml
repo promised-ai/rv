@@ -1,23 +1,32 @@
 variables:
-    CARGO_HOME: $CI_PROJECT_DIR/cargo
-    RUST_BACKTRACE: 1
+  CARGO_HOME: $CI_PROJECT_DIR/cargo
+  RUST_BACKTRACE: 1
 
 before_script:
-    - rustup component add rustfmt-preview
+  - rustup component add rustfmt-preview
+
+stages:
+  - test
+  - bench
 
 test:cargo-stable:
-    image: "rust:1.38.0"
-    script:
-        - rustc --version && cargo --version
-        - cargo build  --features serde_support
-        - time cargo test --jobs 1
-        - cargo bench -- --test
-
+  stage: test
+  image: "rust:1.38.0"
+  script:
+    - rustc --version && cargo --version
+    - cargo build  --features serde_support
+    - time cargo test --jobs 1
 
 test:cargo-nigtly:
-    image: "rustlang/rust:nightly"
-    script:
-        - rustc --version && cargo --version
-        - cargo build  --features serde_support
-        - time cargo test --jobs 1
-        - cargo bench -- --test
+  stage: test
+  image: "rustlang/rust:nightly"
+  script:
+    - rustc --version && cargo --version
+    - cargo build  --features serde_support
+    - time cargo test --jobs 1
+
+bench:cargo-nigtly:
+  stage: bench
+  image: "rustlang/rust:nightly"
+  script:
+    - cargo bench -- --test
