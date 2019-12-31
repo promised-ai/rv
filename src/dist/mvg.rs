@@ -97,6 +97,7 @@ pub struct MvGaussian {
     cache: OnceCell<MvgCache>,
 }
 
+#[allow(dead_code)]
 fn default_cache_none() -> OnceCell<MvgCache> {
     OnceCell::new()
 }
