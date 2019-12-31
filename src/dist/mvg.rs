@@ -8,7 +8,7 @@ use crate::impl_display;
 use crate::traits::*;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dynamic};
-use once_cell::unsync::OnceCell;
+use once_cell::sync::OnceCell;
 use rand::Rng;
 
 /// Cache for MvGaussian Internals
@@ -98,6 +98,7 @@ pub struct MvGaussian {
 }
 
 #[allow(dead_code)]
+#[cfg(feature = "serde_support")]
 fn default_cache_none() -> OnceCell<MvgCache> {
     OnceCell::new()
 }

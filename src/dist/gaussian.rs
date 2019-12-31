@@ -2,7 +2,7 @@
 use std::f64::consts::SQRT_2;
 
 use getset::Setters;
-use once_cell::unsync::OnceCell;
+use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Normal;
 #[cfg(feature = "serde_support")]
