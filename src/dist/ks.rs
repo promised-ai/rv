@@ -18,13 +18,28 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
     diff <= (atol + rtol * y.abs())
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
+/// Kolmogorov-Smirnov distribution where the number of samples, $N$, is assumed to be large
+/// This is the distribution of $\sqrt{N} D_n$ where $D_n = \sup_x |F_n(x) - F(x)|$ where $F$
+/// is the true CDF and $F_n$ the emperical CDF.
+///
+/// # Example
+///
+/// Calculate the Survival Function for a particular KS stat.
+///
+/// ```rust
+/// use rv::traits::*;
+/// use rv::dist::KsTwoAsymptotic;
+/// use rand::SeedableRng;
+/// use rand::rngs::StdRng;
+///
+/// let ks = KsTwoAsymptotic::default();
+/// let sf = ks.sf(&1.0);
+/// const EXPECTED: f64 = 0.26999967167735456;
+/// assert!((sf - EXPECTED).abs() < 1E-15);
+/// ```
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Setters, Default)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct KSTwoAsymptotic {}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {}
+pub struct KsTwoAsymptotic {}
 
 struct CdfPdf {
     cdf: f64,
@@ -36,16 +51,16 @@ const MIN_THRESHOLD: f64 = PI / (8.0 * -MIN_EXP);
 const KOLMOGO_CUTOVER: f64 = 0.82;
 const MAX_ITERS: usize = 2000;
 
-impl KSTwoAsymptotic {
-    /// Create a new KSTwoAsymptotic distribution
+impl KsTwoAsymptotic {
+    /// Create a new KsTwoAsymptotic distribution
     pub fn new() -> Self {
         Self {}
     }
 
-    fn compute(x: &f64) -> CdfPdf {
-        if *x <= MIN_THRESHOLD {
+    fn compute(x: f64) -> CdfPdf {
+        if x <= MIN_THRESHOLD {
             CdfPdf { cdf: 0.0, pdf: 0.0 }
-        } else if *x <= KOLMOGO_CUTOVER {
+        } else if x <= KOLMOGO_CUTOVER {
             /*
              * u = e^(-pi^2 / (8x^2))
              * w = sqrt(2pi) / x
@@ -76,7 +91,7 @@ impl KSTwoAsymptotic {
 
                 d = PI * PI / (4.0 * x * x) * d - p;
                 d *= w * u / x;
-                p = w * u * p;
+                p *= w * u;
             }
 
             CdfPdf {
@@ -113,8 +128,8 @@ impl KSTwoAsymptotic {
             p = 1.0 - vpwr * p;
             d = 1.0 * 1.0 - vpwr * d;
 
-            p = 2.0 * v * p;
-            d = 8.0 * v * x * d;
+            p *= 2.0 * v;
+            d *= 8.0 * v * x;
             p = p.max(0.0);
             let cdf = (1.0 - p).max(0.0).min(1.0);
             let pdf = d.max(0.0);
@@ -126,9 +141,9 @@ impl KSTwoAsymptotic {
     /// sf(x) = sf
     /// cdf(x) = cdf
     fn inverse(sf: f64, cdf: f64) -> f64 {
-        if !(sf >= 0.0 && cdf >= 0.0 && sf <= 1.0 && cdf <= 1.0) {
-            std::f64::NAN
-        } else if (1.0 - cdf - sf).abs() > 4.0 * std::f64::EPSILON {
+        if !(sf >= 0.0 && cdf >= 0.0 && sf <= 1.0 && cdf <= 1.0)
+            || (1.0 - cdf - sf).abs() > 4.0 * std::f64::EPSILON
+        {
             std::f64::NAN
         } else if cdf == 0.0 {
             0.0
@@ -186,7 +201,7 @@ impl KSTwoAsymptotic {
 
             for _ in 0..MAX_ITERS {
                 let x0 = x;
-                let c = Self::compute(&x0);
+                let c = Self::compute(x0);
                 let df = if cdf < 0.5 {
                     cdf - c.cdf
                 } else {
@@ -243,19 +258,19 @@ impl KSTwoAsymptotic {
     }
 }
 
-impl From<&KSTwoAsymptotic> for String {
-    fn from(_kstwobign: &KSTwoAsymptotic) -> String {
-        format!("KSTwoAsymptotic()")
+impl From<&KsTwoAsymptotic> for String {
+    fn from(_kstwobign: &KsTwoAsymptotic) -> String {
+        "KsTwoAsymptotic()".to_string()
     }
 }
 
-impl_display!(KSTwoAsymptotic);
+impl_display!(KsTwoAsymptotic);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for KSTwoAsymptotic {
+        impl Rv<$kind> for KsTwoAsymptotic {
             fn ln_f(&self, x: &$kind) -> f64 {
-                Self::compute(&(*x as f64)).pdf.ln()
+                Self::compute(*x as f64).pdf.ln()
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -264,21 +279,21 @@ macro_rules! impl_traits {
             }
         }
 
-        impl Support<$kind> for KSTwoAsymptotic {
+        impl Support<$kind> for KsTwoAsymptotic {
             fn supports(&self, x: &$kind) -> bool {
                 *x >= 0.0 && *x <= 1.0
             }
         }
 
-        impl ContinuousDistr<$kind> for KSTwoAsymptotic {}
+        impl ContinuousDistr<$kind> for KsTwoAsymptotic {}
 
-        impl Cdf<$kind> for KSTwoAsymptotic {
+        impl Cdf<$kind> for KsTwoAsymptotic {
             fn cdf(&self, x: &$kind) -> f64 {
-                Self::compute(&(*x as f64)).cdf
+                Self::compute(*x as f64).cdf
             }
         }
 
-        impl InverseCdf<$kind> for KSTwoAsymptotic {
+        impl InverseCdf<$kind> for KsTwoAsymptotic {
             fn invcdf(&self, p: f64) -> $kind {
                 Self::inverse(1.0 - p, p) as $kind
             }
@@ -299,7 +314,7 @@ mod test {
 
     #[test]
     fn ln_f() {
-        let ks = KSTwoAsymptotic::new();
+        let ks = KsTwoAsymptotic::new();
         let xs: [f64; 10] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
         let ys: [f64; 10] = [
             -112.34167178024646,
@@ -322,7 +337,7 @@ mod test {
 
     #[test]
     fn cdf() {
-        let ks = KSTwoAsymptotic::new();
+        let ks = KsTwoAsymptotic::new();
         let xs: [f64; 10] = [
             0.1,
             0.3111111111111111,
@@ -355,7 +370,7 @@ mod test {
 
     #[test]
     fn invcdf() {
-        let ks = KSTwoAsymptotic::new();
+        let ks = KsTwoAsymptotic::new();
         let xs: [f64; 10] = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
         let ys: [f64; 10] = [
             0.0,
@@ -378,7 +393,7 @@ mod test {
 
     #[test]
     fn draw() {
-        let ks = KSTwoAsymptotic::new();
+        let ks = KsTwoAsymptotic::new();
         let mut rng = StdRng::seed_from_u64(0x1234);
         let sample: Vec<f64> = ks.sample(1000, &mut rng);
         let (_, alpha) = ks_test(&sample, |x| ks.cdf(&x));

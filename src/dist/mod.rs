@@ -54,7 +54,7 @@ pub use gaussian::{Gaussian, GaussianError};
 pub use geometric::{Geometric, GeometricError};
 pub use gev::{Gev, GevError};
 pub use invgamma::{InvGamma, InvGammaError};
-pub use ks::KSTwoAsymptotic;
+pub use ks::KsTwoAsymptotic;
 pub use kumaraswamy::{Kumaraswamy, KumaraswamyError};
 pub use laplace::{Laplace, LaplaceError};
 pub use lognormal::{LogNormal, LogNormalError};

@@ -1,4 +1,4 @@
-use crate::dist::KSTwoAsymptotic;
+use crate::dist::KsTwoAsymptotic;
 use crate::traits::Cdf;
 use num::integer::binomial;
 use num::Integer;
@@ -58,7 +58,7 @@ where
 const KS_AUTO_CUTOVER: usize = 10_000;
 
 /// Mode in which to run the KS Test
-pub enum KSMode {
+pub enum KsMode {
     /// Compute the exact statistic
     Exact,
     /// Compute the statistic in the large N limit
@@ -67,25 +67,37 @@ pub enum KSMode {
     Auto,
 }
 
-impl Default for KSMode {
-    fn default() -> KSMode {
-        KSMode::Auto
+impl Default for KsMode {
+    fn default() -> KsMode {
+        KsMode::Auto
     }
 }
 
-pub enum KSAlternative {
-    ///
+/// Hypothesis Alternative for ks_two_sample test
+pub enum KsAlternative {
+    /// Alternative where the emperical CDFs could lie on either side on one another.
     TwoSided,
-    ///
+    /// Alternative where the emperical CDF of the first sequence is strictly less than the
+    /// emperical cdf of the second sequence.
     Less,
-    ///
+    /// Alternative where the emperical CDF of the first sequence is strictly greater than the
+    /// emperical cdf of the second sequence.
     Greater,
 }
 
-impl Default for KSAlternative {
-    fn default() -> KSAlternative {
-        KSAlternative::TwoSided
+impl Default for KsAlternative {
+    fn default() -> KsAlternative {
+        KsAlternative::TwoSided
     }
+}
+
+/// Errors when calculating ks_two_sample
+#[derive(Debug)]
+pub enum KsError {
+    /// Once of the slices given is empty
+    EmptySlice,
+    /// Requested Exact with too many elements
+    TooLongForExact,
 }
 
 /// Two sample Kolmogorov-Smirnov statistic on two samples.
@@ -96,7 +108,7 @@ impl Default for KSAlternative {
 ///
 /// # Example
 /// ```rust
-/// use rv::misc::{ks_two_sample, KSMode, KSAlternative};
+/// use rv::misc::{ks_two_sample, KsMode, KsAlternative};
 ///
 /// let xs = [
 ///     0.95692026,  1.1348812 , -0.76579239, -0.58065653, -0.05122393,
@@ -108,7 +120,7 @@ impl Default for KSAlternative {
 ///     -0.38499295,  1.44976991,  0.2504608 , -0.53694774,  1.42221993
 /// ];
 ///
-/// let (stat, alpha) = ks_two_sample(&xs, &ys, KSMode::Auto, KSAlternative::TwoSided);
+/// let (stat, alpha) = ks_two_sample(&xs, &ys, KsMode::Auto, KsAlternative::TwoSided).unwrap();
 ///
 /// assert::close(stat, 0.3, 1E-8);
 /// assert::close(alpha, 0.7869297884777761, 1E-8);
@@ -116,16 +128,15 @@ impl Default for KSAlternative {
 pub fn ks_two_sample<X>(
     xs: &[X],
     ys: &[X],
-    mode: KSMode,
-    alternative: KSAlternative,
-) -> (f64, f64)
+    mode: KsMode,
+    alternative: KsAlternative,
+) -> Result<(f64, f64), KsError>
 where
     X: Copy + PartialOrd,
 {
-    assert!(
-        !xs.is_empty() && !ys.is_empty(),
-        "Cannot call ks_two_sample with an empty slice"
-    );
+    if xs.is_empty() || ys.is_empty() {
+        return Err(KsError::EmptySlice);
+    }
 
     let n_x = xs.len();
     let n_y = ys.len();
@@ -165,9 +176,9 @@ where
     let min_s = -min_s;
 
     let stat = match alternative {
-        KSAlternative::Less => min_s,
-        KSAlternative::Greater => max_s,
-        KSAlternative::TwoSided => max_s.max(min_s),
+        KsAlternative::Less => min_s,
+        KsAlternative::Greater => max_s,
+        KsAlternative::TwoSided => max_s.max(min_s),
     };
 
     let g = n_x.gcd(&n_y);
@@ -176,41 +187,39 @@ where
     let n_y_g = n_y_f / (g as f64);
 
     let use_method = match mode {
-        KSMode::Asymptotic => KSMode::Asymptotic,
-        KSMode::Auto => {
+        KsMode::Asymptotic => KsMode::Asymptotic,
+        KsMode::Auto => {
             if n_x.max(n_y) <= KS_AUTO_CUTOVER {
-                KSMode::Exact
+                KsMode::Exact
             } else {
-                KSMode::Asymptotic
+                KsMode::Asymptotic
             }
         }
-        KSMode::Exact => {
-            assert!(
-                n_x_g < std::f64::MAX / n_y_g,
-                "Cannot perform exact with given sample sizes..."
-            );
-            KSMode::Exact
+        KsMode::Exact => {
+            if n_x_g > std::f64::MAX / n_y_g {
+                return Err(KsError::TooLongForExact);
+            }
+            KsMode::Exact
         }
     };
 
     match use_method {
-        KSMode::Auto => unreachable!(),
-        KSMode::Exact => {
+        KsMode::Exact => {
             let lcm = (n_x_f / g_f) * n_y_f;
             let h = (stat * lcm).round();
             let stat = h / lcm;
             if h == 0.0 {
-                (stat, 1.0)
+                Ok((stat, 1.0))
             } else {
                 match alternative {
-                    KSAlternative::TwoSided => {
+                    KsAlternative::TwoSided => {
                         if n_x == n_y {
-                            (stat, paths_outside_proportion(n_x, h))
+                            Ok((stat, paths_outside_proportion(n_x, h)))
                         } else {
-                            (
+                            Ok((
                                 stat,
                                 1.0 - paths_inside_proportion(n_x, n_y, g, h),
-                            )
+                            ))
                         }
                     }
                     _ => {
@@ -219,23 +228,23 @@ where
                                 ((n_x - j) as f64) * p
                                     / (n_x_f + (j as f64) + 1.0)
                             });
-                            (stat, p)
+                            Ok((stat, p))
                         } else {
                             let paths = paths_outside(n_x, n_y, g, h);
                             let bin = binomial(n_x + n_y, n_x);
-                            (stat, (paths as f64) / (bin as f64))
+                            Ok((stat, (paths as f64) / (bin as f64)))
                         }
                     }
                 }
             }
         }
-        KSMode::Asymptotic => {
-            let ks_dist = KSTwoAsymptotic::new();
+        KsMode::Asymptotic => {
+            let ks_dist = KsTwoAsymptotic::new();
 
             match alternative {
-                KSAlternative::TwoSided => {
+                KsAlternative::TwoSided => {
                     let en = (n_x_f * n_y_f / (n_y_f + n_x_f)).sqrt();
-                    (stat, 1.0 - ks_dist.cdf(&(en * stat)))
+                    Ok((stat, 1.0 - ks_dist.cdf(&(en * stat))))
                 }
                 _ => {
                     let m = n_x.max(n_y) as f64;
@@ -247,10 +256,11 @@ where
                             / (m * n * (m + n)).sqrt()
                             / 3.0;
                     let p = expt.exp();
-                    (stat, p)
+                    Ok((stat, p))
                 }
             }
         }
+        KsMode::Auto => unreachable!(),
     }
 }
 
@@ -261,7 +271,7 @@ fn paths_outside(m: usize, n: usize, g: usize, h: f64) -> usize {
     let ng_f = ng as f64;
     let mg_f = mg as f64;
 
-    let xj: Vec<usize> = (0..(n + 1))
+    let xj: Vec<usize> = (0..=n)
         .map(|j| ((h + mg_f * (j as f64)) / ng_f).ceil() as usize)
         .filter(|&x| x <= m)
         .collect();
@@ -328,7 +338,7 @@ fn paths_inside_proportion(m: usize, n: usize, g: usize, h: f64) -> f64 {
     let mut a: Vec<f64> = (0..len_a)
         .map(|i| if i >= min_j && i < max_j { 1.0 } else { 0.0 })
         .collect();
-    for i in 1..(m + 1) {
+    for i in 1..=m {
         let i_f = i as f64;
         let last_min_j = min_j;
         let last_len = cur_len;
@@ -346,8 +356,10 @@ fn paths_inside_proportion(m: usize, n: usize, g: usize, h: f64) -> f64 {
         }
         cur_len = max_j - min_j;
         if last_len > cur_len {
-            for j in max_j - min_j..max_j - min_j + (last_len - cur_len) {
-                a[j] = 0.0;
+            for a_part in
+                a.iter_mut().skip(max_j - min_j).take(last_len - cur_len)
+            {
+                *a_part = 0.0;
             }
         }
         let scaling_factor = i_f / (n_f + i_f);
@@ -511,17 +523,20 @@ mod tests {
         ];
 
         let (stat, alpha) =
-            ks_two_sample(&xs, &ys, KSMode::Exact, KSAlternative::TwoSided);
+            ks_two_sample(&xs, &ys, KsMode::Exact, KsAlternative::TwoSided)
+                .unwrap();
         assert::close(stat, 0.3, 1E-8);
         assert::close(alpha, 0.7869297884777761, 1E-8);
 
         let (stat, alpha) =
-            ks_two_sample(&xs, &ys, KSMode::Exact, KSAlternative::Less);
+            ks_two_sample(&xs, &ys, KsMode::Exact, KsAlternative::Less)
+                .unwrap();
         assert::close(stat, 0.3, 1E-8);
         assert::close(alpha, 0.41958041958041953, 1E-8);
 
         let (stat, alpha) =
-            ks_two_sample(&xs, &ys, KSMode::Exact, KSAlternative::Greater);
+            ks_two_sample(&xs, &ys, KsMode::Exact, KsAlternative::Greater)
+                .unwrap();
         assert::close(stat, 0.2, 1E-8);
         assert::close(alpha, 0.6818181818181818, 1E-8);
     }
@@ -557,19 +572,22 @@ mod tests {
         let (stat, alpha) = ks_two_sample(
             &xs,
             &ys,
-            KSMode::Asymptotic,
-            KSAlternative::TwoSided,
-        );
+            KsMode::Asymptotic,
+            KsAlternative::TwoSided,
+        )
+        .unwrap();
         assert::close(stat, 0.3, 1E-8);
         assert::close(alpha, 0.7590978384203948, 1E-8);
 
         let (stat, alpha) =
-            ks_two_sample(&xs, &ys, KSMode::Asymptotic, KSAlternative::Less);
+            ks_two_sample(&xs, &ys, KsMode::Asymptotic, KsAlternative::Less)
+                .unwrap();
         assert::close(stat, 0.3, 1E-8);
         assert::close(alpha, 0.30119421191220214, 1E-8);
 
         let (stat, alpha) =
-            ks_two_sample(&xs, &ys, KSMode::Asymptotic, KSAlternative::Greater);
+            ks_two_sample(&xs, &ys, KsMode::Asymptotic, KsAlternative::Greater)
+                .unwrap();
         assert::close(stat, 0.2, 1E-8);
         assert::close(alpha, 0.5488116360940264, 1E-8);
     }
