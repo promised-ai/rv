@@ -1,5 +1,7 @@
+#[cfg(feature = "serde_support")]
+use serde_derive::{Deserialize, Serialize};
+
 use crate::misc::{logsumexp, pflip};
-use crate::result;
 use crate::traits::*;
 use rand::Rng;
 
@@ -30,6 +32,21 @@ pub struct Mixture<Fx> {
     components: Vec<Fx>,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum MixtureError {
+    /// The weights vector is empty
+    WeightsEmptyError,
+    /// The weights to not sum to one
+    WeightsDoNotSumToOneError,
+    /// One or more weights is less than or equal to zero
+    WeightTooLowError,
+    /// The components vector is empty
+    ComponentsEmptyError,
+    /// The components vector and the weights vector are different lengths
+    ComponentWeightDimensionMismatchError,
+}
+
 impl<Fx> Mixture<Fx> {
     /// Create a new micture distribution
     ///
@@ -37,25 +54,20 @@ impl<Fx> Mixture<Fx> {
     /// - weights: The weights for each component distribution. All entries
     ///   must be positive and sum to 1.
     /// - components: The componen distributions.
-    pub fn new(weights: Vec<f64>, components: Vec<Fx>) -> result::Result<Self> {
-        let weights_ok = weights.iter().all(|&w| w >= 0.0)
-            && (weights.iter().sum::<f64>() - 1.0).abs() < 1E-12;
-
-        if weights.is_empty() || components.is_empty() {
-            let err_kind = result::ErrorKind::EmptyContainerError;
-            let msg = "weights or components was empty";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
-        } else if weights.len() != components.len() {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "weights.len() != components.len()";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
-        } else if !weights_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "weights must be positive and sum to 1";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+    pub fn new(
+        weights: Vec<f64>,
+        components: Vec<Fx>,
+    ) -> Result<Self, MixtureError> {
+        if weights.is_empty() {
+            Err(MixtureError::WeightsEmptyError)
+        } else if components.is_empty() {
+            Err(MixtureError::ComponentsEmptyError)
+        } else if components.len() != weights.len() {
+            Err(MixtureError::ComponentWeightDimensionMismatchError)
+        } else if weights.iter().any(|&w| w <= 0.0) {
+            Err(MixtureError::WeightTooLowError)
+        } else if (weights.iter().sum::<f64>() - 1.0).abs() > 1E-12 {
+            Err(MixtureError::WeightsDoNotSumToOneError)
         } else {
             Ok(Mixture {
                 weights,
@@ -76,17 +88,21 @@ impl<Fx> Mixture<Fx> {
     ///
     /// Given a n-length vector of components, automatically sets the component
     /// weights to 1/n.
-    pub fn uniform(components: Vec<Fx>) -> result::Result<Self> {
-        let k = components.len();
-        let weights = vec![1.0 / k as f64; k];
-        Ok(Mixture {
-            weights,
-            components,
-        })
+    pub fn uniform(components: Vec<Fx>) -> Result<Self, MixtureError> {
+        if components.is_empty() {
+            Err(MixtureError::ComponentsEmptyError)
+        } else {
+            let k = components.len();
+            let weights = vec![1.0 / k as f64; k];
+            Ok(Mixture {
+                weights,
+                components,
+            })
+        }
     }
 
     /// Combines many mixtures into one big mixture
-    pub fn combine(mut mixtures: Vec<Mixture<Fx>>) -> result::Result<Self> {
+    pub fn combine(mut mixtures: Vec<Mixture<Fx>>) -> Self {
         let k_total: usize = mixtures.iter().fold(0, |acc, mm| acc + mm.k());
         let nf = mixtures.len() as f64;
 
@@ -102,7 +118,7 @@ impl<Fx> Mixture<Fx> {
             );
         });
 
-        Mixture::new(weights, components)
+        Mixture::new_unchecked(weights, components)
     }
 
     /// Number of components
@@ -120,20 +136,16 @@ impl<Fx> Mixture<Fx> {
         &self.components
     }
 
-    pub fn set_weights(&mut self, weights: Vec<f64>) -> result::Result<()> {
-        let weights_ok = weights.iter().all(|&w| w >= 0.0)
-            && (weights.iter().sum::<f64>() - 1.0).abs() < 1E-12;
-
+    pub fn set_weights(
+        &mut self,
+        weights: Vec<f64>,
+    ) -> Result<(), MixtureError> {
         if weights.len() != self.k() {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "weights.len() != components.len()";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
-        } else if !weights_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "weights must be positive and sum to 1";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Err(MixtureError::ComponentWeightDimensionMismatchError)
+        } else if weights.iter().any(|&w| w <= 0.0) {
+            Err(MixtureError::WeightTooLowError)
+        } else if (weights.iter().sum::<f64>() - 1.0).abs() > 1E-12 {
+            Err(MixtureError::WeightsDoNotSumToOneError)
         } else {
             self.weights = weights;
             Ok(())
@@ -147,12 +159,9 @@ impl<Fx> Mixture<Fx> {
     pub fn set_components(
         &mut self,
         components: Vec<Fx>,
-    ) -> result::Result<()> {
+    ) -> Result<(), MixtureError> {
         if components.len() != self.k() {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "There must be a component for each weight";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Err(MixtureError::ComponentWeightDimensionMismatchError)
         } else {
             self.components = components;
             Ok(())
@@ -384,7 +393,7 @@ mod tests {
             Mixture::new(vec![0.4, 0.6], components).unwrap()
         };
 
-        let mmc = Mixture::combine(vec![mm1, mm2]).unwrap();
+        let mmc = Mixture::combine(vec![mm1, mm2]);
 
         assert::close(mmc.weights, vec![0.1, 0.4, 0.2, 0.3], TOL);
         assert::close(mmc.components[0].mu(), 0.0, TOL);

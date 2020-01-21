@@ -1,17 +1,18 @@
 //! Gaussian/Normal distribution over x in (-∞, ∞)
+use std::f64::consts::SQRT_2;
+
+use getset::Setters;
+use once_cell::sync::OnceCell;
+use rand::Rng;
+use rand_distr::Normal;
 #[cfg(feature = "serde_support")]
 use serde_derive::{Deserialize, Serialize};
+use special::Error as _;
 
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
-use getset::Setters;
-use rand::distributions::Normal;
-use rand::Rng;
-use special::Error as _;
-use std::f64::consts::SQRT_2;
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.
@@ -35,15 +36,44 @@ use std::f64::consts::SQRT_2;
 /// let kl_sym = gauss_1.kl_sym(&gauss_2);
 /// assert!((kl_sym - (kl_12 + kl_21)).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
+#[derive(Debug, Setters)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Gaussian {
     /// Mean
     #[set = "pub"]
     mu: f64,
     /// Standard deviation
-    #[set = "pub"]
     sigma: f64,
+    #[cfg_attr(feature = "serde_support", serde(skip))]
+    /// Cached log(sigma)
+    ln_sigma: OnceCell<f64>,
+}
+
+impl Clone for Gaussian {
+    fn clone(&self) -> Self {
+        Self {
+            mu: self.mu,
+            sigma: self.sigma,
+            ln_sigma: OnceCell::from(self.ln_sigma()),
+        }
+    }
+}
+
+impl PartialEq for Gaussian {
+    fn eq(&self, other: &Gaussian) -> bool {
+        self.mu == other.mu && self.sigma == other.sigma
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum GaussianError {
+    /// The mu parameter is infinite or NaN
+    MuNotFiniteError,
+    /// The sigma parameter is less than or equal to zero
+    SigmaTooLowError,
+    /// The sigma parameter is infinite or NaN
+    SigmaNotFiniteError,
 }
 
 impl Gaussian {
@@ -52,27 +82,31 @@ impl Gaussian {
     /// # Aruments
     /// - mu: mean
     /// - sigma: standard deviation
-    pub fn new(mu: f64, sigma: f64) -> result::Result<Self> {
-        let mu_ok = mu.is_finite();
-        let sigma_ok = sigma > 0.0 && sigma.is_finite();
-        if !mu_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "mu must be finite");
-            Err(err)
-        } else if !sigma_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "sigma must be finite and greater than zero";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+    pub fn new(mu: f64, sigma: f64) -> Result<Self, GaussianError> {
+        if !mu.is_finite() {
+            Err(GaussianError::MuNotFiniteError)
+        } else if sigma <= 0.0 {
+            Err(GaussianError::SigmaTooLowError)
+        } else if !sigma.is_finite() {
+            Err(GaussianError::SigmaNotFiniteError)
         } else {
-            Ok(Gaussian { mu, sigma })
+            Ok(Gaussian {
+                mu,
+                sigma,
+                ln_sigma: OnceCell::new(),
+            })
         }
     }
 
     /// Creates a new Gaussian without checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
-        Gaussian { mu, sigma }
+        Gaussian {
+            mu,
+            sigma,
+            ln_sigma: OnceCell::new(),
+        }
     }
 
     /// Standard normal
@@ -85,10 +119,12 @@ impl Gaussian {
     ///
     /// assert_eq!(gauss, Gaussian::new(0.0, 1.0).unwrap());
     /// ```
+    #[inline]
     pub fn standard() -> Self {
         Gaussian {
             mu: 0.0,
             sigma: 1.0,
+            ln_sigma: OnceCell::from(0.0),
         }
     }
 
@@ -102,6 +138,7 @@ impl Gaussian {
     ///
     /// assert_eq!(gauss.mu(), 2.0);
     /// ```
+    #[inline]
     pub fn mu(&self) -> f64 {
         self.mu
     }
@@ -116,8 +153,35 @@ impl Gaussian {
     ///
     /// assert_eq!(gauss.sigma(), 1.5);
     /// ```
+    #[inline]
     pub fn sigma(&self) -> f64 {
         self.sigma
+    }
+
+    /// Set the value of sigma
+    #[inline]
+    pub fn set_sigma(&mut self, sigma: f64) -> Result<(), GaussianError> {
+        if sigma <= 0.0 {
+            Err(GaussianError::SigmaTooLowError)
+        } else if !sigma.is_finite() {
+            Err(GaussianError::SigmaNotFiniteError)
+        } else {
+            self.set_sigma_unchecked(sigma);
+            Ok(())
+        }
+    }
+
+    /// Set the value of sigma
+    #[inline]
+    pub fn set_sigma_unchecked(&mut self, sigma: f64) {
+        self.sigma = sigma;
+        self.ln_sigma = OnceCell::new();
+    }
+
+    /// Evaluate or fetch cached log sigma
+    #[inline]
+    fn ln_sigma(&self) -> f64 {
+        *self.ln_sigma.get_or_init(|| self.sigma.ln())
     }
 }
 
@@ -140,16 +204,16 @@ macro_rules! impl_traits {
         impl Rv<$kind> for Gaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k = (f64::from(*x) - self.mu) / self.sigma;
-                -self.sigma.ln() - 0.5 * k * k - HALF_LN_2PI
+                -self.ln_sigma() - 0.5 * k * k - HALF_LN_2PI
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let g = Normal::new(self.mu, self.sigma);
+                let g = Normal::new(self.mu, self.sigma).unwrap();
                 rng.sample(g) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let g = Normal::new(self.mu, self.sigma);
+                let g = Normal::new(self.mu, self.sigma).unwrap();
                 (0..n).map(|_| rng.sample(g) as $kind).collect()
             }
         }
@@ -216,7 +280,7 @@ impl Variance<f64> for Gaussian {
 
 impl Entropy for Gaussian {
     fn entropy(&self) -> f64 {
-        HALF_LN_2PI_E + self.sigma.ln()
+        HALF_LN_2PI_E + self.ln_sigma()
     }
 }
 
@@ -453,5 +517,23 @@ mod tests {
         let g2 = Gaussian::new(2.0, 1.0).unwrap();
         let kl = 0.5_f64.ln() + 5.0 / 2.0 - 0.5;
         assert::close(g1.kl(&g2), kl, TOL);
+    }
+
+    #[test]
+    fn ln_f_after_set_mu_works() {
+        let mut gauss = Gaussian::standard();
+        assert::close(gauss.ln_pdf(&0.0_f64), -0.91893853320467267, TOL);
+
+        gauss.set_mu(1.0);
+        assert::close(gauss.ln_pdf(&1.0_f64), -0.91893853320467267, TOL);
+    }
+
+    #[test]
+    fn ln_f_after_set_sigm_works() {
+        let mut gauss = Gaussian::new(-1.2, 5.0).unwrap();
+
+        gauss.set_sigma(0.33).unwrap();
+        assert::close(gauss.ln_pdf(&-1.2_f64), 0.18972409131693846, TOL);
+        assert::close(gauss.ln_pdf(&0.0_f32), -6.4218461566169447, TOL);
     }
 }

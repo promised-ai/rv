@@ -4,7 +4,6 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::dist::Uniform;
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use num::{Bounded, FromPrimitive, Integer, Saturating, ToPrimitive, Unsigned};
@@ -33,18 +32,28 @@ pub struct Geometric {
     p: f64,
 }
 
+#[derive(Debug, Clone, PartialOrd, PartialEq, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum GeometricError {
+    /// The p parameter is infinite or NaN
+    PNotFiniteError,
+    /// The p parameter is less than or equal to zero
+    PTooLowError,
+    /// The p parameter is greater than one
+    PGreaterThanOneError,
+}
+
 impl Geometric {
     /// Create a new geometric distribution
-    pub fn new(p: f64) -> result::Result<Self> {
-        if p > 0.0 && p <= 1.0 {
-            Ok(Geometric { p })
+    pub fn new(p: f64) -> Result<Self, GeometricError> {
+        if !p.is_finite() {
+            Err(GeometricError::PNotFiniteError)
+        } else if p <= 0.0 {
+            Err(GeometricError::PTooLowError)
+        } else if p > 1.0 {
+            Err(GeometricError::PGreaterThanOneError)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(
-                err_kind,
-                "p must be between zero and one (right closed).",
-            );
-            Err(err)
+            Ok(Geometric { p })
         }
     }
 

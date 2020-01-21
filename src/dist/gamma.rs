@@ -3,10 +3,8 @@
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
-use rand::distributions;
 use rand::Rng;
 use special::Gamma as _;
 
@@ -30,19 +28,32 @@ pub struct Gamma {
     rate: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum GammaError {
+    /// Shape parameter is less than or equal to zero
+    ShapeTooLowError,
+    /// Shape parameter is infinite or NaN
+    ShapeNotFintieError,
+    /// Rate parameter is less than or equal to zero
+    RateTooLowError,
+    /// Rate parameter is infinite or NaN
+    RateNotFintieError,
+}
+
 impl Gamma {
     /// Create a new `Gamma` distribution with shape (α) and rate (β).
-    pub fn new(shape: f64, rate: f64) -> result::Result<Self> {
-        let shape_ok = shape > 0.0 && shape.is_finite();
-        let rate_ok = rate > 0.0 && rate.is_finite();
-
-        if shape_ok && rate_ok {
-            Ok(Gamma { shape, rate })
+    pub fn new(shape: f64, rate: f64) -> Result<Self, GammaError> {
+        if shape <= 0.0 {
+            Err(GammaError::ShapeTooLowError)
+        } else if rate <= 0.0 {
+            Err(GammaError::RateTooLowError)
+        } else if !shape.is_finite() {
+            Err(GammaError::ShapeNotFintieError)
+        } else if !rate.is_finite() {
+            Err(GammaError::RateNotFintieError)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "shape and rate must be finite and greater than 0";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Ok(Gamma { shape, rate })
         }
     }
 
@@ -105,12 +116,14 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let g = distributions::Gamma::new(self.shape, 1.0 / self.rate);
+                let g = rand_distr::Gamma::new(self.shape, 1.0 / self.rate)
+                    .unwrap();
                 rng.sample(g) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let g = distributions::Gamma::new(self.shape, 1.0 / self.rate);
+                let g = rand_distr::Gamma::new(self.shape, 1.0 / self.rate)
+                    .unwrap();
                 (0..n).map(|_| rng.sample(g) as $kind).collect()
             }
         }

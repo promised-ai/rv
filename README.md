@@ -74,6 +74,21 @@ For more interesting examples, including use in machine learning, see
 
 ## Contributing
 
+Bjork has had a great influence on how I create things. She once said in an
+interview:
+
+> When I did "Debut" I thought, 'OK, I've pleased enough people, I'm gonna get
+> really selfish.' And I never sold as many records as with "Debut". So, I
+> don't know, it seems the more selfish I am, the more generous I am. I'm not
+> going to pretend I know the formula. I can only please myself.
+
+And so our goal with rv is to please ourselves. We use it in our tools and
+we've designed it to do what we want. We are happy if you find rv useful, and
+we will entertain ideas for changes -- and accept them if we like them -- but
+in the end, rv is for us.
+
+If you'd like to offer a contribution:
+
 1. Please create an issue before starting any work. We're far from stable, so
    we might actually be working on what you want, or we might be working on
    something that will change the way you might implement it.

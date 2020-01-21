@@ -2,12 +2,10 @@
 #[cfg(feature = "serde_support")]
 use serde_derive::{Deserialize, Serialize};
 
-use crate::data::BernoulliSuffStat;
+use crate::data::{BernoulliSuffStat, Booleable};
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
-use rand::distributions::Uniform;
 use rand::Rng;
 use std::f64;
 
@@ -41,6 +39,17 @@ pub struct Bernoulli {
     p: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum BernoulliError {
+    /// Bernoulli p is less than zero
+    PLessThanZeroError,
+    /// Bernoulli p is greater than one
+    PGreaterThanOneError,
+    /// Bernoulli p is infinite or NaN
+    PNotFiniteError,
+}
+
 impl Bernoulli {
     /// Create a new Bernoulli distribution.
     ///
@@ -65,13 +74,15 @@ impl Bernoulli {
     /// assert!(Bernoulli::new(-1.0).is_err());
     /// assert!(Bernoulli::new(1.1).is_err());
     /// ```
-    pub fn new(p: f64) -> result::Result<Self> {
-        if p.is_finite() && 0.0 < p && p < 1.0 {
-            Ok(Bernoulli { p })
+    pub fn new(p: f64) -> Result<Self, BernoulliError> {
+        if !p.is_finite() {
+            Err(BernoulliError::PNotFiniteError)
+        } else if p > 1.0 {
+            Err(BernoulliError::PGreaterThanOneError)
+        } else if p < 0.0 {
+            Err(BernoulliError::PLessThanZeroError)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "p must be in [0, 1]");
-            Err(err)
+            Ok(Bernoulli { p })
         }
     }
 
@@ -140,88 +151,84 @@ impl From<&Bernoulli> for String {
 
 impl_display!(Bernoulli);
 
-macro_rules! impl_int_traits {
-    ($kind:ty) => {
-        impl Rv<$kind> for Bernoulli {
-            fn f(&self, x: &$kind) -> f64 {
-                if *x == 1 {
-                    self.p
-                } else if *x == 0 {
-                    1.0_f64 - self.p
-                } else {
-                    panic!("Invalid value: x was not 0 or 1");
-                }
-            }
-
-            fn ln_f(&self, x: &$kind) -> f64 {
-                self.f(x).ln()
-            }
-
-            fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let u = Uniform::new(0.0, 1.0);
-                if rng.sample(u) < self.p {
-                    1
-                } else {
-                    0
-                }
-            }
-
-            fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let u = Uniform::new(0.0, 1.0);
-                (0..n)
-                    .map(|_| if rng.sample(u) < self.p { 1 } else { 0 })
-                    .collect()
-            }
+impl<X: Booleable> Rv<X> for Bernoulli {
+    fn f(&self, x: &X) -> f64 {
+        let val: bool = x.into_bool();
+        if val {
+            self.p
+        } else {
+            1.0_f64 - self.p
         }
+    }
 
-        impl Support<$kind> for Bernoulli {
-            fn supports(&self, x: &$kind) -> bool {
-                *x == 0 || *x == 1
-            }
+    fn ln_f(&self, x: &X) -> f64 {
+        self.f(x).ln()
+    }
+
+    fn draw<R: Rng>(&self, rng: &mut R) -> X {
+        let u = rand_distr::Open01;
+        let x: f64 = rng.sample(u);
+        X::from_bool(x < self.p)
+    }
+
+    fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<X> {
+        let u = rand_distr::Open01;
+        (0..n)
+            .map(|_| {
+                let x: f64 = rng.sample(u);
+                X::from_bool(x < self.p)
+            })
+            .collect()
+    }
+}
+
+impl<X: Booleable> Support<X> for Bernoulli {
+    fn supports(&self, x: &X) -> bool {
+        x.try_into_bool().is_some()
+    }
+}
+
+impl<X: Booleable> DiscreteDistr<X> for Bernoulli {
+    fn pmf(&self, x: &X) -> f64 {
+        let val: bool = x.into_bool();
+        self.f(&val)
+    }
+
+    fn ln_pmf(&self, x: &X) -> f64 {
+        let val: bool = x.into_bool();
+        self.ln_f(&val)
+    }
+}
+
+impl<X: Booleable> Cdf<X> for Bernoulli {
+    fn cdf(&self, x: &X) -> f64 {
+        let val: bool = x.into_bool();
+        if val {
+            1.0
+        } else {
+            self.q()
         }
+    }
+}
 
-        impl DiscreteDistr<$kind> for Bernoulli {
-            fn pmf(&self, x: &$kind) -> f64 {
-                self.f(x)
-            }
-
-            fn ln_pmf(&self, x: &$kind) -> f64 {
-                self.ln_f(x)
-            }
+impl<X: Booleable> Mode<X> for Bernoulli {
+    fn mode(&self) -> Option<X> {
+        let q = self.q();
+        if self.p < q {
+            Some(X::from_bool(false))
+        } else if (self.p - q).abs() < f64::EPSILON {
+            None
+        } else {
+            Some(X::from_bool(true))
         }
+    }
+}
 
-        impl Cdf<$kind> for Bernoulli {
-            fn cdf(&self, x: &$kind) -> f64 {
-                if *x == 0 {
-                    self.q()
-                } else if *x > 0 {
-                    1.0
-                } else {
-                    0.0
-                }
-            }
-        }
-
-        impl Mode<$kind> for Bernoulli {
-            fn mode(&self) -> Option<$kind> {
-                let q = self.q();
-                if self.p < q {
-                    Some(0)
-                } else if (self.p - q).abs() < f64::EPSILON {
-                    None
-                } else {
-                    Some(1)
-                }
-            }
-        }
-
-        impl HasSuffStat<$kind> for Bernoulli {
-            type Stat = BernoulliSuffStat;
-            fn empty_suffstat(&self) -> Self::Stat {
-                BernoulliSuffStat::new()
-            }
-        }
-    };
+impl<X: Booleable> HasSuffStat<X> for Bernoulli {
+    type Stat = BernoulliSuffStat;
+    fn empty_suffstat(&self) -> Self::Stat {
+        BernoulliSuffStat::new()
+    }
 }
 
 impl KlDivergence for Bernoulli {
@@ -290,13 +297,19 @@ impl Rv<bool> for Bernoulli {
     }
 
     fn draw<R: Rng>(&self, rng: &mut R) -> bool {
-        let u = Uniform::new(0.0, 1.0);
-        rng.sample(u) < self.p
+        let u = rand_distr::Open01;
+        let x: f64 = rng.sample(u);
+        x < self.p
     }
 
     fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<bool> {
-        let u = Uniform::new(0.0, 1.0);
-        (0..n).map(|_| rng.sample(u) < self.p).collect()
+        let u = rand_distr::Open01;
+        (0..n)
+            .map(|_| {
+                let x: f64 = rng.sample(u);
+                x < self.p
+            })
+            .collect()
     }
 }
 
@@ -346,18 +359,6 @@ impl HasSuffStat<bool> for Bernoulli {
     }
 }
 
-impl_int_traits!(u8);
-impl_int_traits!(u16);
-impl_int_traits!(u32);
-impl_int_traits!(u64);
-impl_int_traits!(usize);
-
-impl_int_traits!(i8);
-impl_int_traits!(i16);
-impl_int_traits!(i32);
-impl_int_traits!(i64);
-impl_int_traits!(isize);
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -376,16 +377,28 @@ mod tests {
 
     #[test]
     fn new_should_reject_oob_p() {
-        assert!(Bernoulli::new(0.0).is_err());
-        assert!(Bernoulli::new(1.0).is_err());
-        assert!(Bernoulli::new(-0.001).is_err());
-        assert!(Bernoulli::new(1.001).is_err());
+        assert!(Bernoulli::new(0.0).is_ok());
+        assert!(Bernoulli::new(1.0).is_ok());
+        assert_eq!(
+            Bernoulli::new(-0.001),
+            Err(BernoulliError::PLessThanZeroError)
+        );
+        assert_eq!(
+            Bernoulli::new(1.001),
+            Err(BernoulliError::PGreaterThanOneError)
+        );
     }
 
     #[test]
     fn new_should_reject_non_finite_p() {
-        assert!(Bernoulli::new(f64::NAN).is_err());
-        assert!(Bernoulli::new(f64::INFINITY).is_err());
+        assert_eq!(
+            Bernoulli::new(f64::NAN),
+            Err(BernoulliError::PNotFiniteError)
+        );
+        assert_eq!(
+            Bernoulli::new(f64::INFINITY),
+            Err(BernoulliError::PNotFiniteError)
+        );
     }
 
     #[test]
@@ -531,9 +544,10 @@ mod tests {
     }
 
     #[test]
-    fn cmf_less_than_zero_is_zero() {
+    #[should_panic]
+    fn cmf_less_than_zero_fails() {
         let b = Bernoulli::new(0.1).unwrap();
-        assert::close(b.cdf(&-1_i16), 0.0, TOL);
+        let _p = b.cdf(&-1_i16);
     }
 
     #[test]

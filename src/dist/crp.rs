@@ -13,7 +13,6 @@ use serde_derive::{Deserialize, Serialize};
 use crate::data::Partition;
 use crate::impl_display;
 use crate::misc::pflip;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use rand::Rng;
@@ -45,25 +44,30 @@ pub struct Crp {
     n: usize,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum CrpError {
+    /// n parameter is zero
+    NIsZeroError,
+    /// alpha parameter is less than or equal to zero
+    AlphaTooLowError,
+    /// alpha parameter is infinite or NaN
+    AlphaNotFiniteError,
+}
+
 impl Crp {
     /// Create an empty `Crp` with parameter alpha
     ///
     /// # Arguments
     /// - alpha: Discount parameter in (0, Infinity)
     /// - n: the number of items in the partition
-    pub fn new(alpha: f64, n: usize) -> result::Result<Self> {
-        let alpha_ok = alpha > 0.0 && alpha.is_finite();
-        let n_ok = n > 0;
-        if !alpha_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "α must be greater than zero and finite";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
-        } else if !n_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "n must be greater than zero";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+    pub fn new(alpha: f64, n: usize) -> Result<Self, CrpError> {
+        if n == 0 {
+            Err(CrpError::NIsZeroError)
+        } else if alpha <= 0.0 {
+            Err(CrpError::AlphaTooLowError)
+        } else if !alpha.is_finite() {
+            Err(CrpError::AlphaNotFiniteError)
         } else {
             Ok(Crp { alpha, n })
         }

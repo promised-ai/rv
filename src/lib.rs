@@ -15,9 +15,6 @@
 //! bunch of things
 //!
 //! ```
-//! extern crate rand;
-//! extern crate rv;
-//!
 //! use rv::prelude::*;
 //!
 //! // Beta(0.5, 0.5)
@@ -45,33 +42,27 @@
 //! ## Conjugate analysis of coin flips
 //!
 //! ```rust
-//! extern crate rand;
-//! extern crate rv;
-//!
-//! use rand::Rng;
 //! use rv::prelude::*;
 //!
-//! fn main() {
-//!     let mut rng = rand::thread_rng();
+//! let mut rng = rand::thread_rng();
 //!
-//!     // A sequence of observations
-//!     let flips = vec![true, false, true, true, true, false, true];
+//! // A sequence of observations
+//! let flips = vec![true, false, true, true, true, false, true];
 //!
-//!     // Construct the Jeffreys prior of Beta(0.5, 0.5)
-//!     let prior = Beta::jeffreys();
+//! // Construct the Jeffreys prior of Beta(0.5, 0.5)
+//! let prior = Beta::jeffreys();
 //!
-//!     // Packages the data in a wrapper that marks it as having come from
-//!     // Bernoulli trials.
-//!     let obs: BernoulliData<bool> = DataOrSuffStat::Data(&flips);
+//! // Packages the data in a wrapper that marks it as having come from
+//! // Bernoulli trials.
+//! let obs: BernoulliData<bool> = DataOrSuffStat::Data(&flips);
 //!
-//!     // Generate the posterior distribution P(θ|x); the distribution of
-//!     // probable coin weights
-//!     let posterior: Beta = prior.posterior(&obs);
+//! // Generate the posterior distribution P(θ|x); the distribution of
+//! // probable coin weights
+//! let posterior: Beta = prior.posterior(&obs);
 //!
-//!     // What is the probability that the next flip would come up heads
-//!     // (true) given the observed flips (posterior predictive)?
-//!     let p_heads = prior.pp(&true, &obs);
-//! }
+//! // What is the probability that the next flip would come up heads
+//! // (true) given the observed flips (posterior predictive)?
+//! let p_heads = prior.pp(&true, &obs);
 //! ```
 #[cfg(feature = "serde_support")]
 extern crate serde_derive;
@@ -88,11 +79,9 @@ pub mod misc;
 mod model;
 pub mod prelude;
 mod priors;
-pub mod result;
 pub mod traits;
 
 pub use crate::model::ConjugateModel;
-pub use crate::result::{Error, ErrorKind, Result};
 
 #[macro_export]
 macro_rules! impl_display {
