@@ -4,10 +4,8 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::consts::*;
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
-use rand::distributions::Normal;
 use rand::Rng;
 use special::Error as _;
 use std::f64::consts::SQRT_2;
@@ -25,22 +23,32 @@ pub struct LogNormal {
     sigma: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum LogNormalError {
+    /// The mu parameter is infinite or NaN
+    MuNotFiniteError,
+    /// The sigma parameter is less than or equal to zero
+    SigmaTooLowError,
+    /// The sigma parameter is infinite or NaN
+    SigmaNotFiniteError,
+}
+
 impl LogNormal {
     /// Create a new LogNormal distribution
     ///
     /// # Arguments
     /// - mu: log scale mean
     /// - sigma: log scale standard deviation
-    pub fn new(mu: f64, sigma: f64) -> result::Result<Self> {
-        let mu_ok = mu.is_finite();
-        let sigma_ok = sigma > 0.0 && sigma.is_finite();
-
-        if mu_ok && sigma_ok {
-            Ok(LogNormal { mu, sigma })
+    pub fn new(mu: f64, sigma: f64) -> Result<Self, LogNormalError> {
+        if !mu.is_finite() {
+            Err(LogNormalError::MuNotFiniteError)
+        } else if sigma <= 0.0 {
+            Err(LogNormalError::SigmaTooLowError)
+        } else if !sigma.is_finite() {
+            Err(LogNormalError::SigmaNotFiniteError)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "mu must be finite and sigma must be finite and greater than zero.");
-            Err(err)
+            Ok(LogNormal { mu, sigma })
         }
     }
 
@@ -118,13 +126,15 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let g = Normal::new(self.mu, self.sigma);
-                rng.sample(g).exp() as $kind
+                let g =
+                    rand_distr::LogNormal::new(self.mu, self.sigma).unwrap();
+                rng.sample(g) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let g = Normal::new(self.mu, self.sigma);
-                (0..n).map(|_| rng.sample(g).exp() as $kind).collect()
+                let g =
+                    rand_distr::LogNormal::new(self.mu, self.sigma).unwrap();
+                (0..n).map(|_| rng.sample(g) as $kind).collect()
             }
         }
 

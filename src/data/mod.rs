@@ -64,6 +64,56 @@ impl_categorical_datum!(u8);
 impl_categorical_datum!(u16);
 impl_categorical_datum!(u32);
 
+/// Converts to and from a bool
+pub trait Booleable: Sized + Sync + Copy {
+    /// Convert from bool. Should never panic.
+    fn from_bool(b: bool) -> Self;
+
+    /// Convert into bool Will panic if cannot be converted.
+    fn into_bool(self) -> bool {
+        self.try_into_bool().expect("could not convert into bool")
+    }
+
+    /// Try to convert into bool. Returns None if cannot be converted.
+    fn try_into_bool(self) -> Option<bool>;
+}
+
+macro_rules! impl_booleable {
+    ($kind:ty) => {
+        impl Booleable for $kind {
+            fn try_into_bool(self) -> Option<bool> {
+                if self == 1 {
+                    Some(true)
+                } else if self == 0 {
+                    Some(false)
+                } else {
+                    None
+                }
+            }
+
+            fn from_bool(b: bool) -> Self {
+                if b {
+                    1
+                } else {
+                    0
+                }
+            }
+        }
+    };
+}
+
+impl_booleable!(u8);
+impl_booleable!(u16);
+impl_booleable!(u32);
+impl_booleable!(u64);
+impl_booleable!(usize);
+
+impl_booleable!(i8);
+impl_booleable!(i16);
+impl_booleable!(i32);
+impl_booleable!(i64);
+impl_booleable!(isize);
+
 /// Holds either a sufficient statistic of a vector of data.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum DataOrSuffStat<'a, X, Fx>

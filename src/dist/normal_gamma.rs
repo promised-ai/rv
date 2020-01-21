@@ -6,7 +6,6 @@ use crate::consts::HALF_LN_2PI;
 use crate::data::GaussianSuffStat;
 use crate::dist::{Gamma, Gaussian};
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use rand::Rng;
@@ -28,6 +27,25 @@ pub struct NormalGamma {
     v: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum NormalGammaError {
+    /// The m parameter is infinite or NaN
+    MNotFiniteError,
+    /// The r parameter is less than or equal to zero
+    RTooLowError,
+    /// The r parameter is infinite or NaN
+    RNotFiniteError,
+    /// The s parameter is less than or equal to zero
+    STooLowError,
+    /// The s parameter is infinite or NaN
+    SNotFiniteError,
+    /// The v parameter is less than or equal to zero
+    VTooLowError,
+    /// The v parameter is infinite or NaN
+    VNotFiniteError,
+}
+
 impl NormalGamma {
     /// Create a new Normal Gamma distribution
     ///
@@ -36,22 +54,28 @@ impl NormalGamma {
     /// - r: Relative precision of μ versus data
     /// - s: The mean of rho (the precision) is v/s.
     /// - v: Degrees of freedom of precision of rho
-    pub fn new(m: f64, r: f64, s: f64, v: f64) -> result::Result<Self> {
-        let m_ok = m.is_finite();
-        let r_ok = r > 0.0 && r.is_finite();
-        let s_ok = s > 0.0 && s.is_finite();
-        let v_ok = v > 0.0 && v.is_finite();
-        if !m_ok {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "m must be finite");
-            Err(err)
-        } else if r_ok && s_ok && v_ok {
-            Ok(NormalGamma { m, r, s, v })
+    pub fn new(
+        m: f64,
+        r: f64,
+        s: f64,
+        v: f64,
+    ) -> Result<Self, NormalGammaError> {
+        if !m.is_finite() {
+            Err(NormalGammaError::MNotFiniteError)
+        } else if !r.is_finite() {
+            Err(NormalGammaError::RNotFiniteError)
+        } else if !s.is_finite() {
+            Err(NormalGammaError::SNotFiniteError)
+        } else if !v.is_finite() {
+            Err(NormalGammaError::VNotFiniteError)
+        } else if r <= 0.0 {
+            Err(NormalGammaError::RTooLowError)
+        } else if s <= 0.0 {
+            Err(NormalGammaError::STooLowError)
+        } else if v <= 0.0 {
+            Err(NormalGammaError::VTooLowError)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = format!("r ({}), s ({}), and v ({}) must be finite and greater than zero", r, s, v);
-            let err = result::Error::new(err_kind, msg.as_str());
-            Err(err)
+            Ok(NormalGamma { m, r, s, v })
         }
     }
 

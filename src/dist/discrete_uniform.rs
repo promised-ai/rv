@@ -1,9 +1,8 @@
 //! Continuous uniform distribution, U(a, b) on the interval x in [a, b]
-use crate::result::*;
 use crate::traits::*;
 use num::{FromPrimitive, Integer, ToPrimitive};
-use rand::distributions::uniform::SampleUniform;
 use rand::Rng;
+use rand_distr::uniform::SampleUniform;
 use std::f64;
 use std::fmt;
 
@@ -22,20 +21,24 @@ pub struct DiscreteUniform<T: DuParam> {
     b: T,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum DiscreteUniformError {
+    /// a is greater than or equal to b
+    InvalidIntervalError,
+}
+
 impl<T: DuParam> DiscreteUniform<T> {
     /// Create a new discreet uniform distribution
     ///
     /// # Arguments
     /// - a: lower bound
     /// - b : upper bound
-    pub fn new(a: T, b: T) -> Result<Self> {
+    pub fn new(a: T, b: T) -> Result<Self, DiscreteUniformError> {
         if a < b {
             Ok(Self { a, b })
         } else {
-            Err(Error::new(
-                ErrorKind::InvalidParameterError,
-                "a must be less than b",
-            ))
+            Err(DiscreteUniformError::InvalidIntervalError)
         }
     }
 

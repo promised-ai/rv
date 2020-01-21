@@ -4,8 +4,8 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::consts::EULER_MASCERONI;
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
+use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;
@@ -41,12 +41,43 @@ use std::f64;
 ///     assert::close(kuma.f(x), beta.f(x), 1E-10);
 /// }
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Kumaraswamy {
     a: f64,
     b: f64,
-    ab_ln: f64,
+    #[cfg_attr(feature = "serde_support", serde(skip))]
+    /// Cached log(a*b)
+    ab_ln: OnceCell<f64>,
+}
+
+impl Clone for Kumaraswamy {
+    fn clone(&self) -> Self {
+        Self {
+            a: self.a,
+            b: self.b,
+            ab_ln: OnceCell::from(self.ab_ln.clone()),
+        }
+    }
+}
+
+impl PartialEq for Kumaraswamy {
+    fn eq(&self, other: &Kumaraswamy) -> bool {
+        self.a == other.a && self.b == other.b
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum KumaraswamyError {
+    /// The a parameter is less than or equal to zero
+    ATooLowError,
+    /// The a parameter is infinite or NaN
+    ANotFiniteError,
+    /// The b parameter is less than or equal to zero
+    BTooLowError,
+    /// The b parameter is infinite or NaN
+    BNotFiniteError,
 }
 
 impl Default for Kumaraswamy {
@@ -78,21 +109,21 @@ impl Kumaraswamy {
     /// let kuma_bad  = Kumaraswamy::new(-5.0, 1.0);
     /// assert!(kuma_bad.is_err());
     /// ```
-    pub fn new(a: f64, b: f64) -> result::Result<Self> {
-        let a_ok = a > 0.0 && a.is_finite();
-        let b_ok = b > 0.0 && b.is_finite();
-
-        if a_ok && b_ok {
+    pub fn new(a: f64, b: f64) -> Result<Self, KumaraswamyError> {
+        if a <= 0.0 {
+            Err(KumaraswamyError::ATooLowError)
+        } else if !a.is_finite() {
+            Err(KumaraswamyError::ANotFiniteError)
+        } else if b <= 0.0 {
+            Err(KumaraswamyError::BTooLowError)
+        } else if !b.is_finite() {
+            Err(KumaraswamyError::ANotFiniteError)
+        } else {
             Ok(Kumaraswamy {
                 a,
                 b,
-                ab_ln: a.ln() + b.ln(),
+                ab_ln: OnceCell::new(),
             })
-        } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "a and b must be finite and greater than 0";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
         }
     }
 
@@ -102,7 +133,7 @@ impl Kumaraswamy {
         Kumaraswamy {
             a,
             b,
-            ab_ln: a.ln() + b.ln(),
+            ab_ln: OnceCell::new(),
         }
     }
 
@@ -119,7 +150,7 @@ impl Kumaraswamy {
         Kumaraswamy {
             a: 1.0,
             b: 1.0,
-            ab_ln: 0.0,
+            ab_ln: OnceCell::from(0.0),
         }
     }
 
@@ -162,19 +193,18 @@ impl Kumaraswamy {
     /// let kuma = Kumaraswamy::centered(2.0).unwrap();
     /// assert!(absolute_error(kuma.f(&0.1), kuma.f(&0.9)) > 1E-8);
     /// ```
-    pub fn centered(a: f64) -> result::Result<Self> {
-        if a > 0.0 && a.is_finite() {
+    pub fn centered(a: f64) -> Result<Self, KumaraswamyError> {
+        if a <= 0.0 {
+            Err(KumaraswamyError::ATooLowError)
+        } else if !a.is_finite() {
+            Err(KumaraswamyError::ANotFiniteError)
+        } else {
             let b = 0.5_f64.ln() / (1.0 - 0.5_f64.powf(a)).ln();
             Ok(Kumaraswamy {
                 a,
                 b,
-                ab_ln: a.ln() + b.ln(),
+                ab_ln: OnceCell::new(),
             })
-        } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "a must be finite and greater than 0";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
         }
     }
 
@@ -206,12 +236,18 @@ impl Kumaraswamy {
 
     pub fn set_a(&mut self, a: f64) {
         self.a = a;
-        self.ab_ln = self.a.ln() + self.b.ln();
+        self.ab_ln = OnceCell::new();
     }
 
     pub fn set_b(&mut self, b: f64) {
         self.b = b;
-        self.ab_ln = self.a.ln() + self.b.ln();
+        self.ab_ln = OnceCell::new();
+    }
+
+    /// Evaluate or fetch cached ln(a*b)
+    #[inline]
+    fn ab_ln(&self) -> f64 {
+        *self.ab_ln.get_or_init(|| self.a.ln() + self.b.ln())
     }
 }
 
@@ -226,7 +262,7 @@ macro_rules! impl_kumaraswamy {
                 let xf = *x as f64;
                 let a = self.a;
                 let b = self.b;
-                self.ab_ln
+                self.ab_ln()
                     + (a - 1.0) * xf.ln()
                     + (b - 1.0) * (1.0 - xf.powf(a)).ln()
             }
@@ -300,7 +336,7 @@ impl Entropy for Kumaraswamy {
         // Harmonic function for reals see:
         // https://en.wikipedia.org/wiki/Harmonic_number#Harmonic_numbers_for_real_and_complex_values
         let hb = self.b.digamma() + EULER_MASCERONI;
-        (1.0 - self.b.recip()) + (1.0 - self.a.recip()) * hb - self.ab_ln
+        (1.0 - self.b.recip()) + (1.0 - self.a.recip()) * hb - self.ab_ln()
     }
 }
 
@@ -497,5 +533,24 @@ mod tests {
             Beta::new(1.0, 2.0).unwrap().pdf(&0.3_f64),
             1E-10,
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde_support")]
+    fn should_deserialize_without_ab_ln() {
+        use indoc::indoc;
+
+        let yaml = indoc!(
+            "
+            ---
+            a: 2.0
+            b: 3.0
+            "
+        );
+
+        let kuma_1: Kumaraswamy = serde_yaml::from_str(&yaml).unwrap();
+        let kuma_2 = Kumaraswamy::new(2.0, 3.0).unwrap();
+
+        assert::close(kuma_1.f(&0.5_f64), kuma_2.f(&0.5_f64), 1E-12);
     }
 }

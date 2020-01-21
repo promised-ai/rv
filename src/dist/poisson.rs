@@ -4,11 +4,10 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::data::PoissonSuffStat;
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
-use rand::distributions::Poisson as RPossion;
 use rand::Rng;
+use rand_distr::Poisson as RPossion;
 use special::Gamma as _;
 
 /// [Possion distribution](https://en.wikipedia.org/wiki/Poisson_distribution)
@@ -37,16 +36,24 @@ pub struct Poisson {
     rate: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum PoissonError {
+    /// The rate parameter is less than or equal to zero
+    RateTooLowError,
+    /// The rate parameter is infinite or NaN
+    RateNotFiniteError,
+}
+
 impl Poisson {
     /// Create a new Possion distribution with given rate
-    pub fn new(rate: f64) -> result::Result<Self> {
-        if rate > 0.0 && rate.is_finite() {
-            Ok(Poisson { rate })
+    pub fn new(rate: f64) -> Result<Self, PoissonError> {
+        if rate <= 0.0 {
+            Err(PoissonError::RateTooLowError)
+        } else if !rate.is_finite() {
+            Err(PoissonError::RateNotFiniteError)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err =
-                result::Error::new(err_kind, "rate must be greater than 0");
-            Err(err)
+            Ok(Poisson { rate })
         }
     }
 
@@ -86,13 +93,19 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let pois = RPossion::new(self.rate);
-                rng.sample(pois) as $kind
+                let pois = RPossion::new(self.rate).unwrap();
+                let x: u64 = rng.sample(pois);
+                x as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let pois = RPossion::new(self.rate);
-                (0..n).map(|_| rng.sample(pois) as $kind).collect()
+                let pois = RPossion::new(self.rate).unwrap();
+                (0..n)
+                    .map(|_| {
+                        let x: u64 = rng.sample(pois);
+                        x as $kind
+                    })
+                    .collect()
             }
         }
 

@@ -3,7 +3,6 @@
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::result;
 use crate::traits::*;
 use getset::Setters;
 use rand::Rng;
@@ -29,19 +28,28 @@ pub struct Pareto {
     scale: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum ParetoError {
+    ShapeTooLowError,
+    ShapeNotFiniteError,
+    ScaleTooLowError,
+    ScaleNotFiniteError,
+}
+
 impl Pareto {
     /// Create a new `Pareto` distribution with shape (α) and scale (x_m).
-    pub fn new(shape: f64, scale: f64) -> result::Result<Self> {
-        let shape_ok = shape > 0.0 && shape.is_finite();
-        let scale_ok = scale > 0.0 && scale.is_finite();
-
-        if shape_ok && scale_ok {
-            Ok(Pareto { shape, scale })
+    pub fn new(shape: f64, scale: f64) -> Result<Self, ParetoError> {
+        if shape <= 0.0 {
+            Err(ParetoError::ShapeTooLowError)
+        } else if !shape.is_finite() {
+            Err(ParetoError::ShapeNotFiniteError)
+        } else if scale <= 0.0 {
+            Err(ParetoError::ScaleTooLowError)
+        } else if !scale.is_finite() {
+            Err(ParetoError::ScaleNotFiniteError)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let msg = "shape and scale must be finite and greater than 0";
-            let err = result::Error::new(err_kind, msg);
-            Err(err)
+            Ok(Pareto { shape, scale })
         }
     }
 
@@ -94,8 +102,9 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let u: f64 = rng.gen();
-                (self.scale * (1.0 - u).powf(-1.0 / self.shape)) as $kind
+                let p =
+                    rand_distr::Pareto::new(self.scale, self.shape).unwrap();
+                rng.sample(p) as $kind
             }
         }
 

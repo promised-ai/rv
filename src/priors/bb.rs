@@ -1,7 +1,7 @@
 use rand::Rng;
 use special::Beta as SBeta;
 
-use crate::data::{BernoulliSuffStat, DataOrSuffStat};
+use crate::data::{BernoulliSuffStat, Booleable, DataOrSuffStat};
 use crate::dist::{Bernoulli, Beta};
 use crate::traits::*;
 
@@ -62,62 +62,41 @@ impl ConjugatePrior<bool, Bernoulli> for Beta {
     }
 }
 
-macro_rules! impl_int_traits {
-    ($kind:ty) => {
-        impl ConjugatePrior<$kind, Bernoulli> for Beta {
-            type Posterior = Self;
-            fn posterior(&self, x: &DataOrSuffStat<$kind, Bernoulli>) -> Self {
-                let (n, k) = match x {
-                    DataOrSuffStat::Data(ref xs) => {
-                        let mut stat = BernoulliSuffStat::new();
-                        xs.iter().for_each(|x| stat.observe(x));
-                        (stat.n(), stat.k())
-                    }
-                    DataOrSuffStat::SuffStat(ref stat) => (stat.n(), stat.k()),
-                    DataOrSuffStat::None => (0, 0),
-                };
-
-                let a = self.alpha() + k as f64;
-                let b = self.beta() + (n - k) as f64;
-
-                Beta::new(a, b).expect("Invalid posterior parameters")
+impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
+    type Posterior = Self;
+    fn posterior(&self, x: &DataOrSuffStat<X, Bernoulli>) -> Self {
+        let (n, k) = match x {
+            DataOrSuffStat::Data(ref xs) => {
+                let mut stat = BernoulliSuffStat::new();
+                xs.iter().for_each(|x| stat.observe(x));
+                (stat.n(), stat.k())
             }
+            DataOrSuffStat::SuffStat(ref stat) => (stat.n(), stat.k()),
+            DataOrSuffStat::None => (0, 0),
+        };
 
-            fn ln_m(&self, x: &DataOrSuffStat<$kind, Bernoulli>) -> f64 {
-                let post = self.posterior(x);
-                post.alpha().ln_beta(post.beta())
-                    - self.alpha().ln_beta(self.beta())
-            }
+        let a = self.alpha() + k as f64;
+        let b = self.beta() + (n - k) as f64;
 
-            fn ln_pp(
-                &self,
-                y: &$kind,
-                x: &DataOrSuffStat<$kind, Bernoulli>,
-            ) -> f64 {
-                //  P(y=1 | xs) happens to be the posterior mean
-                let post = self.posterior(x);
-                let p: f64 = post.mean().expect("Mean undefined");
-                if *y == 1 {
-                    p.ln()
-                } else {
-                    (1.0 - p).ln()
-                }
-            }
+        Beta::new(a, b).expect("Invalid posterior parameters")
+    }
+
+    fn ln_m(&self, x: &DataOrSuffStat<X, Bernoulli>) -> f64 {
+        let post = self.posterior(x);
+        post.alpha().ln_beta(post.beta()) - self.alpha().ln_beta(self.beta())
+    }
+
+    fn ln_pp(&self, y: &X, x: &DataOrSuffStat<X, Bernoulli>) -> f64 {
+        //  P(y=1 | xs) happens to be the posterior mean
+        let post = self.posterior(x);
+        let p: f64 = post.mean().expect("Mean undefined");
+        if y.into_bool() {
+            p.ln()
+        } else {
+            (1.0 - p).ln()
         }
-    };
+    }
 }
-
-impl_int_traits!(u8);
-impl_int_traits!(u16);
-impl_int_traits!(u32);
-impl_int_traits!(u64);
-impl_int_traits!(usize);
-
-impl_int_traits!(i8);
-impl_int_traits!(i16);
-impl_int_traits!(i32);
-impl_int_traits!(i64);
-impl_int_traits!(isize);
 
 #[cfg(test)]
 mod tests {

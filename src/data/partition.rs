@@ -3,7 +3,6 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::vec_to_string;
-use crate::result;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
@@ -39,6 +38,17 @@ impl From<&Partition> for String {
 }
 
 impl_display!(Partition);
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum Error {
+    /// One or more of the bins in the partition has no members
+    UnoccupiedBinError,
+    /// The input partition is an empty vector
+    EmptyPartitionError,
+    /// One or more of the indicators exceeds the number of categories
+    IndicatorHigherThanNumberOfPartitionsError,
+}
 
 impl Partition {
     /// Empty partition
@@ -85,8 +95,11 @@ impl Partition {
     /// let z2 = vec![0, 1, 2, 3, 1, 5];
     /// assert!(Partition::from_z(z2).is_err());
     /// ```
-    pub fn from_z(z: Vec<usize>) -> result::Result<Self> {
-        // TODO: integrate NoneError into output instead of using expect
+    pub fn from_z(z: Vec<usize>) -> Result<Self, Error> {
+        if z.is_empty() {
+            return Err(Error::EmptyPartitionError);
+        }
+
         let k = *z.iter().max().expect("empty z") + 1;
         let mut counts: Vec<usize> = vec![0; k];
         z.iter().for_each(|&zi| counts[zi] += 1);
@@ -95,8 +108,7 @@ impl Partition {
             let part = Partition { z, counts };
             Ok(part)
         } else {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            Err(result::Error::new(err_kind, "Unoccupied partition(s)"))
+            Err(Error::EmptyPartitionError)
         }
     }
 
@@ -112,7 +124,7 @@ impl Partition {
     /// assert_eq!(*part.z(), vec![0, 0, 1]);
     /// assert_eq!(*part.counts(), vec![2, 1]);
     /// ```
-    pub fn remove(&mut self, ix: usize) -> result::Result<()> {
+    pub fn remove(&mut self, ix: usize) -> Result<(), Error> {
         // Panics  on index error panics.
         let zi = self.z.remove(ix);
         if self.counts[zi] == 1 {
@@ -142,12 +154,10 @@ impl Partition {
     /// assert_eq!(*part.z(), vec![0, 1, 0, 2, 3]);
     /// assert_eq!(*part.counts(), vec![2, 1, 1, 1]);
     /// ```
-    pub fn append(&mut self, zi: usize) -> result::Result<()> {
+    pub fn append(&mut self, zi: usize) -> Result<(), Error> {
         let k = self.k();
         if zi > k {
-            let err_kind = result::ErrorKind::InvalidParameterError;
-            let err = result::Error::new(err_kind, "zi higher than k");
-            Err(err)
+            Err(Error::IndicatorHigherThanNumberOfPartitionsError)
         } else {
             self.z.push(zi);
             if zi == k {
