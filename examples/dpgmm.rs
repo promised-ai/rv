@@ -171,7 +171,7 @@ impl Dpgmm {
 fn main() {
     let mut rng = rand::thread_rng();
 
-    // Generate 100 data from two Gaussians. The Gaussians are far enought apart
+    // Generate 100 data from two Gaussians. The Gaussians are far enough apart
     // that the DPGMM should separate them.
     let mut xs: Vec<f64> =
         Gaussian::new(-3.0, 1.0).unwrap().sample(50, &mut rng);
