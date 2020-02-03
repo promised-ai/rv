@@ -112,46 +112,11 @@ impl<'a, X: Booleable> Into<DataOrSuffStat<'a, X, Bernoulli>>
 // XXX: This only works on rust 1.41 and greater. Since stable is currently
 // 1.40, we need to hold off implementing this
 // TODO: Implement this for everything when 1.41 is stable
-#[rustversion::since(1.41)]
 impl<'a, X: Booleable> Into<DataOrSuffStat<'a, X, Bernoulli>> for &'a Vec<X> {
     fn into(self) -> DataOrSuffStat<'a, X, Bernoulli> {
         DataOrSuffStat::Data(self)
     }
 }
-
-// TODO: Get rid of this when the above is implemented
-#[allow(unused_macros)]
-macro_rules! impl_into_dos_for_booleables {
-    ($kind: ty) => {
-        impl<'a> Into<DataOrSuffStat<'a, $kind, Bernoulli>> for &'a Vec<$kind> {
-            fn into(self) -> DataOrSuffStat<'a, $kind, Bernoulli> {
-                DataOrSuffStat::Data(self)
-            }
-        }
-    };
-}
-
-#[rustversion::before(1.41)]
-impl_into_dos_for_booleables!(u8);
-#[rustversion::before(1.41)]
-impl_into_dos_for_booleables!(u16);
-#[rustversion::before(1.41)]
-impl_into_dos_for_booleables!(u32);
-#[rustversion::before(1.41)]
-impl_into_dos_for_booleables!(u64);
-#[rustversion::before(1.41)]
-impl_into_dos_for_booleables!(usize);
-
-#[rustversion::before(1.41)]
-impl_into_dos_for_booleables!(i8);
-#[rustversion::before(1.41)]
-impl_into_dos_for_booleables!(i16);
-#[rustversion::before(1.41)]
-impl_into_dos_for_booleables!(i32);
-#[rustversion::before(1.41)]
-impl_into_dos_for_booleables!(i64);
-#[rustversion::before(1.41)]
-impl_into_dos_for_booleables!(isize);
 
 impl<X: Booleable> SuffStat<X> for BernoulliSuffStat {
     fn n(&self) -> usize {
@@ -242,7 +207,6 @@ where
 
 // XXX Can't just implement for X: CategoricalDatum because of orphan type rule
 // TODO: Implement this for CategoricalDatum when 1.41 is stable
-#[rustversion::since(1.41)]
 impl<'a, X: CategoricalDatum> Into<DataOrSuffStat<'a, X, Categorical>>
     for &'a Vec<X>
 {
@@ -250,31 +214,6 @@ impl<'a, X: CategoricalDatum> Into<DataOrSuffStat<'a, X, Categorical>>
         DataOrSuffStat::Data(self)
     }
 }
-
-// TODO: Get rid of this when the above is implemented
-#[allow(unused_macros)]
-macro_rules! impl_into_dos_for_categorical {
-    ($kind: ty) => {
-        impl<'a> Into<DataOrSuffStat<'a, $kind, Categorical>>
-            for &'a Vec<$kind>
-        {
-            fn into(self) -> DataOrSuffStat<'a, $kind, Categorical> {
-                DataOrSuffStat::Data(self)
-            }
-        }
-    };
-}
-
-#[rustversion::before(1.41)]
-impl_into_dos_for_categorical!(bool);
-#[rustversion::before(1.41)]
-impl_into_dos_for_categorical!(usize);
-#[rustversion::before(1.41)]
-impl_into_dos_for_categorical!(u8);
-#[rustversion::before(1.41)]
-impl_into_dos_for_categorical!(u16);
-#[rustversion::before(1.41)]
-impl_into_dos_for_categorical!(u32);
 
 impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
     fn n(&self) -> usize {
