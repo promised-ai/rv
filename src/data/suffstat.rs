@@ -109,9 +109,6 @@ impl<'a, X: Booleable> Into<DataOrSuffStat<'a, X, Bernoulli>>
     }
 }
 
-// XXX: This only works on rust 1.41 and greater. Since stable is currently
-// 1.40, we need to hold off implementing this
-// TODO: Implement this for everything when 1.41 is stable
 impl<'a, X: Booleable> Into<DataOrSuffStat<'a, X, Bernoulli>> for &'a Vec<X> {
     fn into(self) -> DataOrSuffStat<'a, X, Bernoulli> {
         DataOrSuffStat::Data(self)
@@ -205,8 +202,6 @@ where
     }
 }
 
-// XXX Can't just implement for X: CategoricalDatum because of orphan type rule
-// TODO: Implement this for CategoricalDatum when 1.41 is stable
 impl<'a, X: CategoricalDatum> Into<DataOrSuffStat<'a, X, Categorical>>
     for &'a Vec<X>
 {
