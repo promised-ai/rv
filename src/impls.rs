@@ -212,4 +212,21 @@ mod tests {
         // Answer from numerical integration in python
         assert::close(h, 2.051658739391058, 1E-7);
     }
+
+    #[cfg(feature = "serde_support")]
+    #[test]
+    fn messy_jsd_should_be_positive() {
+        // recreates bug in dependent crate where JSD was negative
+        let mm_str =
+            std::fs::read_to_string("resources/gauss-mm.yaml").unwrap();
+        let mm: Mixture<Gaussian> = serde_yaml::from_str(&mm_str).unwrap();
+        let sum_h = mm
+            .weights()
+            .iter()
+            .zip(mm.components().iter())
+            .map(|(&w, cpnt)| w * cpnt.entropy())
+            .sum::<f64>();
+        let jsd = mm.entropy() - sum_h;
+        assert!(0.0 < jsd);
+    }
 }

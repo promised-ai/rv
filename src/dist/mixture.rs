@@ -1,8 +1,9 @@
 #[cfg(feature = "serde_support")]
-use serde::{Deserialize, Serialize};
-
+use serde::de::{self, Deserializer, MapAccess, SeqAccess, Visitor};
 #[cfg(feature = "serde_support")]
 use serde::ser::{SerializeStruct, Serializer};
+#[cfg(feature = "serde_support")]
+use serde::{Deserialize, Serialize};
 
 use crate::misc::{logsumexp, pflip};
 use crate::traits::*;
@@ -48,6 +49,108 @@ where
         state.serialize_field("weights", &self.weights)?;
         state.serialize_field("components", &self.components)?;
         state.end()
+    }
+}
+
+#[cfg(feature = "serde_support")]
+impl<'de, Fx> Deserialize<'de> for Mixture<Fx>
+where
+    Fx: Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        use std::fmt;
+        use std::marker::PhantomData;
+
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "lowercase")]
+        enum Field {
+            Weights,
+            Components,
+        };
+
+        struct MixtureVisitor<Fx> {
+            _fx: PhantomData<Fx>,
+        };
+
+        impl<Fx> MixtureVisitor<Fx> {
+            fn new() -> Self {
+                MixtureVisitor { _fx: PhantomData }
+            }
+        }
+
+        impl<'de, Fx> Visitor<'de> for MixtureVisitor<Fx>
+        where
+            Fx: Deserialize<'de>,
+        {
+            type Value = Mixture<Fx>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct Mixture")
+            }
+
+            fn visit_seq<V>(self, mut seq: V) -> Result<Mixture<Fx>, V::Error>
+            where
+                V: SeqAccess<'de>,
+            {
+                let weights = seq
+                    .next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+                let components = seq
+                    .next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
+                Ok(Mixture {
+                    weights,
+                    components,
+                })
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<Mixture<Fx>, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut weights = None;
+                let mut components = None;
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Weights => {
+                            if weights.is_some() {
+                                return Err(de::Error::duplicate_field(
+                                    "weights",
+                                ));
+                            }
+                            weights = Some(map.next_value()?);
+                        }
+                        Field::Components => {
+                            if components.is_some() {
+                                return Err(de::Error::duplicate_field(
+                                    "components",
+                                ));
+                            }
+                            components = Some(map.next_value()?);
+                        }
+                    }
+                }
+                let weights = weights
+                    .ok_or_else(|| de::Error::missing_field("weights"))?;
+                let components = components
+                    .ok_or_else(|| de::Error::missing_field("components"))?;
+
+                Ok(Mixture {
+                    weights,
+                    components,
+                })
+            }
+        }
+
+        const FIELDS: &'static [&'static str] = &["weights", "components"];
+        deserializer.deserialize_struct(
+            "Mixture",
+            FIELDS,
+            MixtureVisitor::new(),
+        )
     }
 }
 
@@ -661,5 +764,23 @@ mod tests {
 
         let v: f64 = mm.variance().unwrap();
         assert::close(v, 3.75, TOL);
+    }
+
+    #[cfg(feature = "serde_support")]
+    #[test]
+    fn mixture_serde() {
+        let components = vec![
+            Gaussian::new(1.0, 3.0).unwrap(),
+            Gaussian::new(3.0, 1.0).unwrap(),
+        ];
+        let weights = vec![0.25, 0.75];
+        let mm1 = Mixture::new(weights, components).unwrap();
+
+        let s1 = serde_yaml::to_string(&mm1).unwrap();
+        let mm2: Mixture<Gaussian> =
+            serde_yaml::from_slice(&s1.as_bytes()).unwrap();
+        let s2 = serde_yaml::to_string(&mm2).unwrap();
+
+        assert_eq!(s1, s2);
     }
 }
