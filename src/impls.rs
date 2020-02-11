@@ -62,8 +62,7 @@ macro_rules! quadrature_entropy {
                     let ln_f = self.ln_f(&x);
                     ln_f.exp() * ln_f
                 };
-                let result = quadrature::integrate(f, lower, upper, 1E-16);
-                -result.integral
+                -crate::misc::quad_eps(f, lower, upper, Some(1E-8))
             }
         }
     };
@@ -184,6 +183,20 @@ mod tests {
 
         println!("{:?}", bad_bounds);
         assert!(bad_bounds.is_none());
+    }
+
+    #[test]
+    fn spread_out_gauss_mixture_quad_bounds() {
+        let g1 = Gaussian::new(0.0, 0.1).unwrap();
+        let g2 = Gaussian::new(10.0, 0.5).unwrap();
+        let g3 = Gaussian::new(20.0, 0.2).unwrap();
+
+        let mm = Mixture::uniform(vec![g1, g2, g3]).unwrap();
+
+        let (a, b) = mm.quad_bounds();
+
+        assert!(a < 0.0);
+        assert!(b > 20.0);
     }
 
     #[test]

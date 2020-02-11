@@ -1,5 +1,8 @@
 #[cfg(feature = "serde_support")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "serde_support")]
+use serde::ser::{SerializeStruct, Serializer};
 
 use crate::misc::{logsumexp, pflip};
 use crate::traits::*;
@@ -31,6 +34,25 @@ pub struct Mixture<Fx> {
     /// The component distributions.
     components: Vec<Fx>,
 }
+
+#[cfg(feature = "serde_support")]
+impl<Fx> Serialize for Mixture<Fx>
+where
+    Fx: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Mixture", 2)?;
+        state.serialize_field("weights", &self.weights)?;
+        state.serialize_field("components", &self.components)?;
+        state.end()
+    }
+}
+
+// #[cfg(feature = "serde_support")]
+// impl<'de, Fx> Deserialize<'de> for Mixture<Fx> where Fx: Deserialize<'de> {}
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]

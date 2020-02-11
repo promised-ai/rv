@@ -1,5 +1,6 @@
 const QUAD_EPS: f64 = 1E-8;
 
+#[inline]
 fn simpsons_rule<F>(func: &F, a: f64, b: f64) -> f64
 where
     F: Fn(f64) -> f64,
@@ -24,6 +25,28 @@ where
     }
 }
 
+/// Adaptive Simpson's quadrature with user supplied error tolerance
+///
+/// # Example
+///
+/// Integrate f: x<sup>2</sup> over the interval [0, 1].
+///
+/// ```
+/// use rv::misc::quad_eps;
+///
+/// let func = |x: f64| x.powi(2);
+/// let q = quad_eps(func, 0.0, 1.0, Some(1E-10));
+///
+/// assert!((q - 1.0/3.0).abs() < 1E-10);
+/// ```
+pub fn quad_eps<F>(func: F, a: f64, b: f64, eps_opt: Option<f64>) -> f64
+where
+    F: Fn(f64) -> f64,
+{
+    let eps = eps_opt.unwrap_or(QUAD_EPS);
+    recursive_asr(&func, a, b, eps, simpsons_rule(&func, a, b))
+}
+
 /// Adaptive Simpson's quadrature
 ///
 /// # Example
@@ -42,7 +65,7 @@ pub fn quad<F>(func: F, a: f64, b: f64) -> f64
 where
     F: Fn(f64) -> f64,
 {
-    recursive_asr(&func, a, b, QUAD_EPS, simpsons_rule(&func, a, b))
+    quad_eps(func, a, b, None)
 }
 
 #[cfg(test)]
