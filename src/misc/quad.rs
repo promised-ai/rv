@@ -1,27 +1,62 @@
 const QUAD_EPS: f64 = 1E-8;
 
-fn simpsons_rule<F>(func: &F, a: f64, b: f64) -> f64
+// TODO: return f(c) for caching
+#[inline]
+fn simpsons_rule<F>(func: &F, a: f64, fa: f64, b: f64, fb: f64) -> f64
 where
     F: Fn(f64) -> f64,
 {
     let c = (a + b) / 2.0;
     let h3 = (b - a).abs() / 6.0;
-    h3 * (func(a) + 4.0 * func(c) + func(b))
+    h3 * (fa + 4.0 * func(c) + fb)
 }
 
-fn recursive_asr<F>(func: &F, a: f64, b: f64, eps: f64, whole: f64) -> f64
+fn recursive_asr<F>(
+    func: &F,
+    a: f64,
+    fa: f64,
+    b: f64,
+    fb: f64,
+    eps: f64,
+    whole: f64,
+) -> f64
 where
     F: Fn(f64) -> f64,
 {
     let c = (a + b) / 2.0;
-    let left = simpsons_rule(&func, a, c);
-    let right = simpsons_rule(&func, c, b);
+    let fc = func(c);
+    let left = simpsons_rule(&func, a, fa, c, fc);
+    let right = simpsons_rule(&func, c, fc, b, fb);
     if (left + right - whole).abs() <= 15.0 * eps {
         left + right + (left + right - whole) / 15.0
     } else {
-        recursive_asr(func, a, c, eps / 2.0, left)
-            + recursive_asr(func, c, b, eps / 2.0, right)
+        recursive_asr(func, a, fa, c, fc, eps / 2.0, left)
+            + recursive_asr(func, c, fc, b, fb, eps / 2.0, right)
     }
+}
+
+/// Adaptive Simpson's quadrature with user supplied error tolerance
+///
+/// # Example
+///
+/// Integrate f: x<sup>2</sup> over the interval [0, 1].
+///
+/// ```
+/// use rv::misc::quad_eps;
+///
+/// let func = |x: f64| x.powi(2);
+/// let q = quad_eps(func, 0.0, 1.0, Some(1E-10));
+///
+/// assert!((q - 1.0/3.0).abs() < 1E-10);
+/// ```
+pub fn quad_eps<F>(func: F, a: f64, b: f64, eps_opt: Option<f64>) -> f64
+where
+    F: Fn(f64) -> f64,
+{
+    let eps = eps_opt.unwrap_or(QUAD_EPS);
+    let fa = func(a);
+    let fb = func(b);
+    recursive_asr(&func, a, fa, b, fb, eps, simpsons_rule(&func, a, fa, b, fb))
 }
 
 /// Adaptive Simpson's quadrature
@@ -42,7 +77,7 @@ pub fn quad<F>(func: F, a: f64, b: f64) -> f64
 where
     F: Fn(f64) -> f64,
 {
-    recursive_asr(&func, a, b, QUAD_EPS, simpsons_rule(&func, a, b))
+    quad_eps(func, a, b, None)
 }
 
 #[cfg(test)]

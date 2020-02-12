@@ -62,8 +62,7 @@ macro_rules! quadrature_entropy {
                     let ln_f = self.ln_f(&x);
                     ln_f.exp() * ln_f
                 };
-                let result = quadrature::integrate(f, lower, upper, 1E-16);
-                -result.integral
+                -crate::misc::quad_eps(f, lower, upper, Some(1E-8))
             }
         }
     };
@@ -187,6 +186,20 @@ mod tests {
     }
 
     #[test]
+    fn spread_out_gauss_mixture_quad_bounds() {
+        let g1 = Gaussian::new(0.0, 0.1).unwrap();
+        let g2 = Gaussian::new(10.0, 0.5).unwrap();
+        let g3 = Gaussian::new(20.0, 0.2).unwrap();
+
+        let mm = Mixture::uniform(vec![g1, g2, g3]).unwrap();
+
+        let (a, b) = mm.quad_bounds();
+
+        assert!(a < 0.0);
+        assert!(b > 20.0);
+    }
+
+    #[test]
     fn gauss_2_component_mixture_entropy() {
         let components = vec![
             Gaussian::new(-2.0, 1.0).unwrap(),
@@ -198,5 +211,22 @@ mod tests {
         let h: f64 = mm.entropy();
         // Answer from numerical integration in python
         assert::close(h, 2.051658739391058, 1E-7);
+    }
+
+    #[cfg(feature = "serde_support")]
+    #[test]
+    fn messy_jsd_should_be_positive() {
+        // recreates bug in dependent crate where JSD was negative
+        let mm_str =
+            std::fs::read_to_string("resources/gauss-mm.yaml").unwrap();
+        let mm: Mixture<Gaussian> = serde_yaml::from_str(&mm_str).unwrap();
+        let sum_h = mm
+            .weights()
+            .iter()
+            .zip(mm.components().iter())
+            .map(|(&w, cpnt)| w * cpnt.entropy())
+            .sum::<f64>();
+        let jsd = mm.entropy() - sum_h;
+        assert!(0.0 < jsd);
     }
 }

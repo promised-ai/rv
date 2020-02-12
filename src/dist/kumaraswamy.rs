@@ -345,7 +345,7 @@ mod tests {
     use super::*;
     use crate::dist::{Beta, Gamma, LogNormal};
     use crate::misc::ks_test;
-    use quadrature::clenshaw_curtis::integrate;
+    use crate::misc::quad;
 
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
@@ -403,8 +403,8 @@ mod tests {
     fn pdf_quad_and_cdf_agree() {
         // create a Kumaraswamy distr with median at 0.5
         let kuma = Kumaraswamy::centered(2.0).unwrap();
-        let quad_output = integrate(|x| kuma.f(&x), 0.0, 0.5, 1E-8);
-        assert::close(quad_output.integral, 0.5, 1E-6);
+        let intergral = quad(|x| kuma.f(&x), 0.0, 0.5);
+        assert::close(intergral, 0.5, 1E-6);
     }
 
     #[test]
