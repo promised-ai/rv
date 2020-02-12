@@ -20,10 +20,10 @@ test:cargo-stable:
 test:cargo-nigtly:
   stage: test
   image: "rustlang/rust:nightly"
-  # # Sometimes nightly breaks, so we have to roll back
-  # before_script:
-  #   - rustup install nightly-2019-12-19 --no-self-update
-  #   - rustup override set nightly-2019-12-19
+  # Sometimes nightly breaks, so we have to roll back
+  before_script:
+    - rustup install nightly-2020-02-06 --no-self-update
+    - rustup override set nightly-2020-02-06
   script:
     - rustc --version && cargo --version
     - cargo build  --features serde_support
