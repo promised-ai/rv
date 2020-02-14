@@ -189,7 +189,8 @@ impl<Fx> Mixture<Fx> {
             Err(MixtureError::ComponentsEmptyError)
         } else if components.len() != weights.len() {
             Err(MixtureError::ComponentWeightDimensionMismatchError)
-        } else if weights.iter().any(|&w| w <= 0.0) {
+        } else if weights.iter().any(|&w| w < 0.0) {
+            // Allow zero weight components
             Err(MixtureError::WeightTooLowError)
         } else if (weights.iter().sum::<f64>() - 1.0).abs() > 1E-12 {
             Err(MixtureError::WeightsDoNotSumToOneError)
@@ -471,12 +472,27 @@ mod tests {
     }
 
     #[test]
-    fn new_should_not_allow_bad_weights() {
+    fn new_should_not_allow_weights_that_do_not_sum_to_1() {
         let components = vec![Gaussian::standard(), Gaussian::standard()];
 
         assert!(Mixture::new(vec![0.5, 0.51], components.clone()).is_err());
         assert!(Mixture::new(vec![0.5, 0.49], components.clone()).is_err());
         assert!(Mixture::new(vec![0.5, 0.5], components.clone()).is_ok());
+    }
+
+    #[test]
+    fn new_should_allow_zero_weights() {
+        let components = vec![Gaussian::standard(), Gaussian::standard()];
+
+        assert!(Mixture::new(vec![1.0, 0.0], components.clone()).is_ok());
+    }
+
+    #[test]
+    fn new_should_allow_negative_weights() {
+        let components = vec![Gaussian::standard(), Gaussian::standard()];
+
+        let res = Mixture::new(vec![1.1, -0.1], components.clone());
+        assert_eq!(res, Err(MixtureError::WeightTooLowError));
     }
 
     #[test]
