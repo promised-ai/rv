@@ -79,6 +79,7 @@ impl NegBinomial {
         }
     }
 
+    /// Get the value of the `r` parameter
     #[inline]
     pub fn r(&self) -> f64 {
         self.r
@@ -111,6 +112,7 @@ impl NegBinomial {
         }
     }
 
+    /// Get the value of the `p` parameter
     #[inline]
     pub fn p(&self) -> f64 {
         self.p
@@ -165,14 +167,16 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, mut rng: &mut R) -> $kind {
-                let scale = self.p / (1.0 - self.p);
+                let q = 1.0 - self.p;
+                let scale = q / (1.0 - q);
                 let gamma = rand_distr::Gamma::new(self.r, scale).unwrap();
                 let pois_rate = rng.sample(gamma);
                 Poisson::new_unchecked(pois_rate).draw(&mut rng)
             }
 
             fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<$kind> {
-                let scale = self.p / (1.0 - self.p);
+                let q = 1.0 - self.p;
+                let scale = q / (1.0 - q);
                 let gamma = rand_distr::Gamma::new(self.r, scale).unwrap();
                 (0..n)
                     .map(|_| {
@@ -186,8 +190,9 @@ macro_rules! impl_traits {
         impl DiscreteDistr<$kind> for NegBinomial {}
 
         impl Support<$kind> for NegBinomial {
-            fn supports(&self, x: &$kind) -> bool {
-                *x > 1
+            fn supports(&self, _x: &$kind) -> bool {
+                // support is [0, Inf), so any unsigned int is OK
+                true
             }
         }
 
@@ -488,5 +493,69 @@ mod tests {
         assert_ne!(nbin_1, nbin_3);
         assert_ne!(nbin_1, nbin_4);
         assert_ne!(nbin_1, nbin_5);
+    }
+
+    #[test]
+    fn sample_test() {
+        use crate::misc::x2_test;
+
+        let n_tries = 5;
+        let x2_pval = 0.2;
+        let mut rng = rand::thread_rng();
+        let nbin = NegBinomial::new(3.0, 0.6).unwrap();
+
+        // How many bins do we need?
+        let k: usize = (0..100)
+            .position(|x| nbin.pmf(&(x as u32)) < std::f64::EPSILON)
+            .unwrap_or(99)
+            + 1;
+
+        let ps: Vec<f64> = (0..k).map(|x| nbin.pmf(&(x as u32))).collect();
+
+        let passes = (0..n_tries).fold(0, |acc, _| {
+            let mut f_obs: Vec<u32> = vec![0; k];
+            let xs: Vec<u32> = nbin.sample(1000, &mut rng);
+            xs.iter().for_each(|&x| f_obs[x as usize] += 1);
+            let (_, p) = x2_test(&f_obs, &ps);
+            if p > x2_pval {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+
+        assert!(passes > 0);
+    }
+
+    #[test]
+    fn draw_test() {
+        use crate::misc::x2_test;
+
+        let n_tries = 5;
+        let x2_pval = 0.2;
+        let mut rng = rand::thread_rng();
+        let nbin = NegBinomial::new(3.0, 0.6).unwrap();
+
+        // How many bins do we need?
+        let k: usize = (0..100)
+            .position(|x| nbin.pmf(&(x as u32)) < std::f64::EPSILON)
+            .unwrap_or(99)
+            + 1;
+
+        let ps: Vec<f64> = (0..k).map(|x| nbin.pmf(&(x as u32))).collect();
+
+        let passes = (0..n_tries).fold(0, |acc, _| {
+            let mut f_obs: Vec<u32> = vec![0; k];
+            let xs: Vec<u32> = (0..1000).map(|_| nbin.draw(&mut rng)).collect();
+            xs.iter().for_each(|&x| f_obs[x as usize] += 1);
+            let (_, p) = x2_test(&f_obs, &ps);
+            if p > x2_pval {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+
+        assert!(passes > 0);
     }
 }
