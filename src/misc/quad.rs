@@ -2,13 +2,20 @@ const QUAD_EPS: f64 = 1E-8;
 
 // TODO: return f(c) for caching
 #[inline]
-fn simpsons_rule<F>(func: &F, a: f64, fa: f64, b: f64, fb: f64) -> f64
+fn simpsons_rule<F>(
+    func: &F,
+    a: f64,
+    fa: f64,
+    b: f64,
+    fb: f64,
+) -> (f64, f64, f64)
 where
     F: Fn(f64) -> f64,
 {
     let c = (a + b) / 2.0;
     let h3 = (b - a).abs() / 6.0;
-    h3 * (fa + 4.0 * func(c) + fb)
+    let fc = func(c);
+    (c, fc, h3 * (fa + 4.0 * fc + fb))
 }
 
 fn recursive_asr<F>(
@@ -19,19 +26,19 @@ fn recursive_asr<F>(
     fb: f64,
     eps: f64,
     whole: f64,
+    c: f64,
+    fc: f64,
 ) -> f64
 where
     F: Fn(f64) -> f64,
 {
-    let c = (a + b) / 2.0;
-    let fc = func(c);
-    let left = simpsons_rule(&func, a, fa, c, fc);
-    let right = simpsons_rule(&func, c, fc, b, fb);
+    let (cl, fcl, left) = simpsons_rule(&func, a, fa, c, fc);
+    let (cr, fcr, right) = simpsons_rule(&func, c, fc, b, fb);
     if (left + right - whole).abs() <= 15.0 * eps {
         left + right + (left + right - whole) / 15.0
     } else {
-        recursive_asr(func, a, fa, c, fc, eps / 2.0, left)
-            + recursive_asr(func, c, fc, b, fb, eps / 2.0, right)
+        recursive_asr(func, a, fa, c, fc, eps / 2.0, left, cl, fcl)
+            + recursive_asr(func, c, fc, b, fb, eps / 2.0, right, cr, fcr)
     }
 }
 
@@ -56,7 +63,8 @@ where
     let eps = eps_opt.unwrap_or(QUAD_EPS);
     let fa = func(a);
     let fb = func(b);
-    recursive_asr(&func, a, fa, b, fb, eps, simpsons_rule(&func, a, fa, b, fb))
+    let (c, fc, whole) = simpsons_rule(&func, a, fa, b, fb);
+    recursive_asr(&func, a, fa, b, fb, eps, whole, c, fc)
 }
 
 /// Adaptive Simpson's quadrature
@@ -89,14 +97,14 @@ fn try_simpsons_rule<F, E>(
     fa: f64,
     b: f64,
     fb: f64,
-) -> Result<f64, E>
+) -> Result<(f64, f64, f64), E>
 where
     F: Fn(f64) -> Result<f64, E>,
 {
     let c = (a + b) / 2.0;
     let fc = func(c)?;
     let h3 = (b - a).abs() / 6.0;
-    Ok(h3 * (fa + 4.0 * fc + fb))
+    Ok((c, fc, h3 * (fa + 4.0 * fc + fb)))
 }
 
 fn try_recursive_asr<F, E>(
@@ -107,23 +115,22 @@ fn try_recursive_asr<F, E>(
     fb: f64,
     eps: f64,
     whole: f64,
+    c: f64,
+    fc: f64,
 ) -> Result<f64, E>
 where
     F: Fn(f64) -> Result<f64, E>,
 {
-    let c = (a + b) / 2.0;
-    let fc = func(c)?;
-    let left = try_simpsons_rule(&func, a, fa, c, fc)?;
-    let right = try_simpsons_rule(&func, c, fc, b, fb)?;
+    let (cl, fcl, left) = try_simpsons_rule(&func, a, fa, c, fc)?;
+    let (cr, fcr, right) = try_simpsons_rule(&func, c, fc, b, fb)?;
     if (left + right - whole).abs() <= 15.0 * eps {
         Ok(left + right + (left + right - whole) / 15.0)
     } else {
-        try_recursive_asr(func, a, fa, c, fc, eps / 2.0, left).and_then(
-            |left| {
-                try_recursive_asr(func, c, fc, b, fb, eps / 2.0, right)
+        try_recursive_asr(func, a, fa, c, fc, eps / 2.0, left, cl, fcl)
+            .and_then(|left| {
+                try_recursive_asr(func, c, fc, b, fb, eps / 2.0, right, cr, fcr)
                     .map(|right| left + right)
-            },
-        )
+            })
     }
 }
 
@@ -160,8 +167,8 @@ where
     let eps = eps_opt.unwrap_or(QUAD_EPS);
     let fa: f64 = func(a)?;
     let fb: f64 = func(b)?;
-    let whole = try_simpsons_rule(&func, a, fa, b, fb)?;
-    try_recursive_asr(&func, a, fa, b, fb, eps, whole)
+    let (c, fc, whole) = try_simpsons_rule(&func, a, fa, b, fb)?;
+    try_recursive_asr(&func, a, fa, b, fb, eps, whole, c, fc)
 }
 
 /// Adaptive Simpson's quadrature on functions that can fail.
@@ -224,6 +231,24 @@ mod tests {
     fn quad_of_sin() {
         let func = |x: f64| x.sin();
         let q = quad(func, 0.0, 5.0 * PI);
+        assert::close(q, 2.0, QUAD_EPS);
+    }
+
+    #[test]
+    fn try_quad_of_x2() {
+        fn func(x: f64) -> Result<f64, u8> {
+            Ok(x.powi(2))
+        }
+        let q = try_quad(func, 0.0, 1.0).unwrap();
+        assert::close(q, 1.0 / 3.0, QUAD_EPS);
+    }
+
+    #[test]
+    fn try_quad_of_sin() {
+        fn func(x: f64) -> Result<f64, u8> {
+            Ok(x.sin())
+        }
+        let q = try_quad(func, 0.0, 5.0 * PI).unwrap();
         assert::close(q, 2.0, QUAD_EPS);
     }
 }
