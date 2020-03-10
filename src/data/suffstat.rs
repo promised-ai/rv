@@ -1,4 +1,4 @@
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::data::Booleable;
@@ -14,7 +14,7 @@ use special::Gamma as SGamma;
 ///
 /// Contains the number of trials and the number of successes.
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct BernoulliSuffStat {
     n: usize,
     k: usize,
@@ -140,7 +140,7 @@ impl<X: Booleable> SuffStat<X> for BernoulliSuffStat {
 /// Store the number of observations and the count of observations of each
 /// instance.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct CategoricalSuffStat {
     n: usize,
     counts: Vec<f64>,
@@ -232,7 +232,7 @@ impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
 ///
 /// Holds the number of observarions and their sum.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct PoissonSuffStat {
     /// Number of observations
     n: usize,
@@ -326,7 +326,7 @@ impl_poisson_suffstat!(u32);
 /// Holds the number of observations, their sum, and the sum of their squared
 /// values.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct GaussianSuffStat {
     /// Number of observations
     n: usize,
@@ -416,7 +416,7 @@ impl_gaussian_suffstat!(f32);
 impl_gaussian_suffstat!(f64);
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct MvGaussianSuffStat {
     n: usize,
     sum_x: DVector<f64>,

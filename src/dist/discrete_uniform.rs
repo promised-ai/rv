@@ -9,23 +9,23 @@ use std::fmt;
 pub trait DuParam: Integer + Copy {}
 impl<T> DuParam for T where T: Integer + Copy {}
 
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 /// [Discrete uniform distribution](https://en.wikipedia.org/wiki/Discrete_uniform_distribution),
 /// U(a, b) on the interval x in [a, b]
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct DiscreteUniform<T: DuParam> {
     a: T,
     b: T,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum DiscreteUniformError {
     /// a is greater than or equal to b
-    InvalidIntervalError,
+    InvalidInterval,
 }
 
 impl<T: DuParam> DiscreteUniform<T> {
@@ -38,7 +38,7 @@ impl<T: DuParam> DiscreteUniform<T> {
         if a < b {
             Ok(Self { a, b })
         } else {
-            Err(DiscreteUniformError::InvalidIntervalError)
+            Err(DiscreteUniformError::InvalidInterval)
         }
     }
 
@@ -217,14 +217,29 @@ impl<T: DuParam> Kurtosis for DiscreteUniform<T> {
     }
 }
 
+impl std::error::Error for DiscreteUniformError {}
+
+impl fmt::Display for DiscreteUniformError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidInterval => {
+                write!(f, "a (lower) is greater than or equal to b (upper)")
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::ks_test;
+    use crate::test_basic_impls;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!(DiscreteUniform::new(0, 10).unwrap());
 
     #[test]
     fn new() {

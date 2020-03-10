@@ -1,44 +1,50 @@
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::dist::MvGaussian;
 use crate::misc::lnmv_gamma;
 use crate::traits::*;
-use getset::Setters;
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
 use std::f64::consts::LN_2;
+use std::fmt;
 
 /// [Inverse Wishart distribution](https://en.wikipedia.org/wiki/Inverse-Wishart_distribution),
 /// W<sup>-1</sup>(**Ψ**,ν) over positive definite matrices.
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct InvWishart {
     /// p-dimensional inverse scale matrix, **Ψ**
     inv_scale: DMatrix<f64>,
     /// Degrees of freedom, ν > p - 1
-    #[set = "pub"]
     df: usize,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum InvWishartError {
     /// The scale matrix is not square
-    ScaleMatrixNotSquareError,
+    ScaleMatrixNotSquare { nrows: usize, ncols: usize },
     /// Degrees of freedom is less than the number of dimension of the scale
     /// matrix.
-    DfTooLowError,
+    DfLessThanDimensions { df: usize, ndims: usize },
 }
 
+#[inline]
 fn validate_inv_scale(
     inv_scale: &DMatrix<f64>,
     df: usize,
 ) -> Result<(), InvWishartError> {
     if !inv_scale.is_square() {
-        Err(InvWishartError::ScaleMatrixNotSquareError)
-    } else if (df as usize) < inv_scale.nrows() {
-        Err(InvWishartError::DfTooLowError)
+        Err(InvWishartError::ScaleMatrixNotSquare {
+            nrows: inv_scale.nrows(),
+            ncols: inv_scale.ncols(),
+        })
+    } else if df < inv_scale.nrows() {
+        Err(InvWishartError::DfLessThanDimensions {
+            df,
+            ndims: inv_scale.nrows(),
+        })
     } else {
         Ok(())
     }
@@ -51,6 +57,7 @@ impl InvWishart {
     /// # Arguments
     /// - inv_scale: p-dimensional inverse scale matrix, **Ψ**
     /// - df: Degrees of freedom, ν > p - 1
+    #[inline]
     pub fn new(
         inv_scale: DMatrix<f64>,
         df: usize,
@@ -61,12 +68,14 @@ impl InvWishart {
 
     /// Creates a new InvWishart without checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(inv_scale: DMatrix<f64>, df: usize) -> Self {
         InvWishart { inv_scale, df }
     }
 
     /// Create an Inverse Wishart distribution, W<sup>-1</sup>(**I**<sup>p</sup>,
     /// p)
+    #[inline]
     pub fn identity(dims: usize) -> Self {
         InvWishart {
             inv_scale: DMatrix::identity(dims, dims),
@@ -74,17 +83,43 @@ impl InvWishart {
         }
     }
 
+    #[inline]
+    pub fn ndims(&self) -> usize {
+        self.inv_scale.nrows()
+    }
+
     /// Get a reference to the inverse scale parameter
+    #[inline]
     pub fn inv_scale(&self) -> &DMatrix<f64> {
         &self.inv_scale
     }
 
     /// Get the degrees of freedom
+    #[inline]
     pub fn df(&self) -> usize {
         self.df
     }
 
+    /// Set the value of df
+    #[inline]
+    pub fn set_df(&mut self, df: usize) -> Result<(), InvWishartError> {
+        let ndims = self.ndims();
+        if df < ndims {
+            Err(InvWishartError::DfLessThanDimensions { df, ndims })
+        } else {
+            self.set_df_unchecked(df);
+            Ok(())
+        }
+    }
+
+    /// Set the value of df without input validation
+    #[inline]
+    pub fn set_df_unchecked(&mut self, df: usize) {
+        self.df = df;
+    }
+
     /// Set inverse scale parameter
+    #[inline]
     pub fn set_inv_scale(
         &mut self,
         inv_scale: DMatrix<f64>,
@@ -94,6 +129,7 @@ impl InvWishart {
         Ok(())
     }
 
+    #[inline]
     pub fn set_inv_scale_unchecked(&mut self, inv_scale: DMatrix<f64>) {
         self.inv_scale = inv_scale;
     }
@@ -172,11 +208,34 @@ impl Mode<DMatrix<f64>> for InvWishart {
     }
 }
 
+impl std::error::Error for InvWishartError {}
+
+impl fmt::Display for InvWishartError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::DfLessThanDimensions { df, ndims } => write!(
+                f,
+                "df, the degrees of freedom must be greater than or \
+                    equal to the number of dimensions, but {} < {}",
+                df, ndims
+            ),
+            Self::ScaleMatrixNotSquare { nrows, ncols } => write!(
+                f,
+                "The scale matrix is not square: {} x {}",
+                nrows, ncols
+            ),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_basic_impls;
 
     const TOL: f64 = 1E-12;
+
+    test_basic_impls!(InvWishart::identity(3));
 
     #[test]
     fn new_should_reject_df_too_low() {
@@ -185,7 +244,7 @@ mod tests {
         assert!(InvWishart::new(inv_scale.clone(), 5).is_ok());
         assert_eq!(
             InvWishart::new(inv_scale.clone(), 3),
-            Err(InvWishartError::DfTooLowError)
+            Err(InvWishartError::DfLessThanDimensions { df: 3, ndims: 4 })
         );
     }
 
@@ -194,7 +253,7 @@ mod tests {
         let inv_scale = DMatrix::identity(4, 3);
         assert_eq!(
             InvWishart::new(inv_scale, 5),
-            Err(InvWishartError::ScaleMatrixNotSquareError)
+            Err(InvWishartError::ScaleMatrixNotSquare { nrows: 4, ncols: 3 })
         );
     }
 

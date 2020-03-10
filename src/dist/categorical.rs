@@ -1,5 +1,5 @@
 //! Categorical distribution of x<sub>k</sub> in {0, 1, ..., k-1}
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::data::{CategoricalDatum, CategoricalSuffStat};
@@ -7,25 +7,28 @@ use crate::impl_display;
 use crate::misc::{argmax, ln_pflip, logsumexp, vec_to_string};
 use crate::traits::*;
 use rand::Rng;
+use std::fmt;
 
 /// [Categorical distribution](https://en.wikipedia.org/wiki/Categorical_distribution)
 /// over unordered values in [0, k).
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Categorical {
     // Use log weights instead to optimize for computation of ln_f
     ln_weights: Vec<f64>,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum CategoricalError {
     /// One or more of the weights is infinite or NaN
-    NonFiniteWeightError,
+    NonFiniteWeight { ix: usize, ln: bool, weight: f64 },
     /// One or more of the weights is less than zero
-    SubZeroWeightError,
+    NegativeWeight { ix: usize, weight: f64 },
     /// The weights do not sum to 1
-    WeightsDoNotSumToOneError,
+    WeightsDoNotSumToOne { ln: bool, sum: f64 },
+    /// Weights has not entries
+    EmptyWights,
 }
 
 impl Categorical {
@@ -51,13 +54,19 @@ impl Categorical {
     /// assert::close(cat.pmf(&0_u8), 0.4, 1E-12);
     /// ```
     pub fn new(weights: &[f64]) -> Result<Self, CategoricalError> {
-        weights.iter().fold(Ok(()), |acc, &w| {
-            if acc.is_err() {
-                acc
-            } else if w < 0.0 {
-                Err(CategoricalError::SubZeroWeightError)
-            } else if !w.is_finite() {
-                Err(CategoricalError::NonFiniteWeightError)
+        if weights.is_empty() {
+            return Err(CategoricalError::EmptyWights);
+        }
+
+        weights.iter().enumerate().try_for_each(|(ix, &weight)| {
+            if weight < 0.0 {
+                Err(CategoricalError::NegativeWeight { ix, weight })
+            } else if !weight.is_finite() {
+                Err(CategoricalError::NonFiniteWeight {
+                    ix,
+                    ln: false,
+                    weight,
+                })
             } else {
                 Ok(())
             }
@@ -98,10 +107,30 @@ impl Categorical {
     pub fn from_ln_weights(
         ln_weights: Vec<f64>,
     ) -> Result<Self, CategoricalError> {
-        if logsumexp(&ln_weights).abs() < 10E-12 {
+        if ln_weights.is_empty() {
+            return Err(CategoricalError::EmptyWights);
+        }
+
+        ln_weights
+            .iter()
+            .enumerate()
+            .try_for_each(|(ix, &weight)| {
+                if weight.is_finite() {
+                    Ok(())
+                } else {
+                    Err(CategoricalError::NonFiniteWeight {
+                        ix,
+                        ln: false,
+                        weight,
+                    })
+                }
+            })?;
+
+        let sum = logsumexp(&ln_weights).abs();
+        if sum < 10E-12 {
             Ok(Categorical { ln_weights })
         } else {
-            Err(CategoricalError::WeightsDoNotSumToOneError)
+            Err(CategoricalError::WeightsDoNotSumToOne { ln: true, sum })
         }
     }
 
@@ -224,14 +253,42 @@ impl KlDivergence for Categorical {
     }
 }
 
+impl fmt::Display for CategoricalError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NonFiniteWeight { ix, ln, weight } if *ln => {
+                write!(f, "non-finite ln weight at index {}: {}", ix, weight)
+            }
+            Self::NonFiniteWeight { ix, weight, .. } => {
+                write!(f, "non-finite weight at index {}: {}", ix, weight)
+            }
+            Self::NegativeWeight { ix, weight } => {
+                write!(f, "negative weight at index {}: {}", ix, weight)
+            }
+            Self::WeightsDoNotSumToOne { ln, sum } if *ln => {
+                write!(f, "ln weights sum to {}, should sum to zero", sum)
+            }
+            Self::WeightsDoNotSumToOne { sum, .. } => {
+                write!(f, "weights sum to {}, should sum to one", sum)
+            }
+            Self::EmptyWights => write!(f, "empty weights vector"),
+        }
+    }
+}
+
+impl std::error::Error for CategoricalError {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::x2_test;
+    use crate::test_basic_impls;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
+
+    test_basic_impls!(Categorical::uniform(3));
 
     #[test]
     fn ln_weights_should_logsumexp_to_1() {

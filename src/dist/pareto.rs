@@ -1,12 +1,12 @@
 //! Pareto distribution over x in [shape, ∞)
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use std::f64;
+use std::fmt;
 
 /// [Pareto distribution](https://en.wikipedia.org/wiki/Pareto_distribution) Pareto(x_m, α)
 /// over x in (x_m, ∞).
@@ -19,35 +19,37 @@ use std::f64;
 /// f(x|α, x_m) = ---------
 ///               x^(α + 1)
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Pareto {
-    #[set = "pub"]
     shape: f64,
-    #[set = "pub"]
     scale: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum ParetoError {
-    ShapeTooLowError,
-    ShapeNotFiniteError,
-    ScaleTooLowError,
-    ScaleNotFiniteError,
+    /// Shape parameter is less than or equal to zero
+    ShapeTooLow { shape: f64 },
+    /// Shape parameter is infinite or NaN
+    ShapeNotFinite { shape: f64 },
+    /// Scale parameter is less than or equal to zero
+    ScaleTooLow { scale: f64 },
+    /// Scale parameter is infinite or NaN
+    ScaleNotFinite { scale: f64 },
 }
 
 impl Pareto {
     /// Create a new `Pareto` distribution with shape (α) and scale (x_m).
     pub fn new(shape: f64, scale: f64) -> Result<Self, ParetoError> {
         if shape <= 0.0 {
-            Err(ParetoError::ShapeTooLowError)
+            Err(ParetoError::ShapeTooLow { shape })
         } else if !shape.is_finite() {
-            Err(ParetoError::ShapeNotFiniteError)
+            Err(ParetoError::ShapeNotFinite { shape })
         } else if scale <= 0.0 {
-            Err(ParetoError::ScaleTooLowError)
+            Err(ParetoError::ScaleTooLow { scale })
         } else if !scale.is_finite() {
-            Err(ParetoError::ScaleNotFiniteError)
+            Err(ParetoError::ScaleNotFinite { scale })
         } else {
             Ok(Pareto { shape, scale })
         }
@@ -71,6 +73,49 @@ impl Pareto {
         self.shape
     }
 
+    /// Set the shape parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::Pareto;
+    /// let mut pareto = Pareto::new(2.0, 1.0).unwrap();
+    /// assert_eq!(pareto.shape(), 2.0);
+    ///
+    /// pareto.set_shape(1.1).unwrap();
+    /// assert_eq!(pareto.shape(), 1.1);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Pareto;
+    /// # let mut pareto = Pareto::new(2.0, 1.0).unwrap();
+    /// assert!(pareto.set_shape(1.1).is_ok());
+    /// assert!(pareto.set_shape(0.0).is_err());
+    /// assert!(pareto.set_shape(-1.0).is_err());
+    /// assert!(pareto.set_shape(std::f64::INFINITY).is_err());
+    /// assert!(pareto.set_shape(std::f64::NEG_INFINITY).is_err());
+    /// assert!(pareto.set_shape(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_shape(&mut self, shape: f64) -> Result<(), ParetoError> {
+        if shape <= 0.0 {
+            Err(ParetoError::ShapeTooLow { shape })
+        } else if !shape.is_finite() {
+            Err(ParetoError::ShapeNotFinite { shape })
+        } else {
+            self.set_shape_unchecked(shape);
+            Ok(())
+        }
+    }
+
+    /// Set the shape parameter without input validation
+    #[inline]
+    pub fn set_shape_unchecked(&mut self, shape: f64) {
+        self.shape = shape;
+    }
+
     /// Get scale parameter
     ///
     /// # Example
@@ -82,6 +127,49 @@ impl Pareto {
     /// ```
     pub fn scale(&self) -> f64 {
         self.scale
+    }
+
+    /// Set the scale parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::Pareto;
+    /// let mut pareto = Pareto::new(2.0, 1.0).unwrap();
+    /// assert_eq!(pareto.scale(), 1.0);
+    ///
+    /// pareto.set_scale(1.1).unwrap();
+    /// assert_eq!(pareto.scale(), 1.1);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Pareto;
+    /// # let mut pareto = Pareto::new(2.0, 1.0).unwrap();
+    /// assert!(pareto.set_scale(1.1).is_ok());
+    /// assert!(pareto.set_scale(0.0).is_err());
+    /// assert!(pareto.set_scale(-1.0).is_err());
+    /// assert!(pareto.set_scale(std::f64::INFINITY).is_err());
+    /// assert!(pareto.set_scale(std::f64::NEG_INFINITY).is_err());
+    /// assert!(pareto.set_scale(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_scale(&mut self, scale: f64) -> Result<(), ParetoError> {
+        if scale <= 0.0 {
+            Err(ParetoError::ScaleTooLow { scale })
+        } else if !scale.is_finite() {
+            Err(ParetoError::ScaleNotFinite { scale })
+        } else {
+            self.set_scale_unchecked(scale);
+            Ok(())
+        }
+    }
+
+    /// Set the scale parameter without input validation
+    #[inline]
+    pub fn set_scale_unchecked(&mut self, scale: f64) {
+        self.scale = scale;
     }
 }
 
@@ -195,15 +283,39 @@ impl Kurtosis for Pareto {
 impl_traits!(f32);
 impl_traits!(f64);
 
+impl std::error::Error for ParetoError {}
+
+impl fmt::Display for ParetoError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ShapeTooLow { shape } => {
+                write!(f, "rate ({}) must be greater than zero", shape)
+            }
+            Self::ShapeNotFinite { shape } => {
+                write!(f, "non-finite rate: {}", shape)
+            }
+            Self::ScaleTooLow { scale } => {
+                write!(f, "scale ({}) must be greater than zero", scale)
+            }
+            Self::ScaleNotFinite { scale } => {
+                write!(f, "non-finite scale: {}", scale)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::{ks_test, linspace};
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!(Pareto::new(1.0, 2.0).unwrap());
 
     #[test]
     fn new() {

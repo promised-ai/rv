@@ -1,15 +1,15 @@
 //! Cauchy distribution over x in (-∞, ∞)
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::consts::LN_PI;
 use crate::impl_display;
 use crate::misc::logsumexp;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use rand_distr::Cauchy as RCauchy;
 use std::f64::consts::PI;
+use std::fmt;
 
 /// [Cauchy distribution](https://en.wikipedia.org/wiki/Cauchy_distribution)
 /// over x in (-∞, ∞).
@@ -23,41 +23,39 @@ use std::f64::consts::PI;
 ///
 /// assert!((ln_fx + 2.4514716152673368).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Cauchy {
     /// location, x<sub>0</sub>, in (-∞, ∞)
-    #[set = "pub"]
     loc: f64,
     /// scale, γ, in (0, ∞)
-    #[set = "pub"]
     scale: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum CauchyError {
     /// Location parameter is infinite or NaN
-    LocNotFiniteError,
+    LocNotFinite { loc: f64 },
     /// Scale parameter is less than or equal to zero
-    ScaleTooLowError,
-    /// Scale parameter is infinite or NaN
-    ScaleNotFiniteError,
+    ScaleTooLow { scale: f64 },
+    /// Scale parameter is infinite or Na]
+    ScaleNotFinite { scale: f64 },
 }
 
 impl Cauchy {
-    /// Createa a new Cauchy distribution
+    /// Creates a new Cauchy distribution
     ///
     /// # Arguments
     /// - loc: location, x<sub>0</sub>, in (-∞, ∞)
     /// - scale: scale, γ, in (0, ∞)
     pub fn new(loc: f64, scale: f64) -> Result<Self, CauchyError> {
         if !loc.is_finite() {
-            Err(CauchyError::LocNotFiniteError)
+            Err(CauchyError::LocNotFinite { loc })
         } else if scale <= 0.0 {
-            Err(CauchyError::ScaleTooLowError)
+            Err(CauchyError::ScaleTooLow { scale })
         } else if !scale.is_finite() {
-            Err(CauchyError::ScaleNotFiniteError)
+            Err(CauchyError::ScaleNotFinite { scale })
         } else {
             Ok(Cauchy { loc, scale })
         }
@@ -81,6 +79,43 @@ impl Cauchy {
         self.loc
     }
 
+    /// Set the location parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Cauchy;
+    /// let mut c = Cauchy::new(0.1, 1.0).unwrap();
+    /// assert_eq!(c.loc(), 0.1);
+    ///
+    /// c.set_loc(2.0).unwrap();
+    /// assert_eq!(c.loc(), 2.0);
+    /// ```
+    /// Will error for invalid parameters
+    ///
+    /// ```rust
+    /// # use rv::dist::Cauchy;
+    /// # let mut c = Cauchy::new(0.1, 1.0).unwrap();
+    /// assert!(c.set_loc(2.0).is_ok());
+    /// assert!(c.set_loc(std::f64::INFINITY).is_err());
+    /// assert!(c.set_loc(std::f64::NEG_INFINITY).is_err());
+    /// assert!(c.set_loc(std::f64::NAN).is_err());
+    /// ```
+    pub fn set_loc(&mut self, loc: f64) -> Result<(), CauchyError> {
+        if loc.is_finite() {
+            self.set_loc_unchecked(loc);
+            Ok(())
+        } else {
+            Err(CauchyError::LocNotFinite { loc })
+        }
+    }
+
+    /// Set the location parameter without input validation
+    #[inline]
+    pub fn set_loc_unchecked(&mut self, loc: f64) {
+        self.loc = loc;
+    }
+
     /// Get the scale parameter
     ///
     /// # Example
@@ -92,6 +127,45 @@ impl Cauchy {
     /// ```
     pub fn scale(&self) -> f64 {
         self.scale
+    }
+
+    /// Set the scale parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Cauchy;
+    /// let mut c = Cauchy::new(0.1, 1.0).unwrap();
+    /// assert_eq!(c.scale(), 1.0);
+    ///
+    /// c.set_scale(2.1).unwrap();
+    /// assert_eq!(c.scale(), 2.1);
+    /// ```
+    ///
+    /// Will error for invalid scale.
+    /// ```
+    /// # use rv::dist::Cauchy;
+    /// # let mut c = Cauchy::new(0.1, 1.0).unwrap();
+    /// assert!(c.set_scale(0.0).is_err());
+    /// assert!(c.set_scale(-1.0).is_err());
+    /// assert!(c.set_scale(std::f64::NAN).is_err());
+    /// assert!(c.set_scale(std::f64::INFINITY).is_err());
+    /// ```
+    pub fn set_scale(&mut self, scale: f64) -> Result<(), CauchyError> {
+        if !scale.is_finite() {
+            Err(CauchyError::ScaleNotFinite { scale })
+        } else if scale > 0.0 {
+            self.set_scale_unchecked(scale);
+            Ok(())
+        } else {
+            Err(CauchyError::ScaleTooLow { scale })
+        }
+    }
+
+    /// Set scale parameter without input validation
+    #[inline]
+    pub fn set_scale_unchecked(&mut self, scale: f64) {
+        self.scale = scale;
     }
 }
 
@@ -175,15 +249,36 @@ impl Entropy for Cauchy {
 impl_traits!(f64);
 impl_traits!(f32);
 
+impl std::error::Error for CauchyError {}
+
+impl fmt::Display for CauchyError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::LocNotFinite { loc } => {
+                write!(f, "loc ({}) must be finite", loc)
+            }
+            Self::ScaleTooLow { scale } => {
+                write!(f, "scale ({}) must be greater than zero", scale)
+            }
+            Self::ScaleNotFinite { scale } => {
+                write!(f, "scale ({}) must be finite", scale)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::ks_test;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!(Cauchy::default());
 
     #[test]
     fn ln_pdf_loc_zero() {

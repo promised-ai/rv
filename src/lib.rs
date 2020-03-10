@@ -64,7 +64,7 @@
 //! // (true) given the observed flips (posterior predictive)?
 //! let p_heads = prior.pp(&true, &obs);
 //! ```
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 extern crate serde_derive;
 
 // Test the README
@@ -79,6 +79,7 @@ pub mod misc;
 mod model;
 pub mod prelude;
 mod priors;
+pub(crate) mod test;
 pub mod traits;
 
 pub use crate::model::ConjugateModel;

@@ -1,15 +1,15 @@
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::consts;
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use special::Gamma;
 use std::f32;
 use std::f64;
 use std::f64::consts::{LN_2, PI};
+use std::fmt;
 
 /// [Generalized Extreme Value Distribution](https://en.wikipedia.org/wiki/Generalized_extreme_value_distribution)
 /// Gev(μ, σ, ξ) where the parameters are
@@ -23,47 +23,45 @@ use std::f64::consts::{LN_2, PI};
 /// t(x) = ⎰ (1 + ξ ((x - μ) / σ))^(-1/ξ) if ξ ≠ 0
 ///        ⎱ e^{(μ - x) / σ}              if ξ = 0
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Gev {
-    #[set = "pub"]
     loc: f64,
-    #[set = "pub"]
     scale: f64,
-    #[set = "pub"]
     shape: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum GevError {
     /// The location parameter is infinite or NaN
-    LocNotFiniteError,
+    LocNotFinite { loc: f64 },
     /// The shape parameter is infinite or NaN
-    ShapeNotFiniteError,
+    ShapeNotFinite { shape: f64 },
     /// The scale parameter is infinite or NaN
-    ScaleNotFiniteError,
+    ScaleNotFinite { scale: f64 },
     /// The scale parameter is less than or equal to zero
-    ScaleTooLowError,
+    ScaleTooLow { scale: f64 },
 }
 
 impl Gev {
     /// Create a new `Gev` distribution with location, scale, and shape.
     pub fn new(loc: f64, scale: f64, shape: f64) -> Result<Self, GevError> {
         if scale <= 0.0 {
-            Err(GevError::ScaleTooLowError)
+            Err(GevError::ScaleTooLow { scale })
         } else if !scale.is_finite() {
-            Err(GevError::ScaleNotFiniteError)
+            Err(GevError::ScaleNotFinite { scale })
         } else if !shape.is_finite() {
-            Err(GevError::ShapeNotFiniteError)
+            Err(GevError::ShapeNotFinite { shape })
         } else if !loc.is_finite() {
-            Err(GevError::LocNotFiniteError)
+            Err(GevError::LocNotFinite { loc })
         } else {
             Ok(Gev { loc, scale, shape })
         }
     }
 
     /// Creates a new Gev without checking whether the parameters are valid.
+    #[inline]
     pub fn new_unchecked(loc: f64, scale: f64, shape: f64) -> Self {
         Gev { loc, scale, shape }
     }
@@ -78,8 +76,48 @@ impl Gev {
     ///
     /// assert_eq!(gev.loc(), 1.2);
     /// ```
+    #[inline]
     pub fn loc(&self) -> f64 {
         self.loc
+    }
+
+    /// Set the loc parameter without input validation
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gev;
+    /// let mut gev = Gev::new(1.2, 2.3, 3.4).unwrap();
+    /// assert_eq!(gev.loc(), 1.2);
+    ///
+    /// gev.set_loc(2.8).unwrap();
+    /// assert_eq!(gev.loc(), 2.8);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Gev;
+    /// # let mut gev = Gev::new(1.2, 2.3, 3.4).unwrap();
+    /// assert!(gev.set_loc(2.8).is_ok());
+    /// assert!(gev.set_loc(std::f64::INFINITY).is_err());
+    /// assert!(gev.set_loc(std::f64::NEG_INFINITY).is_err());
+    /// assert!(gev.set_loc(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_loc(&mut self, loc: f64) -> Result<(), GevError> {
+        if !loc.is_finite() {
+            Err(GevError::LocNotFinite { loc })
+        } else {
+            self.set_loc_unchecked(loc);
+            Ok(())
+        }
+    }
+
+    /// Set the loc parameter without input validation
+    #[inline]
+    pub fn set_loc_unchecked(&mut self, loc: f64) {
+        self.loc = loc
     }
 
     /// Get the shape parameter
@@ -92,8 +130,48 @@ impl Gev {
     ///
     /// assert_eq!(gev.shape(), 3.4);
     /// ```
+    #[inline]
     pub fn shape(&self) -> f64 {
         self.shape
+    }
+
+    /// Set the shape parameter without input validation
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gev;
+    /// let mut gev = Gev::new(1.2, 2.3, 3.4).unwrap();
+    /// assert_eq!(gev.shape(), 3.4);
+    ///
+    /// gev.set_shape(2.8).unwrap();
+    /// assert_eq!(gev.shape(), 2.8);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Gev;
+    /// # let mut gev = Gev::new(1.2, 2.3, 3.4).unwrap();
+    /// assert!(gev.set_shape(2.8).is_ok());
+    /// assert!(gev.set_shape(std::f64::INFINITY).is_err());
+    /// assert!(gev.set_shape(std::f64::NEG_INFINITY).is_err());
+    /// assert!(gev.set_shape(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_shape(&mut self, shape: f64) -> Result<(), GevError> {
+        if !shape.is_finite() {
+            Err(GevError::ShapeNotFinite { shape })
+        } else {
+            self.set_shape_unchecked(shape);
+            Ok(())
+        }
+    }
+
+    /// Set the shape parameter without input validation
+    #[inline]
+    pub fn set_shape_unchecked(&mut self, shape: f64) {
+        self.shape = shape
     }
 
     /// Get the scale parameter
@@ -106,8 +184,52 @@ impl Gev {
     ///
     /// assert_eq!(gev.scale(), 2.3);
     /// ```
+    #[inline]
     pub fn scale(&self) -> f64 {
         self.scale
+    }
+
+    /// Set the scale parameter without input validation
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gev;
+    /// let mut gev = Gev::new(1.2, 2.3, 3.4).unwrap();
+    /// assert_eq!(gev.scale(), 2.3);
+    ///
+    /// gev.set_scale(2.8).unwrap();
+    /// assert_eq!(gev.scale(), 2.8);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Gev;
+    /// # let mut gev = Gev::new(1.2, 2.3, 3.4).unwrap();
+    /// assert!(gev.set_scale(2.8).is_ok());
+    /// assert!(gev.set_scale(0.0).is_err());
+    /// assert!(gev.set_scale(-1.0).is_err());
+    /// assert!(gev.set_scale(std::f64::INFINITY).is_err());
+    /// assert!(gev.set_scale(std::f64::NEG_INFINITY).is_err());
+    /// assert!(gev.set_scale(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_scale(&mut self, scale: f64) -> Result<(), GevError> {
+        if !scale.is_finite() {
+            Err(GevError::ScaleNotFinite { scale })
+        } else if scale <= 0.0 {
+            Err(GevError::ScaleTooLow { scale })
+        } else {
+            self.set_scale_unchecked(scale);
+            Ok(())
+        }
+    }
+
+    /// Set the scale parameter without input validation
+    #[inline]
+    pub fn set_scale_unchecked(&mut self, scale: f64) {
+        self.scale = scale
     }
 }
 
@@ -251,16 +373,38 @@ impl Entropy for Gev {
 impl_traits!(f32);
 impl_traits!(f64);
 
+impl std::error::Error for GevError {}
+
+impl fmt::Display for GevError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::LocNotFinite { loc } => write!(f, "non-finite loc: {}", loc),
+            Self::ShapeNotFinite { shape } => {
+                write!(f, "non-finite shape: {}", shape)
+            }
+            Self::ScaleNotFinite { scale } => {
+                write!(f, "non-finite scale: {}", scale)
+            }
+            Self::ScaleTooLow { scale } => {
+                write!(f, "scale ({}) must be greater than zero", scale)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::ks_test;
     use crate::misc::linspace;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!(Gev::new(0.0, 1.0, 2.0).unwrap());
 
     #[test]
     fn new() {
