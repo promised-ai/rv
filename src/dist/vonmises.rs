@@ -3,7 +3,7 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::consts::LN_2PI;
 use crate::impl_display;
-use crate::misc::{bessel, mod_euc, quad};
+use crate::misc::{bessel, quad};
 use crate::traits::*;
 use rand::Rng;
 use std::f64::consts::PI;
@@ -248,7 +248,7 @@ macro_rules! impl_traits {
                     {
                         let u3: f64 = rng.sample(u);
                         let y = (u3 - 0.5).signum() * f.acos() + self.mu;
-                        let x = mod_euc(y, 2.0 * PI) as $kind;
+                        let x = y.rem_euclid(2.0 * PI) as $kind;
                         if !self.supports(&x) {
                             panic!(format!("VonMises does not support {}", x));
                         } else {

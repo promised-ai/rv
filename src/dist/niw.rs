@@ -8,6 +8,8 @@ use nalgebra::{DMatrix, DVector};
 use rand::Rng;
 use std::fmt;
 
+mod mvg_prior;
+
 /// Common conjugate prior on the μ and Σ parameters in the Multivariate
 /// Gaussian, Ν(μ, Σ)
 ///
