@@ -1,37 +1,35 @@
 //! Log Normal Distribution over x in (0, ∞)
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::consts::*;
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use special::Error as _;
 use std::f64::consts::SQRT_2;
+use std::fmt;
 
 /// [LogNormal Distribution](https://en.wikipedia.org/wiki/Log-normal_distribution)
 /// If x ~ Normal(μ, σ), then e^x ~ LogNormal(μ, σ).
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct LogNormal {
     /// log scale mean
-    #[set = "pub"]
     mu: f64,
     /// log scale standard deviation
-    #[set = "pub"]
     sigma: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum LogNormalError {
     /// The mu parameter is infinite or NaN
-    MuNotFiniteError,
+    MuNotFinite { mu: f64 },
     /// The sigma parameter is less than or equal to zero
-    SigmaTooLowError,
+    SigmaTooLow { sigma: f64 },
     /// The sigma parameter is infinite or NaN
-    SigmaNotFiniteError,
+    SigmaNotFinite { sigma: f64 },
 }
 
 impl LogNormal {
@@ -40,13 +38,14 @@ impl LogNormal {
     /// # Arguments
     /// - mu: log scale mean
     /// - sigma: log scale standard deviation
+    #[inline]
     pub fn new(mu: f64, sigma: f64) -> Result<Self, LogNormalError> {
         if !mu.is_finite() {
-            Err(LogNormalError::MuNotFiniteError)
+            Err(LogNormalError::MuNotFinite { mu })
         } else if sigma <= 0.0 {
-            Err(LogNormalError::SigmaTooLowError)
+            Err(LogNormalError::SigmaTooLow { sigma })
         } else if !sigma.is_finite() {
-            Err(LogNormalError::SigmaNotFiniteError)
+            Err(LogNormalError::SigmaNotFinite { sigma })
         } else {
             Ok(LogNormal { mu, sigma })
         }
@@ -54,6 +53,7 @@ impl LogNormal {
 
     /// Creates a new LogNormal without checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
         LogNormal { mu, sigma }
     }
@@ -67,6 +67,7 @@ impl LogNormal {
     /// let lognormal = LogNormal::standard();
     /// assert_eq!(lognormal, LogNormal::new(0.0, 1.0).unwrap());
     /// ```
+    #[inline]
     pub fn standard() -> Self {
         LogNormal {
             mu: 0.0,
@@ -83,8 +84,48 @@ impl LogNormal {
     /// let lognormal = LogNormal::new(-1.0, 2.0).unwrap();
     /// assert_eq!(lognormal.mu(), -1.0);
     /// ```
+    #[inline]
     pub fn mu(&self) -> f64 {
         self.mu
+    }
+
+    /// Set the value of mu
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::LogNormal;
+    /// let mut lognormal = LogNormal::new(2.0, 1.5).unwrap();
+    /// assert_eq!(lognormal.mu(), 2.0);
+    ///
+    /// lognormal.set_mu(1.3).unwrap();
+    /// assert_eq!(lognormal.mu(), 1.3);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::LogNormal;
+    /// # let mut lognormal = LogNormal::new(2.0, 1.5).unwrap();
+    /// assert!(lognormal.set_mu(1.3).is_ok());
+    /// assert!(lognormal.set_mu(std::f64::NEG_INFINITY).is_err());
+    /// assert!(lognormal.set_mu(std::f64::INFINITY).is_err());
+    /// assert!(lognormal.set_mu(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_mu(&mut self, mu: f64) -> Result<(), LogNormalError> {
+        if !mu.is_finite() {
+            Err(LogNormalError::MuNotFinite { mu })
+        } else {
+            self.set_mu_unchecked(mu);
+            Ok(())
+        }
+    }
+
+    /// Set the value of mu without input validation
+    #[inline]
+    pub fn set_mu_unchecked(&mut self, mu: f64) {
+        self.mu = mu;
     }
 
     /// Get the sigma parameter
@@ -96,8 +137,52 @@ impl LogNormal {
     /// let lognormal = LogNormal::new(-1.0, 2.0).unwrap();
     /// assert_eq!(lognormal.sigma(), 2.0);
     /// ```
+    #[inline]
     pub fn sigma(&self) -> f64 {
         self.sigma
+    }
+
+    /// Set the value of sigma
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::LogNormal;
+    /// let mut lognormal = LogNormal::standard();
+    /// assert_eq!(lognormal.sigma(), 1.0);
+    ///
+    /// lognormal.set_sigma(2.3).unwrap();
+    /// assert_eq!(lognormal.sigma(), 2.3);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::LogNormal;
+    /// # let mut lognormal = LogNormal::standard();
+    /// assert!(lognormal.set_sigma(2.3).is_ok());
+    /// assert!(lognormal.set_sigma(0.0).is_err());
+    /// assert!(lognormal.set_sigma(-1.0).is_err());
+    /// assert!(lognormal.set_sigma(std::f64::INFINITY).is_err());
+    /// assert!(lognormal.set_sigma(std::f64::NEG_INFINITY).is_err());
+    /// assert!(lognormal.set_sigma(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_sigma(&mut self, sigma: f64) -> Result<(), LogNormalError> {
+        if sigma <= 0.0 {
+            Err(LogNormalError::SigmaTooLow { sigma })
+        } else if !sigma.is_finite() {
+            Err(LogNormalError::SigmaNotFinite { sigma })
+        } else {
+            self.set_sigma_unchecked(sigma);
+            Ok(())
+        }
+    }
+
+    /// Set the value of sigma
+    #[inline]
+    pub fn set_sigma_unchecked(&mut self, sigma: f64) {
+        self.sigma = sigma;
     }
 }
 
@@ -216,12 +301,31 @@ impl Kurtosis for LogNormal {
 impl_traits!(f32);
 impl_traits!(f64);
 
+impl std::error::Error for LogNormalError {}
+
+impl fmt::Display for LogNormalError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
+            Self::SigmaTooLow { sigma } => {
+                write!(f, "sigma ({}) must be greater than zero", sigma)
+            }
+            Self::SigmaNotFinite { sigma } => {
+                write!(f, "non-finite sigma: {}", sigma)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
+
+    test_basic_impls!(LogNormal::default());
 
     #[test]
     fn new() {

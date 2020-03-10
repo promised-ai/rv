@@ -1,5 +1,5 @@
 //! Kumaraswamy distribution over x in (0, 1)
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::consts::EULER_MASCERONI;
@@ -9,6 +9,7 @@ use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;
+use std::fmt;
 
 /// [Kumaraswamy distribution](https://en.wikipedia.org/wiki/Kumaraswamy_distribution),
 /// Kumaraswamy(α, β) over x in (0, 1).
@@ -42,11 +43,11 @@ use std::f64;
 /// }
 /// ```
 #[derive(Debug)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Kumaraswamy {
     a: f64,
     b: f64,
-    #[cfg_attr(feature = "serde_support", serde(skip))]
+    #[cfg_attr(feature = "serde1", serde(skip))]
     /// Cached log(a*b)
     ab_ln: OnceCell<f64>,
 }
@@ -67,17 +68,17 @@ impl PartialEq for Kumaraswamy {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum KumaraswamyError {
     /// The a parameter is less than or equal to zero
-    ATooLowError,
+    ATooLow { a: f64 },
     /// The a parameter is infinite or NaN
-    ANotFiniteError,
+    ANotFinite { a: f64 },
     /// The b parameter is less than or equal to zero
-    BTooLowError,
+    BTooLow { b: f64 },
     /// The b parameter is infinite or NaN
-    BNotFiniteError,
+    BNotFinite { b: f64 },
 }
 
 impl Default for Kumaraswamy {
@@ -109,15 +110,16 @@ impl Kumaraswamy {
     /// let kuma_bad  = Kumaraswamy::new(-5.0, 1.0);
     /// assert!(kuma_bad.is_err());
     /// ```
+    #[inline]
     pub fn new(a: f64, b: f64) -> Result<Self, KumaraswamyError> {
         if a <= 0.0 {
-            Err(KumaraswamyError::ATooLowError)
+            Err(KumaraswamyError::ATooLow { a })
         } else if !a.is_finite() {
-            Err(KumaraswamyError::ANotFiniteError)
+            Err(KumaraswamyError::ANotFinite { a })
         } else if b <= 0.0 {
-            Err(KumaraswamyError::BTooLowError)
+            Err(KumaraswamyError::BTooLow { b })
         } else if !b.is_finite() {
-            Err(KumaraswamyError::ANotFiniteError)
+            Err(KumaraswamyError::BNotFinite { b })
         } else {
             Ok(Kumaraswamy {
                 a,
@@ -129,6 +131,7 @@ impl Kumaraswamy {
 
     /// Creates a new Kumaraswamy without checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(a: f64, b: f64) -> Self {
         Kumaraswamy {
             a,
@@ -146,6 +149,7 @@ impl Kumaraswamy {
     /// let kuma = Kumaraswamy::uniform();
     /// assert_eq!(kuma, Kumaraswamy::new(1.0, 1.0).unwrap());
     /// ```
+    #[inline]
     pub fn uniform() -> Self {
         Kumaraswamy {
             a: 1.0,
@@ -193,11 +197,12 @@ impl Kumaraswamy {
     /// let kuma = Kumaraswamy::centered(2.0).unwrap();
     /// assert!(absolute_error(kuma.f(&0.1), kuma.f(&0.9)) > 1E-8);
     /// ```
+    #[inline]
     pub fn centered(a: f64) -> Result<Self, KumaraswamyError> {
         if a <= 0.0 {
-            Err(KumaraswamyError::ATooLowError)
+            Err(KumaraswamyError::ATooLow { a })
         } else if !a.is_finite() {
-            Err(KumaraswamyError::ANotFiniteError)
+            Err(KumaraswamyError::ANotFinite { a })
         } else {
             let b = 0.5_f64.ln() / (1.0 - 0.5_f64.powf(a)).ln();
             Ok(Kumaraswamy {
@@ -217,6 +222,7 @@ impl Kumaraswamy {
     /// let kuma = Kumaraswamy::new(1.0, 5.0).unwrap();
     /// assert_eq!(kuma.a(), 1.0);
     /// ```
+    #[inline]
     pub fn a(&self) -> f64 {
         self.a
     }
@@ -230,16 +236,91 @@ impl Kumaraswamy {
     /// let kuma = Kumaraswamy::new(1.0, 5.0).unwrap();
     /// assert_eq!(kuma.b(), 5.0);
     /// ```
+    #[inline]
     pub fn b(&self) -> f64 {
         self.b
     }
 
-    pub fn set_a(&mut self, a: f64) {
+    /// Set the value of the a parameter
+    ///
+    /// # Example
+    /// ```rust
+    /// # use rv::dist::Kumaraswamy;
+    /// let mut kuma = Kumaraswamy::new(1.0, 5.0).unwrap();
+    /// assert_eq!(kuma.a(), 1.0);
+    ///
+    /// kuma.set_a(2.3).unwrap();
+    /// assert_eq!(kuma.a(), 2.3);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Kumaraswamy;
+    /// # let mut kuma = Kumaraswamy::new(1.0, 5.0).unwrap();
+    /// assert!(kuma.set_a(2.3).is_ok());
+    /// assert!(kuma.set_a(0.0).is_err());
+    /// assert!(kuma.set_a(std::f64::INFINITY).is_err());
+    /// assert!(kuma.set_a(std::f64::NEG_INFINITY).is_err());
+    /// assert!(kuma.set_a(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_a(&mut self, a: f64) -> Result<(), KumaraswamyError> {
+        if a <= 0.0 {
+            Err(KumaraswamyError::ATooLow { a })
+        } else if !a.is_finite() {
+            Err(KumaraswamyError::ANotFinite { a })
+        } else {
+            self.set_a_unchecked(a);
+            Ok(())
+        }
+    }
+
+    /// Set the value of the a parameter without input validation
+    #[inline]
+    pub fn set_a_unchecked(&mut self, a: f64) {
         self.a = a;
         self.ab_ln = OnceCell::new();
     }
 
-    pub fn set_b(&mut self, b: f64) {
+    /// Set the value of the b parameter
+    ///
+    /// # Example
+    /// ```rust
+    /// # use rv::dist::Kumaraswamy;
+    /// let mut kuma = Kumaraswamy::new(1.0, 5.0).unwrap();
+    /// assert_eq!(kuma.b(), 5.0);
+    ///
+    /// kuma.set_b(2.3).unwrap();
+    /// assert_eq!(kuma.b(), 2.3);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Kumaraswamy;
+    /// # let mut kuma = Kumaraswamy::new(1.0, 5.0).unwrap();
+    /// assert!(kuma.set_b(2.3).is_ok());
+    /// assert!(kuma.set_b(0.0).is_err());
+    /// assert!(kuma.set_b(std::f64::INFINITY).is_err());
+    /// assert!(kuma.set_b(std::f64::NEG_INFINITY).is_err());
+    /// assert!(kuma.set_b(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_b(&mut self, b: f64) -> Result<(), KumaraswamyError> {
+        if b <= 0.0 {
+            Err(KumaraswamyError::BTooLow { b })
+        } else if !b.is_finite() {
+            Err(KumaraswamyError::BNotFinite { b })
+        } else {
+            self.set_b_unchecked(b);
+            Ok(())
+        }
+    }
+
+    /// Set the value of the b parameter without input validation
+    #[inline]
+    pub fn set_b_unchecked(&mut self, b: f64) {
         self.b = b;
         self.ab_ln = OnceCell::new();
     }
@@ -340,15 +421,35 @@ impl Entropy for Kumaraswamy {
     }
 }
 
+impl std::error::Error for KumaraswamyError {}
+
+impl fmt::Display for KumaraswamyError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ATooLow { a } => {
+                write!(f, "a ({}) must be greater than zero", a)
+            }
+            Self::ANotFinite { a } => write!(f, "non-finite a: {}", a),
+            Self::BTooLow { b } => {
+                write!(f, "b ({}) must be greater than zero", b)
+            }
+            Self::BNotFinite { b } => write!(f, "non-finite b: {}", b),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::dist::{Beta, Gamma, LogNormal};
     use crate::misc::ks_test;
     use crate::misc::quad;
+    use crate::test_basic_impls;
 
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!(Kumaraswamy::centered(1.2).unwrap());
 
     #[test]
     fn cdf_uniform_midpoint() {
@@ -514,7 +615,7 @@ mod tests {
         let mut kuma = Kumaraswamy::uniform();
         assert::close(kuma.pdf(&0.3), 1.0, 1E-10);
 
-        kuma.set_a(2.0);
+        kuma.set_a(2.0).unwrap();
         assert::close(
             kuma.pdf(&0.3),
             Beta::new(2.0, 1.0).unwrap().pdf(&0.3_f64),
@@ -527,7 +628,7 @@ mod tests {
         let mut kuma = Kumaraswamy::uniform();
         assert::close(kuma.pdf(&0.3), 1.0, 1E-10);
 
-        kuma.set_b(2.0);
+        kuma.set_b(2.0).unwrap();
         assert::close(
             kuma.pdf(&0.3),
             Beta::new(1.0, 2.0).unwrap().pdf(&0.3_f64),
@@ -536,7 +637,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "serde_support")]
+    #[cfg(feature = "serde1")]
     fn should_deserialize_without_ab_ln() {
         use indoc::indoc;
 

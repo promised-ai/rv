@@ -1,14 +1,14 @@
 //! Dirichlet and Symmetric Dirichlet distributions over simplexes
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::vec_to_string;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use rand_distr::Gamma as RGamma;
 use special::Gamma as _;
+use std::fmt;
 
 /// Symmetric [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
 /// where all alphas are the same.
@@ -16,25 +16,22 @@ use special::Gamma as _;
 /// `SymmetricDirichlet { alpha, k }` is mathematicall equivalent to
 /// `Dirichlet { alphas: vec![alpha; k] }`. This version has some extra
 /// optimizations to seep up computing the PDF and drawing random vectors.
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct SymmetricDirichlet {
-    #[set = "pub"]
     alpha: f64,
     k: usize,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum DirichletError {
-    /// alpha vector is empty
-    AlphasEmptyError,
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+pub enum SymmetricDirichletError {
     /// k parameter is zero
-    KIsZeroError,
+    KIsZero,
     /// alpha parameter(s) is less than or equal to zero
-    AlphaTooLowError,
+    AlphaTooLow { alpha: f64 },
     /// alpha parameter(s) is infinite or NaN
-    AlphaNotFiniteError,
+    AlphaNotFinite { alpha: f64 },
 }
 
 impl SymmetricDirichlet {
@@ -43,13 +40,13 @@ impl SymmetricDirichlet {
     /// # Arguments
     /// - alpha: The Dirichlet weight.
     /// - k : The number of weights. `alpha` will be replicated `k` times.
-    pub fn new(alpha: f64, k: usize) -> Result<Self, DirichletError> {
+    pub fn new(alpha: f64, k: usize) -> Result<Self, SymmetricDirichletError> {
         if k == 0 {
-            Err(DirichletError::KIsZeroError)
+            Err(SymmetricDirichletError::KIsZero)
         } else if alpha <= 0.0 {
-            Err(DirichletError::AlphaTooLowError)
+            Err(SymmetricDirichletError::AlphaTooLow { alpha })
         } else if !alpha.is_finite() {
-            Err(DirichletError::AlphaNotFiniteError)
+            Err(SymmetricDirichletError::AlphaNotFinite { alpha })
         } else {
             Ok(SymmetricDirichlet { alpha, k })
         }
@@ -70,9 +67,9 @@ impl SymmetricDirichlet {
     /// let symdir = SymmetricDirichlet::jeffreys(4).unwrap();
     /// assert_eq!(symdir, SymmetricDirichlet::new(0.5, 4).unwrap());
     /// ```
-    pub fn jeffreys(k: usize) -> Result<Self, DirichletError> {
+    pub fn jeffreys(k: usize) -> Result<Self, SymmetricDirichletError> {
         if k == 0 {
-            Err(DirichletError::KIsZeroError)
+            Err(SymmetricDirichletError::KIsZero)
         } else {
             Ok(SymmetricDirichlet { alpha: 0.5, k })
         }
@@ -89,6 +86,50 @@ impl SymmetricDirichlet {
     /// ```
     pub fn alpha(&self) -> f64 {
         self.alpha
+    }
+
+    /// Set the value of alpha
+    ///
+    /// # Example
+    /// ```rust
+    /// # use rv::dist::SymmetricDirichlet;
+    /// let mut symdir = SymmetricDirichlet::new(1.1, 5).unwrap();
+    /// assert_eq!(symdir.alpha(), 1.1);
+    ///
+    /// symdir.set_alpha(2.3).unwrap();
+    /// assert_eq!(symdir.alpha(), 2.3);
+    /// ```
+    ///
+    /// Will error for invalid parameters
+    ///
+    /// ```rust
+    /// # use rv::dist::SymmetricDirichlet;
+    /// # let mut symdir = SymmetricDirichlet::new(1.1, 5).unwrap();
+    /// assert!(symdir.set_alpha(0.5).is_ok());
+    /// assert!(symdir.set_alpha(0.0).is_err());
+    /// assert!(symdir.set_alpha(-1.0).is_err());
+    /// assert!(symdir.set_alpha(std::f64::INFINITY).is_err());
+    /// assert!(symdir.set_alpha(std::f64::NEG_INFINITY).is_err());
+    /// assert!(symdir.set_alpha(std::f64::NAN).is_err());
+    /// ```
+    pub fn set_alpha(
+        &mut self,
+        alpha: f64,
+    ) -> Result<(), SymmetricDirichletError> {
+        if alpha <= 0.0 {
+            Err(SymmetricDirichletError::AlphaTooLow { alpha })
+        } else if !alpha.is_finite() {
+            Err(SymmetricDirichletError::AlphaNotFinite { alpha })
+        } else {
+            self.set_alpha_unchecked(alpha);
+            Ok(())
+        }
+    }
+
+    /// Set the value of alpha without input validation
+    #[inline]
+    pub fn set_alpha_unchecked(&mut self, alpha: f64) {
+        self.alpha = alpha;
     }
 
     /// Get the number of weights, k
@@ -133,10 +174,23 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+pub enum DirichletError {
+    /// k parameter is zero
+    KIsZero,
+    /// alpha vector is empty
+    AlphasEmpty,
+    /// alphas parameter has one or more entries less than or equal to zero
+    AlphaTooLow { ix: usize, alpha: f64 },
+    /// alphas parameter has one or infinite or NaN entries
+    AlphaNotFinite { ix: usize, alpha: f64 },
+}
+
 /// [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
 /// over points on the k-simplex.
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Dirichlet {
     /// A `Vec` of real numbers in (0, ∞)
     alphas: Vec<f64>,
@@ -158,16 +212,14 @@ impl Dirichlet {
     /// Creates a `Dirichlet` with a given `alphas` vector
     pub fn new(alphas: Vec<f64>) -> Result<Self, DirichletError> {
         if alphas.is_empty() {
-            return Err(DirichletError::AlphasEmptyError);
+            return Err(DirichletError::AlphasEmpty);
         }
 
-        alphas.iter().fold(Ok(()), |acc, &alpha| {
-            if acc.is_err() {
-                acc
-            } else if alpha <= 0.0 {
-                Err(DirichletError::AlphaTooLowError)
+        alphas.iter().enumerate().try_for_each(|(ix, &alpha)| {
+            if alpha <= 0.0 {
+                Err(DirichletError::AlphaTooLow { ix, alpha })
             } else if !alpha.is_finite() {
-                Err(DirichletError::AlphaNotFiniteError)
+                Err(DirichletError::AlphaNotFinite { ix, alpha })
             } else {
                 Ok(())
             }
@@ -204,11 +256,11 @@ impl Dirichlet {
     /// ```
     pub fn symmetric(alpha: f64, k: usize) -> Result<Self, DirichletError> {
         if k == 0 {
-            Err(DirichletError::KIsZeroError)
+            Err(DirichletError::KIsZero)
         } else if alpha <= 0.0 {
-            Err(DirichletError::AlphaTooLowError)
+            Err(DirichletError::AlphaTooLow { ix: 0, alpha })
         } else if !alpha.is_finite() {
-            Err(DirichletError::AlphaNotFiniteError)
+            Err(DirichletError::AlphaNotFinite { ix: 0, alpha })
         } else {
             Ok(Dirichlet {
                 alphas: vec![alpha; k],
@@ -238,7 +290,11 @@ impl Dirichlet {
     /// assert::close(dir.ln_f(&x), symdir.ln_f(&x), 1E-12);
     /// ```
     pub fn jeffreys(k: usize) -> Result<Self, DirichletError> {
-        Dirichlet::symmetric(0.5, k)
+        if k == 0 {
+            Err(DirichletError::KIsZero)
+        } else {
+            Ok(Dirichlet::new_unchecked(vec![0.5; k]))
+        }
     }
 
     /// The length of `alphas` / the number of categories
@@ -321,14 +377,49 @@ impl Support<Vec<f64>> for Dirichlet {
     }
 }
 
+impl std::error::Error for SymmetricDirichletError {}
+impl std::error::Error for DirichletError {}
+
+impl fmt::Display for SymmetricDirichletError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::AlphaTooLow { alpha } => {
+                write!(f, "alpha ({}) must be greater than zero", alpha)
+            }
+            Self::AlphaNotFinite { alpha } => {
+                write!(f, "alpha ({}) was non-finite", alpha)
+            }
+            Self::KIsZero => write!(f, "k must be greater than zero"),
+        }
+    }
+}
+
+impl fmt::Display for DirichletError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::KIsZero => write!(f, "k must be greater than zero"),
+            Self::AlphasEmpty => write!(f, "alphas vector was empty"),
+            Self::AlphaTooLow { ix, alpha } => {
+                write!(f, "Invalid alpha at index {}: {} <= 0.0", ix, alpha)
+            }
+            Self::AlphaNotFinite { ix, alpha } => {
+                write!(f, "Non-finite alpha at index {}: {}", ix, alpha)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_basic_impls;
 
     const TOL: f64 = 1E-12;
 
     mod dir {
         use super::*;
+
+        test_basic_impls!(Dirichlet::jeffreys(4).unwrap());
 
         #[test]
         fn properly_sized_points_on_simplex_should_be_in_support() {
@@ -404,6 +495,8 @@ mod tests {
 
     mod symdir {
         use super::*;
+
+        test_basic_impls!(SymmetricDirichlet::jeffreys(4).unwrap());
 
         #[test]
         fn sample_should_return_the_proper_number_of_draws() {

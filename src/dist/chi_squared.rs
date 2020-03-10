@@ -1,13 +1,13 @@
 //! Χ</sup>2</sup> over x in (0, ∞)
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use special::Gamma as _;
 use std::f64::consts::LN_2;
+use std::fmt;
 
 /// [Χ<sup>2</sup> distribution](https://en.wikipedia.org/wiki/Chi-squared_distribution)
 /// Χ<sup>2</sup>(k).
@@ -19,21 +19,20 @@ use std::f64::consts::LN_2;
 ///
 /// let x2 = ChiSquared::new(2.0).unwrap();
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct ChiSquared {
     /// Degrees of freedom in (0, ∞)
-    #[set = "pub"]
     k: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum ChiSquaredError {
     /// k parameter is less than or equal to zero
-    KTooLowError,
+    KTooLow { k: f64 },
     /// k parameter is infinite or NaN
-    KNotFiniteError,
+    KNotFinite { k: f64 },
 }
 
 impl ChiSquared {
@@ -43,9 +42,9 @@ impl ChiSquared {
     /// - k: Degrees of freedom in (0, ∞)
     pub fn new(k: f64) -> Result<Self, ChiSquaredError> {
         if k <= 0.0 {
-            Err(ChiSquaredError::KTooLowError)
+            Err(ChiSquaredError::KTooLow { k })
         } else if !k.is_finite() {
-            Err(ChiSquaredError::KNotFiniteError)
+            Err(ChiSquaredError::KNotFinite { k })
         } else {
             Ok(ChiSquared { k })
         }
@@ -68,6 +67,45 @@ impl ChiSquared {
     /// ```
     pub fn k(&self) -> f64 {
         self.k
+    }
+
+    /// Get the degrees of freedom, `k`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::ChiSquared;
+    /// let mut x2 = ChiSquared::new(1.2).unwrap();
+    ///
+    /// x2.set_k(2.2).unwrap();
+    /// assert_eq!(x2.k(), 2.2);
+    /// ```
+    ///
+    /// Will error given invalid values.
+    ///
+    /// ```rust
+    /// # use rv::dist::ChiSquared;
+    /// # let mut x2 = ChiSquared::new(1.2).unwrap();
+    /// assert!(x2.set_k(2.2).is_ok());
+    /// assert!(x2.set_k(0.0).is_err());
+    /// assert!(x2.set_k(-1.0).is_err());
+    /// assert!(x2.set_k(std::f64::NAN).is_err());
+    /// assert!(x2.set_k(std::f64::INFINITY).is_err());
+    /// ```
+    pub fn set_k(&mut self, k: f64) -> Result<(), ChiSquaredError> {
+        if !k.is_finite() {
+            Err(ChiSquaredError::KNotFinite { k })
+        } else if k > 0.0 {
+            self.set_k_unchecked(k);
+            Ok(())
+        } else {
+            Err(ChiSquaredError::KTooLow { k })
+        }
+    }
+
+    #[inline]
+    pub fn set_k_unchecked(&mut self, k: f64) {
+        self.k = k
     }
 }
 
@@ -148,15 +186,31 @@ impl Kurtosis for ChiSquared {
 impl_traits!(f64);
 impl_traits!(f32);
 
+impl std::error::Error for ChiSquaredError {}
+
+impl fmt::Display for ChiSquaredError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::KTooLow { k } => {
+                write!(f, "k ({}) must be greater than zero", k)
+            }
+            Self::KNotFinite { k } => write!(f, "k ({}) must be finite", k),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::ks_test;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!(ChiSquared::new(3.2).unwrap());
 
     #[test]
     fn new() {

@@ -3,18 +3,23 @@ use crate::misc::ln_binom;
 use crate::traits::*;
 use once_cell::sync::OnceCell;
 use rand::Rng;
+use std::fmt;
 
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 /// Negative Binomial distribution errors
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum NegBinomialError {
     /// The probability parameter, p, is not in [0, 1]
-    POutOfRangeError,
+    POutOfRange { p: f64 },
+    /// the p parameter is infinite or NaN
+    PNotFinite { p: f64 },
     /// R is less that 1.0
-    RLessThanOneError,
+    RLessThanOne { r: f64 },
+    /// the r parameter is infinite or NaN
+    RNotFinite { r: f64 },
 }
 
 /// Negative Binomial distribution NBin(r, p).
@@ -28,15 +33,15 @@ pub enum NegBinomialError {
 /// - r: The number of successes before the trials are stopped
 /// - p: The success probability
 #[derive(Debug)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct NegBinomial {
     r: f64,
     p: f64,
     // ln(1-p)
-    #[cfg_attr(feature = "serde_support", serde(skip))]
+    #[cfg_attr(feature = "serde1", serde(skip))]
     ln_1mp: OnceCell<f64>,
     // r*ln(p)
-    #[cfg_attr(feature = "serde_support", serde(skip))]
+    #[cfg_attr(feature = "serde1", serde(skip))]
     r_ln_p: OnceCell<f64>,
 }
 
@@ -61,9 +66,13 @@ impl NegBinomial {
     /// Create a new Negative Binomial distribution
     pub fn new(r: f64, p: f64) -> Result<Self, NegBinomialError> {
         if r < 1.0 {
-            Err(NegBinomialError::RLessThanOneError)
+            Err(NegBinomialError::RLessThanOne { r })
+        } else if !r.is_finite() {
+            Err(NegBinomialError::RNotFinite { r })
         } else if 1.0 < p || p < 0.0 {
-            Err(NegBinomialError::POutOfRangeError)
+            Err(NegBinomialError::POutOfRange { p })
+        } else if !p.is_finite() {
+            Err(NegBinomialError::PNotFinite { p })
         } else {
             Ok(Self::new_unchecked(r, p))
         }
@@ -100,16 +109,40 @@ impl NegBinomial {
     ///
     /// assert!((nbin.r() - 2.5).abs() < 1E-10);
     /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::NegBinomial;
+    /// # let mut nbin = NegBinomial::new(4.0, 0.8).unwrap();
+    /// assert!(nbin.set_r(2.0).is_ok());
+    /// assert!(nbin.set_r(1.0).is_ok());
+    ///
+    /// // r must be >= 1.0
+    /// assert!(nbin.set_r(0.99).is_err());
+    ///
+    /// assert!(nbin.set_r(std::f64::INFINITY).is_err());
+    /// assert!(nbin.set_r(std::f64::NEG_INFINITY).is_err());
+    /// assert!(nbin.set_r(std::f64::NAN).is_err());
+    /// ```
     #[inline]
     pub fn set_r(&mut self, r: f64) -> Result<(), NegBinomialError> {
         if r < 1.0 {
-            Err(NegBinomialError::RLessThanOneError)
+            Err(NegBinomialError::RLessThanOne { r })
+        } else if !r.is_finite() {
+            Err(NegBinomialError::RNotFinite { r })
         } else {
-            self.r = r;
-            self.ln_1mp = OnceCell::new();
-            self.r_ln_p = OnceCell::new();
+            self.set_r_unchecked(r);
             Ok(())
         }
+    }
+
+    /// Set the value of r without input validation
+    #[inline]
+    pub fn set_r_unchecked(&mut self, r: f64) {
+        self.r = r;
+        self.ln_1mp = OnceCell::new();
+        self.r_ln_p = OnceCell::new();
     }
 
     /// Get the value of the `p` parameter
@@ -133,16 +166,45 @@ impl NegBinomial {
     ///
     /// assert!((nbin.p() - 0.51).abs() < 1E-10);
     /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::NegBinomial;
+    /// # let mut nbin = NegBinomial::new(4.0, 0.8).unwrap();
+    /// // OK values in [0, 1]
+    /// assert!(nbin.set_p(0.51).is_ok());
+    /// assert!(nbin.set_p(0.0).is_ok());
+    /// assert!(nbin.set_p(1.0).is_ok());
+    ///
+    /// // Too low, not in [0, 1]
+    /// assert!(nbin.set_p(-0.1).is_err());
+    ///
+    /// // Too high, not in [0, 1]
+    /// assert!(nbin.set_p(-1.1).is_err());
+    ///
+    /// assert!(nbin.set_p(std::f64::INFINITY).is_err());
+    /// assert!(nbin.set_p(std::f64::NEG_INFINITY).is_err());
+    /// assert!(nbin.set_p(std::f64::NAN).is_err());
+    /// ```
     #[inline]
     pub fn set_p(&mut self, p: f64) -> Result<(), NegBinomialError> {
         if 1.0 < p || p < 0.0 {
-            Err(NegBinomialError::POutOfRangeError)
+            Err(NegBinomialError::POutOfRange { p })
+        } else if !p.is_finite() {
+            Err(NegBinomialError::PNotFinite { p })
         } else {
-            self.p = p;
-            self.ln_1mp = OnceCell::new();
-            self.r_ln_p = OnceCell::new();
+            self.set_p_unchecked(p);
             Ok(())
         }
+    }
+
+    /// Set the value of p without input validation
+    #[inline]
+    pub fn set_p_unchecked(&mut self, p: f64) {
+        self.p = p;
+        self.ln_1mp = OnceCell::new();
+        self.r_ln_p = OnceCell::new();
     }
 
     #[inline]
@@ -239,10 +301,31 @@ impl_traits!(u8);
 impl_traits!(u16);
 impl_traits!(u32);
 
+impl std::error::Error for NegBinomialError {}
+
+impl fmt::Display for NegBinomialError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::POutOfRange { p } => {
+                write!(f, "p ({}) not in range [0, 1]", p)
+            }
+            Self::PNotFinite { p } => write!(f, "non-finite p: {}", p),
+            Self::RLessThanOne { r } => {
+                write!(f, "r ({}) must be one or greater", r)
+            }
+            Self::RNotFinite { r } => write!(f, "non-finite r: {}", r),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_basic_impls;
+
     const TOL: f64 = 1E-10;
+
+    test_basic_impls!(NegBinomial::new(2.1, 0.6).unwrap());
 
     #[test]
     fn new_with_good_params() {
@@ -261,7 +344,7 @@ mod tests {
         let nbin_res = NegBinomial::new(0.99999, 0.82);
 
         match nbin_res {
-            Err(NegBinomialError::RLessThanOneError) => (),
+            Err(NegBinomialError::RLessThanOne { .. }) => (),
             Err(err) => panic!("wrong error {:?}", err),
             Ok(_) => panic!("should have failed"),
         }
@@ -270,13 +353,13 @@ mod tests {
     #[test]
     fn new_with_too_low_or_high_p_errors() {
         match NegBinomial::new(2.0, -0.1) {
-            Err(NegBinomialError::POutOfRangeError) => (),
+            Err(NegBinomialError::POutOfRange { .. }) => (),
             Err(err) => panic!("wrong error {:?}", err),
             Ok(_) => panic!("should have failed"),
         }
 
         match NegBinomial::new(2.0, 1.001) {
-            Err(NegBinomialError::POutOfRangeError) => (),
+            Err(NegBinomialError::POutOfRange { .. }) => (),
             Err(err) => panic!("wrong error {:?}", err),
             Ok(_) => panic!("should have failed"),
         }
@@ -297,7 +380,7 @@ mod tests {
         assert::close(nbin.r(), 3.0, TOL);
 
         match nbin.set_r(0.1) {
-            Err(NegBinomialError::RLessThanOneError) => (),
+            Err(NegBinomialError::RLessThanOne { .. }) => (),
             Err(err) => panic!("wrong error {:?}", err),
             Ok(_) => panic!("should have failed"),
         }
@@ -318,7 +401,7 @@ mod tests {
         assert::close(nbin.p(), 0.5, TOL);
 
         match nbin.set_p(-0.1) {
-            Err(NegBinomialError::POutOfRangeError) => (),
+            Err(NegBinomialError::POutOfRange { .. }) => (),
             Err(err) => panic!("wrong error {:?}", err),
             Ok(_) => panic!("should have failed"),
         }
@@ -330,7 +413,7 @@ mod tests {
         assert::close(nbin.p(), 0.5, TOL);
 
         match nbin.set_p(1.1) {
-            Err(NegBinomialError::POutOfRangeError) => (),
+            Err(NegBinomialError::POutOfRange { .. }) => (),
             Err(err) => panic!("wrong error {:?}", err),
             Ok(_) => panic!("should have failed"),
         }

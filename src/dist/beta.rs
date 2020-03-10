@@ -1,14 +1,15 @@
 //! Beta distribution over x in (0, 1)
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
+use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Beta as _;
 use special::Gamma as _;
 use std::f64;
+use std::fmt;
 
 /// [Beta distribution](https://en.wikipedia.org/wiki/Beta_distribution),
 /// Beta(α, β) over x in (0, 1).
@@ -37,26 +38,43 @@ use std::f64;
 /// let p_pred_heads = beta.pp(&true, &DataOrSuffStat::Data(&flips)); // 9/15
 /// assert!((p_pred_heads - 3.0/5.0).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Beta {
-    #[set = "pub"]
     alpha: f64,
-    #[set = "pub"]
     beta: f64,
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    /// Cached ln(Beta(a, b))
+    ln_beta_ab: OnceCell<f64>,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+impl Clone for Beta {
+    fn clone(&self) -> Self {
+        Self {
+            alpha: self.alpha,
+            beta: self.beta,
+            ln_beta_ab: OnceCell::from(self.ln_beta_ab.clone()),
+        }
+    }
+}
+
+impl PartialEq for Beta {
+    fn eq(&self, other: &Beta) -> bool {
+        self.alpha == other.alpha && self.beta == other.beta
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum BetaError {
     /// The alpha parameter is less than or equal too zero
-    AlphaTooLowError,
+    AlphaTooLow { alpha: f64 },
     /// The alpha parameter is infinite or NaN
-    AlphaNotFiniteError,
+    AlphaNotFinite { alpha: f64 },
     /// The beta parameter is less than or equal to zero
-    BetaTooLowError,
+    BetaTooLow { beta: f64 },
     /// The beta parameter is infinite or NaN
-    BetaNotFiniteError,
+    BetaNotFinite { beta: f64 },
 }
 
 impl Beta {
@@ -80,21 +98,30 @@ impl Beta {
     /// ```
     pub fn new(alpha: f64, beta: f64) -> Result<Self, BetaError> {
         if alpha <= 0.0 {
-            Err(BetaError::AlphaTooLowError)
+            Err(BetaError::AlphaTooLow { alpha })
         } else if !alpha.is_finite() {
-            Err(BetaError::AlphaNotFiniteError)
+            Err(BetaError::AlphaNotFinite { alpha })
         } else if beta <= 0.0 {
-            Err(BetaError::BetaTooLowError)
+            Err(BetaError::BetaTooLow { beta })
         } else if !beta.is_finite() {
-            Err(BetaError::BetaNotFiniteError)
+            Err(BetaError::BetaNotFinite { beta })
         } else {
-            Ok(Beta { alpha, beta })
+            Ok(Beta {
+                alpha,
+                beta,
+                ln_beta_ab: OnceCell::new(),
+            })
         }
     }
 
     /// Creates a new Beta without checking whether the parameters are valid.
+    #[inline]
     pub fn new_unchecked(alpha: f64, beta: f64) -> Self {
-        Beta { alpha, beta }
+        Beta {
+            alpha,
+            beta,
+            ln_beta_ab: OnceCell::new(),
+        }
     }
 
     /// Create a `Beta` distribution with even density over (0, 1).
@@ -106,10 +133,12 @@ impl Beta {
     /// let beta = Beta::uniform();
     /// assert_eq!(beta, Beta::new(1.0, 1.0).unwrap());
     /// ```
+    #[inline]
     pub fn uniform() -> Self {
         Beta {
             alpha: 1.0,
             beta: 1.0,
+            ln_beta_ab: OnceCell::new(),
         }
     }
 
@@ -123,10 +152,12 @@ impl Beta {
     /// let beta = Beta::jeffreys();
     /// assert_eq!(beta, Beta::new(0.5, 0.5).unwrap());
     /// ```
+    #[inline]
     pub fn jeffreys() -> Self {
         Beta {
             alpha: 0.5,
             beta: 0.5,
+            ln_beta_ab: OnceCell::new(),
         }
     }
 
@@ -139,8 +170,50 @@ impl Beta {
     /// let beta = Beta::new(1.0, 5.0).unwrap();
     /// assert_eq!(beta.alpha(), 1.0);
     /// ```
+    #[inline]
     pub fn alpha(&self) -> f64 {
         self.alpha
+    }
+
+    /// Set the alpha parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Beta;
+    /// let mut beta = Beta::new(1.0, 5.0).unwrap();
+    ///
+    /// beta.set_alpha(2.0).unwrap();
+    /// assert_eq!(beta.alpha(), 2.0);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Beta;
+    /// # let mut beta = Beta::new(1.0, 5.0).unwrap();
+    /// assert!(beta.set_alpha(0.1).is_ok());
+    /// assert!(beta.set_alpha(0.0).is_err());
+    /// assert!(beta.set_alpha(-1.0).is_err());
+    /// assert!(beta.set_alpha(std::f64::INFINITY).is_err());
+    /// assert!(beta.set_alpha(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_alpha(&mut self, alpha: f64) -> Result<(), BetaError> {
+        if alpha <= 0.0 {
+            Err(BetaError::AlphaTooLow { alpha })
+        } else if !alpha.is_finite() {
+            Err(BetaError::AlphaNotFinite { alpha })
+        } else {
+            self.set_alpha_unchecked(alpha);
+            Ok(())
+        }
+    }
+
+    /// Set alpha without input validation
+    #[inline]
+    pub fn set_alpha_unchecked(&mut self, alpha: f64) {
+        self.alpha = alpha
     }
 
     /// Get the beta parameter
@@ -152,8 +225,58 @@ impl Beta {
     /// let beta = Beta::new(1.0, 5.0).unwrap();
     /// assert_eq!(beta.beta(), 5.0);
     /// ```
+    #[inline]
     pub fn beta(&self) -> f64 {
         self.beta
+    }
+
+    /// Set the beta parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Beta;
+    /// let mut beta = Beta::new(1.0, 5.0).unwrap();
+    ///
+    /// beta.set_beta(2.0).unwrap();
+    /// assert_eq!(beta.beta(), 2.0);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Beta;
+    /// # let mut beta = Beta::new(1.0, 5.0).unwrap();
+    /// assert!(beta.set_beta(0.1).is_ok());
+    /// assert!(beta.set_beta(0.0).is_err());
+    /// assert!(beta.set_beta(-1.0).is_err());
+    /// assert!(beta.set_beta(std::f64::INFINITY).is_err());
+    /// assert!(beta.set_beta(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_beta(&mut self, beta: f64) -> Result<(), BetaError> {
+        if beta <= 0.0 {
+            Err(BetaError::BetaTooLow { beta })
+        } else if !beta.is_finite() {
+            Err(BetaError::BetaNotFinite { beta })
+        } else {
+            self.set_beta_unchecked(beta);
+            Ok(())
+        }
+    }
+
+    /// Set beta without input validation
+    #[inline]
+    pub fn set_beta_unchecked(&mut self, beta: f64) {
+        self.beta = beta
+    }
+
+    /// Evaluate or fetch cached ln(a*b)
+    #[inline]
+    fn ln_beta_ab(&self) -> f64 {
+        *self
+            .ln_beta_ab
+            .get_or_init(|| self.alpha.ln_beta(self.beta))
     }
 }
 
@@ -177,7 +300,7 @@ macro_rules! impl_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 (self.alpha - 1.0) * f64::from(*x).ln()
                     + (self.beta - 1.0) * (1.0 - f64::from(*x)).ln()
-                    - self.alpha.ln_beta(self.beta)
+                    - self.ln_beta_ab()
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -202,7 +325,7 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for Beta {
             fn cdf(&self, x: &$kind) -> f64 {
-                let ln_beta = self.alpha.ln_beta(self.beta);
+                let ln_beta = self.ln_beta_ab();
                 (*x as f64).inc_beta(self.alpha, self.beta, ln_beta)
             }
         }
@@ -249,7 +372,7 @@ impl Variance<f64> for Beta {
 impl Entropy for Beta {
     fn entropy(&self) -> f64 {
         let apb = self.alpha + self.beta;
-        self.alpha.ln_beta(self.beta)
+        self.ln_beta_ab()
             - (self.alpha - 1.0) * self.alpha.digamma()
             - (self.beta - 1.0) * self.beta.digamma()
             + (apb - 2.0) * apb.digamma()
@@ -279,15 +402,39 @@ impl Kurtosis for Beta {
 impl_traits!(f32);
 impl_traits!(f64);
 
+impl std::error::Error for BetaError {}
+
+impl fmt::Display for BetaError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::AlphaTooLow { alpha } => {
+                write!(f, "alpha ({}) must be greater than zero", alpha)
+            }
+            Self::AlphaNotFinite { alpha } => {
+                write!(f, "alpha ({}) was non finite", alpha)
+            }
+            Self::BetaTooLow { beta } => {
+                write!(f, "beta ({}) must be greater than zero", beta)
+            }
+            Self::BetaNotFinite { beta } => {
+                write!(f, "beta ({}) was non finite", beta)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::ks_test;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!(Beta::jeffreys());
 
     #[test]
     fn new() {

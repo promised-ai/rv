@@ -2,13 +2,11 @@
 //! Heavily inspired by SciPy's implementation which can be found here:
 //! https://github.com/scipy/scipy/blob/a767030252ba3f7c8e2924847dffa7024171657b/scipy/special/cephes/kolmogorov.c#L153
 
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
-
-use getset::Setters;
 use rand::Rng;
 use std::f64::consts::{PI, SQRT_2};
 
@@ -37,8 +35,8 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
 /// const EXPECTED: f64 = 0.26999967167735456;
 /// assert!((sf - EXPECTED).abs() < 1E-15);
 /// ```
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Setters, Default)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct KsTwoAsymptotic {}
 
 struct CdfPdf {
@@ -53,6 +51,7 @@ const MAX_ITERS: usize = 2000;
 
 impl KsTwoAsymptotic {
     /// Create a new KsTwoAsymptotic distribution
+    #[inline]
     pub fn new() -> Self {
         Self {}
     }

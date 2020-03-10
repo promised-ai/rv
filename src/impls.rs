@@ -213,7 +213,7 @@ mod tests {
         assert::close(h, 2.051658739391058, 1E-7);
     }
 
-    #[cfg(feature = "serde_support")]
+    #[cfg(feature = "serde1")]
     #[test]
     fn messy_jsd_should_be_positive() {
         // recreates bug in dependent crate where JSD was negative

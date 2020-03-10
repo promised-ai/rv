@@ -1,12 +1,11 @@
 //! Skellam distribution on signed integers
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::dist::Poisson;
 use crate::impl_display;
 use crate::misc::bessel::bessel_iv;
 use crate::traits::*;
-use getset::Setters;
 use lru::LruCache;
 use rand::Rng;
 use std::cell::RefCell;
@@ -27,17 +26,16 @@ use std::cell::RefCell;
 /// let xs: Vec<i32> = skel.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
-#[derive(Debug, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Skellam {
     /// Mean of first poisson
-    #[set = "pub"]
     mu_1: f64,
     /// Mean of second poisson
-    #[set = "pub"]
     mu_2: f64,
-    /// Cached values of bessel_iv
-    #[cfg_attr(feature = "serde_support", serde(skip, default = "cache_default"))]
+    /// Cached values of bessel_iv. Note that the cache is not invalidated when
+    /// the values of mu_1 or mu_2 change.
+    #[cfg_attr(feature = "serde1", serde(skip, default = "cache_default"))]
     bessel_iv_cache: RefCell<LruCache<i32, f64>>,
 }
 
@@ -45,49 +43,37 @@ fn cache_default() -> RefCell<LruCache<i32, f64>> {
     RefCell::new(LruCache::new(100))
 }
 
-impl PartialEq for Skellam {
-    fn eq(&self, other: &Skellam) -> bool {
-        self.mu_1 == other.mu_1 && self.mu_2 == other.mu_2
-    }
-}
-
-impl Clone for Skellam {
-    fn clone(&self) -> Self {
-        let old_cache = self.bessel_iv_cache.borrow();
-        let mut cache = LruCache::new(old_cache.len());
-        for (key, value) in old_cache.iter() {
-            cache.put(*key, *value);
-        }
-        Skellam {
-            mu_1: self.mu_1,
-            mu_2: self.mu_2,
-            bessel_iv_cache: RefCell::new(cache),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum SkellamError {
-    /// The rate parameter is less than or equal to zero
-    RateTooLowError,
-    /// The rate parameter is infinite or NaN
-    RateNotFiniteError,
+    /// The first rate parameter is less than or equal to zero
+    Mu1TooLow { mu_1: f64 },
+    /// The first rate parameter is infinite or NaN
+    Mu1NotFinite { mu_1: f64 },
+    /// The second rate parameter is less than or equal to zero
+    Mu2TooLow { mu_2: f64 },
+    /// The second rate parameter is infinite or NaN
+    Mu2NotFinite { mu_2: f64 },
 }
 
 impl Skellam {
     /// Create a new Skellam distribution with given rates
     pub fn new(mu_1: f64, mu_2: f64) -> Result<Self, SkellamError> {
-        if mu_1 <= 0.0 || mu_2 <= 0.0 {
-            Err(SkellamError::RateTooLowError)
-        } else if !mu_1.is_finite() || !mu_2.is_finite() {
-            Err(SkellamError::RateNotFiniteError)
+        if mu_1 <= 0.0 {
+            Err(SkellamError::Mu1TooLow { mu_1 })
+        } else if mu_2 <= 0.0 {
+            Err(SkellamError::Mu2TooLow { mu_2 })
+        } else if !mu_1.is_finite() {
+            Err(SkellamError::Mu1NotFinite { mu_1 })
+        } else if !mu_2.is_finite() {
+            Err(SkellamError::Mu2NotFinite { mu_2 })
         } else {
             Ok(Self::new_unchecked(mu_1, mu_2))
         }
     }
 
     /// Creates a new Skellam without checking whether the parameters are valid.
+    #[inline]
     pub fn new_unchecked(mu_1: f64, mu_2: f64) -> Self {
         Skellam {
             mu_1,
@@ -105,8 +91,52 @@ impl Skellam {
     /// let skel = Skellam::new(2.0, 3.0).unwrap();
     /// assert_eq!(skel.mu_1(), 2.0);
     /// ```
+    #[inline]
     pub fn mu_1(&self) -> f64 {
         self.mu_1
+    }
+
+    /// Set the mu_1 (first rate) parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::Skellam;
+    /// let mut skel = Skellam::new(2.0, 1.0).unwrap();
+    /// assert_eq!(skel.mu_1(), 2.0);
+    ///
+    /// skel.set_mu_1(1.1).unwrap();
+    /// assert_eq!(skel.mu_1(), 1.1);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Skellam;
+    /// # let mut skel = Skellam::new(2.0, 1.0).unwrap();
+    /// assert!(skel.set_mu_1(1.1).is_ok());
+    /// assert!(skel.set_mu_1(0.0).is_err());
+    /// assert!(skel.set_mu_1(-1.0).is_err());
+    /// assert!(skel.set_mu_1(std::f64::INFINITY).is_err());
+    /// assert!(skel.set_mu_1(std::f64::NEG_INFINITY).is_err());
+    /// assert!(skel.set_mu_1(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_mu_1(&mut self, mu_1: f64) -> Result<(), SkellamError> {
+        if mu_1 <= 0.0 {
+            Err(SkellamError::Mu1TooLow { mu_1 })
+        } else if !mu_1.is_finite() {
+            Err(SkellamError::Mu1NotFinite { mu_1 })
+        } else {
+            self.set_mu_1_unchecked(mu_1);
+            Ok(())
+        }
+    }
+
+    /// Set the mu_1 (first rate) parameter without input validation
+    #[inline]
+    pub fn set_mu_1_unchecked(&mut self, mu_1: f64) {
+        self.mu_1 = mu_1;
     }
 
     /// Get the mu_2 parameter
@@ -118,8 +148,52 @@ impl Skellam {
     /// let skel = Skellam::new(2.0, 3.0).unwrap();
     /// assert_eq!(skel.mu_2(), 3.0);
     /// ```
+    #[inline]
     pub fn mu_2(&self) -> f64 {
         self.mu_2
+    }
+
+    /// Set the mu_2 (second rate) parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::Skellam;
+    /// let mut skel = Skellam::new(2.0, 1.0).unwrap();
+    /// assert_eq!(skel.mu_2(), 1.0);
+    ///
+    /// skel.set_mu_2(1.1).unwrap();
+    /// assert_eq!(skel.mu_2(), 1.1);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Skellam;
+    /// # let mut skel = Skellam::new(2.0, 1.0).unwrap();
+    /// assert!(skel.set_mu_2(1.1).is_ok());
+    /// assert!(skel.set_mu_2(0.0).is_err());
+    /// assert!(skel.set_mu_2(-1.0).is_err());
+    /// assert!(skel.set_mu_2(std::f64::INFINITY).is_err());
+    /// assert!(skel.set_mu_2(std::f64::NEG_INFINITY).is_err());
+    /// assert!(skel.set_mu_2(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_mu_2(&mut self, mu_2: f64) -> Result<(), SkellamError> {
+        if mu_2 <= 0.0 {
+            Err(SkellamError::Mu2TooLow { mu_2 })
+        } else if !mu_2.is_finite() {
+            Err(SkellamError::Mu2NotFinite { mu_2 })
+        } else {
+            self.set_mu_2_unchecked(mu_2);
+            Ok(())
+        }
+    }
+
+    /// Set the mu_2 (first rate) parameter without input validation
+    #[inline]
+    pub fn set_mu_2_unchecked(&mut self, mu_2: f64) {
+        self.mu_2 = mu_2;
     }
 
     /// Set the cache size on the internal LRU for Bessel Iv calls.
@@ -218,15 +292,39 @@ impl_traits!(i8);
 impl_traits!(i16);
 impl_traits!(i32);
 
+impl PartialEq for Skellam {
+    fn eq(&self, other: &Skellam) -> bool {
+        self.mu_1 == other.mu_1 && self.mu_2 == other.mu_2
+    }
+}
+
+impl Clone for Skellam {
+    fn clone(&self) -> Self {
+        let old_cache = self.bessel_iv_cache.borrow();
+        let mut cache = LruCache::new(old_cache.len());
+        for (key, value) in old_cache.iter() {
+            cache.put(*key, *value);
+        }
+        Skellam {
+            mu_1: self.mu_1,
+            mu_2: self.mu_2,
+            bessel_iv_cache: RefCell::new(cache),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::x2_test;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
+
+    test_basic_impls!(Skellam::new(0.5, 2.0).unwrap());
 
     #[test]
     fn new() {

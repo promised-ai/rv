@@ -1,13 +1,13 @@
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::data::PoissonSuffStat;
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use rand_distr::Poisson as RPossion;
 use special::Gamma as _;
+use std::fmt;
 
 /// [Possion distribution](https://en.wikipedia.org/wiki/Poisson_distribution)
 /// over x in {0, 1, ... }.
@@ -17,7 +17,7 @@ use special::Gamma as _;
 /// ```
 /// use rv::prelude::*;
 ///
-/// // Create Possion(λ=5.3)
+/// // Create Poisson(λ=5.3)
 /// let pois = Poisson::new(5.3).unwrap();
 ///
 /// // CDF at 5
@@ -28,29 +28,28 @@ use special::Gamma as _;
 /// let xs: Vec<u32> = pois.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Poisson {
-    #[set = "pub"]
     rate: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum PoissonError {
     /// The rate parameter is less than or equal to zero
-    RateTooLowError,
+    RateTooLow { rate: f64 },
     /// The rate parameter is infinite or NaN
-    RateNotFiniteError,
+    RateNotFinite { rate: f64 },
 }
 
 impl Poisson {
-    /// Create a new Possion distribution with given rate
+    /// Create a new Poisson distribution with given rate
     pub fn new(rate: f64) -> Result<Self, PoissonError> {
         if rate <= 0.0 {
-            Err(PoissonError::RateTooLowError)
+            Err(PoissonError::RateTooLow { rate })
         } else if !rate.is_finite() {
-            Err(PoissonError::RateNotFiniteError)
+            Err(PoissonError::RateNotFinite { rate })
         } else {
             Ok(Poisson { rate })
         }
@@ -72,6 +71,49 @@ impl Poisson {
     /// ```
     pub fn rate(&self) -> f64 {
         self.rate
+    }
+
+    /// Set the rate parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::Poisson;
+    /// let mut pois = Poisson::new(1.0).unwrap();
+    /// assert_eq!(pois.rate(), 1.0);
+    ///
+    /// pois.set_rate(1.1).unwrap();
+    /// assert_eq!(pois.rate(), 1.1);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Poisson;
+    /// # let mut pois = Poisson::new(1.0).unwrap();
+    /// assert!(pois.set_rate(1.1).is_ok());
+    /// assert!(pois.set_rate(0.0).is_err());
+    /// assert!(pois.set_rate(-1.0).is_err());
+    /// assert!(pois.set_rate(std::f64::INFINITY).is_err());
+    /// assert!(pois.set_rate(std::f64::NEG_INFINITY).is_err());
+    /// assert!(pois.set_rate(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_rate(&mut self, rate: f64) -> Result<(), PoissonError> {
+        if rate <= 0.0 {
+            Err(PoissonError::RateTooLow { rate })
+        } else if !rate.is_finite() {
+            Err(PoissonError::RateNotFinite { rate })
+        } else {
+            self.set_rate_unchecked(rate);
+            Ok(())
+        }
+    }
+
+    /// Set the rate parameter without input validation
+    #[inline]
+    pub fn set_rate_unchecked(&mut self, rate: f64) {
+        self.rate = rate;
     }
 }
 
@@ -161,15 +203,33 @@ impl_traits!(u8);
 impl_traits!(u16);
 impl_traits!(u32);
 
+impl std::error::Error for PoissonError {}
+
+impl fmt::Display for PoissonError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::RateTooLow { rate } => {
+                write!(f, "rate ({}) must be greater than zero", rate)
+            }
+            Self::RateNotFinite { rate } => {
+                write!(f, "non-finite rate: {}", rate)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::x2_test;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
+
+    test_basic_impls!(Poisson::new(0.5).unwrap());
 
     #[test]
     fn new() {

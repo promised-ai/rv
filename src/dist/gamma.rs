@@ -1,12 +1,12 @@
 //! Gamma distribution over x in (0, ∞)
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use special::Gamma as _;
+use std::fmt;
 
 /// [Gamma distribution](https://en.wikipedia.org/wiki/Gamma_distribution) G(α, β)
 /// over x in (0, ∞).
@@ -19,45 +19,44 @@ use special::Gamma as _;
 /// f(x|α, β) = ----  x^(α-1) e^(-βx)
 ///             Γ(α)
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Gamma {
-    #[set = "pub"]
     shape: f64,
-    #[set = "pub"]
     rate: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum GammaError {
     /// Shape parameter is less than or equal to zero
-    ShapeTooLowError,
+    ShapeTooLow { shape: f64 },
     /// Shape parameter is infinite or NaN
-    ShapeNotFintieError,
+    ShapeNotFinite { shape: f64 },
     /// Rate parameter is less than or equal to zero
-    RateTooLowError,
+    RateTooLow { rate: f64 },
     /// Rate parameter is infinite or NaN
-    RateNotFintieError,
+    RateNotFinite { rate: f64 },
 }
 
 impl Gamma {
     /// Create a new `Gamma` distribution with shape (α) and rate (β).
     pub fn new(shape: f64, rate: f64) -> Result<Self, GammaError> {
         if shape <= 0.0 {
-            Err(GammaError::ShapeTooLowError)
+            Err(GammaError::ShapeTooLow { shape })
         } else if rate <= 0.0 {
-            Err(GammaError::RateTooLowError)
+            Err(GammaError::RateTooLow { rate })
         } else if !shape.is_finite() {
-            Err(GammaError::ShapeNotFintieError)
+            Err(GammaError::ShapeNotFinite { shape })
         } else if !rate.is_finite() {
-            Err(GammaError::RateNotFintieError)
+            Err(GammaError::RateNotFinite { rate })
         } else {
             Ok(Gamma { shape, rate })
         }
     }
 
     /// Creates a new Gamma without checking whether the parameters are valid.
+    #[inline]
     pub fn new_unchecked(shape: f64, rate: f64) -> Self {
         Gamma { shape, rate }
     }
@@ -71,8 +70,52 @@ impl Gamma {
     /// let gam = Gamma::new(2.0, 1.0).unwrap();
     /// assert_eq!(gam.shape(), 2.0);
     /// ```
+    #[inline]
     pub fn shape(&self) -> f64 {
         self.shape
+    }
+
+    /// Set the shape parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gamma;
+    /// let mut gam = Gamma::new(2.0, 1.0).unwrap();
+    /// assert_eq!(gam.shape(), 2.0);
+    ///
+    /// gam.set_shape(1.1).unwrap();
+    /// assert_eq!(gam.shape(), 1.1);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Gamma;
+    /// # let mut gam = Gamma::new(2.0, 1.0).unwrap();
+    /// assert!(gam.set_shape(1.1).is_ok());
+    /// assert!(gam.set_shape(0.0).is_err());
+    /// assert!(gam.set_shape(-1.0).is_err());
+    /// assert!(gam.set_shape(std::f64::INFINITY).is_err());
+    /// assert!(gam.set_shape(std::f64::NEG_INFINITY).is_err());
+    /// assert!(gam.set_shape(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_shape(&mut self, shape: f64) -> Result<(), GammaError> {
+        if shape <= 0.0 {
+            Err(GammaError::ShapeTooLow { shape })
+        } else if !shape.is_finite() {
+            Err(GammaError::ShapeNotFinite { shape })
+        } else {
+            self.set_shape_unchecked(shape);
+            Ok(())
+        }
+    }
+
+    /// Set the shape parameter without input validation
+    #[inline]
+    pub fn set_shape_unchecked(&mut self, shape: f64) {
+        self.shape = shape;
     }
 
     /// Get the rate parameter
@@ -84,8 +127,52 @@ impl Gamma {
     /// let gam = Gamma::new(2.0, 1.0).unwrap();
     /// assert_eq!(gam.rate(), 1.0);
     /// ```
+    #[inline]
     pub fn rate(&self) -> f64 {
         self.rate
+    }
+
+    /// Set the rate parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gamma;
+    /// let mut gam = Gamma::new(2.0, 1.0).unwrap();
+    /// assert_eq!(gam.rate(), 1.0);
+    ///
+    /// gam.set_rate(1.1).unwrap();
+    /// assert_eq!(gam.rate(), 1.1);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Gamma;
+    /// # let mut gam = Gamma::new(2.0, 1.0).unwrap();
+    /// assert!(gam.set_rate(1.1).is_ok());
+    /// assert!(gam.set_rate(0.0).is_err());
+    /// assert!(gam.set_rate(-1.0).is_err());
+    /// assert!(gam.set_rate(std::f64::INFINITY).is_err());
+    /// assert!(gam.set_rate(std::f64::NEG_INFINITY).is_err());
+    /// assert!(gam.set_rate(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_rate(&mut self, rate: f64) -> Result<(), GammaError> {
+        if rate <= 0.0 {
+            Err(GammaError::RateTooLow { rate })
+        } else if !rate.is_finite() {
+            Err(GammaError::RateNotFinite { rate })
+        } else {
+            self.set_rate_unchecked(rate);
+            Ok(())
+        }
+    }
+
+    /// Set the rate parameter without input validation
+    #[inline]
+    pub fn set_rate_unchecked(&mut self, rate: f64) {
+        self.rate = rate;
     }
 }
 
@@ -190,15 +277,39 @@ impl Kurtosis for Gamma {
 impl_traits!(f32);
 impl_traits!(f64);
 
+impl std::error::Error for GammaError {}
+
+impl fmt::Display for GammaError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ShapeTooLow { shape } => {
+                write!(f, "rate ({}) must be greater than zero", shape)
+            }
+            Self::ShapeNotFinite { shape } => {
+                write!(f, "non-finite rate: {}", shape)
+            }
+            Self::RateTooLow { rate } => {
+                write!(f, "rate ({}) must be greater than zero", rate)
+            }
+            Self::RateNotFinite { rate } => {
+                write!(f, "non-finite rate: {}", rate)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::ks_test;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!(Gamma::default());
 
     #[test]
     fn new() {

@@ -14,7 +14,7 @@ test:cargo-stable:
   image: "rust:1.41"
   script:
     - rustc --version && cargo --version
-    - cargo build  --features serde_support
+    - cargo build  --features serde1
     - time cargo test --jobs 1
 
 test:cargo-nigtly:
@@ -26,7 +26,7 @@ test:cargo-nigtly:
     - rustup override set nightly-2020-02-06
   script:
     - rustc --version && cargo --version
-    - cargo build  --features serde_support
+    - cargo build  --features serde1
     - time cargo test --jobs 1
 
 bench:cargo-stable:

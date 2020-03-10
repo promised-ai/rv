@@ -1,14 +1,14 @@
 //! Beta Binomial distribution of x in {0, ..., n}
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::{ln_binom, ln_pflip};
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use special::Beta as _;
 use std::f64;
+use std::fmt;
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// over k in {0, ..., n}
@@ -48,33 +48,30 @@ use std::f64;
 /// beta_binom.pmf(&21_u32); // panics
 /// ```
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct BetaBinomial {
     /// Total number of trials
-    #[set = "pub"]
     n: u32,
     /// Analogous to Beta Distribution α parameter.
-    #[set = "pub"]
     alpha: f64,
     /// Analogous to Beta Distribution β parameter
-    #[set = "pub"]
     beta: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum BetaBinomialError {
     /// The alpha parameter is less than zero
-    AlphaLessThanZeroError,
+    AlphaTooLow { alpha: f64 },
     /// The alpha parameter is infinite or NaN
-    AlphaNotFiniteError,
+    AlphaNotFinite { alpha: f64 },
     /// The beta parameter is less than zero
-    BetaLessThanZeroError,
+    BetaTooLow { beta: f64 },
     /// The beta parameter is infinite or NaN
-    BetaNotFiniteError,
+    BetaNotFinite { beta: f64 },
     /// The number of trails is zero
-    NIsZeroError,
+    NIsZero,
 }
 
 impl BetaBinomial {
@@ -90,16 +87,16 @@ impl BetaBinomial {
         alpha: f64,
         beta: f64,
     ) -> Result<Self, BetaBinomialError> {
-        if alpha < 0.0 {
-            Err(BetaBinomialError::AlphaLessThanZeroError)
+        if alpha <= 0.0 {
+            Err(BetaBinomialError::AlphaTooLow { alpha })
         } else if !alpha.is_finite() {
-            Err(BetaBinomialError::AlphaNotFiniteError)
-        } else if beta < 0.0 {
-            Err(BetaBinomialError::BetaLessThanZeroError)
+            Err(BetaBinomialError::AlphaNotFinite { alpha })
+        } else if beta <= 0.0 {
+            Err(BetaBinomialError::BetaTooLow { beta })
         } else if !beta.is_finite() {
-            Err(BetaBinomialError::BetaNotFiniteError)
+            Err(BetaBinomialError::BetaNotFinite { beta })
         } else if n == 0 {
-            Err(BetaBinomialError::NIsZeroError)
+            Err(BetaBinomialError::NIsZero)
         } else {
             Ok(BetaBinomial { n, alpha, beta })
         }
@@ -137,6 +134,47 @@ impl BetaBinomial {
         self.alpha
     }
 
+    /// Set the alpha parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::BetaBinomial;
+    ///
+    /// let mut bb = BetaBinomial::new(10, 1.0, 5.0).unwrap();
+    ///
+    /// bb.set_alpha(2.0).unwrap();
+    /// assert_eq!(bb.alpha(), 2.0);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::BetaBinomial;
+    /// # let mut bb = BetaBinomial::new(10, 1.0, 5.0).unwrap();
+    /// assert!(bb.set_alpha(0.1).is_ok());
+    /// assert!(bb.set_alpha(0.0).is_err());
+    /// assert!(bb.set_alpha(-1.0).is_err());
+    /// assert!(bb.set_alpha(std::f64::INFINITY).is_err());
+    /// assert!(bb.set_alpha(std::f64::NAN).is_err());
+    /// ```
+    pub fn set_alpha(&mut self, alpha: f64) -> Result<(), BetaBinomialError> {
+        if alpha <= 0.0 {
+            Err(BetaBinomialError::AlphaTooLow { alpha })
+        } else if !alpha.is_finite() {
+            Err(BetaBinomialError::AlphaNotFinite { alpha })
+        } else {
+            self.set_alpha_unchecked(alpha);
+            Ok(())
+        }
+    }
+
+    /// Set alpha without input validation
+    #[inline]
+    pub fn set_alpha_unchecked(&mut self, alpha: f64) {
+        self.alpha = alpha
+    }
+
     /// Get the `beta` parameter
     ///
     /// # Example
@@ -148,6 +186,84 @@ impl BetaBinomial {
     /// ```
     pub fn beta(&self) -> f64 {
         self.beta
+    }
+
+    /// Set the beta parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::BetaBinomial;
+    /// let mut bb = BetaBinomial::new(10, 1.0, 5.0).unwrap();
+    ///
+    /// bb.set_beta(2.0).unwrap();
+    /// assert_eq!(bb.beta(), 2.0);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::BetaBinomial;
+    /// # let mut bb = BetaBinomial::new(10, 1.0, 5.0).unwrap();
+    /// assert!(bb.set_beta(0.1).is_ok());
+    /// assert!(bb.set_beta(0.0).is_err());
+    /// assert!(bb.set_beta(-1.0).is_err());
+    /// assert!(bb.set_beta(std::f64::INFINITY).is_err());
+    /// assert!(bb.set_beta(std::f64::NAN).is_err());
+    /// ```
+    pub fn set_beta(&mut self, beta: f64) -> Result<(), BetaBinomialError> {
+        if beta <= 0.0 {
+            Err(BetaBinomialError::BetaTooLow { beta })
+        } else if !beta.is_finite() {
+            Err(BetaBinomialError::BetaNotFinite { beta })
+        } else {
+            self.set_beta_unchecked(beta);
+            Ok(())
+        }
+    }
+
+    /// Set beta without input validation
+    #[inline]
+    pub fn set_beta_unchecked(&mut self, beta: f64) {
+        self.beta = beta
+    }
+
+    /// Set the value of the n parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::BetaBinomial;
+    ///
+    /// let mut bb = BetaBinomial::new(10, 0.5, 0.5).unwrap();
+    ///
+    /// bb.set_n(11).unwrap();
+    ///
+    /// assert_eq!(bb.n(), 11);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::BetaBinomial;
+    /// # let mut bb = BetaBinomial::new(10, 0.5, 0.5).unwrap();
+    /// assert!(bb.set_n(11).is_ok());
+    /// assert!(bb.set_n(1).is_ok());
+    /// assert!(bb.set_n(0).is_err());
+    /// ```
+    pub fn set_n(&mut self, n: u32) -> Result<(), BetaBinomialError> {
+        if n == 0 {
+            Err(BetaBinomialError::NIsZero)
+        } else {
+            self.set_n_unchecked(n);
+            Ok(())
+        }
+    }
+
+    /// Set the value of n without input validation
+    #[inline]
+    pub fn set_n_unchecked(&mut self, n: u32) {
+        self.n = n
     }
 }
 
@@ -237,12 +353,37 @@ impl_int_traits!(i16);
 impl_int_traits!(i32);
 impl_int_traits!(i64);
 
+impl std::error::Error for BetaBinomialError {}
+
+impl fmt::Display for BetaBinomialError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::AlphaTooLow { alpha } => {
+                write!(f, "alpha ({}) must be greater than zero", alpha)
+            }
+            Self::AlphaNotFinite { alpha } => {
+                write!(f, "alpha ({}) was non finite", alpha)
+            }
+            Self::BetaTooLow { beta } => {
+                write!(f, "beta ({}) must be greater than zero", beta)
+            }
+            Self::BetaNotFinite { beta } => {
+                write!(f, "beta ({}) was non finite", beta)
+            }
+            Self::NIsZero => write!(f, "n was zero"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
+
+    test_basic_impls!(BetaBinomial::new(10, 0.2, 0.7).unwrap());
 
     #[test]
     fn new() {
