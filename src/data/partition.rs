@@ -4,7 +4,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::misc::vec_to_string;
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Partition {
     /// The assignment of the n items to partitions 0, ..., k-1
@@ -39,7 +39,7 @@ impl From<&Partition> for String {
 
 impl_display!(Partition);
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum Error {
     /// One or more of the bins in the partition has no members

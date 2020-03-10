@@ -11,6 +11,8 @@ use special::Gamma as _;
 use std::f64;
 use std::fmt;
 
+pub mod bernoulli_prior;
+
 /// [Beta distribution](https://en.wikipedia.org/wiki/Beta_distribution),
 /// Beta(α, β) over x in (0, 1).
 ///

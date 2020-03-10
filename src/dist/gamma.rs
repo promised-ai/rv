@@ -8,6 +8,8 @@ use rand::Rng;
 use special::Gamma as _;
 use std::fmt;
 
+mod poisson_prior;
+
 /// [Gamma distribution](https://en.wikipedia.org/wiki/Gamma_distribution) G(α, β)
 /// over x in (0, ∞).
 ///

@@ -10,6 +10,8 @@ use crate::traits::*;
 use rand::Rng;
 use std::fmt;
 
+mod gaussian_prior;
+
 /// Prior for Gaussian
 ///
 /// Given `x ~ N(μ, σ)`, the Normal Gamma prior implies that `μ ~ N(m, 1/(rρ))`

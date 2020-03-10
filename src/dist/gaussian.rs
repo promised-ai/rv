@@ -373,6 +373,12 @@ impl KlDivergence for Gaussian {
     }
 }
 
+impl QuadBounds for Gaussian {
+    fn quad_bounds(&self) -> (f64, f64) {
+        self.interval(0.99999999999)
+    }
+}
+
 impl_traits!(f32);
 impl_traits!(f64);
 

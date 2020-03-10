@@ -10,6 +10,8 @@ use rand_distr::Gamma as RGamma;
 use special::Gamma as _;
 use std::fmt;
 
+mod categorical_prior;
+
 /// Symmetric [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
 /// where all alphas are the same.
 ///
