@@ -3,8 +3,8 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::data::DataOrSuffStat;
 use crate::dist::Poisson;
+use crate::misc::ln_fact;
 use crate::traits::SuffStat;
-use special::Gamma as _;
 
 /// Poisson sufficient statistic.
 ///
@@ -17,31 +17,35 @@ pub struct PoissonSuffStat {
     /// Sum of observations
     sum: f64,
     /// Sum of Log(x!)
-    sum_log_fact: f64,
+    sum_ln_fact: f64,
 }
 
 impl PoissonSuffStat {
     /// Create a new empty SuffStat
+    #[inline]
     pub fn new() -> Self {
         Self {
             n: 0,
             sum: 0.0,
-            sum_log_fact: 0.0,
+            sum_ln_fact: 0.0,
         }
     }
 
     /// Get the number of observations
+    #[inline]
     pub fn n(&self) -> usize {
         self.n
     }
 
     /// Get the sum of all observations
+    #[inline]
     pub fn sum(&self) -> f64 {
         self.sum
     }
 
-    pub fn sum_log_fact(&self) -> f64 {
-        self.sum_log_fact
+    #[inline]
+    pub fn sum_ln_fact(&self) -> f64 {
+        self.sum_ln_fact
     }
 }
 
@@ -76,7 +80,7 @@ macro_rules! impl_poisson_suffstat {
                 let xf = f64::from(*x);
                 self.n += 1;
                 self.sum += xf;
-                self.sum_log_fact += f64::from(*x + 1).ln_gamma().0;
+                self.sum_ln_fact += ln_fact(*x as usize);
             }
 
             fn forget(&mut self, x: &$kind) {
@@ -84,11 +88,11 @@ macro_rules! impl_poisson_suffstat {
                     let xf = f64::from(*x);
                     self.n -= 1;
                     self.sum -= xf;
-                    self.sum_log_fact -= f64::from(*x + 1).ln_gamma().0;
+                    self.sum_ln_fact -= ln_fact(*x as usize);
                 } else {
                     self.n = 0;
                     self.sum = 0.0;
-                    self.sum_log_fact = 0.0;
+                    self.sum_ln_fact = 0.0;
                 }
             }
         }

@@ -332,6 +332,7 @@ impl Kumaraswamy {
     }
 }
 
+#[inline]
 fn invcdf(p: f64, a: f64, b: f64) -> f64 {
     (1.0 - (1.0 - p).powf(b.recip())).powf(a.recip())
 }

@@ -253,6 +253,7 @@ macro_rules! impl_traits {
     ($kind: ty) => {
         impl Rv<$kind> for Gev {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: could cache ln(scale)
                 let tv = t(self.loc, self.shape, self.scale, f64::from(*x));
                 -self.scale.ln() + (self.shape + 1.0) * tv.ln() - tv
             }

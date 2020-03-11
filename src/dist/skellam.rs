@@ -197,6 +197,7 @@ impl Skellam {
     }
 
     /// Set the cache size on the internal LRU for Bessel Iv calls.
+    #[inline]
     pub fn set_cache_cap(&self, cap: usize) {
         self.bessel_iv_cache.borrow_mut().resize(cap);
     }

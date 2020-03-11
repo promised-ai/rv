@@ -201,6 +201,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for InvGamma {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: could cache ln(scale) and ln_gamma(shape)
                 let xf = f64::from(*x);
                 self.shape * self.scale.ln()
                     - self.shape.ln_gamma().0

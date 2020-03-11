@@ -44,6 +44,7 @@ impl Exponential {
     ///
     /// # Arguments
     /// - rate: λ > 0, rate or inverse scale
+    #[inline]
     pub fn new(rate: f64) -> Result<Self, ExponentialError> {
         if rate <= 0.0 {
             Err(ExponentialError::RateTooLow { rate })
@@ -56,6 +57,7 @@ impl Exponential {
 
     /// Creates a new Exponential without checking whether the parameter is
     /// valid.
+    #[inline]
     pub fn new_unchecked(rate: f64) -> Self {
         Exponential { rate }
     }
@@ -69,6 +71,7 @@ impl Exponential {
     /// let expon = Exponential::new(1.3).unwrap();
     /// assert_eq!(expon.rate(), 1.3);
     /// ```
+    #[inline]
     pub fn rate(&self) -> f64 {
         self.rate
     }
@@ -98,6 +101,7 @@ impl Exponential {
     /// assert!(expon.set_rate(std::f64::NEG_INFINITY).is_err());
     /// assert!(expon.set_rate(std::f64::NAN).is_err());
     /// ```
+    #[inline]
     pub fn set_rate(&mut self, rate: f64) -> Result<(), ExponentialError> {
         if rate <= 0.0 {
             Err(ExponentialError::RateTooLow { rate })
@@ -128,6 +132,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Exponential {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: could cache ln(rate)
                 if x < &0.0 {
                     f64::NEG_INFINITY
                 } else {

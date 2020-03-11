@@ -8,7 +8,7 @@ use crate::misc::logsumexp;
 use crate::traits::*;
 use rand::Rng;
 use rand_distr::Cauchy as RCauchy;
-use std::f64::consts::PI;
+use std::f64::consts::{FRAC_1_PI, PI};
 use std::fmt;
 
 /// [Cauchy distribution](https://en.wikipedia.org/wiki/Cauchy_distribution)
@@ -62,6 +62,7 @@ impl Cauchy {
     }
 
     /// Create a new Cauchy without checking whether the parameters are valid.
+    #[inline]
     pub fn new_unchecked(loc: f64, scale: f64) -> Self {
         Cauchy { loc, scale }
     }
@@ -75,6 +76,7 @@ impl Cauchy {
     /// let c = Cauchy::new(0.1, 1.0).unwrap();
     /// assert_eq!(c.loc(), 0.1);
     /// ```
+    #[inline]
     pub fn loc(&self) -> f64 {
         self.loc
     }
@@ -101,6 +103,7 @@ impl Cauchy {
     /// assert!(c.set_loc(std::f64::NEG_INFINITY).is_err());
     /// assert!(c.set_loc(std::f64::NAN).is_err());
     /// ```
+    #[inline]
     pub fn set_loc(&mut self, loc: f64) -> Result<(), CauchyError> {
         if loc.is_finite() {
             self.set_loc_unchecked(loc);
@@ -125,6 +128,7 @@ impl Cauchy {
     /// let c = Cauchy::new(0.1, 1.0).unwrap();
     /// assert_eq!(c.scale(), 1.0);
     /// ```
+    #[inline]
     pub fn scale(&self) -> f64 {
         self.scale
     }
@@ -151,6 +155,7 @@ impl Cauchy {
     /// assert!(c.set_scale(std::f64::NAN).is_err());
     /// assert!(c.set_scale(std::f64::INFINITY).is_err());
     /// ```
+    #[inline]
     pub fn set_scale(&mut self, scale: f64) -> Result<(), CauchyError> {
         if !scale.is_finite() {
             Err(CauchyError::ScaleNotFinite { scale })
@@ -215,7 +220,7 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for Cauchy {
             fn cdf(&self, x: &$kind) -> f64 {
-                PI.recip() * ((f64::from(*x) - self.loc) / self.scale).atan()
+                FRAC_1_PI * ((f64::from(*x) - self.loc) / self.scale).atan()
                     + 0.5
             }
         }

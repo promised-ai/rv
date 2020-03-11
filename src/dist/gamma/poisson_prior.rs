@@ -74,7 +74,7 @@ macro_rules! impl_traits {
                 let zn =
                     post.shape().ln_gamma().0 - post.shape() * post.rate().ln();
 
-                zn - z0 - stat.sum_log_fact()
+                zn - z0 - stat.sum_ln_fact()
             }
 
             fn ln_pp(

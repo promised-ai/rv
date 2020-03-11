@@ -85,6 +85,7 @@ impl Binomial {
 
     /// Creates a new Binomial without checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(n: u64, p: f64) -> Self {
         Binomial { n, p }
     }
@@ -98,6 +99,7 @@ impl Binomial {
     /// let binom = Binomial::uniform(11);
     /// assert_eq!(binom.p(), 0.5);
     /// ```
+    #[inline]
     pub fn uniform(n: u64) -> Self {
         Binomial::new_unchecked(n, 0.5)
     }
@@ -111,6 +113,7 @@ impl Binomial {
     /// let binom = Binomial::uniform(11);
     /// assert_eq!(binom, Binomial::new(11, 0.5).unwrap());
     /// ```
+    #[inline]
     pub fn n(&self) -> u64 {
         self.n
     }
@@ -138,6 +141,7 @@ impl Binomial {
     /// assert!(binom.set_n(1).is_ok());
     /// assert!(binom.set_n(0).is_err());
     /// ```
+    #[inline]
     pub fn set_n(&mut self, n: u64) -> Result<(), BinomialError> {
         if n == 0 {
             Err(BinomialError::NIsZero)
@@ -162,6 +166,7 @@ impl Binomial {
     /// let binom = Binomial::new(10, 0.2).unwrap();
     /// assert_eq!(binom.p(), 0.2);
     /// ```
+    #[inline]
     pub fn p(&self) -> f64 {
         self.p
     }
@@ -191,6 +196,7 @@ impl Binomial {
     /// assert!(binom.set_p(std::f64::NEG_INFINITY).is_err());
     /// assert!(binom.set_p(std::f64::NAN).is_err());
     /// ```
+    #[inline]
     pub fn set_p(&mut self, p: f64) -> Result<(), BinomialError> {
         if !p.is_finite() {
             Err(BinomialError::PNotFinite { p })
@@ -239,6 +245,7 @@ macro_rules! impl_int_traits {
             fn ln_f(&self, k: &$kind) -> f64 {
                 let nf = self.n as f64;
                 let kf = *k as f64;
+                // TODO: could cache ln(p) and ln(q)
                 ln_binom(nf, kf) + self.p.ln() * kf + self.q().ln() * (nf - kf)
             }
 

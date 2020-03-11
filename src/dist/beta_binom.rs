@@ -104,6 +104,7 @@ impl BetaBinomial {
 
     /// Creates a new BetaBinomial without checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(n: u32, alpha: f64, beta: f64) -> Self {
         BetaBinomial { n, alpha, beta }
     }
@@ -117,6 +118,7 @@ impl BetaBinomial {
     /// let bb = BetaBinomial::new(10, 1.0, 2.0).unwrap();
     /// assert_eq!(bb.n(), 10);
     /// ```
+    #[inline]
     pub fn n(&self) -> u32 {
         self.n
     }
@@ -130,6 +132,7 @@ impl BetaBinomial {
     /// let bb = BetaBinomial::new(10, 1.0, 2.0).unwrap();
     /// assert_eq!(bb.alpha(), 1.0);
     /// ```
+    #[inline]
     pub fn alpha(&self) -> f64 {
         self.alpha
     }
@@ -158,6 +161,7 @@ impl BetaBinomial {
     /// assert!(bb.set_alpha(std::f64::INFINITY).is_err());
     /// assert!(bb.set_alpha(std::f64::NAN).is_err());
     /// ```
+    #[inline]
     pub fn set_alpha(&mut self, alpha: f64) -> Result<(), BetaBinomialError> {
         if alpha <= 0.0 {
             Err(BetaBinomialError::AlphaTooLow { alpha })
@@ -184,6 +188,7 @@ impl BetaBinomial {
     /// let bb = BetaBinomial::new(10, 1.0, 2.0).unwrap();
     /// assert_eq!(bb.beta(), 2.0);
     /// ```
+    #[inline]
     pub fn beta(&self) -> f64 {
         self.beta
     }
@@ -211,6 +216,7 @@ impl BetaBinomial {
     /// assert!(bb.set_beta(std::f64::INFINITY).is_err());
     /// assert!(bb.set_beta(std::f64::NAN).is_err());
     /// ```
+    #[inline]
     pub fn set_beta(&mut self, beta: f64) -> Result<(), BetaBinomialError> {
         if beta <= 0.0 {
             Err(BetaBinomialError::BetaTooLow { beta })
@@ -251,6 +257,7 @@ impl BetaBinomial {
     /// assert!(bb.set_n(1).is_ok());
     /// assert!(bb.set_n(0).is_err());
     /// ```
+    #[inline]
     pub fn set_n(&mut self, n: u32) -> Result<(), BetaBinomialError> {
         if n == 0 {
             Err(BetaBinomialError::NIsZero)
@@ -281,6 +288,7 @@ macro_rules! impl_int_traits {
             fn ln_f(&self, k: &$kind) -> f64 {
                 let nf = f64::from(self.n);
                 let kf = *k as f64;
+                // TODO: cache ln_beta(alpha, beta)
                 ln_binom(nf, kf)
                     + (kf + self.alpha).ln_beta(nf - kf + self.beta)
                     - self.alpha.ln_beta(self.beta)
@@ -316,8 +324,7 @@ macro_rules! impl_int_traits {
             fn cdf(&self, k: &$kind) -> f64 {
                 // XXX: Slow and awful.
                 // TODO: could make this faster with hypergeometric function,
-                // but the `special` crate doesn't implement it...yet (take
-                // the hint).
+                // but the `special` crate doesn't implement it
                 (0..=*k).fold(0.0, |acc, x| acc + self.pmf(&x))
             }
         }

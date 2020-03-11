@@ -44,6 +44,7 @@ pub enum GeometricError {
 
 impl Geometric {
     /// Create a new geometric distribution
+    #[inline]
     pub fn new(p: f64) -> Result<Self, GeometricError> {
         if !p.is_finite() {
             Err(GeometricError::PNotFinite { p })
@@ -58,11 +59,13 @@ impl Geometric {
 
     /// Creates a new Geometric without checking whether the parameter is
     /// valid.
+    #[inline]
     pub fn new_unchecked(p: f64) -> Self {
         Geometric { p }
     }
 
     /// Get the p parameter
+    #[inline]
     pub fn p(&self) -> f64 {
         self.p
     }
@@ -93,6 +96,7 @@ impl Geometric {
     /// assert!(geom.set_p(std::f64::NEG_INFINITY).is_err());
     /// assert!(geom.set_p(std::f64::NAN).is_err());
     /// ```
+    #[inline]
     pub fn set_p(&mut self, p: f64) -> Result<(), GeometricError> {
         if !p.is_finite() {
             Err(GeometricError::PNotFinite { p })
@@ -113,6 +117,7 @@ impl Geometric {
     }
 
     // Use the inversion method to select the corresponding integer.
+    #[inline]
     fn inversion_draw_method<X, R>(rng: &mut R, p: f64) -> X
     where
         X: Unsigned + Integer + FromPrimitive + Bounded,
@@ -124,6 +129,7 @@ impl Geometric {
     }
 
     // Increase the value until the cdf surpasses the given p value.
+    #[inline]
     fn search_draw_method<X, R>(rng: &mut R, p: f64) -> X
     where
         X: Unsigned + Integer + Saturating,
@@ -164,6 +170,7 @@ where
     X: Unsigned + Integer + FromPrimitive + ToPrimitive + Saturating + Bounded,
 {
     fn ln_f(&self, k: &X) -> f64 {
+        // TODO: could cache ln(1-p) and ln(p)
         let kf = (*k).to_f64().unwrap();
         kf * (1.0 - self.p).ln() + self.p.ln()
     }

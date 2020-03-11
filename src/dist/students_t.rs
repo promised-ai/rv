@@ -120,6 +120,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for StudentsT {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: could cache ln(pi*v) and ln_gamma(v/2)
                 let vp1 = (self.v + 1.0) / 2.0;
                 let xterm = -vp1 * (1.0 + f64::from(*x).powi(2) / self.v).ln();
                 let zterm = vp1.ln_gamma().0

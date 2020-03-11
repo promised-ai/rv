@@ -141,9 +141,11 @@ impl Rv<DMatrix<f64>> for InvWishart {
         let pf = p as f64;
         let v = self.df as f64;
 
+        // TODO: cache det_s
         let det_s: f64 = v * 0.5 * self.inv_scale.determinant().ln();
         let det_x: f64 = -(v + pf + 1.0) * 0.5 * x.determinant().ln();
 
+        // TODO: cache denom
         let denom: f64 = v * pf * 0.5 * LN_2 + lnmv_gamma(p, 0.5 * v);
         let numer: f64 =
             -0.5 * (&self.inv_scale * x.clone().try_inverse().unwrap()).trace();
@@ -157,9 +159,10 @@ impl Rv<DMatrix<f64>> for InvWishart {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> DMatrix<f64> {
         let p = self.inv_scale.nrows();
         let scale = self.inv_scale.clone().try_inverse().unwrap();
-        let mvg = MvGaussian::new(DVector::zeros(p), scale).unwrap();
+        let mvg = MvGaussian::new_unchecked(DVector::zeros(p), scale);
         let xs = mvg.sample(self.df, &mut rng);
         let y = xs.iter().fold(DMatrix::<f64>::zeros(p, p), |acc, x| {
+            // TODO: faster way to do X * X^T?
             acc + x * x.transpose()
         });
         y.try_inverse().unwrap()
@@ -168,12 +171,13 @@ impl Rv<DMatrix<f64>> for InvWishart {
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<DMatrix<f64>> {
         let p = self.inv_scale.nrows();
         let scale = self.inv_scale.clone().try_inverse().unwrap();
-        let mvg = MvGaussian::new(DVector::zeros(p), scale).unwrap();
+        let mvg = MvGaussian::new_unchecked(DVector::zeros(p), scale);
         (0..n)
             .map(|_| {
                 let xs = mvg.sample(self.df, &mut rng);
                 let y =
                     xs.iter().fold(DMatrix::<f64>::zeros(p, p), |acc, x| {
+                        // TODO: faster way to do X * X^T?
                         acc + x * x.transpose()
                     });
                 y.try_inverse().unwrap()

@@ -56,6 +56,7 @@ impl Pareto {
     }
 
     /// Creates a new Pareto without checking whether the parameters are valid.
+    #[inline]
     pub fn new_unchecked(shape: f64, scale: f64) -> Self {
         Pareto { shape, scale }
     }
@@ -69,6 +70,7 @@ impl Pareto {
     /// let pareto = Pareto::new(1.0, 2.0).unwrap();
     /// assert_eq!(pareto.shape(), 1.0);
     /// ```
+    #[inline]
     pub fn shape(&self) -> f64 {
         self.shape
     }
@@ -125,6 +127,7 @@ impl Pareto {
     /// let pareto = Pareto::new(1.0, 2.0).unwrap();
     /// assert_eq!(pareto.scale(), 2.0);
     /// ```
+    #[inline]
     pub fn scale(&self) -> f64 {
         self.scale
     }
@@ -185,6 +188,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Pareto {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: cache ln(shape) and ln(scale)
                 self.shape.ln() + self.shape * self.scale.ln()
                     - (self.shape + 1.0) * f64::from(*x).ln()
             }
