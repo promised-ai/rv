@@ -87,6 +87,7 @@ impl Bernoulli {
 
     /// Creates a new Bernoulli without checking whether parameter value is
     /// valid.
+    #[inline]
     pub fn new_unchecked(p: f64) -> Self {
         Bernoulli { p }
     }
@@ -102,6 +103,7 @@ impl Bernoulli {
     /// assert_eq!(b.p(), 0.5);
     /// assert_eq!(b.q(), 0.5);
     /// ```
+    #[inline]
     pub fn uniform() -> Self {
         Bernoulli { p: 0.5 }
     }
@@ -116,6 +118,7 @@ impl Bernoulli {
     ///
     /// assert_eq!(b.p(), 0.2);
     /// ```
+    #[inline]
     pub fn p(&self) -> f64 {
         self.p
     }
@@ -145,6 +148,7 @@ impl Bernoulli {
     /// assert!(b.set_p(std::f64::NEG_INFINITY).is_err());
     /// assert!(b.set_p(std::f64::NAN).is_err());
     /// ```
+    #[inline]
     pub fn set_p(&mut self, p: f64) -> Result<(), BernoulliError> {
         if !p.is_finite() {
             Err(BernoulliError::PNotFinite { p })

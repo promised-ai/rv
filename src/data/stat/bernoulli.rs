@@ -18,6 +18,7 @@ pub struct BernoulliSuffStat {
 
 impl BernoulliSuffStat {
     /// Create a new Bernoulli sufficient statistic
+    #[inline]
     pub fn new() -> Self {
         BernoulliSuffStat { n: 0, k: 0 }
     }
@@ -36,6 +37,7 @@ impl BernoulliSuffStat {
     ///
     /// assert_eq!(stat.n(), 2);
     /// ```
+    #[inline]
     pub fn n(&self) -> usize {
         self.n
     }
@@ -54,6 +56,7 @@ impl BernoulliSuffStat {
     ///
     /// assert_eq!(stat.k(), 1);
     /// ```
+    #[inline]
     pub fn k(&self) -> usize {
         self.k
     }

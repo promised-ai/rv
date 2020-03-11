@@ -13,6 +13,7 @@ pub struct MvGaussianSuffStat {
 }
 
 impl MvGaussianSuffStat {
+    #[inline]
     pub fn new(dims: usize) -> Self {
         MvGaussianSuffStat {
             n: 0,
@@ -22,16 +23,19 @@ impl MvGaussianSuffStat {
     }
 
     /// Get the number of observations
+    #[inline]
     pub fn n(&self) -> usize {
         self.n
     }
 
     /// Get the sum of observations
+    #[inline]
     pub fn sum_x(&self) -> &DVector<f64> {
         &self.sum_x
     }
 
     /// Get the sum of X^2
+    #[inline]
     pub fn sum_x_sq(&self) -> &DMatrix<f64> {
         &self.sum_x_sq
     }

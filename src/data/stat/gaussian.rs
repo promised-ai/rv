@@ -21,6 +21,7 @@ pub struct GaussianSuffStat {
 }
 
 impl GaussianSuffStat {
+    #[inline]
     pub fn new() -> Self {
         GaussianSuffStat {
             n: 0,
@@ -30,16 +31,19 @@ impl GaussianSuffStat {
     }
 
     /// Get the number of observations
+    #[inline]
     pub fn n(&self) -> usize {
         self.n
     }
 
     /// Get the sum of observations
+    #[inline]
     pub fn sum_x(&self) -> f64 {
         self.sum_x
     }
 
     /// Get the sum of squared observations
+    #[inline]
     pub fn sum_x_sq(&self) -> f64 {
         self.sum_x_sq
     }

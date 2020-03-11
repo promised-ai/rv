@@ -113,6 +113,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Uniform {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: should just cache the whole ln_pdf
                 let xf = f64::from(*x);
                 if self.a <= xf && xf <= self.b {
                     -(self.b - self.a).ln()

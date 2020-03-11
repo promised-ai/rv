@@ -279,6 +279,7 @@ impl<Fx> Mixture<Fx> {
     /// let mean_2: f64 = mm.mean().unwrap();
     /// assert_eq!(mean_2, -0.5);
     /// ```
+    #[inline]
     pub fn set_components(
         &mut self,
         components: Vec<Fx>,

@@ -18,6 +18,7 @@ pub struct CategoricalSuffStat {
 }
 
 impl CategoricalSuffStat {
+    #[inline]
     pub fn new(k: usize) -> Self {
         CategoricalSuffStat {
             n: 0,
@@ -40,6 +41,7 @@ impl CategoricalSuffStat {
     ///
     /// assert_eq!(stat.n(), 3);
     /// ```
+    #[inline]
     pub fn n(&self) -> usize {
         self.n
     }
@@ -59,6 +61,7 @@ impl CategoricalSuffStat {
     ///
     /// assert_eq!(*stat.counts(), vec![1.0, 2.0, 0.0]);
     /// ```
+    #[inline]
     pub fn counts(&self) -> &Vec<f64> {
         &self.counts
     }

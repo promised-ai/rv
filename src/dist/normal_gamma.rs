@@ -306,11 +306,12 @@ impl_display!(NormalGamma);
 
 impl Rv<Gaussian> for NormalGamma {
     fn ln_f(&self, x: &Gaussian) -> f64 {
+        // TODO: could cache the gamma and Gaussian distributions
         let rho = x.sigma().powi(2).recip();
         let lnf_rho =
-            Gamma::new(self.v / 2.0, self.s / 2.0).unwrap().ln_f(&rho);
+            Gamma::new_unchecked(self.v / 2.0, self.s / 2.0).ln_f(&rho);
         let prior_sigma = (self.r * rho).recip().sqrt();
-        let lnf_mu = Gaussian::new(self.m, prior_sigma).unwrap().ln_f(&x.mu());
+        let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&x.mu());
         lnf_rho + lnf_mu - HALF_LN_2PI
     }
 
@@ -367,3 +368,5 @@ impl fmt::Display for NormalGammaError {
         }
     }
 }
+
+// TODO: tests!

@@ -9,7 +9,13 @@ pub use stat::GaussianSuffStat;
 pub use stat::MvGaussianSuffStat;
 pub use stat::PoissonSuffStat;
 
+use crate::dist::{Bernoulli, Categorical, Gaussian, Poisson};
 use crate::traits::{HasSuffStat, SuffStat};
+
+pub type BernoulliData<'a, X> = DataOrSuffStat<'a, X, Bernoulli>;
+pub type CategoricalData<'a, X> = DataOrSuffStat<'a, X, Categorical>;
+pub type GaussianData<'a, X> = DataOrSuffStat<'a, X, Gaussian>;
+pub type PoissonData<'a, X> = DataOrSuffStat<'a, X, Poisson>;
 
 /// The trait that data must implemented by all data used with the
 /// `Categorical` distribution

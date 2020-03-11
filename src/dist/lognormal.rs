@@ -204,6 +204,7 @@ macro_rules! impl_traits {
     ($kind: ty) => {
         impl Rv<$kind> for LogNormal {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: cache ln(sigma)
                 let xk = f64::from(*x);
                 let xk_ln = xk.ln();
                 let d = (xk_ln - self.mu) / self.sigma;

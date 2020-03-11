@@ -64,6 +64,7 @@ impl PartialEq for NegBinomial {
 
 impl NegBinomial {
     /// Create a new Negative Binomial distribution
+    #[inline]
     pub fn new(r: f64, p: f64) -> Result<Self, NegBinomialError> {
         if r < 1.0 {
             Err(NegBinomialError::RLessThanOne { r })
@@ -79,6 +80,7 @@ impl NegBinomial {
     }
 
     /// Create a new Negative Binomial distribution without input validation.
+    #[inline]
     pub fn new_unchecked(r: f64, p: f64) -> Self {
         NegBinomial {
             r,
@@ -141,7 +143,6 @@ impl NegBinomial {
     #[inline]
     pub fn set_r_unchecked(&mut self, r: f64) {
         self.r = r;
-        self.ln_1mp = OnceCell::new();
         self.r_ln_p = OnceCell::new();
     }
 

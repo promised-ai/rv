@@ -40,6 +40,7 @@ impl ChiSquared {
     ///
     /// # Arguments
     /// - k: Degrees of freedom in (0, ∞)
+    #[inline]
     pub fn new(k: f64) -> Result<Self, ChiSquaredError> {
         if k <= 0.0 {
             Err(ChiSquaredError::KTooLow { k })
@@ -52,6 +53,7 @@ impl ChiSquared {
 
     /// Create a new ChiSquared wihout checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(k: f64) -> Self {
         ChiSquared { k }
     }
@@ -65,6 +67,7 @@ impl ChiSquared {
     /// let x2 = ChiSquared::new(1.2).unwrap();
     /// assert_eq!(x2.k(), 1.2);
     /// ```
+    #[inline]
     pub fn k(&self) -> f64 {
         self.k
     }
@@ -92,6 +95,7 @@ impl ChiSquared {
     /// assert!(x2.set_k(std::f64::NAN).is_err());
     /// assert!(x2.set_k(std::f64::INFINITY).is_err());
     /// ```
+    #[inline]
     pub fn set_k(&mut self, k: f64) -> Result<(), ChiSquaredError> {
         if !k.is_finite() {
             Err(ChiSquaredError::KNotFinite { k })
@@ -123,6 +127,7 @@ macro_rules! impl_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k2 = self.k / 2.0;
                 let xf = f64::from(*x);
+                // TODO: cache (k2 - LN_2 - k2.ln_gamma().0)
                 (k2 - 1.0) * xf.ln() - xf / 2.0 - k2 * LN_2 - k2.ln_gamma().0
             }
 

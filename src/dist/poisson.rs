@@ -3,6 +3,7 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::data::PoissonSuffStat;
 use crate::impl_display;
+use crate::misc::ln_fact;
 use crate::traits::*;
 use rand::Rng;
 use rand_distr::Poisson as RPossion;
@@ -45,6 +46,7 @@ pub enum PoissonError {
 
 impl Poisson {
     /// Create a new Poisson distribution with given rate
+    #[inline]
     pub fn new(rate: f64) -> Result<Self, PoissonError> {
         if rate <= 0.0 {
             Err(PoissonError::RateTooLow { rate })
@@ -56,6 +58,7 @@ impl Poisson {
     }
 
     /// Creates a new Poisson without checking whether the parameter is valid.
+    #[inline]
     pub fn new_unchecked(rate: f64) -> Self {
         Poisson { rate }
     }
@@ -69,6 +72,7 @@ impl Poisson {
     /// let pois = Poisson::new(2.0).unwrap();
     /// assert_eq!(pois.rate(), 2.0);
     /// ```
+    #[inline]
     pub fn rate(&self) -> f64 {
         self.rate
     }
@@ -129,8 +133,9 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Poisson {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: cache ln(rate)
                 let kf = f64::from(*x);
-                kf * self.rate.ln() - self.rate - (kf + 1.0).ln_gamma().0
+                kf * self.rate.ln() - self.rate - ln_fact(*x as usize)
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {

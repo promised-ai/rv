@@ -244,17 +244,18 @@ impl Rv<MvGaussian> for NormalInvWishart {
     fn ln_f(&self, x: &MvGaussian) -> f64 {
         let m = self.mu.clone();
         let sigma = x.cov().to_owned() / self.k;
-        let mvg = MvGaussian::new(m, sigma).unwrap();
-        let iw = InvWishart::new(self.scale.clone(), self.df).unwrap();
+        // TODO: cache mvg and iw instead of cloning
+        let mvg = MvGaussian::new_unchecked(m, sigma);
+        let iw = InvWishart::new_unchecked(self.scale.clone(), self.df);
         mvg.ln_f(x.mu()) + iw.ln_f(x.cov())
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> MvGaussian {
-        let iw = InvWishart::new(self.scale.clone(), self.df).unwrap();
+        let iw = InvWishart::new_unchecked(self.scale.clone(), self.df);
         let sigma = iw.draw(&mut rng);
 
         let mvg =
-            MvGaussian::new(self.mu.clone(), sigma.clone() / self.k).unwrap();
+            MvGaussian::new_unchecked(self.mu.clone(), sigma.clone() / self.k);
         let mu = mvg.draw(&mut rng);
 
         MvGaussian::new(mu, sigma).unwrap()
@@ -299,3 +300,4 @@ impl fmt::Display for NormalInvWishartError {
         }
     }
 }
+// TODO: Tests!

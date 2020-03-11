@@ -34,6 +34,7 @@ impl<T: DuParam> DiscreteUniform<T> {
     /// # Arguments
     /// - a: lower bound
     /// - b : upper bound
+    #[inline]
     pub fn new(a: T, b: T) -> Result<Self, DiscreteUniformError> {
         if a < b {
             Ok(Self { a, b })
@@ -44,6 +45,7 @@ impl<T: DuParam> DiscreteUniform<T> {
 
     /// Creates a new DiscreteUniform without checking whether the parameters
     /// are valid.
+    #[inline]
     pub fn new_unchecked(a: T, b: T) -> Self {
         Self { a, b }
     }
@@ -57,6 +59,7 @@ impl<T: DuParam> DiscreteUniform<T> {
     /// let du = DiscreteUniform::new(1_u8, 22_u8).unwrap();
     /// assert_eq!(du.a(), 1);
     /// ```
+    #[inline]
     pub fn a(&self) -> T {
         self.a
     }
@@ -70,6 +73,7 @@ impl<T: DuParam> DiscreteUniform<T> {
     /// let du = DiscreteUniform::new(1_u8, 22_u8).unwrap();
     /// assert_eq!(du.b(), 22);
     /// ```
+    #[inline]
     pub fn b(&self) -> T {
         self.b
     }

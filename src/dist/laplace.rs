@@ -197,6 +197,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Laplace {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: could cache ln(b)
                 -(f64::from(*x) - self.mu).abs() / self.b - self.b.ln() - LN_2
             }
 

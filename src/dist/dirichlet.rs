@@ -42,6 +42,7 @@ impl SymmetricDirichlet {
     /// # Arguments
     /// - alpha: The Dirichlet weight.
     /// - k : The number of weights. `alpha` will be replicated `k` times.
+    #[inline]
     pub fn new(alpha: f64, k: usize) -> Result<Self, SymmetricDirichletError> {
         if k == 0 {
             Err(SymmetricDirichletError::KIsZero)
@@ -56,6 +57,7 @@ impl SymmetricDirichlet {
 
     /// Create a new SymmetricDirichlet without checking whether the parmaeters
     /// are valid.
+    #[inline]
     pub fn new_unchecked(alpha: f64, k: usize) -> Self {
         SymmetricDirichlet { alpha, k }
     }
@@ -69,6 +71,7 @@ impl SymmetricDirichlet {
     /// let symdir = SymmetricDirichlet::jeffreys(4).unwrap();
     /// assert_eq!(symdir, SymmetricDirichlet::new(0.5, 4).unwrap());
     /// ```
+    #[inline]
     pub fn jeffreys(k: usize) -> Result<Self, SymmetricDirichletError> {
         if k == 0 {
             Err(SymmetricDirichletError::KIsZero)
@@ -86,6 +89,7 @@ impl SymmetricDirichlet {
     /// let symdir = SymmetricDirichlet::new(1.2, 5).unwrap();
     /// assert_eq!(symdir.alpha(), 1.2);
     /// ```
+    #[inline]
     pub fn alpha(&self) -> f64 {
         self.alpha
     }
@@ -114,6 +118,7 @@ impl SymmetricDirichlet {
     /// assert!(symdir.set_alpha(std::f64::NEG_INFINITY).is_err());
     /// assert!(symdir.set_alpha(std::f64::NAN).is_err());
     /// ```
+    #[inline]
     pub fn set_alpha(
         &mut self,
         alpha: f64,
@@ -143,6 +148,7 @@ impl SymmetricDirichlet {
     /// let symdir = SymmetricDirichlet::new(1.2, 5).unwrap();
     /// assert_eq!(symdir.k(), 5);
     /// ```
+    #[inline]
     pub fn k(&self) -> usize {
         self.k
     }
@@ -160,11 +166,12 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
     fn draw<R: Rng>(&self, rng: &mut R) -> Vec<f64> {
         let g = RGamma::new(self.alpha, 1.0).unwrap();
         let xs: Vec<f64> = (0..self.k).map(|_| rng.sample(g)).collect();
-        let z = xs.iter().fold(0.0, |acc, x| acc + x);
+        let z: f64 = xs.iter().sum();
         xs.iter().map(|x| x / z).collect()
     }
 
     fn ln_f(&self, x: &Vec<f64>) -> f64 {
+        // TODO: could cache ln_gamma(alpha)
         let kf = self.k as f64;
         let sum_ln_gamma = self.alpha.ln_gamma().0 * kf;
         let ln_gamma_sum = (self.alpha * kf).ln_gamma().0;
@@ -232,7 +239,8 @@ impl Dirichlet {
 
     /// Creates a new Dirichlet without checking whether the parameters are
     /// valid.
-    fn new_unchecked(alphas: Vec<f64>) -> Self {
+    #[inline]
+    pub fn new_unchecked(alphas: Vec<f64>) -> Self {
         Dirichlet { alphas }
     }
 
@@ -256,6 +264,7 @@ impl Dirichlet {
     /// let x: Vec<f64> = vec![0.1, 0.4, 0.3, 0.2];
     /// assert::close(dir.ln_f(&x), symdir.ln_f(&x), 1E-12);
     /// ```
+    #[inline]
     pub fn symmetric(alpha: f64, k: usize) -> Result<Self, DirichletError> {
         if k == 0 {
             Err(DirichletError::KIsZero)
@@ -291,6 +300,7 @@ impl Dirichlet {
     /// let x: Vec<f64> = vec![0.1, 0.4, 0.5];
     /// assert::close(dir.ln_f(&x), symdir.ln_f(&x), 1E-12);
     /// ```
+    #[inline]
     pub fn jeffreys(k: usize) -> Result<Self, DirichletError> {
         if k == 0 {
             Err(DirichletError::KIsZero)
@@ -300,11 +310,13 @@ impl Dirichlet {
     }
 
     /// The length of `alphas` / the number of categories
+    #[inline]
     pub fn k(&self) -> usize {
         self.alphas.len()
     }
 
     /// Get a reference to the weights vector, `alphas`
+    #[inline]
     pub fn alphas(&self) -> &Vec<f64> {
         &self.alphas
     }
@@ -345,17 +357,13 @@ impl Rv<Vec<f64>> for Dirichlet {
     }
 
     fn ln_f(&self, x: &Vec<f64>) -> f64 {
+        // XXX: could cache all ln_gamma(alpha)
         let sum_ln_gamma: f64 = self
             .alphas
             .iter()
             .fold(0.0, |acc, &alpha| acc + alpha.ln_gamma().0);
 
-        let ln_gamma_sum: f64 = self
-            .alphas
-            .iter()
-            .fold(0.0, |acc, &alpha| acc + alpha)
-            .ln_gamma()
-            .0;
+        let ln_gamma_sum: f64 = self.alphas.iter().sum::<f64>().ln_gamma().0;
 
         let term = x
             .iter()

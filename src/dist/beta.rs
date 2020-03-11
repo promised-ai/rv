@@ -478,6 +478,48 @@ mod tests {
     }
 
     #[test]
+    fn pdf_preserved_after_set_reset_alpha() {
+        let x: f64 = 0.6;
+        let alpha = 1.5;
+
+        let mut beta = Beta::new(alpha, 2.0).unwrap();
+
+        let f_1 = beta.f(&x);
+        let ln_f_1 = beta.ln_f(&x);
+
+        beta.set_alpha(3.4).unwrap();
+
+        assert_ne!(f_1, beta.f(&x));
+        assert_ne!(ln_f_1, beta.ln_f(&x));
+
+        beta.set_alpha(alpha).unwrap();
+
+        assert_eq!(f_1, beta.f(&x));
+        assert_eq!(ln_f_1, beta.ln_f(&x));
+    }
+
+    #[test]
+    fn pdf_preserved_after_set_reset_beta() {
+        let x: f64 = 0.6;
+        let b = 2.0;
+
+        let mut beta = Beta::new(2.5, b).unwrap();
+
+        let f_1 = beta.f(&x);
+        let ln_f_1 = beta.ln_f(&x);
+
+        beta.set_beta(3.4).unwrap();
+
+        assert_ne!(f_1, beta.f(&x));
+        assert_ne!(ln_f_1, beta.ln_f(&x));
+
+        beta.set_beta(b).unwrap();
+
+        assert_eq!(f_1, beta.f(&x));
+        assert_eq!(ln_f_1, beta.ln_f(&x));
+    }
+
+    #[test]
     fn cdf_hump_shaped() {
         let beta = Beta::new(1.5, 2.0).unwrap();
         let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];

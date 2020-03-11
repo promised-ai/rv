@@ -136,17 +136,20 @@ impl Categorical {
 
     /// Creates a new Categorical without checking whether the ln weights are
     /// valid.
+    #[inline]
     fn new_unchecked(ln_weights: Vec<f64>) -> Self {
         Categorical { ln_weights }
     }
 
     /// Creates a Categorical distribution over [0, k) with uniform weights
+    #[inline]
     pub fn uniform(k: usize) -> Self {
         let lnp = (1.0 / k as f64).ln();
         Categorical::new_unchecked(vec![lnp; k])
     }
 
     /// Return the weights (`exp(ln_weights)`)
+    #[inline]
     pub fn weights(&self) -> Vec<f64> {
         self.ln_weights.iter().map(|&w| w.exp()).collect()
     }
@@ -160,11 +163,13 @@ impl Categorical {
     /// let cat = Categorical::uniform(4);
     /// assert_eq!(cat.k(), 4);
     /// ```
+    #[inline]
     pub fn k(&self) -> usize {
         self.ln_weights.len()
     }
 
     /// Get a reference to the weights
+    #[inline]
     pub fn ln_weights(&self) -> &Vec<f64> {
         &self.ln_weights
     }

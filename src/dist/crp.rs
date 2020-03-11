@@ -72,6 +72,7 @@ impl Crp {
     }
 
     /// Create a new Crp without checking whether the parametes are valid.
+    #[inline]
     pub fn new_unchecked(alpha: f64, n: usize) -> Self {
         Crp { alpha, n }
     }
@@ -85,6 +86,7 @@ impl Crp {
     /// let crp = Crp::new(1.0, 12).unwrap();
     /// assert_eq!(crp.alpha(), 1.0);
     /// ```
+    #[inline]
     pub fn alpha(&self) -> f64 {
         self.alpha
     }
@@ -113,6 +115,7 @@ impl Crp {
     /// assert!(crp.set_alpha(std::f64::NEG_INFINITY).is_err());
     /// assert!(crp.set_alpha(std::f64::NAN).is_err());
     /// ```
+    #[inline]
     pub fn set_alpha(&mut self, alpha: f64) -> Result<(), CrpError> {
         if alpha <= 0.0 {
             Err(CrpError::AlphaTooLow { alpha })
@@ -139,6 +142,7 @@ impl Crp {
     /// let crp = Crp::new(1.0, 12).unwrap();
     /// assert_eq!(crp.n(), 12);
     /// ```
+    #[inline]
     pub fn n(&self) -> usize {
         self.n
     }
@@ -164,6 +168,7 @@ impl Crp {
     /// assert!(crp.set_n(1).is_ok());
     /// assert!(crp.set_n(0).is_err());
     /// ```
+    #[inline]
     pub fn set_n(&mut self, n: usize) -> Result<(), CrpError> {
         if n == 0 {
             Err(CrpError::NIsZero)
@@ -195,6 +200,7 @@ impl Rv<Partition> for Crp {
             .iter()
             .fold(0.0, |acc, ct| acc + (*ct as f64).ln_gamma().0);
 
+        // TODO: could cache ln(alpha) and ln_gamma(alpha)
         gsum + (x.k() as f64) * self.alpha.ln() + self.alpha.ln_gamma().0
             - (x.len() as f64 + self.alpha).ln_gamma().0
     }

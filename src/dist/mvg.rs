@@ -32,11 +32,13 @@ impl MvgCache {
         }
     }
 
+    #[inline]
     pub fn from_chol(cov_chol: Cholesky<f64, Dynamic>) -> Self {
         let cov_inv = cov_chol.inverse();
         MvgCache { cov_chol, cov_inv }
     }
 
+    #[inline]
     pub fn cov(&self) -> DMatrix<f64> {
         let l = self.cov_chol.l();
         &l * &l.transpose()
