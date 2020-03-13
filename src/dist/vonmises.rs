@@ -342,7 +342,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!(VonMises::default());
+    test_basic_impls!([continuous] VonMises::default());
 
     #[test]
     fn new_should_allow_mu_in_0_2pi() {

@@ -406,7 +406,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!(Gaussian::standard());
+    test_basic_impls!([continuous] Gaussian::standard());
 
     #[test]
     fn new() {

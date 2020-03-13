@@ -312,7 +312,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!(Gamma::default());
+    test_basic_impls!([continuous] Gamma::default());
 
     #[test]
     fn new() {

@@ -509,7 +509,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const MARDIA_PVAL: f64 = 0.2;
 
-    test_basic_impls!(MvGaussian::standard(3).unwrap());
+    test_basic_impls!(MvGaussian::standard(3).unwrap(), DVector::zeros(3));
 
     #[test]
     fn new() {

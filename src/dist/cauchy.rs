@@ -283,7 +283,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!(Cauchy::default());
+    test_basic_impls!([continuous] Cauchy::default());
 
     #[test]
     fn ln_pdf_loc_zero() {

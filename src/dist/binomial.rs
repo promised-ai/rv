@@ -337,7 +337,7 @@ mod tests {
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!(Binomial::uniform(10));
+    test_basic_impls!([count] Binomial::uniform(10));
 
     #[test]
     fn new() {

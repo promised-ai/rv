@@ -243,7 +243,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!(DiscreteUniform::new(0, 10).unwrap());
+    test_basic_impls!([count] DiscreteUniform::new(0_u32, 10_u32).unwrap());
 
     #[test]
     fn new() {

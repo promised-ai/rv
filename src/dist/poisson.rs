@@ -246,7 +246,7 @@ mod tests {
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!(Poisson::new(0.5).unwrap());
+    test_basic_impls!([count] Poisson::new(0.5).unwrap());
 
     #[test]
     fn new() {

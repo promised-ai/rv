@@ -450,7 +450,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!(Kumaraswamy::centered(1.2).unwrap());
+    test_basic_impls!([continuous] Kumaraswamy::centered(1.2).unwrap());
 
     #[test]
     fn cdf_uniform_midpoint() {

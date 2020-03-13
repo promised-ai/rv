@@ -228,7 +228,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!(StudentsT::default());
+    test_basic_impls!([continuous] StudentsT::default());
 
     #[test]
     fn new() {

@@ -293,7 +293,7 @@ mod tests {
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!(Categorical::uniform(3));
+    test_basic_impls!([categorical] Categorical::uniform(3));
 
     #[test]
     fn ln_weights_should_logsumexp_to_1() {

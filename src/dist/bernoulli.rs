@@ -433,7 +433,7 @@ mod tests {
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!(Bernoulli::default());
+    test_basic_impls!([binary] Bernoulli::default());
 
     #[test]
     fn new() {

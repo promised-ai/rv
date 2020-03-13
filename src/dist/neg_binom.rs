@@ -326,7 +326,7 @@ mod tests {
 
     const TOL: f64 = 1E-10;
 
-    test_basic_impls!(NegBinomial::new(2.1, 0.6).unwrap());
+    test_basic_impls!([count] NegBinomial::new(2.1, 0.6).unwrap());
 
     #[test]
     fn new_with_good_params() {

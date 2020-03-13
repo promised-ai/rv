@@ -239,7 +239,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!(InvWishart::identity(3));
+    test_basic_impls!(InvWishart::identity(3), DMatrix::identity(3, 3));
 
     #[test]
     fn new_should_reject_df_too_low() {

@@ -319,7 +319,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!(Pareto::new(1.0, 2.0).unwrap());
+    test_basic_impls!([continuous] Pareto::new(1.0, 0.2).unwrap());
 
     #[test]
     fn new() {

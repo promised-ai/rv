@@ -326,7 +326,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!(LogNormal::default());
+    test_basic_impls!([continuous] LogNormal::default());
 
     #[test]
     fn new() {

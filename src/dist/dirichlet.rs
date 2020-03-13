@@ -430,7 +430,7 @@ mod tests {
     mod dir {
         use super::*;
 
-        test_basic_impls!(Dirichlet::jeffreys(4).unwrap());
+        test_basic_impls!(Dirichlet::jeffreys(4).unwrap(), vec![0.25_f64; 4]);
 
         #[test]
         fn properly_sized_points_on_simplex_should_be_in_support() {
@@ -507,7 +507,10 @@ mod tests {
     mod symdir {
         use super::*;
 
-        test_basic_impls!(SymmetricDirichlet::jeffreys(4).unwrap());
+        test_basic_impls!(
+            SymmetricDirichlet::jeffreys(4).unwrap(),
+            vec![0.25_f64; 4]
+        );
 
         #[test]
         fn sample_should_return_the_proper_number_of_draws() {

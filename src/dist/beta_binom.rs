@@ -390,7 +390,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!(BetaBinomial::new(10, 0.2, 0.7).unwrap());
+    test_basic_impls!([count] BetaBinomial::new(10, 0.2, 0.7).unwrap());
 
     #[test]
     fn new() {

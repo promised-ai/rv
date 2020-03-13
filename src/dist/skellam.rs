@@ -325,7 +325,7 @@ mod tests {
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!(Skellam::new(0.5, 2.0).unwrap());
+    test_basic_impls!(Skellam::new(0.5, 2.0).unwrap(), 3_i32);
 
     #[test]
     fn new() {

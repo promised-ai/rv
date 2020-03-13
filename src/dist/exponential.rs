@@ -251,7 +251,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!(Exponential::new(1.0).unwrap());
+    test_basic_impls!([continuous] Exponential::new(1.0).unwrap());
 
     #[test]
     fn new() {
