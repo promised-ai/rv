@@ -70,9 +70,9 @@ macro_rules! impl_traits {
                 let post = self.posterior(&data_or_suff);
 
                 let z0 =
-                    self.shape().ln_gamma().0 - self.shape() * self.rate().ln();
+                    self.shape().ln_gamma().0 - self.shape() * self.rate.ln();
                 let zn =
-                    post.shape().ln_gamma().0 - post.shape() * post.rate().ln();
+                    post.shape().ln_gamma().0 - post.shape() * post.rate.ln();
 
                 zn - z0 - stat.sum_ln_fact()
             }

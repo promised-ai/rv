@@ -5,6 +5,7 @@ use crate::data::PoissonSuffStat;
 use crate::impl_display;
 use crate::misc::ln_fact;
 use crate::traits::*;
+use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Poisson as RPossion;
 use special::Gamma as _;
@@ -33,6 +34,9 @@ use std::fmt;
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Poisson {
     rate: f64,
+    /// Cached ln(rate)
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    ln_rate: OnceCell<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -53,14 +57,22 @@ impl Poisson {
         } else if !rate.is_finite() {
             Err(PoissonError::RateNotFinite { rate })
         } else {
-            Ok(Poisson { rate })
+            Ok(Self::new_unchecked(rate))
         }
     }
 
     /// Creates a new Poisson without checking whether the parameter is valid.
     #[inline]
     pub fn new_unchecked(rate: f64) -> Self {
-        Poisson { rate }
+        Poisson {
+            rate,
+            ln_rate: OnceCell::new(),
+        }
+    }
+
+    #[inline]
+    pub fn ln_rate(&self) -> f64 {
+        *self.ln_rate.get_or_init(|| self.rate.ln())
     }
 
     /// Get the rate parameter
@@ -118,6 +130,7 @@ impl Poisson {
     #[inline]
     pub fn set_rate_unchecked(&mut self, rate: f64) {
         self.rate = rate;
+        self.ln_rate = OnceCell::new();
     }
 }
 
@@ -133,9 +146,8 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Poisson {
             fn ln_f(&self, x: &$kind) -> f64 {
-                // TODO: cache ln(rate)
                 let kf = f64::from(*x);
-                kf * self.rate.ln() - self.rate - ln_fact(*x as usize)
+                kf * self.ln_rate() - self.rate - ln_fact(*x as usize)
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -257,11 +269,30 @@ mod tests {
     }
 
     #[test]
-    fn ln_pdf() {
+    fn ln_pmf() {
         let pois = Poisson::new(5.3).unwrap();
         assert::close(pois.ln_pmf(&1_u32), -3.6322931794419238, TOL);
         assert::close(pois.ln_pmf(&5_u32), -1.7489576399916658, TOL);
         assert::close(pois.ln_pmf(&11_u32), -4.4575328197350492, TOL);
+    }
+
+    #[test]
+    fn pmf_preserved_after_rate_set_reset() {
+        let x: u32 = 3;
+        let mut pois = Poisson::new(5.3).unwrap();
+
+        let pmf_1 = pois.pmf(&x);
+        let ln_pmf_1 = pois.ln_pmf(&x);
+
+        pois.set_rate(1.2).unwrap();
+
+        assert!((pmf_1 - pois.pmf(&x)).abs() > 1e-4);
+        assert!((ln_pmf_1 - pois.ln_pmf(&x)).abs() > 1e-4);
+
+        pois.set_rate(5.3).unwrap();
+
+        assert_eq!(pmf_1, pois.pmf(&x));
+        assert_eq!(ln_pmf_1, pois.ln_pmf(&x));
     }
 
     #[test]

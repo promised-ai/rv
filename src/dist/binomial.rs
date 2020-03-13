@@ -248,12 +248,7 @@ macro_rules! impl_int_traits {
                 // TODO: could cache ln(p) and ln(q)
                 ln_binom(nf, kf) + self.p.ln() * kf + self.q().ln() * (nf - kf)
             }
-
-            // XXX: Opportunity for optimization in `sample`. Sometime in the
-            // future, we should do some criterion benchmarks to test when it
-            // is faster to draw using alias tables or some other method.
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                // TODO: This is really awful.
                 let b = rand_distr::Binomial::new(self.n, self.p).unwrap();
                 rng.sample(b) as $kind
             }

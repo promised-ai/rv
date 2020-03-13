@@ -43,8 +43,8 @@ pub struct Gaussian {
     mu: f64,
     /// Standard deviation
     sigma: f64,
-    #[cfg_attr(feature = "serde1", serde(skip))]
     /// Cached log(sigma)
+    #[cfg_attr(feature = "serde1", serde(skip))]
     ln_sigma: OnceCell<f64>,
 }
 
