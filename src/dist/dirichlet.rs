@@ -165,9 +165,10 @@ impl_display!(SymmetricDirichlet);
 impl Rv<Vec<f64>> for SymmetricDirichlet {
     fn draw<R: Rng>(&self, rng: &mut R) -> Vec<f64> {
         let g = RGamma::new(self.alpha, 1.0).unwrap();
-        let xs: Vec<f64> = (0..self.k).map(|_| rng.sample(g)).collect();
+        let mut xs: Vec<f64> = (0..self.k).map(|_| rng.sample(g)).collect();
         let z: f64 = xs.iter().sum();
-        xs.iter().map(|x| x / z).collect()
+        xs.iter_mut().for_each(|x| *x /= z);
+        xs
     }
 
     fn ln_f(&self, x: &Vec<f64>) -> f64 {
@@ -345,15 +346,15 @@ impl Support<Vec<f64>> for SymmetricDirichlet {
 
 impl Rv<Vec<f64>> for Dirichlet {
     fn draw<R: Rng>(&self, rng: &mut R) -> Vec<f64> {
-        // TODO: offload to Gamma distribution
         let gammas: Vec<RGamma<f64>> = self
             .alphas
             .iter()
             .map(|&alpha| RGamma::new(alpha, 1.0).unwrap())
             .collect();
-        let xs: Vec<f64> = gammas.iter().map(|g| rng.sample(g)).collect();
-        let z = xs.iter().fold(0.0, |acc, x| acc + x);
-        xs.iter().map(|x| x / z).collect()
+        let mut xs: Vec<f64> = gammas.iter().map(|g| rng.sample(g)).collect();
+        let z: f64 = xs.iter().sum();
+        xs.iter_mut().for_each(|x| *x /= z);
+        xs
     }
 
     fn ln_f(&self, x: &Vec<f64>) -> f64 {
