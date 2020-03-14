@@ -2,9 +2,9 @@
 use serde_derive::{Deserialize, Serialize};
 
 use crate::data::PoissonSuffStat;
-use crate::impl_display;
 use crate::misc::ln_fact;
 use crate::traits::*;
+use crate::{clone_cache_f64, impl_display};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Poisson as RPossion;
@@ -30,13 +30,28 @@ use std::fmt;
 /// let xs: Vec<u32> = pois.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Poisson {
     rate: f64,
     /// Cached ln(rate)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_rate: OnceCell<f64>,
+}
+
+impl Clone for Poisson {
+    fn clone(&self) -> Self {
+        Poisson {
+            rate: self.rate,
+            ln_rate: clone_cache_f64!(self, ln_rate),
+        }
+    }
+}
+
+impl PartialEq for Poisson {
+    fn eq(&self, other: &Poisson) -> bool {
+        self.rate == other.rate
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

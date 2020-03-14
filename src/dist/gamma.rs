@@ -2,8 +2,8 @@
 #[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
-use crate::impl_display;
 use crate::traits::*;
+use crate::{clone_cache_f64, impl_display};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Gamma as _;
@@ -22,7 +22,7 @@ mod poisson_prior;
 /// f(x|α, β) = ----  x^(α-1) e^(-βx)
 ///             Γ(α)
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Gamma {
     shape: f64,
@@ -33,6 +33,23 @@ pub struct Gamma {
     // ln(rate)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_rate: OnceCell<f64>,
+}
+
+impl Clone for Gamma {
+    fn clone(&self) -> Self {
+        Gamma {
+            shape: self.shape,
+            rate: self.rate,
+            ln_gamma_shape: clone_cache_f64!(self, ln_gamma_shape),
+            ln_rate: clone_cache_f64!(self, ln_rate),
+        }
+    }
+}
+
+impl PartialEq for Gamma {
+    fn eq(&self, other: &Gamma) -> bool {
+        self.shape == other.shape && self.rate == other.rate
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -84,7 +101,10 @@ impl Gamma {
     /// Get ln(gamma(rate))
     #[inline]
     pub fn ln_gamma_shape(&self) -> f64 {
-        *self.ln_gamma_shape.get_or_init(|| self.shape.ln_gamma().0)
+        *self.ln_gamma_shape.get_or_init(|| {
+            println!("ln_gamma(shape)");
+            self.shape.ln_gamma().0
+        })
     }
 
     /// Get the shape parameter

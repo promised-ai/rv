@@ -2,8 +2,8 @@
 #[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
-use crate::impl_display;
 use crate::traits::*;
+use crate::{clone_cache_f64, impl_display};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Beta as _;
@@ -55,7 +55,7 @@ impl Clone for Beta {
         Self {
             alpha: self.alpha,
             beta: self.beta,
-            ln_beta_ab: OnceCell::from(self.ln_beta_ab.clone()),
+            ln_beta_ab: clone_cache_f64!(self, ln_beta_ab),
         }
     }
 }

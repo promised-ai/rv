@@ -11,8 +11,8 @@ use std::fmt;
 
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
-use crate::impl_display;
 use crate::traits::*;
+use crate::{clone_cache_f64, impl_display};
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.
@@ -53,7 +53,7 @@ impl Clone for Gaussian {
         Self {
             mu: self.mu,
             sigma: self.sigma,
-            ln_sigma: OnceCell::from(self.ln_sigma()),
+            ln_sigma: clone_cache_f64!(self, ln_sigma),
         }
     }
 }

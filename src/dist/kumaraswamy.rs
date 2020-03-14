@@ -3,8 +3,8 @@
 use serde_derive::{Deserialize, Serialize};
 
 use crate::consts::EULER_MASCERONI;
-use crate::impl_display;
 use crate::traits::*;
+use crate::{clone_cache_f64, impl_display};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Gamma as _;
@@ -57,7 +57,7 @@ impl Clone for Kumaraswamy {
         Self {
             a: self.a,
             b: self.b,
-            ab_ln: OnceCell::from(self.ab_ln.clone()),
+            ab_ln: clone_cache_f64!(self, ab_ln),
         }
     }
 }

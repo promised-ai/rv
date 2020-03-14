@@ -92,3 +92,14 @@ macro_rules! impl_display {
         }
     };
 }
+
+#[macro_export]
+macro_rules! clone_cache_f64 {
+    ($this:ident, $($field:tt)+) => {
+        if let Some(&val) = $this.$($field)+.get() {
+            OnceCell::from(val)
+        } else {
+            OnceCell::new()
+        }
+    }
+}

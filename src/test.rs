@@ -18,11 +18,25 @@ macro_rules! test_basic_impls {
     ($fx: expr, $x: expr) => {
         #[test]
         fn should_impl_debug_clone_and_partialeq() {
-            let fx2 = $fx.clone();
+            // make the expression a thing. If we don't do this, calling $fx
+            // reconstructs the distribution which means we don't do caching
+            let fx = $fx;
+
+            // clone a copy of fn before any computation of cached values is
+            // done
+            let fx2 = fx.clone();
             assert_eq!($fx, fx2);
-            let _f = $fx.ln_f(&$x);
-            assert_eq!(fx2, $fx);
-            let _s1 = format!("{:?}", $fx);
+
+            // Computing ln_f normally initializes all cached values
+            let y1 = fx.ln_f(&$x);
+            let y2 = fx.ln_f(&$x);
+            assert_eq!(y1, y2);
+
+            // check the fx == fx2 despite fx having its cached values initalized
+            assert_eq!(fx2, fx);
+
+            // Make sure Debug is implemented for fx
+            let _s1 = format!("{:?}", fx);
         }
     };
 }

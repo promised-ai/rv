@@ -1,3 +1,4 @@
+use crate::clone_cache_f64;
 use crate::dist::Poisson;
 use crate::misc::ln_binom;
 use crate::traits::*;
@@ -50,8 +51,8 @@ impl Clone for NegBinomial {
         Self {
             r: self.r,
             p: self.p,
-            ln_1mp: OnceCell::from(self.ln_1mp()),
-            r_ln_p: OnceCell::from(self.r_ln_p()),
+            ln_1mp: clone_cache_f64!(self, ln_1mp),
+            r_ln_p: clone_cache_f64!(self, r_ln_p),
         }
     }
 }
