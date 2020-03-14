@@ -4,6 +4,7 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
+use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Gamma as _;
 use std::fmt;
@@ -26,6 +27,12 @@ mod poisson_prior;
 pub struct Gamma {
     shape: f64,
     rate: f64,
+    // ln(gamma(shape))
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    ln_gamma_shape: OnceCell<f64>,
+    // ln(rate)
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    ln_rate: OnceCell<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -53,14 +60,31 @@ impl Gamma {
         } else if !rate.is_finite() {
             Err(GammaError::RateNotFinite { rate })
         } else {
-            Ok(Gamma { shape, rate })
+            Ok(Gamma::new_unchecked(shape, rate))
         }
     }
 
     /// Creates a new Gamma without checking whether the parameters are valid.
     #[inline]
     pub fn new_unchecked(shape: f64, rate: f64) -> Self {
-        Gamma { shape, rate }
+        Gamma {
+            shape,
+            rate,
+            ln_gamma_shape: OnceCell::new(),
+            ln_rate: OnceCell::new(),
+        }
+    }
+
+    /// Get ln(rate)
+    #[inline]
+    pub fn ln_rate(&self) -> f64 {
+        *self.ln_rate.get_or_init(|| self.rate.ln())
+    }
+
+    /// Get ln(gamma(rate))
+    #[inline]
+    pub fn ln_gamma_shape(&self) -> f64 {
+        *self.ln_gamma_shape.get_or_init(|| self.shape.ln_gamma().0)
     }
 
     /// Get the shape parameter
@@ -118,6 +142,7 @@ impl Gamma {
     #[inline]
     pub fn set_shape_unchecked(&mut self, shape: f64) {
         self.shape = shape;
+        self.ln_gamma_shape = OnceCell::new();
     }
 
     /// Get the rate parameter
@@ -175,15 +200,13 @@ impl Gamma {
     #[inline]
     pub fn set_rate_unchecked(&mut self, rate: f64) {
         self.rate = rate;
+        self.ln_rate = OnceCell::new();
     }
 }
 
 impl Default for Gamma {
     fn default() -> Self {
-        Gamma {
-            shape: 1.0,
-            rate: 1.0,
-        }
+        Gamma::new_unchecked(1.0, 1.0)
     }
 }
 
@@ -199,8 +222,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Gamma {
             fn ln_f(&self, x: &$kind) -> f64 {
-                // TODO: cache ln rate and ln_gamma(shape)
-                self.shape * self.rate.ln() - self.shape.ln_gamma().0
+                self.shape * self.ln_rate() - self.ln_gamma_shape()
                     + (self.shape - 1.0) * f64::from(*x).ln()
                     - (self.rate * f64::from(*x))
             }
@@ -259,8 +281,8 @@ impl Variance<f64> for Gamma {
 
 impl Entropy for Gamma {
     fn entropy(&self) -> f64 {
-        self.shape - self.rate.ln()
-            + self.shape.ln_gamma().0
+        self.shape - self.ln_rate()
+            + self.ln_gamma_shape()
             + (1.0 - self.shape) * self.shape.digamma()
     }
 }
