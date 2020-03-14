@@ -94,13 +94,13 @@ impl Gamma {
 
     /// Get ln(rate)
     #[inline]
-    pub fn ln_rate(&self) -> f64 {
+    fn ln_rate(&self) -> f64 {
         *self.ln_rate.get_or_init(|| self.rate.ln())
     }
 
     /// Get ln(gamma(rate))
     #[inline]
-    pub fn ln_gamma_shape(&self) -> f64 {
+    fn ln_gamma_shape(&self) -> f64 {
         *self.ln_gamma_shape.get_or_init(|| {
             println!("ln_gamma(shape)");
             self.shape.ln_gamma().0

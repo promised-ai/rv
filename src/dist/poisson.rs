@@ -86,7 +86,7 @@ impl Poisson {
     }
 
     #[inline]
-    pub fn ln_rate(&self) -> f64 {
+    fn ln_rate(&self) -> f64 {
         *self.ln_rate.get_or_init(|| self.rate.ln())
     }
 

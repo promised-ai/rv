@@ -2,8 +2,9 @@
 #[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
-use crate::impl_display;
 use crate::traits::*;
+use crate::{clone_cache_f64, impl_display};
+use once_cell::sync::OnceCell;
 use rand::Rng;
 use std::f64;
 use std::fmt;
@@ -26,11 +27,30 @@ use std::fmt;
 /// assert!((u.cdf(&3.0_f64) - y(3.0)).abs() < 1E-12);
 /// assert!((u.cdf(&3.2_f64) - y(3.2)).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Uniform {
     a: f64,
     b: f64,
+    /// Cached value of the ln(PDF)
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    lnf: OnceCell<f64>,
+}
+
+impl Clone for Uniform {
+    fn clone(&self) -> Self {
+        Self {
+            a: self.a,
+            b: self.b,
+            lnf: clone_cache_f64!(self, lnf),
+        }
+    }
+}
+
+impl PartialEq for Uniform {
+    fn eq(&self, other: &Uniform) -> bool {
+        self.a == other.a && self.b == other.b
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -55,7 +75,7 @@ impl Uniform {
         } else if !b.is_finite() {
             Err(UniformError::BNotFinite { b })
         } else {
-            Ok(Uniform { a, b })
+            Ok(Uniform::new_unchecked(a, b))
         }
     }
 
@@ -63,7 +83,11 @@ impl Uniform {
     /// valid.
     #[inline]
     pub fn new_unchecked(a: f64, b: f64) -> Self {
-        Uniform { a, b }
+        Uniform {
+            a,
+            b,
+            lnf: OnceCell::new(),
+        }
     }
 
     /// Get the lower bound, a
@@ -93,6 +117,11 @@ impl Uniform {
     pub fn b(&self) -> f64 {
         self.b
     }
+
+    #[inline]
+    fn lnf(&self) -> f64 {
+        *self.lnf.get_or_init(|| -(self.b - self.a).ln())
+    }
 }
 
 impl Default for Uniform {
@@ -113,10 +142,10 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Uniform {
             fn ln_f(&self, x: &$kind) -> f64 {
-                // TODO: should just cache the whole ln_pdf
                 let xf = f64::from(*x);
                 if self.a <= xf && xf <= self.b {
-                    -(self.b - self.a).ln()
+                    // call the lnf cache field
+                    self.lnf()
                 } else {
                     f64::NEG_INFINITY
                 }
