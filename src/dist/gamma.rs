@@ -102,7 +102,6 @@ impl Gamma {
     #[inline]
     fn ln_gamma_shape(&self) -> f64 {
         *self.ln_gamma_shape.get_or_init(|| {
-            println!("ln_gamma(shape)");
             self.shape.ln_gamma().0
         })
     }
