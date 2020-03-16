@@ -1,18 +1,18 @@
 //! Gaussian/Normal distribution over x in (-∞, ∞)
-use std::f64::consts::SQRT_2;
+#[cfg(feature = "serde1")]
+use serde_derive::{Deserialize, Serialize};
 
-use getset::Setters;
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Normal;
-#[cfg(feature = "serde_support")]
-use serde_derive::{Deserialize, Serialize};
 use special::Error as _;
+use std::f64::consts::SQRT_2;
+use std::fmt;
 
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
-use crate::impl_display;
 use crate::traits::*;
+use crate::{clone_cache_f64, impl_display};
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.
@@ -36,16 +36,15 @@ use crate::traits::*;
 /// let kl_sym = gauss_1.kl_sym(&gauss_2);
 /// assert!((kl_sym - (kl_12 + kl_21)).abs() < 1E-12);
 /// ```
-#[derive(Debug, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Gaussian {
     /// Mean
-    #[set = "pub"]
     mu: f64,
     /// Standard deviation
     sigma: f64,
-    #[cfg_attr(feature = "serde_support", serde(skip))]
     /// Cached log(sigma)
+    #[cfg_attr(feature = "serde1", serde(skip))]
     ln_sigma: OnceCell<f64>,
 }
 
@@ -54,7 +53,7 @@ impl Clone for Gaussian {
         Self {
             mu: self.mu,
             sigma: self.sigma,
-            ln_sigma: OnceCell::from(self.ln_sigma()),
+            ln_sigma: clone_cache_f64!(self, ln_sigma),
         }
     }
 }
@@ -65,15 +64,15 @@ impl PartialEq for Gaussian {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum GaussianError {
     /// The mu parameter is infinite or NaN
-    MuNotFiniteError,
+    MuNotFinite { mu: f64 },
     /// The sigma parameter is less than or equal to zero
-    SigmaTooLowError,
+    SigmaTooLow { sigma: f64 },
     /// The sigma parameter is infinite or NaN
-    SigmaNotFiniteError,
+    SigmaNotFinite { sigma: f64 },
 }
 
 impl Gaussian {
@@ -84,11 +83,11 @@ impl Gaussian {
     /// - sigma: standard deviation
     pub fn new(mu: f64, sigma: f64) -> Result<Self, GaussianError> {
         if !mu.is_finite() {
-            Err(GaussianError::MuNotFiniteError)
+            Err(GaussianError::MuNotFinite { mu })
         } else if sigma <= 0.0 {
-            Err(GaussianError::SigmaTooLowError)
+            Err(GaussianError::SigmaTooLow { sigma })
         } else if !sigma.is_finite() {
-            Err(GaussianError::SigmaNotFiniteError)
+            Err(GaussianError::SigmaNotFinite { sigma })
         } else {
             Ok(Gaussian {
                 mu,
@@ -143,6 +142,45 @@ impl Gaussian {
         self.mu
     }
 
+    /// Set the value of mu
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gaussian;
+    /// let mut gauss = Gaussian::new(2.0, 1.5).unwrap();
+    /// assert_eq!(gauss.mu(), 2.0);
+    ///
+    /// gauss.set_mu(1.3).unwrap();
+    /// assert_eq!(gauss.mu(), 1.3);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Gaussian;
+    /// # let mut gauss = Gaussian::new(2.0, 1.5).unwrap();
+    /// assert!(gauss.set_mu(1.3).is_ok());
+    /// assert!(gauss.set_mu(std::f64::NEG_INFINITY).is_err());
+    /// assert!(gauss.set_mu(std::f64::INFINITY).is_err());
+    /// assert!(gauss.set_mu(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_mu(&mut self, mu: f64) -> Result<(), GaussianError> {
+        if !mu.is_finite() {
+            Err(GaussianError::MuNotFinite { mu })
+        } else {
+            self.set_mu_unchecked(mu);
+            Ok(())
+        }
+    }
+
+    /// Set the value of mu without input validation
+    #[inline]
+    pub fn set_mu_unchecked(&mut self, mu: f64) {
+        self.mu = mu;
+    }
+
     /// Get sigma parameter
     ///
     /// # Example
@@ -159,12 +197,36 @@ impl Gaussian {
     }
 
     /// Set the value of sigma
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Gaussian;
+    /// let mut gauss = Gaussian::standard();
+    /// assert_eq!(gauss.sigma(), 1.0);
+    ///
+    /// gauss.set_sigma(2.3).unwrap();
+    /// assert_eq!(gauss.sigma(), 2.3);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Gaussian;
+    /// # let mut gauss = Gaussian::standard();
+    /// assert!(gauss.set_sigma(2.3).is_ok());
+    /// assert!(gauss.set_sigma(0.0).is_err());
+    /// assert!(gauss.set_sigma(-1.0).is_err());
+    /// assert!(gauss.set_sigma(std::f64::INFINITY).is_err());
+    /// assert!(gauss.set_sigma(std::f64::NEG_INFINITY).is_err());
+    /// assert!(gauss.set_sigma(std::f64::NAN).is_err());
+    /// ```
     #[inline]
     pub fn set_sigma(&mut self, sigma: f64) -> Result<(), GaussianError> {
         if sigma <= 0.0 {
-            Err(GaussianError::SigmaTooLowError)
+            Err(GaussianError::SigmaTooLow { sigma })
         } else if !sigma.is_finite() {
-            Err(GaussianError::SigmaNotFiniteError)
+            Err(GaussianError::SigmaNotFinite { sigma })
         } else {
             self.set_sigma_unchecked(sigma);
             Ok(())
@@ -311,15 +373,40 @@ impl KlDivergence for Gaussian {
     }
 }
 
+impl QuadBounds for Gaussian {
+    fn quad_bounds(&self) -> (f64, f64) {
+        self.interval(0.99999999999)
+    }
+}
+
 impl_traits!(f32);
 impl_traits!(f64);
+
+impl std::error::Error for GaussianError {}
+
+impl fmt::Display for GaussianError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
+            Self::SigmaTooLow { sigma } => {
+                write!(f, "sigma ({}) must be greater than zero", sigma)
+            }
+            Self::SigmaNotFinite { sigma } => {
+                write!(f, "non-finite sigma: {}", sigma)
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
+
+    test_basic_impls!([continuous] Gaussian::standard());
 
     #[test]
     fn new() {
@@ -524,7 +611,7 @@ mod tests {
         let mut gauss = Gaussian::standard();
         assert::close(gauss.ln_pdf(&0.0_f64), -0.91893853320467267, TOL);
 
-        gauss.set_mu(1.0);
+        gauss.set_mu(1.0).unwrap();
         assert::close(gauss.ln_pdf(&1.0_f64), -0.91893853320467267, TOL);
     }
 

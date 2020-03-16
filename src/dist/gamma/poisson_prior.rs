@@ -4,7 +4,6 @@ use crate::data::{DataOrSuffStat, PoissonSuffStat};
 use crate::dist::{Gamma, Poisson};
 use crate::misc::ln_binom;
 use crate::traits::*;
-use special::Gamma as SGamma;
 
 impl Rv<Poisson> for Gamma {
     fn ln_f(&self, x: &Poisson) -> f64 {
@@ -69,12 +68,10 @@ macro_rules! impl_traits {
                     DataOrSuffStat::SuffStat(&stat);
                 let post = self.posterior(&data_or_suff);
 
-                let z0 =
-                    self.shape().ln_gamma().0 - self.shape() * self.rate().ln();
-                let zn =
-                    post.shape().ln_gamma().0 - post.shape() * post.rate().ln();
+                let z0 = self.ln_gamma_shape() - self.shape() * self.ln_rate();
+                let zn = post.ln_gamma_shape() - post.shape() * post.ln_rate();
 
-                zn - z0 - stat.sum_log_fact()
+                zn - z0 - stat.sum_ln_fact()
             }
 
             fn ln_pp(

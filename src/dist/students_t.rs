@@ -1,40 +1,40 @@
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use special::Gamma as SGamma;
 use std::f64::consts::PI;
 use std::f64::INFINITY;
+use std::fmt;
 
 /// [Student's T distribution](https://en.wikipedia.org/wiki/Student%27s_t-distribution)
 /// over x in (-∞, ∞).
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct StudentsT {
     /// Degrees of freedom, ν, in (0, ∞)
-    #[set = "pub"]
     v: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum StudentsTError {
     /// The v parameter is infinite or NaN
-    VNotFiniteError,
+    VNotFinite { v: f64 },
     /// The v parameter is less than or equal to zero
-    VTooLowError,
+    VTooLow { v: f64 },
 }
 
 impl StudentsT {
     /// Create a new Student's T distribtuion with degrees of freedom, v.
+    #[inline]
     pub fn new(v: f64) -> Result<Self, StudentsTError> {
         if v <= 0.0 {
-            Err(StudentsTError::VTooLowError)
+            Err(StudentsTError::VTooLow { v })
         } else if !v.is_finite() {
-            Err(StudentsTError::VNotFiniteError)
+            Err(StudentsTError::VNotFinite { v })
         } else {
             Ok(StudentsT { v })
         }
@@ -42,13 +42,63 @@ impl StudentsT {
 
     /// Creates a new StudentsT without checking whether the parameter is
     /// valid.
+    #[inline]
     pub fn new_unchecked(v: f64) -> Self {
         StudentsT { v }
     }
 
     /// Get the degrees of freedom, v
+    #[inline]
     pub fn v(&self) -> f64 {
         self.v
+    }
+
+    /// Set the value of v
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::StudentsT;
+    ///
+    /// let mut t = StudentsT::new(1.2).unwrap();
+    /// assert_eq!(t.v(), 1.2);
+    ///
+    /// t.set_v(4.3).unwrap();
+    /// assert_eq!(t.v(), 4.3);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::StudentsT;
+    /// # let mut t = StudentsT::new(1.2).unwrap();
+    /// assert!(t.set_v(2.1).is_ok());
+    ///
+    /// // must be greater than zero
+    /// assert!(t.set_v(0.0).is_err());
+    /// assert!(t.set_v(-1.0).is_err());
+    ///
+    ///
+    /// assert!(t.set_v(std::f64::INFINITY).is_err());
+    /// assert!(t.set_v(std::f64::NEG_INFINITY).is_err());
+    /// assert!(t.set_v(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_v(&mut self, v: f64) -> Result<(), StudentsTError> {
+        if !v.is_finite() {
+            Err(StudentsTError::VNotFinite { v })
+        } else if v <= 0.0 {
+            Err(StudentsTError::VTooLow { v })
+        } else {
+            self.set_v_unchecked(v);
+            Ok(())
+        }
+    }
+
+    /// Set the value of v without input validation
+    #[inline]
+    pub fn set_v_unchecked(&mut self, v: f64) {
+        self.v = v;
     }
 }
 
@@ -70,6 +120,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for StudentsT {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: could cache ln(pi*v) and ln_gamma(v/2)
                 let vp1 = (self.v + 1.0) / 2.0;
                 let xterm = -vp1 * (1.0 + f64::from(*x).powi(2) / self.v).ln();
                 let zterm = vp1.ln_gamma().0
@@ -156,12 +207,28 @@ impl Kurtosis for StudentsT {
 impl_traits!(f64);
 impl_traits!(f32);
 
+impl std::error::Error for StudentsTError {}
+
+impl fmt::Display for StudentsTError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::VNotFinite { v } => write!(f, "non-finite v: {}", v),
+            Self::VTooLow { v } => {
+                write!(f, "v ({}) must be greater than zero", v)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
+
+    test_basic_impls!([continuous] StudentsT::default());
 
     #[test]
     fn new() {

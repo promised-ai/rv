@@ -9,16 +9,16 @@ use std::f64::consts::{LN_2, PI};
 type MvgData<'a> = DataOrSuffStat<'a, DVector<f64>, MvGaussian>;
 
 macro_rules! extract_stat_then {
-    ($dims: expr, $x: ident, $func: expr) => {{
+    ($ndims: expr, $x: ident, $func: expr) => {{
         match $x {
             DataOrSuffStat::SuffStat(ref stat) => $func(&stat),
             DataOrSuffStat::Data(xs) => {
-                let mut stat = MvGaussianSuffStat::new($dims);
+                let mut stat = MvGaussianSuffStat::new($ndims);
                 stat.observe_many(&xs);
                 $func(&stat)
             }
             DataOrSuffStat::None => {
-                let stat = MvGaussianSuffStat::new($dims);
+                let stat = MvGaussianSuffStat::new($ndims);
                 $func(&stat)
             }
         }
@@ -42,7 +42,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         }
 
         let nf = x.n() as f64;
-        extract_stat_then!(self.dims(), x, |stat: &MvGaussianSuffStat| {
+        extract_stat_then!(self.ndims(), x, |stat: &MvGaussianSuffStat| {
             let xbar = stat.sum_x() / stat.n() as f64;
             let diff = &xbar - self.mu();
             let s = stat.sum_x_sq() - nf * (&xbar * &xbar.transpose());
@@ -64,13 +64,13 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         let z0 = ln_z(self.k(), self.df(), self.scale());
         let zn = ln_z(post.k(), post.df(), post.scale());
 
-        let nd: f64 = (self.dims() as f64) * (x.n() as f64);
+        let nd: f64 = (self.ndims() as f64) * (x.n() as f64);
 
         zn - z0 - nd / 2.0 * LN_2PI
     }
 
     fn ln_pp(&self, y: &DVector<f64>, x: &MvgData) -> f64 {
-        let mut y_stat = MvGaussianSuffStat::new(self.dims());
+        let mut y_stat = MvGaussianSuffStat::new(self.ndims());
         y_stat.observe(&y);
         let y_packed = DataOrSuffStat::SuffStat(&y_stat);
 
@@ -80,7 +80,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         let zn = ln_z(post.k(), post.df(), post.scale());
         let zm = ln_z(pred.k(), pred.df(), pred.scale());
 
-        let d: f64 = self.dims() as f64;
+        let d: f64 = self.ndims() as f64;
 
         zm - zn - d / 2.0 * LN_2PI
     }

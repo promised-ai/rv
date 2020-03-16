@@ -1,15 +1,21 @@
 //! Data utilities
 mod partition;
-mod suffstat;
+mod stat;
 
 pub use partition::Partition;
-pub use suffstat::BernoulliSuffStat;
-pub use suffstat::CategoricalSuffStat;
-pub use suffstat::GaussianSuffStat;
-pub use suffstat::MvGaussianSuffStat;
-pub use suffstat::PoissonSuffStat;
+pub use stat::BernoulliSuffStat;
+pub use stat::CategoricalSuffStat;
+pub use stat::GaussianSuffStat;
+pub use stat::MvGaussianSuffStat;
+pub use stat::PoissonSuffStat;
 
+use crate::dist::{Bernoulli, Categorical, Gaussian, Poisson};
 use crate::traits::{HasSuffStat, SuffStat};
+
+pub type BernoulliData<'a, X> = DataOrSuffStat<'a, X, Bernoulli>;
+pub type CategoricalData<'a, X> = DataOrSuffStat<'a, X, Categorical>;
+pub type GaussianData<'a, X> = DataOrSuffStat<'a, X, Gaussian>;
+pub type PoissonData<'a, X> = DataOrSuffStat<'a, X, Poisson>;
 
 /// The trait that data must implemented by all data used with the
 /// `Categorical` distribution
@@ -115,7 +121,7 @@ impl_booleable!(i64);
 impl_booleable!(isize);
 
 /// Holds either a sufficient statistic of a vector of data.
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DataOrSuffStat<'a, X, Fx>
 where
     X: 'a,

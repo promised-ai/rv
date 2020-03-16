@@ -1,14 +1,14 @@
 //! Exponential distribution over x in [0, ∞)
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use rand_distr::Exp;
 use std::f64;
 use std::f64::consts::LN_2;
+use std::fmt;
 
 /// [Exponential distribution](https://en.wikipedia.org/wiki/Exponential_distribution),
 /// Exp(λ) over x in [0, ∞).
@@ -23,21 +23,20 @@ use std::f64::consts::LN_2;
 /// let expon = Exponential::new(1.5).unwrap();
 /// let interval: (f64, f64) = expon.interval(0.5);  // (0.19, 0.92)
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Exponential {
     /// λ > 0, rate or inverse scale
-    #[set = "pub"]
     rate: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum ExponentialError {
     /// rate parameter is less than or equal to zero
-    RateTooLowError,
+    RateTooLow { rate: f64 },
     /// rate parameter is infinite or zero
-    RateNotFiniteError,
+    RateNotFinite { rate: f64 },
 }
 
 impl Exponential {
@@ -45,11 +44,12 @@ impl Exponential {
     ///
     /// # Arguments
     /// - rate: λ > 0, rate or inverse scale
+    #[inline]
     pub fn new(rate: f64) -> Result<Self, ExponentialError> {
         if rate <= 0.0 {
-            Err(ExponentialError::RateTooLowError)
+            Err(ExponentialError::RateTooLow { rate })
         } else if !rate.is_finite() {
-            Err(ExponentialError::RateNotFiniteError)
+            Err(ExponentialError::RateNotFinite { rate })
         } else {
             Ok(Exponential { rate })
         }
@@ -57,6 +57,7 @@ impl Exponential {
 
     /// Creates a new Exponential without checking whether the parameter is
     /// valid.
+    #[inline]
     pub fn new_unchecked(rate: f64) -> Self {
         Exponential { rate }
     }
@@ -70,8 +71,52 @@ impl Exponential {
     /// let expon = Exponential::new(1.3).unwrap();
     /// assert_eq!(expon.rate(), 1.3);
     /// ```
+    #[inline]
     pub fn rate(&self) -> f64 {
         self.rate
+    }
+
+    /// Set the rate parameter
+    ///
+    /// # Example
+    /// ```rust
+    /// # use rv::dist::Exponential;
+    /// let mut expon = Exponential::new(1.3).unwrap();
+    /// assert_eq!(expon.rate(), 1.3);
+    ///
+    /// expon.set_rate(2.1).unwrap();
+    /// assert_eq!(expon.rate(), 2.1);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Exponential;
+    /// # let mut expon = Exponential::new(1.3).unwrap();
+    /// assert!(expon.set_rate(2.1).is_ok());
+    /// assert!(expon.set_rate(0.1).is_ok());
+    /// assert!(expon.set_rate(0.0).is_err());
+    /// assert!(expon.set_rate(-1.0).is_err());
+    /// assert!(expon.set_rate(std::f64::INFINITY).is_err());
+    /// assert!(expon.set_rate(std::f64::NEG_INFINITY).is_err());
+    /// assert!(expon.set_rate(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_rate(&mut self, rate: f64) -> Result<(), ExponentialError> {
+        if rate <= 0.0 {
+            Err(ExponentialError::RateTooLow { rate })
+        } else if !rate.is_finite() {
+            Err(ExponentialError::RateNotFinite { rate })
+        } else {
+            self.set_rate_unchecked(rate);
+            Ok(())
+        }
+    }
+
+    /// Set the rate parameter without input validation
+    #[inline]
+    pub fn set_rate_unchecked(&mut self, rate: f64) {
+        self.rate = rate;
     }
 }
 
@@ -87,6 +132,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Exponential {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: could cache ln(rate)
                 if x < &0.0 {
                     f64::NEG_INFINITY
                 } else {
@@ -179,15 +225,33 @@ impl KlDivergence for Exponential {
 impl_traits!(f64);
 impl_traits!(f32);
 
+impl std::error::Error for ExponentialError {}
+
+impl fmt::Display for ExponentialError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::RateTooLow { rate } => {
+                write!(f, "rate ({}) must be greater than zero", rate)
+            }
+            Self::RateNotFinite { rate } => {
+                write!(f, "non-finite rate: {}", rate)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::ks_test;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!([continuous] Exponential::new(1.0).unwrap());
 
     #[test]
     fn new() {

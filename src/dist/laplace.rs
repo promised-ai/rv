@@ -1,12 +1,12 @@
 //! Laplace (double exponential) distribution
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use std::f64::consts::{E, FRAC_1_SQRT_2, LN_2};
+use std::fmt;
 
 /// [Laplace](https://en.wikipedia.org/wiki/Laplace_distribution), or double
 /// exponential, distribution over x in (-∞, ∞).
@@ -23,37 +23,35 @@ use std::f64::consts::{E, FRAC_1_SQRT_2, LN_2};
 /// let xs: Vec<f64> = laplace.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Laplace {
     /// Location in (-∞, ∞)
-    #[set = "pub"]
     mu: f64,
     /// Scale in (0, ∞)
-    #[set = "pub"]
     b: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum LaplaceError {
     /// The mu parameter is infinite or NaN
-    MuNotFiniteError,
+    MuNotFinite { mu: f64 },
     /// The b parameter less than or equal to zero
-    BTooLowError,
+    BTooLow { b: f64 },
     /// The b parameter is infinite or NaN
-    BNotFiniteError,
+    BNotFinite { b: f64 },
 }
 
 impl Laplace {
     /// Create a new Laplace distribution.
     pub fn new(mu: f64, b: f64) -> Result<Self, LaplaceError> {
         if !mu.is_finite() {
-            Err(LaplaceError::MuNotFiniteError)
+            Err(LaplaceError::MuNotFinite { mu })
         } else if !b.is_finite() {
-            Err(LaplaceError::BNotFiniteError)
+            Err(LaplaceError::BNotFinite { b })
         } else if b <= 0.0 {
-            Err(LaplaceError::BTooLowError)
+            Err(LaplaceError::BTooLow { b })
         } else {
             Ok(Laplace { mu, b })
         }
@@ -61,6 +59,7 @@ impl Laplace {
 
     /// Creates a new Laplace without checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(mu: f64, b: f64) -> Self {
         Laplace { mu, b }
     }
@@ -74,8 +73,47 @@ impl Laplace {
     /// let laplace = Laplace::new(-1.0, 2.0).unwrap();
     /// assert_eq!(laplace.mu(), -1.0);
     /// ```
+    #[inline]
     pub fn mu(&self) -> f64 {
         self.mu
+    }
+
+    /// Set the value of the mu parameter
+    ///
+    /// # Example
+    /// ```rust
+    /// # use rv::dist::Laplace;
+    /// let mut laplace = Laplace::new(-1.0, 2.0).unwrap();
+    /// assert_eq!(laplace.mu(), -1.0);
+    ///
+    /// laplace.set_mu(2.3).unwrap();
+    /// assert_eq!(laplace.mu(), 2.3);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Laplace;
+    /// # let mut laplace = Laplace::new(-1.0, 2.0).unwrap();
+    /// assert!(laplace.set_mu(0.0).is_ok());
+    /// assert!(laplace.set_mu(std::f64::INFINITY).is_err());
+    /// assert!(laplace.set_mu(std::f64::NEG_INFINITY).is_err());
+    /// assert!(laplace.set_mu(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_mu(&mut self, mu: f64) -> Result<(), LaplaceError> {
+        if mu.is_finite() {
+            self.set_mu_unchecked(mu);
+            Ok(())
+        } else {
+            Err(LaplaceError::MuNotFinite { mu })
+        }
+    }
+
+    /// Set the value of the mu parameter without input validation
+    #[inline]
+    pub fn set_mu_unchecked(&mut self, mu: f64) {
+        self.mu = mu;
     }
 
     /// Get the b parameter
@@ -87,8 +125,50 @@ impl Laplace {
     /// let laplace = Laplace::new(-1.0, 2.0).unwrap();
     /// assert_eq!(laplace.b(), 2.0);
     /// ```
+    #[inline]
     pub fn b(&self) -> f64 {
         self.b
+    }
+
+    /// Set the value of the b parameter
+    ///
+    /// # Example
+    /// ```rust
+    /// # use rv::dist::Laplace;
+    /// let mut laplace = Laplace::new(-1.0, 2.0).unwrap();
+    /// assert_eq!(laplace.b(), 2.0);
+    ///
+    /// laplace.set_b(2.3).unwrap();
+    /// assert_eq!(laplace.b(), 2.3);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Laplace;
+    /// # let mut laplace = Laplace::new(-1.0, 2.0).unwrap();
+    /// assert!(laplace.set_b(2.3).is_ok());
+    /// assert!(laplace.set_b(0.0).is_err());
+    /// assert!(laplace.set_b(std::f64::INFINITY).is_err());
+    /// assert!(laplace.set_b(std::f64::NEG_INFINITY).is_err());
+    /// assert!(laplace.set_b(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_b(&mut self, b: f64) -> Result<(), LaplaceError> {
+        if b <= 0.0 {
+            Err(LaplaceError::BTooLow { b })
+        } else if !b.is_finite() {
+            Err(LaplaceError::BNotFinite { b })
+        } else {
+            self.set_b_unchecked(b);
+            Ok(())
+        }
+    }
+
+    /// Set the value of the b parameter without input validation
+    #[inline]
+    pub fn set_b_unchecked(&mut self, b: f64) {
+        self.b = b;
     }
 }
 
@@ -117,6 +197,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Laplace {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: could cache ln(b)
                 -(f64::from(*x) - self.mu).abs() / self.b - self.b.ln() - LN_2
             }
 
@@ -192,15 +273,32 @@ impl Entropy for Laplace {
 impl_traits!(f64);
 impl_traits!(f32);
 
+impl std::error::Error for LaplaceError {}
+
+impl fmt::Display for LaplaceError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
+            Self::BTooLow { b } => {
+                write!(f, "b ({}) must be greater than zero", b)
+            }
+            Self::BNotFinite { b } => write!(f, "non-finite b: {}", b),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::ks_test;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!([continuous] Laplace::default());
 
     #[test]
     fn new() {

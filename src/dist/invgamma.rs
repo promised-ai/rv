@@ -1,12 +1,12 @@
 //! Inverse Gamma distribution over x in (0, ∞)
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use special::Gamma as _;
+use std::fmt;
 
 /// [Inverse gamma distribution](https://en.wikipedia.org/wiki/Inverse-gamma_distribution)
 /// IG(α, β) over x in (0, ∞).
@@ -16,28 +16,26 @@ use special::Gamma as _;
 /// f(x|α, β) = ----  x^(-α-1) e^(-β/x)
 ///             Γ(α)
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct InvGamma {
     // shape parameter, α
-    #[set = "pub"]
     shape: f64,
     // scale parameter, β
-    #[set = "pub"]
     scale: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum InvGammaError {
     /// Shape parameter is less than or equal to zero
-    ShapeTooLowError,
+    ShapeTooLow { shape: f64 },
     /// Shape parameter is infinite or NaN
-    ShapeNotFintieError,
+    ShapeNotFinite { shape: f64 },
     /// Scale parameter is less than or equal to zero
-    ScaleTooLowError,
+    ScaleTooLow { scale: f64 },
     /// Scale parameter is infinite or NaN
-    ScaleNotFintieError,
+    ScaleNotFinite { scale: f64 },
 }
 
 impl InvGamma {
@@ -48,13 +46,13 @@ impl InvGamma {
     /// - scale scale parameter, β
     pub fn new(shape: f64, scale: f64) -> Result<Self, InvGammaError> {
         if shape <= 0.0 {
-            Err(InvGammaError::ShapeTooLowError)
+            Err(InvGammaError::ShapeTooLow { shape })
         } else if scale <= 0.0 {
-            Err(InvGammaError::ScaleTooLowError)
+            Err(InvGammaError::ScaleTooLow { scale })
         } else if !shape.is_finite() {
-            Err(InvGammaError::ShapeNotFintieError)
+            Err(InvGammaError::ShapeNotFinite { shape })
         } else if !scale.is_finite() {
-            Err(InvGammaError::ScaleNotFintieError)
+            Err(InvGammaError::ScaleNotFinite { scale })
         } else {
             Ok(InvGamma { shape, scale })
         }
@@ -62,6 +60,7 @@ impl InvGamma {
 
     /// Creates a new InvGamma without checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(shape: f64, scale: f64) -> Self {
         InvGamma { shape, scale }
     }
@@ -75,11 +74,55 @@ impl InvGamma {
     /// let ig = InvGamma::new(1.0, 2.0).unwrap();
     /// assert_eq!(ig.shape(), 1.0);
     /// ```
+    #[inline]
     pub fn shape(&self) -> f64 {
         self.shape
     }
 
-    /// Get the scale paramter
+    /// Set the shape parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::InvGamma;
+    /// let mut ig = InvGamma::new(2.0, 1.0).unwrap();
+    /// assert_eq!(ig.shape(), 2.0);
+    ///
+    /// ig.set_shape(1.1).unwrap();
+    /// assert_eq!(ig.shape(), 1.1);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::InvGamma;
+    /// # let mut ig = InvGamma::new(2.0, 1.0).unwrap();
+    /// assert!(ig.set_shape(1.1).is_ok());
+    /// assert!(ig.set_shape(0.0).is_err());
+    /// assert!(ig.set_shape(-1.0).is_err());
+    /// assert!(ig.set_shape(std::f64::INFINITY).is_err());
+    /// assert!(ig.set_shape(std::f64::NEG_INFINITY).is_err());
+    /// assert!(ig.set_shape(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_shape(&mut self, shape: f64) -> Result<(), InvGammaError> {
+        if shape <= 0.0 {
+            Err(InvGammaError::ShapeTooLow { shape })
+        } else if !shape.is_finite() {
+            Err(InvGammaError::ShapeNotFinite { shape })
+        } else {
+            self.set_shape_unchecked(shape);
+            Ok(())
+        }
+    }
+
+    /// Set the shape parameter without input validation
+    #[inline]
+    pub fn set_shape_unchecked(&mut self, shape: f64) {
+        self.shape = shape;
+    }
+
+    /// Get the scale parameter
     ///
     /// # Example
     ///
@@ -88,8 +131,52 @@ impl InvGamma {
     /// let ig = InvGamma::new(1.0, 2.0).unwrap();
     /// assert_eq!(ig.scale(), 2.0);
     /// ```
+    #[inline]
     pub fn scale(&self) -> f64 {
         self.scale
+    }
+
+    /// Set the scale parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::InvGamma;
+    /// let mut ig = InvGamma::new(2.0, 1.0).unwrap();
+    /// assert_eq!(ig.scale(), 1.0);
+    ///
+    /// ig.set_scale(1.1).unwrap();
+    /// assert_eq!(ig.scale(), 1.1);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::InvGamma;
+    /// # let mut ig = InvGamma::new(2.0, 1.0).unwrap();
+    /// assert!(ig.set_scale(1.1).is_ok());
+    /// assert!(ig.set_scale(0.0).is_err());
+    /// assert!(ig.set_scale(-1.0).is_err());
+    /// assert!(ig.set_scale(std::f64::INFINITY).is_err());
+    /// assert!(ig.set_scale(std::f64::NEG_INFINITY).is_err());
+    /// assert!(ig.set_scale(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_scale(&mut self, scale: f64) -> Result<(), InvGammaError> {
+        if scale <= 0.0 {
+            Err(InvGammaError::ScaleTooLow { scale })
+        } else if !scale.is_finite() {
+            Err(InvGammaError::ScaleNotFinite { scale })
+        } else {
+            self.set_scale_unchecked(scale);
+            Ok(())
+        }
+    }
+
+    /// Set the scale parameter without input validation
+    #[inline]
+    pub fn set_scale_unchecked(&mut self, scale: f64) {
+        self.scale = scale;
     }
 }
 
@@ -114,6 +201,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for InvGamma {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: could cache ln(scale) and ln_gamma(shape)
                 let xf = f64::from(*x);
                 self.shape * self.scale.ln()
                     - self.shape.ln_gamma().0
@@ -210,15 +298,39 @@ impl Kurtosis for InvGamma {
 impl_traits!(f32);
 impl_traits!(f64);
 
+impl std::error::Error for InvGammaError {}
+
+impl fmt::Display for InvGammaError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ShapeTooLow { shape } => {
+                write!(f, "rate ({}) must be greater than zero", shape)
+            }
+            Self::ShapeNotFinite { shape } => {
+                write!(f, "non-finite rate: {}", shape)
+            }
+            Self::ScaleTooLow { scale } => {
+                write!(f, "scale ({}) must be greater than zero", scale)
+            }
+            Self::ScaleNotFinite { scale } => {
+                write!(f, "non-finite scale: {}", scale)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::ks_test;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!([continuous] InvGamma::default());
 
     #[test]
     fn new() {

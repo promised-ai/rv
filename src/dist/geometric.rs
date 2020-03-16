@@ -1,13 +1,13 @@
 //! Possion distribution on unisgned integers
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::dist::Uniform;
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
 use num::{Bounded, FromPrimitive, Integer, Saturating, ToPrimitive, Unsigned};
 use rand::Rng;
+use std::fmt;
 
 /// [Geometric distribution](https://en.wikipedia.org/wiki/Geometric_distribution)
 /// over x in {0, 1, 2, 3, ... }.
@@ -25,33 +25,33 @@ use rand::Rng;
 /// let xs: Vec<u32> = geom.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
-#[derive(Debug, Clone, PartialOrd, PartialEq, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Geometric {
-    #[set = "pub"]
     p: f64,
 }
 
-#[derive(Debug, Clone, PartialOrd, PartialEq, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum GeometricError {
     /// The p parameter is infinite or NaN
-    PNotFiniteError,
+    PNotFinite { p: f64 },
     /// The p parameter is less than or equal to zero
-    PTooLowError,
+    PTooLow { p: f64 },
     /// The p parameter is greater than one
-    PGreaterThanOneError,
+    PGreaterThanOne { p: f64 },
 }
 
 impl Geometric {
     /// Create a new geometric distribution
+    #[inline]
     pub fn new(p: f64) -> Result<Self, GeometricError> {
         if !p.is_finite() {
-            Err(GeometricError::PNotFiniteError)
+            Err(GeometricError::PNotFinite { p })
         } else if p <= 0.0 {
-            Err(GeometricError::PTooLowError)
+            Err(GeometricError::PTooLow { p })
         } else if p > 1.0 {
-            Err(GeometricError::PGreaterThanOneError)
+            Err(GeometricError::PGreaterThanOne { p })
         } else {
             Ok(Geometric { p })
         }
@@ -59,16 +59,65 @@ impl Geometric {
 
     /// Creates a new Geometric without checking whether the parameter is
     /// valid.
+    #[inline]
     pub fn new_unchecked(p: f64) -> Self {
         Geometric { p }
     }
 
     /// Get the p parameter
+    #[inline]
     pub fn p(&self) -> f64 {
         self.p
     }
 
+    /// Set the p parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Geometric;
+    /// let mut geom = Geometric::new(0.2).unwrap();
+    /// geom.set_p(0.5).unwrap();
+    ///
+    /// assert_eq!(geom.p(), 0.5);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Geometric;
+    /// # let mut geom = Geometric::new(0.2).unwrap();
+    /// assert!(geom.set_p(0.5).is_ok());
+    /// assert!(geom.set_p(1.0).is_ok());
+    /// assert!(geom.set_p(0.0).is_err());
+    /// assert!(geom.set_p(-1.0).is_err());
+    /// assert!(geom.set_p(1.1).is_err());
+    /// assert!(geom.set_p(std::f64::INFINITY).is_err());
+    /// assert!(geom.set_p(std::f64::NEG_INFINITY).is_err());
+    /// assert!(geom.set_p(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_p(&mut self, p: f64) -> Result<(), GeometricError> {
+        if !p.is_finite() {
+            Err(GeometricError::PNotFinite { p })
+        } else if p > 1.0 {
+            Err(GeometricError::PGreaterThanOne { p })
+        } else if p <= 0.0 {
+            Err(GeometricError::PTooLow { p })
+        } else {
+            self.set_p_unchecked(p);
+            Ok(())
+        }
+    }
+
+    /// Set p without input validation
+    #[inline]
+    pub fn set_p_unchecked(&mut self, p: f64) {
+        self.p = p;
+    }
+
     // Use the inversion method to select the corresponding integer.
+    #[inline]
     fn inversion_draw_method<X, R>(rng: &mut R, p: f64) -> X
     where
         X: Unsigned + Integer + FromPrimitive + Bounded,
@@ -80,6 +129,7 @@ impl Geometric {
     }
 
     // Increase the value until the cdf surpasses the given p value.
+    #[inline]
     fn search_draw_method<X, R>(rng: &mut R, p: f64) -> X
     where
         X: Unsigned + Integer + Saturating,
@@ -120,6 +170,7 @@ where
     X: Unsigned + Integer + FromPrimitive + ToPrimitive + Saturating + Bounded,
 {
     fn ln_f(&self, k: &X) -> f64 {
+        // TODO: could cache ln(1-p) and ln(p)
         let kf = (*k).to_f64().unwrap();
         kf * (1.0 - self.p).ln() + self.p.ln()
     }
@@ -191,15 +242,34 @@ impl Entropy for Geometric {
     }
 }
 
+impl std::error::Error for GeometricError {}
+
+impl fmt::Display for GeometricError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::PTooLow { p } => {
+                write!(f, "p ({}) must be greater than zero", p)
+            }
+            Self::PGreaterThanOne { p } => {
+                write!(f, "p was less greater than one: {}", p)
+            }
+            Self::PNotFinite { p } => write!(f, "p was non-finite: {}", p),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::x2_test;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
+
+    test_basic_impls!([count] Geometric::default());
 
     #[test]
     fn new() {

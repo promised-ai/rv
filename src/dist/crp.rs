@@ -7,16 +7,16 @@
 //! The CRP is parameterized CRP(α) where α is the 'discount' parameter in
 //! (0, ∞). Higher α causes there to be more partitions, as it encourages new
 //! entries to create new partitions.
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::data::Partition;
 use crate::impl_display;
 use crate::misc::pflip;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use special::Gamma as _;
+use std::fmt;
 
 /// [Chinese Restaurant Process](https://en.wikipedia.org/wiki/Chinese_restaurant_process),
 /// a distribution over partitions.
@@ -33,26 +33,24 @@ use special::Gamma as _;
 ///
 /// assert_eq!(partition.len(), 10);
 /// ```
-#[derive(Debug, Clone, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Crp {
     /// Discount parameter
-    #[set = "pub"]
     alpha: f64,
     /// number of items in the partition
-    #[set = "pub"]
     n: usize,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum CrpError {
     /// n parameter is zero
-    NIsZeroError,
+    NIsZero,
     /// alpha parameter is less than or equal to zero
-    AlphaTooLowError,
+    AlphaTooLow { alpha: f64 },
     /// alpha parameter is infinite or NaN
-    AlphaNotFiniteError,
+    AlphaNotFinite { alpha: f64 },
 }
 
 impl Crp {
@@ -63,17 +61,18 @@ impl Crp {
     /// - n: the number of items in the partition
     pub fn new(alpha: f64, n: usize) -> Result<Self, CrpError> {
         if n == 0 {
-            Err(CrpError::NIsZeroError)
+            Err(CrpError::NIsZero)
         } else if alpha <= 0.0 {
-            Err(CrpError::AlphaTooLowError)
+            Err(CrpError::AlphaTooLow { alpha })
         } else if !alpha.is_finite() {
-            Err(CrpError::AlphaNotFiniteError)
+            Err(CrpError::AlphaNotFinite { alpha })
         } else {
             Ok(Crp { alpha, n })
         }
     }
 
     /// Create a new Crp without checking whether the parametes are valid.
+    #[inline]
     pub fn new_unchecked(alpha: f64, n: usize) -> Self {
         Crp { alpha, n }
     }
@@ -87,8 +86,51 @@ impl Crp {
     /// let crp = Crp::new(1.0, 12).unwrap();
     /// assert_eq!(crp.alpha(), 1.0);
     /// ```
+    #[inline]
     pub fn alpha(&self) -> f64 {
         self.alpha
+    }
+
+    /// Set the value of alpha
+    ///
+    /// # Example
+    /// ```rust
+    /// # use rv::dist::Crp;
+    /// let mut crp = Crp::new(1.1, 20).unwrap();
+    /// assert_eq!(crp.alpha(), 1.1);
+    ///
+    /// crp.set_alpha(2.3).unwrap();
+    /// assert_eq!(crp.alpha(), 2.3);
+    /// ```
+    ///
+    /// Will error for invalid parameters
+    ///
+    /// ```rust
+    /// # use rv::dist::Crp;
+    /// # let mut crp = Crp::new(1.1, 20).unwrap();
+    /// assert!(crp.set_alpha(0.5).is_ok());
+    /// assert!(crp.set_alpha(0.0).is_err());
+    /// assert!(crp.set_alpha(-1.0).is_err());
+    /// assert!(crp.set_alpha(std::f64::INFINITY).is_err());
+    /// assert!(crp.set_alpha(std::f64::NEG_INFINITY).is_err());
+    /// assert!(crp.set_alpha(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_alpha(&mut self, alpha: f64) -> Result<(), CrpError> {
+        if alpha <= 0.0 {
+            Err(CrpError::AlphaTooLow { alpha })
+        } else if !alpha.is_finite() {
+            Err(CrpError::AlphaNotFinite { alpha })
+        } else {
+            self.set_alpha_unchecked(alpha);
+            Ok(())
+        }
+    }
+
+    /// Set the value of alpha without input validation
+    #[inline]
+    pub fn set_alpha_unchecked(&mut self, alpha: f64) {
+        self.alpha = alpha;
     }
 
     /// Get the number of entries in the partition, `n`.
@@ -100,8 +142,46 @@ impl Crp {
     /// let crp = Crp::new(1.0, 12).unwrap();
     /// assert_eq!(crp.n(), 12);
     /// ```
+    #[inline]
     pub fn n(&self) -> usize {
         self.n
+    }
+
+    /// Set the value of n
+    ///
+    /// # Example
+    /// ```rust
+    /// # use rv::dist::Crp;
+    /// let mut crp = Crp::new(1.1, 20).unwrap();
+    /// assert_eq!(crp.n(), 20);
+    ///
+    /// crp.set_n(11).unwrap();
+    /// assert_eq!(crp.n(), 11);
+    /// ```
+    ///
+    /// Will error for invalid parameters
+    ///
+    /// ```rust
+    /// # use rv::dist::Crp;
+    /// # let mut crp = Crp::new(1.1, 20).unwrap();
+    /// assert!(crp.set_n(5).is_ok());
+    /// assert!(crp.set_n(1).is_ok());
+    /// assert!(crp.set_n(0).is_err());
+    /// ```
+    #[inline]
+    pub fn set_n(&mut self, n: usize) -> Result<(), CrpError> {
+        if n == 0 {
+            Err(CrpError::NIsZero)
+        } else {
+            self.set_n_unchecked(n);
+            Ok(())
+        }
+    }
+
+    /// Set the value of alpha without input validation
+    #[inline]
+    pub fn set_n_unchecked(&mut self, n: usize) {
+        self.n = n;
     }
 }
 
@@ -120,6 +200,7 @@ impl Rv<Partition> for Crp {
             .iter()
             .fold(0.0, |acc, ct| acc + (*ct as f64).ln_gamma().0);
 
+        // TODO: could cache ln(alpha) and ln_gamma(alpha)
         gsum + (x.k() as f64) * self.alpha.ln() + self.alpha.ln_gamma().0
             - (x.len() as f64 + self.alpha).ln_gamma().0
     }
@@ -159,11 +240,33 @@ impl Support<Partition> for Crp {
     }
 }
 
+impl std::error::Error for CrpError {}
+
+impl fmt::Display for CrpError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::AlphaTooLow { alpha } => {
+                write!(f, "alpha ({}) must be greater than zero", alpha)
+            }
+            Self::AlphaNotFinite { alpha } => {
+                write!(f, "alpha ({}) was non-finite", alpha)
+            }
+            Self::NIsZero => write!(f, "n must be greater than zero"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_basic_impls;
 
     const TOL: f64 = 1E-12;
+
+    test_basic_impls!(
+        Crp::new(1.0, 10).unwrap(),
+        Partition::new_unchecked(vec![0; 10], vec![10])
+    );
 
     #[test]
     fn new() {

@@ -1,13 +1,13 @@
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::consts::LN_2PI;
 use crate::impl_display;
-use crate::misc::{bessel, mod_euc, quad};
+use crate::misc::{bessel, quad};
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use std::f64::consts::PI;
+use std::fmt;
 
 /// [VonMises distirbution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
 /// on the circular interval (0, 2π]
@@ -28,11 +28,10 @@ use std::f64::consts::PI;
 /// let xs: Vec<f64> = vm.sample(103, &mut rng);
 /// assert_eq!(xs.len(), 103);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct VonMises {
     /// Mean
-    #[set = "pub"]
     mu: f64,
     /// Sort of like precision. Higher k implies lower variance.
     k: f64,
@@ -40,30 +39,30 @@ pub struct VonMises {
     i0_k: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum VonMisesError {
     /// The mu parameter is less than zero or greater than `2*PI`
-    MuOutOfBoundsError,
+    MuOutOfBounds { mu: f64 },
     /// The mu parameter is infinite or NaN
-    MuNotFiniteError,
+    MuNotFinite { mu: f64 },
     /// The k parameter is less than or equal to zero
-    KTooLowError,
+    KTooLow { k: f64 },
     /// The k parameter is infinite or NaN
-    KNotFiniteError,
+    KNotFinite { k: f64 },
 }
 
 impl VonMises {
     /// Create a new VonMises distribution with mean mu, and precision, k.
     pub fn new(mu: f64, k: f64) -> Result<Self, VonMisesError> {
         if 2.0 * PI < mu || mu < 0.0 {
-            Err(VonMisesError::MuOutOfBoundsError)
+            Err(VonMisesError::MuOutOfBounds { mu })
         } else if !mu.is_finite() {
-            Err(VonMisesError::MuNotFiniteError)
+            Err(VonMisesError::MuNotFinite { mu })
         } else if k <= 0.0 {
-            Err(VonMisesError::KTooLowError)
+            Err(VonMisesError::KTooLow { k })
         } else if !k.is_finite() {
-            Err(VonMisesError::KNotFiniteError)
+            Err(VonMisesError::KNotFinite { k })
         } else {
             let i0_k = bessel::i0(k);
             Ok(VonMises { mu, k, i0_k })
@@ -72,6 +71,7 @@ impl VonMises {
 
     /// Creates a new VonMises without checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(mu: f64, k: f64) -> Self {
         let i0_k = bessel::i0(k);
         VonMises { mu, k, i0_k }
@@ -86,8 +86,56 @@ impl VonMises {
     /// let vm = VonMises::new(0.0, 1.0).unwrap();
     /// assert_eq!(vm.mu(), 0.0);
     /// ```
+    #[inline]
     pub fn mu(&self) -> f64 {
         self.mu
+    }
+
+    /// Set the value of mu
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::VonMises;
+    /// let mut vm = VonMises::new(2.0, 1.5).unwrap();
+    /// assert_eq!(vm.mu(), 2.0);
+    ///
+    /// vm.set_mu(1.3).unwrap();
+    /// assert_eq!(vm.mu(), 1.3);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::VonMises;
+    /// # let mut vm = VonMises::new(2.0, 1.5).unwrap();
+    /// assert!(vm.set_mu(1.3).is_ok());
+    /// assert!(vm.set_mu(0.0).is_ok());
+    /// assert!(vm.set_mu(2.0 * std::f64::consts::PI).is_ok());
+    ///
+    /// assert!(vm.set_mu(0.0 - 0.001).is_err());
+    /// assert!(vm.set_mu(2.0 * std::f64::consts::PI + 0.001).is_err());
+    ///
+    /// assert!(vm.set_mu(std::f64::NEG_INFINITY).is_err());
+    /// assert!(vm.set_mu(std::f64::INFINITY).is_err());
+    /// assert!(vm.set_mu(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_mu(&mut self, mu: f64) -> Result<(), VonMisesError> {
+        if !mu.is_finite() {
+            Err(VonMisesError::MuNotFinite { mu })
+        } else if 2.0 * PI < mu || mu < 0.0 {
+            Err(VonMisesError::MuOutOfBounds { mu })
+        } else {
+            self.set_mu_unchecked(mu);
+            Ok(())
+        }
+    }
+
+    /// Set the value of mu without input validation
+    #[inline]
+    pub fn set_mu_unchecked(&mut self, mu: f64) {
+        self.mu = mu;
     }
 
     /// Get the precision parameter, k
@@ -99,6 +147,7 @@ impl VonMises {
     /// let vm = VonMises::new(0.0, 1.0).unwrap();
     /// assert_eq!(vm.k(), 1.0);
     /// ```
+    #[inline]
     pub fn k(&self) -> f64 {
         self.k
     }
@@ -119,14 +168,39 @@ impl VonMises {
     /// let v2: f64 = vm.variance().unwrap();
     /// assert::close(v2, 0.3022253420359917, 1E-10);
     /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::VonMises;
+    /// # let mut vm = VonMises::new(0.0, 1.0).unwrap();
+    /// assert!(vm.set_k(0.1).is_ok());
+    ///
+    /// // Must be greater than zero
+    /// assert!(vm.set_k(0.0).is_err());
+    /// assert!(vm.set_k(-1.0).is_err());
+    ///
+    /// assert!(vm.set_k(std::f64::INFINITY).is_err());
+    /// assert!(vm.set_k(std::f64::NEG_INFINITY).is_err());
+    /// assert!(vm.set_k(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
     pub fn set_k(&mut self, k: f64) -> Result<(), VonMisesError> {
         if k <= 0.0 {
-            Err(VonMisesError::KTooLowError)
+            Err(VonMisesError::KTooLow { k })
+        } else if !k.is_finite() {
+            Err(VonMisesError::KNotFinite { k })
         } else {
-            self.k = k;
-            self.i0_k = bessel::i0(k);
+            self.set_k_unchecked(k);
             Ok(())
         }
+    }
+
+    /// Set the value of k without input validation
+    #[inline]
+    pub fn set_k_unchecked(&mut self, k: f64) {
+        self.k = k;
+        self.i0_k = bessel::i0(k);
     }
 }
 
@@ -148,6 +222,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for VonMises {
             fn ln_f(&self, x: &$kind) -> f64 {
+                // TODO: could also cache ln(i0_k)
                 let xf = f64::from(*x);
                 self.k * (xf - self.mu).cos() - LN_2PI - self.i0_k.ln()
             }
@@ -174,7 +249,7 @@ macro_rules! impl_traits {
                     {
                         let u3: f64 = rng.sample(u);
                         let y = (u3 - 0.5).signum() * f.acos() + self.mu;
-                        let x = mod_euc(y, 2.0 * PI) as $kind;
+                        let x = y.rem_euclid(2.0 * PI) as $kind;
                         if !self.supports(&x) {
                             panic!(format!("VonMises does not support {}", x));
                         } else {
@@ -239,15 +314,35 @@ impl Entropy for VonMises {
 impl_traits!(f32);
 impl_traits!(f64);
 
+impl std::error::Error for VonMisesError {}
+
+impl fmt::Display for VonMisesError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
+            Self::KNotFinite { k } => write!(f, "non-finite k: {}", k),
+            Self::MuOutOfBounds { mu } => {
+                write!(f, "mu was {} but must be in range [0, 2*PI]", mu)
+            }
+            Self::KTooLow { k } => {
+                write!(f, "k ({}) must be greater than zero", k)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::ks_test;
+    use crate::test_basic_impls;
     use std::f64::EPSILON;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!([continuous] VonMises::default());
 
     #[test]
     fn new_should_allow_mu_in_0_2pi() {

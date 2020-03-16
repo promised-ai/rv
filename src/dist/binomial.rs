@@ -1,13 +1,13 @@
 //! Binomial distribution
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_binom;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use std::f64;
+use std::fmt;
 
 /// [Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// with success probability *p*
@@ -40,28 +40,26 @@ use std::f64;
 /// # let binom = Binomial::new(n, 0.5).unwrap();
 /// binom.pmf(&5_u8); // panics
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Binomial {
     /// Total number of trials
-    #[set = "pub"]
     n: u64,
     /// Probability of a success
-    #[set = "pub"]
     p: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum BinomialError {
     /// The number of trials is zero
-    NIsZeroError,
+    NIsZero,
     /// Bernoulli p is less than zero
-    PLessThanZeroError,
+    PLessThanZero { p: f64 },
     /// Bernoulli p is greater than one
-    PGreaterThanOneError,
+    PGreaterThanOne { p: f64 },
     /// Bernoulli p is infinite or NaN
-    PNotFiniteError,
+    PNotFinite { p: f64 },
 }
 
 impl Binomial {
@@ -73,13 +71,13 @@ impl Binomial {
     /// - p: the pobability of success
     pub fn new(n: u64, p: f64) -> Result<Self, BinomialError> {
         if n == 0 {
-            Err(BinomialError::NIsZeroError)
+            Err(BinomialError::NIsZero)
         } else if p < 0.0 {
-            Err(BinomialError::PLessThanZeroError)
+            Err(BinomialError::PLessThanZero { p })
         } else if p > 1.0 {
-            Err(BinomialError::PGreaterThanOneError)
+            Err(BinomialError::PGreaterThanOne { p })
         } else if !p.is_finite() {
-            Err(BinomialError::PNotFiniteError)
+            Err(BinomialError::PNotFinite { p })
         } else {
             Ok(Binomial { n, p })
         }
@@ -87,6 +85,7 @@ impl Binomial {
 
     /// Creates a new Binomial without checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(n: u64, p: f64) -> Self {
         Binomial { n, p }
     }
@@ -100,6 +99,7 @@ impl Binomial {
     /// let binom = Binomial::uniform(11);
     /// assert_eq!(binom.p(), 0.5);
     /// ```
+    #[inline]
     pub fn uniform(n: u64) -> Self {
         Binomial::new_unchecked(n, 0.5)
     }
@@ -113,8 +113,48 @@ impl Binomial {
     /// let binom = Binomial::uniform(11);
     /// assert_eq!(binom, Binomial::new(11, 0.5).unwrap());
     /// ```
+    #[inline]
     pub fn n(&self) -> u64 {
         self.n
+    }
+
+    /// Set the value of the n parameter
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rv::dist::Binomial;
+    ///
+    /// let mut binom = Binomial::new(10, 0.5).unwrap();
+    ///
+    /// binom.set_n(11).unwrap();
+    ///
+    /// assert_eq!(binom.n(), 11);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Binomial;
+    /// # let mut binom = Binomial::new(10, 0.5).unwrap();
+    /// assert!(binom.set_n(11).is_ok());
+    /// assert!(binom.set_n(1).is_ok());
+    /// assert!(binom.set_n(0).is_err());
+    /// ```
+    #[inline]
+    pub fn set_n(&mut self, n: u64) -> Result<(), BinomialError> {
+        if n == 0 {
+            Err(BinomialError::NIsZero)
+        } else {
+            self.set_n_unchecked(n);
+            Ok(())
+        }
+    }
+
+    /// Set the value of n without input validation
+    #[inline]
+    pub fn set_n_unchecked(&mut self, n: u64) {
+        self.n = n
     }
 
     /// Get the probability of success
@@ -126,8 +166,54 @@ impl Binomial {
     /// let binom = Binomial::new(10, 0.2).unwrap();
     /// assert_eq!(binom.p(), 0.2);
     /// ```
+    #[inline]
     pub fn p(&self) -> f64 {
         self.p
+    }
+
+    /// Set p, the probability of success.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Binomial;
+    /// let mut binom = Binomial::new(10, 0.2).unwrap();
+    /// binom.set_p(0.5).unwrap();
+    ///
+    /// assert_eq!(binom.p(), 0.5);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Binomial;
+    /// # let mut binom = Binomial::new(10, 0.2).unwrap();
+    /// assert!(binom.set_p(0.0).is_ok());
+    /// assert!(binom.set_p(1.0).is_ok());
+    /// assert!(binom.set_p(-1.0).is_err());
+    /// assert!(binom.set_p(1.1).is_err());
+    /// assert!(binom.set_p(std::f64::INFINITY).is_err());
+    /// assert!(binom.set_p(std::f64::NEG_INFINITY).is_err());
+    /// assert!(binom.set_p(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_p(&mut self, p: f64) -> Result<(), BinomialError> {
+        if !p.is_finite() {
+            Err(BinomialError::PNotFinite { p })
+        } else if p > 1.0 {
+            Err(BinomialError::PGreaterThanOne { p })
+        } else if p < 0.0 {
+            Err(BinomialError::PLessThanZero { p })
+        } else {
+            self.set_p_unchecked(p);
+            Ok(())
+        }
+    }
+
+    /// Set p without input validation
+    #[inline]
+    pub fn set_p_unchecked(&mut self, p: f64) {
+        self.p = p;
     }
 
     /// The complement of `p`, i.e. `(1 - p)`.
@@ -159,14 +245,10 @@ macro_rules! impl_int_traits {
             fn ln_f(&self, k: &$kind) -> f64 {
                 let nf = self.n as f64;
                 let kf = *k as f64;
+                // TODO: could cache ln(p) and ln(q)
                 ln_binom(nf, kf) + self.p.ln() * kf + self.q().ln() * (nf - kf)
             }
-
-            // XXX: Opportunity for optimization in `sample`. Sometime in the
-            // future, we should do some criterion benchmarks to test when it
-            // is faster to draw using alias tables or some other method.
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                // TODO: This is really awful.
                 let b = rand_distr::Binomial::new(self.n, self.p).unwrap();
                 rng.sample(b) as $kind
             }
@@ -227,15 +309,35 @@ impl_int_traits!(i16);
 impl_int_traits!(i32);
 impl_int_traits!(i64);
 
+impl std::error::Error for BinomialError {}
+
+impl fmt::Display for BinomialError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::PLessThanZero { p } => {
+                write!(f, "p ({}) was less than zero", p)
+            }
+            Self::PGreaterThanOne { p } => {
+                write!(f, "p ({}) was greater than zero", p)
+            }
+            Self::PNotFinite { p } => write!(f, "p ({}) was non-finite", p),
+            Self::NIsZero => write!(f, "n was zero"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::x2_test;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
+
+    test_basic_impls!([count] Binomial::uniform(10));
 
     #[test]
     fn new() {

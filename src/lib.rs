@@ -64,7 +64,7 @@
 //! // (true) given the observed flips (posterior predictive)?
 //! let p_heads = prior.pp(&true, &obs);
 //! ```
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 extern crate serde_derive;
 
 // Test the README
@@ -74,11 +74,10 @@ doctest!("../README.md");
 pub mod consts;
 pub mod data;
 pub mod dist;
-mod impls;
 pub mod misc;
 mod model;
 pub mod prelude;
-mod priors;
+pub(crate) mod test;
 pub mod traits;
 
 pub use crate::model::ConjugateModel;
@@ -92,4 +91,15 @@ macro_rules! impl_display {
             }
         }
     };
+}
+
+#[macro_export]
+macro_rules! clone_cache_f64 {
+    ($this:ident, $($field:tt)+) => {
+        if let Some(&val) = $this.$($field)+.get() {
+            OnceCell::from(val)
+        } else {
+            OnceCell::new()
+        }
+    }
 }

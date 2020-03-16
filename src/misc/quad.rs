@@ -1,6 +1,5 @@
 const QUAD_EPS: f64 = 1E-8;
 
-// TODO: return f(c) for caching
 #[inline]
 fn simpsons_rule<F>(
     func: &F,
@@ -89,7 +88,6 @@ where
 }
 
 //------------------------------------------
-// TODO: return f(c) for caching
 #[inline]
 fn try_simpsons_rule<F, E>(
     func: &F,

@@ -1,13 +1,13 @@
 //! Bernoulli distribution of x in {0, 1}
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::data::{BernoulliSuffStat, Booleable};
 use crate::impl_display;
 use crate::traits::*;
-use getset::Setters;
 use rand::Rng;
 use std::f64;
+use std::fmt;
 
 /// [Bernoulli distribution](https://en.wikipedia.org/wiki/Bernoulli_distribution)
 /// with success probability *p*
@@ -31,23 +31,22 @@ use std::f64;
 /// b.pmf(&2_u8); // panics
 /// ```
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Setters)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Bernoulli {
     /// Probability of a success (x=1)
-    #[set = "pub"]
     p: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum BernoulliError {
     /// Bernoulli p is less than zero
-    PLessThanZeroError,
+    PLessThanZero { p: f64 },
     /// Bernoulli p is greater than one
-    PGreaterThanOneError,
+    PGreaterThanOne { p: f64 },
     /// Bernoulli p is infinite or NaN
-    PNotFiniteError,
+    PNotFinite { p: f64 },
 }
 
 impl Bernoulli {
@@ -76,11 +75,11 @@ impl Bernoulli {
     /// ```
     pub fn new(p: f64) -> Result<Self, BernoulliError> {
         if !p.is_finite() {
-            Err(BernoulliError::PNotFiniteError)
+            Err(BernoulliError::PNotFinite { p })
         } else if p > 1.0 {
-            Err(BernoulliError::PGreaterThanOneError)
+            Err(BernoulliError::PGreaterThanOne { p })
         } else if p < 0.0 {
-            Err(BernoulliError::PLessThanZeroError)
+            Err(BernoulliError::PLessThanZero { p })
         } else {
             Ok(Bernoulli { p })
         }
@@ -88,6 +87,7 @@ impl Bernoulli {
 
     /// Creates a new Bernoulli without checking whether parameter value is
     /// valid.
+    #[inline]
     pub fn new_unchecked(p: f64) -> Self {
         Bernoulli { p }
     }
@@ -103,6 +103,7 @@ impl Bernoulli {
     /// assert_eq!(b.p(), 0.5);
     /// assert_eq!(b.q(), 0.5);
     /// ```
+    #[inline]
     pub fn uniform() -> Self {
         Bernoulli { p: 0.5 }
     }
@@ -117,8 +118,54 @@ impl Bernoulli {
     ///
     /// assert_eq!(b.p(), 0.2);
     /// ```
+    #[inline]
     pub fn p(&self) -> f64 {
         self.p
+    }
+
+    /// Set p, the probability of success.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Bernoulli;
+    /// let mut b = Bernoulli::new(0.2).unwrap();
+    /// b.set_p(0.5).unwrap();
+    ///
+    /// assert_eq!(b.p(), 0.5);
+    /// ```
+    ///
+    /// Will error for invalid values
+    ///
+    /// ```rust
+    /// # use rv::dist::Bernoulli;
+    /// # let mut b = Bernoulli::new(0.2).unwrap();
+    /// assert!(b.set_p(0.0).is_ok());
+    /// assert!(b.set_p(1.0).is_ok());
+    /// assert!(b.set_p(-1.0).is_err());
+    /// assert!(b.set_p(1.1).is_err());
+    /// assert!(b.set_p(std::f64::INFINITY).is_err());
+    /// assert!(b.set_p(std::f64::NEG_INFINITY).is_err());
+    /// assert!(b.set_p(std::f64::NAN).is_err());
+    /// ```
+    #[inline]
+    pub fn set_p(&mut self, p: f64) -> Result<(), BernoulliError> {
+        if !p.is_finite() {
+            Err(BernoulliError::PNotFinite { p })
+        } else if p > 1.0 {
+            Err(BernoulliError::PGreaterThanOne { p })
+        } else if p < 0.0 {
+            Err(BernoulliError::PLessThanZero { p })
+        } else {
+            self.set_p_unchecked(p);
+            Ok(())
+        }
+    }
+
+    /// Set p without input validation
+    #[inline]
+    pub fn set_p_unchecked(&mut self, p: f64) {
+        self.p = p;
     }
 
     /// The complement of `p`, i.e. `(1 - p)`.
@@ -359,15 +406,34 @@ impl HasSuffStat<bool> for Bernoulli {
     }
 }
 
+impl std::error::Error for BernoulliError {}
+
+impl fmt::Display for BernoulliError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::PLessThanZero { p } => {
+                write!(f, "p was less than zero: {}", p)
+            }
+            Self::PGreaterThanOne { p } => {
+                write!(f, "p was less greater than one: {}", p)
+            }
+            Self::PNotFinite { p } => write!(f, "p was non-finite: {}", p),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::x2_test;
+    use crate::test_basic_impls;
     use std::f64;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
+
+    test_basic_impls!([binary] Bernoulli::default());
 
     #[test]
     fn new() {
@@ -381,24 +447,26 @@ mod tests {
         assert!(Bernoulli::new(1.0).is_ok());
         assert_eq!(
             Bernoulli::new(-0.001),
-            Err(BernoulliError::PLessThanZeroError)
+            Err(BernoulliError::PLessThanZero { p: -0.001 })
         );
         assert_eq!(
             Bernoulli::new(1.001),
-            Err(BernoulliError::PGreaterThanOneError)
+            Err(BernoulliError::PGreaterThanOne { p: 1.001 })
         );
     }
 
     #[test]
     fn new_should_reject_non_finite_p() {
-        assert_eq!(
-            Bernoulli::new(f64::NAN),
-            Err(BernoulliError::PNotFiniteError)
-        );
-        assert_eq!(
-            Bernoulli::new(f64::INFINITY),
-            Err(BernoulliError::PNotFiniteError)
-        );
+        match Bernoulli::new(f64::NAN) {
+            Err(BernoulliError::PNotFinite { .. }) => (),
+            Err(_) => panic!("wrong error"),
+            Ok(_) => panic!("should've errored"),
+        };
+        match Bernoulli::new(f64::INFINITY) {
+            Err(BernoulliError::PNotFinite { .. }) => (),
+            Err(_) => panic!("wrong error"),
+            Ok(_) => panic!("should've errored"),
+        };
     }
 
     #[test]
@@ -698,7 +766,7 @@ mod tests {
         let mut bern = Bernoulli::new(0.6).unwrap();
         assert::close(bern.pmf(&true), 0.6, 1E-10);
 
-        bern.set_p(0.5);
+        bern.set_p(0.5).unwrap();
 
         assert::close(bern.pmf(&true), 0.5, 1E-10);
     }

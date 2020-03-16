@@ -1,13 +1,15 @@
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde::de::{self, Deserializer, MapAccess, SeqAccess, Visitor};
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde::ser::{SerializeStruct, Serializer};
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::dist::{Categorical, Gaussian};
 use crate::misc::{logsumexp, pflip};
 use crate::traits::*;
 use rand::Rng;
+use std::fmt;
 
 /// [Mixture distribution](https://en.wikipedia.org/wiki/Mixture_model)
 /// Σ w<sub>i</sub> f(x|θ<sub>i</sub>)
@@ -27,7 +29,7 @@ use rand::Rng;
 /// // f(x) = 0.6 * N(-2.5, 1.0) + 0.4 * N(2.0, 2.1)
 /// let mm = Mixture::new(vec![0.6, 0.4], vec![g1, g2]).unwrap();
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Mixture<Fx> {
     /// The weights for each component distribution. All entries must be
     /// positive and sum to 1.
@@ -36,140 +38,49 @@ pub struct Mixture<Fx> {
     components: Vec<Fx>,
 }
 
-#[cfg(feature = "serde_support")]
-impl<Fx> Serialize for Mixture<Fx>
-where
-    Fx: Serialize,
-{
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut state = serializer.serialize_struct("Mixture", 2)?;
-        state.serialize_field("weights", &self.weights)?;
-        state.serialize_field("components", &self.components)?;
-        state.end()
-    }
-}
-
-#[cfg(feature = "serde_support")]
-impl<'de, Fx> Deserialize<'de> for Mixture<Fx>
-where
-    Fx: Deserialize<'de>,
-{
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        use std::fmt;
-        use std::marker::PhantomData;
-
-        #[derive(Deserialize)]
-        #[serde(field_identifier, rename_all = "lowercase")]
-        enum Field {
-            Weights,
-            Components,
-        };
-
-        struct MixtureVisitor<Fx> {
-            _fx: PhantomData<Fx>,
-        };
-
-        impl<Fx> MixtureVisitor<Fx> {
-            fn new() -> Self {
-                MixtureVisitor { _fx: PhantomData }
-            }
-        }
-
-        impl<'de, Fx> Visitor<'de> for MixtureVisitor<Fx>
-        where
-            Fx: Deserialize<'de>,
-        {
-            type Value = Mixture<Fx>;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("struct Mixture")
-            }
-
-            fn visit_seq<V>(self, mut seq: V) -> Result<Mixture<Fx>, V::Error>
-            where
-                V: SeqAccess<'de>,
-            {
-                let weights = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
-                let components = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
-                Ok(Mixture {
-                    weights,
-                    components,
-                })
-            }
-
-            fn visit_map<V>(self, mut map: V) -> Result<Mixture<Fx>, V::Error>
-            where
-                V: MapAccess<'de>,
-            {
-                let mut weights = None;
-                let mut components = None;
-                while let Some(key) = map.next_key()? {
-                    match key {
-                        Field::Weights => {
-                            if weights.is_some() {
-                                return Err(de::Error::duplicate_field(
-                                    "weights",
-                                ));
-                            }
-                            weights = Some(map.next_value()?);
-                        }
-                        Field::Components => {
-                            if components.is_some() {
-                                return Err(de::Error::duplicate_field(
-                                    "components",
-                                ));
-                            }
-                            components = Some(map.next_value()?);
-                        }
-                    }
-                }
-                let weights = weights
-                    .ok_or_else(|| de::Error::missing_field("weights"))?;
-                let components = components
-                    .ok_or_else(|| de::Error::missing_field("components"))?;
-
-                Ok(Mixture {
-                    weights,
-                    components,
-                })
-            }
-        }
-
-        const FIELDS: &'static [&'static str] = &["weights", "components"];
-        deserializer.deserialize_struct(
-            "Mixture",
-            FIELDS,
-            MixtureVisitor::new(),
-        )
-    }
-}
-
-// #[cfg(feature = "serde_support")]
-// impl<'de, Fx> Deserialize<'de> for Mixture<Fx> where Fx: Deserialize<'de> {}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum MixtureError {
     /// The weights vector is empty
-    WeightsEmptyError,
+    WeightsEmpty,
     /// The weights to not sum to one
-    WeightsDoNotSumToOneError,
-    /// One or more weights is less than or equal to zero
-    WeightTooLowError,
+    WeightsDoNotSumToOne { sum: f64 },
+    /// One or more weights is less than zero
+    WeightTooLow { ix: usize, weight: f64 },
     /// The components vector is empty
-    ComponentsEmptyError,
+    ComponentsEmpty,
     /// The components vector and the weights vector are different lengths
-    ComponentWeightDimensionMismatchError,
+    ComponentWeightLengthMismatch {
+        /// length of the weights vector
+        n_weights: usize,
+        /// length of the components vector
+        n_components: usize,
+    },
+}
+
+#[inline]
+fn validate_weights(weights: &[f64]) -> Result<(), MixtureError> {
+    if weights.is_empty() {
+        return Err(MixtureError::WeightsEmpty);
+    }
+
+    weights
+        .iter()
+        .enumerate()
+        .try_fold(0.0, |sum, (ix, &weight)| {
+            if weight < 0.0 {
+                Err(MixtureError::WeightTooLow { ix, weight })
+            } else {
+                Ok(sum + weight)
+            }
+        })
+        .and_then(|sum| {
+            if (sum - 1.0).abs() > 1E-12 {
+                Err(MixtureError::WeightsDoNotSumToOne { sum })
+            } else {
+                Ok(())
+            }
+        })
 }
 
 impl<Fx> Mixture<Fx> {
@@ -184,24 +95,28 @@ impl<Fx> Mixture<Fx> {
         components: Vec<Fx>,
     ) -> Result<Self, MixtureError> {
         if weights.is_empty() {
-            Err(MixtureError::WeightsEmptyError)
+            Err(MixtureError::WeightsEmpty)
         } else if components.is_empty() {
-            Err(MixtureError::ComponentsEmptyError)
+            Err(MixtureError::ComponentsEmpty)
         } else if components.len() != weights.len() {
-            Err(MixtureError::ComponentWeightDimensionMismatchError)
-        } else if weights.iter().any(|&w| w <= 0.0) {
-            Err(MixtureError::WeightTooLowError)
-        } else if (weights.iter().sum::<f64>() - 1.0).abs() > 1E-12 {
-            Err(MixtureError::WeightsDoNotSumToOneError)
-        } else {
-            Ok(Mixture {
-                weights,
-                components,
+            Err(MixtureError::ComponentWeightLengthMismatch {
+                n_weights: weights.len(),
+                n_components: components.len(),
             })
-        }
+        } else {
+            Ok(())
+        }?;
+
+        validate_weights(&weights)?;
+
+        Ok(Mixture {
+            weights,
+            components,
+        })
     }
 
     /// Creates a new Mixture without checking whether the parameters are valid.
+    #[inline]
     pub fn new_unchecked(weights: Vec<f64>, components: Vec<Fx>) -> Self {
         Mixture {
             weights,
@@ -213,9 +128,10 @@ impl<Fx> Mixture<Fx> {
     ///
     /// Given a n-length vector of components, automatically sets the component
     /// weights to 1/n.
+    #[inline]
     pub fn uniform(components: Vec<Fx>) -> Result<Self, MixtureError> {
         if components.is_empty() {
-            Err(MixtureError::ComponentsEmptyError)
+            Err(MixtureError::ComponentsEmpty)
         } else {
             let k = components.len();
             let weights = vec![1.0 / k as f64; k];
@@ -227,6 +143,10 @@ impl<Fx> Mixture<Fx> {
     }
 
     /// Combines many mixtures into one big mixture
+    ///
+    /// # Notes
+    ///
+    /// Assumes mixtures are valid.
     pub fn combine(mut mixtures: Vec<Mixture<Fx>>) -> Self {
         let k_total: usize = mixtures.iter().fold(0, |acc, mm| acc + mm.k());
         let nf = mixtures.len() as f64;
@@ -247,52 +167,135 @@ impl<Fx> Mixture<Fx> {
     }
 
     /// Number of components
+    #[inline]
     pub fn k(&self) -> usize {
         self.components.len()
     }
 
     /// Get a reference to the component weights
+    #[inline]
     pub fn weights(&self) -> &Vec<f64> {
         &self.weights
     }
 
     /// Get a reference to the components
+    #[inline]
     pub fn components(&self) -> &Vec<Fx> {
         &self.components
     }
 
+    /// Set the mixture weights
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Mixture;
+    /// use rv::dist::Gaussian;
+    ///
+    /// let components = vec![
+    ///     Gaussian::new(-2.0, 1.0).unwrap(),
+    ///     Gaussian::new(2.0, 1.0).unwrap(),
+    /// ];
+    ///
+    /// let mut mm = Mixture::uniform(components).unwrap();
+    /// assert_eq!(mm.weights(), &vec![0.5, 0.5]);
+    ///
+    /// mm.set_weights(vec![0.2, 0.8]).unwrap();
+    /// assert_eq!(mm.weights(), &vec![0.2, 0.8]);
+    /// ```
+    ///
+    /// Will error for invalid weights
+    ///
+    /// ```rust
+    /// # use rv::dist::Mixture;
+    /// # use rv::dist::Gaussian;
+    /// # let components = vec![
+    /// #     Gaussian::new(-2.0, 1.0).unwrap(),
+    /// #     Gaussian::new(2.0, 1.0).unwrap(),
+    /// # ];
+    /// # let mut mm = Mixture::uniform(components).unwrap();
+    /// // This is fine
+    /// assert!(mm.set_weights(vec![0.2, 0.8]).is_ok());
+    ///
+    /// // Does not sum to 1
+    /// assert!(mm.set_weights(vec![0.1, 0.8]).is_err());
+    ///
+    /// // Wrong number of weights
+    /// assert!(mm.set_weights(vec![0.1, 0.1, 0.8]).is_err());
+    ///
+    /// // Negative weight
+    /// assert!(mm.set_weights(vec![-0.1, 1.1]).is_err());
+    ///
+    /// // Zero weight are ok
+    /// assert!(mm.set_weights(vec![0.0, 1.0]).is_ok());
+    /// ```
+    #[inline]
     pub fn set_weights(
         &mut self,
         weights: Vec<f64>,
     ) -> Result<(), MixtureError> {
-        if weights.len() != self.k() {
-            Err(MixtureError::ComponentWeightDimensionMismatchError)
-        } else if weights.iter().any(|&w| w <= 0.0) {
-            Err(MixtureError::WeightTooLowError)
-        } else if (weights.iter().sum::<f64>() - 1.0).abs() > 1E-12 {
-            Err(MixtureError::WeightsDoNotSumToOneError)
-        } else {
-            self.weights = weights;
-            Ok(())
-        }
+        if weights.len() != self.components.len() {
+            return Err(MixtureError::ComponentWeightLengthMismatch {
+                n_components: self.components.len(),
+                n_weights: weights.len(),
+            });
+        };
+
+        validate_weights(&weights)?;
+
+        self.weights = weights;
+        Ok(())
     }
 
+    #[inline]
     pub fn set_weights_unchecked(&mut self, weights: Vec<f64>) {
         self.weights = weights;
     }
 
+    #[inline]
+    /// Set the mixture components
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rv::dist::Mixture;
+    /// use rv::dist::Gaussian;
+    /// use rv::traits::Mean;
+    ///
+    /// let components = vec![
+    ///     Gaussian::new(-2.0, 1.0).unwrap(),
+    ///     Gaussian::new(2.0, 1.0).unwrap(),
+    /// ];
+    ///
+    /// let mut mm = Mixture::uniform(components).unwrap();
+    /// let mean_1: f64 = mm.mean().unwrap();
+    /// assert_eq!(mean_1, 0.0);
+    ///
+    /// let components_2 = vec![
+    ///     Gaussian::new(-3.0, 1.0).unwrap(),
+    ///     Gaussian::new(2.0, 1.0).unwrap(),
+    /// ];
+    /// mm.set_components(components_2).unwrap();
+    /// let mean_2: f64 = mm.mean().unwrap();
+    /// assert_eq!(mean_2, -0.5);
+    /// ```
+    #[inline]
     pub fn set_components(
         &mut self,
         components: Vec<Fx>,
     ) -> Result<(), MixtureError> {
-        if components.len() != self.k() {
-            Err(MixtureError::ComponentWeightDimensionMismatchError)
+        if components.len() != self.components.len() {
+            Err(MixtureError::ComponentWeightLengthMismatch {
+                n_components: components.len(),
+                n_weights: self.weights.len(),
+            })
         } else {
             self.components = components;
             Ok(())
         }
     }
 
+    #[inline]
     pub fn set_components_unchecked(&mut self, components: Vec<Fx>) {
         self.components = components;
     }
@@ -407,15 +410,13 @@ macro_rules! continuous_uv_mean_and_var {
             Fx: ContinuousDistr<$kind> + Mean<$kind>,
         {
             fn mean(&self) -> Option<$kind> {
-                let mut out: f64 = 0.0;
-                for (w, cpnt) in self.weights.iter().zip(self.components.iter())
-                {
-                    match cpnt.mean() {
-                        Some(m) => out += w * (m as f64),
-                        None => return None,
-                    }
-                }
-                Some(out as $kind / (self.k() as $kind))
+                self.weights
+                    .iter()
+                    .zip(self.components.iter())
+                    .try_fold(0_f64, |grand_mean, (&w, cpnt)| {
+                        cpnt.mean().map(|mean| grand_mean + w * (mean as f64))
+                    })
+                    .map(|mean| mean as $kind)
             }
         }
 
@@ -451,6 +452,215 @@ macro_rules! continuous_uv_mean_and_var {
 
 continuous_uv_mean_and_var!(f32);
 continuous_uv_mean_and_var!(f64);
+
+#[cfg(feature = "serde1")]
+impl<Fx> Serialize for Mixture<Fx>
+where
+    Fx: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Mixture", 2)?;
+        state.serialize_field("weights", &self.weights)?;
+        state.serialize_field("components", &self.components)?;
+        state.end()
+    }
+}
+
+#[cfg(feature = "serde1")]
+impl<'de, Fx> Deserialize<'de> for Mixture<Fx>
+where
+    Fx: Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        use std::fmt;
+        use std::marker::PhantomData;
+
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "lowercase")]
+        enum Field {
+            Weights,
+            Components,
+        };
+
+        struct MixtureVisitor<Fx> {
+            _fx: PhantomData<Fx>,
+        };
+
+        impl<Fx> MixtureVisitor<Fx> {
+            fn new() -> Self {
+                MixtureVisitor { _fx: PhantomData }
+            }
+        }
+
+        impl<'de, Fx> Visitor<'de> for MixtureVisitor<Fx>
+        where
+            Fx: Deserialize<'de>,
+        {
+            type Value = Mixture<Fx>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct Mixture")
+            }
+
+            fn visit_seq<V>(self, mut seq: V) -> Result<Mixture<Fx>, V::Error>
+            where
+                V: SeqAccess<'de>,
+            {
+                let weights = seq
+                    .next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+                let components = seq
+                    .next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
+                Ok(Mixture {
+                    weights,
+                    components,
+                })
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<Mixture<Fx>, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut weights = None;
+                let mut components = None;
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Weights => {
+                            if weights.is_some() {
+                                return Err(de::Error::duplicate_field(
+                                    "weights",
+                                ));
+                            }
+                            weights = Some(map.next_value()?);
+                        }
+                        Field::Components => {
+                            if components.is_some() {
+                                return Err(de::Error::duplicate_field(
+                                    "components",
+                                ));
+                            }
+                            components = Some(map.next_value()?);
+                        }
+                    }
+                }
+                let weights = weights
+                    .ok_or_else(|| de::Error::missing_field("weights"))?;
+                let components = components
+                    .ok_or_else(|| de::Error::missing_field("components"))?;
+
+                Ok(Mixture {
+                    weights,
+                    components,
+                })
+            }
+        }
+
+        const FIELDS: &'static [&'static str] = &["weights", "components"];
+        deserializer.deserialize_struct(
+            "Mixture",
+            FIELDS,
+            MixtureVisitor::new(),
+        )
+    }
+}
+
+impl std::error::Error for MixtureError {}
+
+impl fmt::Display for MixtureError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::WeightsEmpty => write!(f, "empty weights vector"),
+            Self::ComponentsEmpty => write!(f, "empty components vector"),
+            Self::WeightsDoNotSumToOne { sum } => {
+                write!(f, "weights sum to {} but should sum to one", sum)
+            }
+            Self::WeightTooLow { ix, weight } => {
+                write!(f, "weight at index {} was too low: {} <= 0", ix, weight)
+            }
+            Self::ComponentWeightLengthMismatch {
+                n_weights,
+                n_components,
+            } => write!(
+                f,
+                "weights and components had a different number of \
+                    entries. weights had {} entries but components had {} \
+                    entries",
+                n_weights, n_components
+            ),
+        }
+    }
+}
+// Exact computation for categorical
+impl Entropy for Mixture<Categorical> {
+    fn entropy(&self) -> f64 {
+        (0..self.components()[0].k()).fold(0.0, |acc, x| {
+            let ln_f = self.ln_f(&x);
+            acc - ln_f.exp() * ln_f
+        })
+    }
+}
+
+// Exact computation for categorical
+impl Entropy for Mixture<&Categorical> {
+    fn entropy(&self) -> f64 {
+        (0..self.components()[0].k()).fold(0.0, |acc, x| {
+            let ln_f = self.ln_f(&x);
+            acc - ln_f.exp() * ln_f
+        })
+    }
+}
+
+macro_rules! dual_step_quad_bounds {
+    ($kind: ty) => {
+        impl QuadBounds for $kind {
+            fn quad_bounds(&self) -> (f64, f64) {
+                let center: f64 = self.mean().unwrap();
+                self.components().iter().fold(
+                    (center, center),
+                    |(mut left, mut right), cpnt| {
+                        let (a, b) = cpnt.quad_bounds();
+                        if a < left {
+                            left = a;
+                        }
+                        if b > right {
+                            right = b;
+                        }
+                        (left, right)
+                    },
+                )
+            }
+        }
+    };
+}
+
+// Entropy by quadrature. Should be faster and more accurate than monte carlo
+macro_rules! quadrature_entropy {
+    ($kind: ty) => {
+        impl Entropy for $kind {
+            fn entropy(&self) -> f64 {
+                let (lower, upper) = self.quad_bounds();
+                let f = |x| {
+                    let ln_f = self.ln_f(&x);
+                    ln_f.exp() * ln_f
+                };
+                -crate::misc::quad_eps(f, lower, upper, Some(1E-8))
+            }
+        }
+    };
+}
+
+dual_step_quad_bounds!(Mixture<Gaussian>);
+dual_step_quad_bounds!(Mixture<&Gaussian>);
+
+quadrature_entropy!(Mixture<Gaussian>);
+quadrature_entropy!(Mixture<&Gaussian>);
 
 #[cfg(test)]
 mod tests {
@@ -723,7 +933,7 @@ mod tests {
         let mm = Mixture::new(weights, components).unwrap();
 
         let m: f64 = mm.mean().unwrap();
-        assert::close(m, 0.3333333333333333, TOL);
+        assert::close(m, 1.0, TOL);
     }
 
     #[test]
@@ -737,7 +947,7 @@ mod tests {
         let mm = Mixture::new(weights, components).unwrap();
 
         let m: f64 = mm.mean().unwrap();
-        assert::close(m, 0.16666666666666666, TOL);
+        assert::close(m, 0.5, TOL);
     }
 
     #[test]
@@ -766,7 +976,7 @@ mod tests {
         assert::close(v, 3.75, TOL);
     }
 
-    #[cfg(feature = "serde_support")]
+    #[cfg(feature = "serde1")]
     #[test]
     fn mixture_serde() {
         let components = vec![
@@ -782,5 +992,161 @@ mod tests {
         let s2 = serde_yaml::to_string(&mm2).unwrap();
 
         assert_eq!(s1, s2);
+    }
+
+    #[cfg(test)]
+    mod mixture_impls {
+        use super::*;
+        const TOL: f64 = 1E-8;
+
+        #[test]
+        fn gauss_mixture_entropy() {
+            let components = vec![Gaussian::standard(), Gaussian::standard()];
+            let weights = vec![0.5, 0.5];
+            let mm = Mixture::new(weights, components).unwrap();
+
+            let h: f64 = mm.entropy();
+            assert::close(h, 1.4189385332046727, TOL);
+        }
+
+        #[test]
+        fn categorical_mixture_entropy_0() {
+            let components = vec![
+                {
+                    let weights: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
+                    Categorical::new(&weights).unwrap()
+                },
+                {
+                    let weights: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
+                    Categorical::new(&weights).unwrap()
+                },
+            ];
+            let weights = vec![0.5, 0.5];
+            let mm = Mixture::new(weights, components).unwrap();
+            let h: f64 = mm.entropy();
+            assert::close(h, 1.2798542258336676, TOL);
+        }
+
+        #[test]
+        fn categorical_mixture_entropy_1() {
+            let components = vec![
+                {
+                    let weights: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
+                    Categorical::new(&weights).unwrap()
+                },
+                {
+                    let weights: Vec<f64> = vec![4.0, 3.0, 2.0, 1.0];
+                    Categorical::new(&weights).unwrap()
+                },
+            ];
+            let weights = vec![0.5, 0.5];
+            let mm = Mixture::new(weights, components).unwrap();
+            let h: f64 = mm.entropy();
+            assert::close(h, -0.25_f64.ln(), TOL);
+        }
+
+        #[test]
+        fn categorical_mixture_entropy_after_combine() {
+            let m1 = {
+                let weights: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
+                let cat = Categorical::new(&weights).unwrap();
+                let components = vec![cat];
+                Mixture::new(vec![1.0], components).unwrap()
+            };
+
+            let m2 = {
+                let weights: Vec<f64> = vec![4.0, 3.0, 2.0, 1.0];
+                let cat = Categorical::new(&weights).unwrap();
+                let components = vec![cat];
+                Mixture::new(vec![1.0], components).unwrap()
+            };
+
+            let mm = Mixture::combine(vec![m1, m2]);
+
+            let h: f64 = mm.entropy();
+            assert::close(h, -0.25_f64.ln(), TOL);
+        }
+
+        #[test]
+        fn gauss_mixture_quad_bounds_have_zero_pdf() {
+            use crate::dist::{InvGamma, Poisson};
+            use crate::traits::Rv;
+
+            let mut rng = rand::thread_rng();
+            let pois = Poisson::new(7.0).unwrap();
+
+            let mu_prior = Gaussian::new(0.0, 5.0).unwrap();
+            let sigma_prior = InvGamma::new(2.0, 3.0).unwrap();
+            let bad_bounds = (0..100).find(|_| {
+                // TODO: should probably implement Rv<usize> for Poisson...
+                let n: usize =
+                    <Poisson as Rv<u32>>::draw(&pois, &mut rng) as usize;
+
+                let components: Vec<Gaussian> = (0..=n)
+                    .map(|_| {
+                        let mu: f64 = mu_prior.draw(&mut rng);
+                        let sigma: f64 = sigma_prior.draw(&mut rng);
+                        Gaussian::new(mu, sigma).unwrap()
+                    })
+                    .collect();
+
+                let mm = Mixture::uniform(components).unwrap();
+                let (a, b) = mm.quad_bounds();
+                let pdf_a = mm.pdf(&a);
+                let pdf_b = mm.pdf(&b);
+
+                println!("({}, {}) => ({}, {})", a, b, pdf_a, pdf_b);
+
+                pdf_a > 1E-10 || pdf_b > 1E-10
+            });
+
+            println!("{:?}", bad_bounds);
+            assert!(bad_bounds.is_none());
+        }
+
+        #[test]
+        fn spread_out_gauss_mixture_quad_bounds() {
+            let g1 = Gaussian::new(0.0, 0.1).unwrap();
+            let g2 = Gaussian::new(10.0, 0.5).unwrap();
+            let g3 = Gaussian::new(20.0, 0.2).unwrap();
+
+            let mm = Mixture::uniform(vec![g1, g2, g3]).unwrap();
+
+            let (a, b) = mm.quad_bounds();
+
+            assert!(a < 0.0);
+            assert!(b > 20.0);
+        }
+
+        #[test]
+        fn gauss_2_component_mixture_entropy() {
+            let components = vec![
+                Gaussian::new(-2.0, 1.0).unwrap(),
+                Gaussian::new(2.0, 1.0).unwrap(),
+            ];
+            let weights = vec![0.5, 0.5];
+            let mm = Mixture::new(weights, components).unwrap();
+
+            let h: f64 = mm.entropy();
+            // Answer from numerical integration in python
+            assert::close(h, 2.051658739391058, 1E-7);
+        }
+
+        #[cfg(feature = "serde1")]
+        #[test]
+        fn messy_jsd_should_be_positive() {
+            // recreates bug in dependent crate where JSD was negative
+            let mm_str =
+                std::fs::read_to_string("resources/gauss-mm.yaml").unwrap();
+            let mm: Mixture<Gaussian> = serde_yaml::from_str(&mm_str).unwrap();
+            let sum_h = mm
+                .weights()
+                .iter()
+                .zip(mm.components().iter())
+                .map(|(&w, cpnt)| w * cpnt.entropy())
+                .sum::<f64>();
+            let jsd = mm.entropy() - sum_h;
+            assert!(0.0 < jsd);
+        }
     }
 }

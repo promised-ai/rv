@@ -1,11 +1,12 @@
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::vec_to_string;
+use std::fmt;
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Partition {
     /// The assignment of the n items to partitions 0, ..., k-1
     z: Vec<usize>,
@@ -39,15 +40,38 @@ impl From<&Partition> for String {
 
 impl_display!(Partition);
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum Error {
-    /// One or more of the bins in the partition has no members
-    UnoccupiedBinError,
+#[derive(Debug, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+pub enum PartitionError {
     /// The input partition is an empty vector
-    EmptyPartitionError,
+    EmptyInputPartition,
     /// One or more of the indicators exceeds the number of categories
-    IndicatorHigherThanNumberOfPartitionsError,
+    IndicatorHigherThanNumberOfPartitions {
+        /// The indicator
+        zi: usize,
+        /// The number of partitions
+        nparts: usize,
+    },
+}
+
+impl std::error::Error for PartitionError {}
+
+impl fmt::Display for PartitionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::EmptyInputPartition => {
+                write!(f, "the input partition was empty")
+            }
+            Self::IndicatorHigherThanNumberOfPartitions { zi, nparts } => {
+                write!(
+                    f,
+                    "tried to append z = {0} to a partition with {1} \
+                     partitions.  z must be in 0..n_parts, (or 0..{1}),",
+                    zi, nparts
+                )
+            }
+        }
+    }
 }
 
 impl Partition {
@@ -95,9 +119,9 @@ impl Partition {
     /// let z2 = vec![0, 1, 2, 3, 1, 5];
     /// assert!(Partition::from_z(z2).is_err());
     /// ```
-    pub fn from_z(z: Vec<usize>) -> Result<Self, Error> {
+    pub fn from_z(z: Vec<usize>) -> Result<Self, PartitionError> {
         if z.is_empty() {
-            return Err(Error::EmptyPartitionError);
+            return Err(PartitionError::EmptyInputPartition);
         }
 
         let k = *z.iter().max().expect("empty z") + 1;
@@ -108,7 +132,7 @@ impl Partition {
             let part = Partition { z, counts };
             Ok(part)
         } else {
-            Err(Error::EmptyPartitionError)
+            Err(PartitionError::EmptyInputPartition)
         }
     }
 
@@ -124,7 +148,7 @@ impl Partition {
     /// assert_eq!(*part.z(), vec![0, 0, 1]);
     /// assert_eq!(*part.counts(), vec![2, 1]);
     /// ```
-    pub fn remove(&mut self, ix: usize) -> Result<(), Error> {
+    pub fn remove(&mut self, ix: usize) -> Result<(), PartitionError> {
         // Panics  on index error panics.
         let zi = self.z.remove(ix);
         if self.counts[zi] == 1 {
@@ -154,10 +178,13 @@ impl Partition {
     /// assert_eq!(*part.z(), vec![0, 1, 0, 2, 3]);
     /// assert_eq!(*part.counts(), vec![2, 1, 1, 1]);
     /// ```
-    pub fn append(&mut self, zi: usize) -> Result<(), Error> {
+    pub fn append(&mut self, zi: usize) -> Result<(), PartitionError> {
         let k = self.k();
         if zi > k {
-            Err(Error::IndicatorHigherThanNumberOfPartitionsError)
+            Err(PartitionError::IndicatorHigherThanNumberOfPartitions {
+                zi,
+                nparts: k,
+            })
         } else {
             self.z.push(zi);
             if zi == k {

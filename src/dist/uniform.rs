@@ -1,11 +1,13 @@
 //! Continuous uniform distribution, U(a, b) on the interval x in [a, b]
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
-use crate::impl_display;
 use crate::traits::*;
+use crate::{clone_cache_f64, impl_display};
+use once_cell::sync::OnceCell;
 use rand::Rng;
 use std::f64;
+use std::fmt;
 
 /// [Continuous uniform distribution](https://en.wikipedia.org/wiki/Uniform_distribution_(continuous)),
 /// U(a, b) on the interval x in [a, b]
@@ -25,39 +27,67 @@ use std::f64;
 /// assert!((u.cdf(&3.0_f64) - y(3.0)).abs() < 1E-12);
 /// assert!((u.cdf(&3.2_f64) - y(3.2)).abs() < 1E-12);
 /// ```
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Uniform {
     a: f64,
     b: f64,
+    /// Cached value of the ln(PDF)
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    lnf: OnceCell<f64>,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+impl Clone for Uniform {
+    fn clone(&self) -> Self {
+        Self {
+            a: self.a,
+            b: self.b,
+            lnf: clone_cache_f64!(self, lnf),
+        }
+    }
+}
+
+impl PartialEq for Uniform {
+    fn eq(&self, other: &Uniform) -> bool {
+        self.a == other.a && self.b == other.b
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum UniformError {
-    InvalidIntervalError,
-    ANotFiniteError,
-    BNotFiniteError,
+    /// A >= B
+    InvalidInterval { a: f64, b: f64 },
+    /// A was infinite or NaN
+    ANotFinite { a: f64 },
+    /// B was infinite or NaN
+    BNotFinite { b: f64 },
 }
 
 impl Uniform {
     /// Create a new uniform distribution on [a, b]
+    #[inline]
     pub fn new(a: f64, b: f64) -> Result<Self, UniformError> {
         if a >= b {
-            Err(UniformError::InvalidIntervalError)
+            Err(UniformError::InvalidInterval { a, b })
         } else if !a.is_finite() {
-            Err(UniformError::ANotFiniteError)
+            Err(UniformError::ANotFinite { a })
         } else if !b.is_finite() {
-            Err(UniformError::BNotFiniteError)
+            Err(UniformError::BNotFinite { b })
         } else {
-            Ok(Uniform { a, b })
+            Ok(Uniform::new_unchecked(a, b))
         }
     }
 
     /// Creates a new Uniform without checking whether the parameters are
     /// valid.
+    #[inline]
     pub fn new_unchecked(a: f64, b: f64) -> Self {
-        Uniform { a, b }
+        Uniform {
+            a,
+            b,
+            lnf: OnceCell::new(),
+        }
     }
 
     /// Get the lower bound, a
@@ -69,6 +99,7 @@ impl Uniform {
     /// let u = Uniform::new(0.0, 1.0).unwrap();
     /// assert_eq!(u.a(), 0.0);
     /// ```
+    #[inline]
     pub fn a(&self) -> f64 {
         self.a
     }
@@ -82,8 +113,14 @@ impl Uniform {
     /// let u = Uniform::new(0.0, 1.0).unwrap();
     /// assert_eq!(u.b(), 1.0);
     /// ```
+    #[inline]
     pub fn b(&self) -> f64 {
         self.b
+    }
+
+    #[inline]
+    fn lnf(&self) -> f64 {
+        *self.lnf.get_or_init(|| -(self.b - self.a).ln())
     }
 }
 
@@ -107,7 +144,8 @@ macro_rules! impl_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let xf = f64::from(*x);
                 if self.a <= xf && xf <= self.b {
-                    -(self.b - self.a).ln()
+                    // call the lnf cache field
+                    self.lnf()
                 } else {
                     f64::NEG_INFINITY
                 }
@@ -198,14 +236,31 @@ impl Entropy for Uniform {
 impl_traits!(f64);
 impl_traits!(f32);
 
+impl std::error::Error for UniformError {}
+
+impl fmt::Display for UniformError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidInterval { a, b } => {
+                write!(f, "invalid interval: (a, b) = ({}, {})", a, b)
+            }
+            Self::ANotFinite { a } => write!(f, "non-finite a: {}", a),
+            Self::BNotFinite { b } => write!(f, "non-finite b: {}", b),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::misc::ks_test;
+    use crate::test_basic_impls;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
+
+    test_basic_impls!([continuous] Uniform::default());
 
     #[test]
     fn new() {
