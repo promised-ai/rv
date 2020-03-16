@@ -6,6 +6,7 @@
 - Fixed a bug with `rv::dist::Mixture` that would compute means incorrectly
 - `MvGaussian::dims` renamed to `MvGaussian::ndims`
 - More aggressive caching of log likelihood terms
+- Cached terms no longer unnecessarily computed on `Clone`
 - Remove dependency on `getset`
 - Setters do input validation unless prefixed by `_unchecked`.
 - feature `serde_support` renamed to `serde1`
