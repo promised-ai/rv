@@ -1095,12 +1095,9 @@ mod tests {
                 let pdf_a = mm.pdf(&a);
                 let pdf_b = mm.pdf(&b);
 
-                println!("({}, {}) => ({}, {})", a, b, pdf_a, pdf_b);
-
                 pdf_a > 1E-10 || pdf_b > 1E-10
             });
 
-            println!("{:?}", bad_bounds);
             assert!(bad_bounds.is_none());
         }
 
