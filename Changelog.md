@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.2
+- Benchmarks
+
+## 0.9.1
+- Remove printlns
+
 ## 0.9.0
 - Refactor errors to provide more information
 - Errors implement the `std::error::Error` trait
