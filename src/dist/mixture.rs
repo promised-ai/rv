@@ -5,7 +5,7 @@ use serde::ser::{SerializeStruct, Serializer};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::dist::{Categorical, Gaussian};
+use crate::dist::{Categorical, Gaussian, Poisson};
 use crate::misc::{logsumexp, pflip};
 use crate::traits::*;
 use rand::Rng;
@@ -597,25 +597,46 @@ impl fmt::Display for MixtureError {
         }
     }
 }
-// Exact computation for categorical
-impl Entropy for Mixture<Categorical> {
-    fn entropy(&self) -> f64 {
-        (0..self.components()[0].k()).fold(0.0, |acc, x| {
-            let ln_f = self.ln_f(&x);
-            acc - ln_f.exp() * ln_f
-        })
-    }
+
+macro_rules! catmix_entropy {
+    ($type:ty) => {
+        // Exact computation for categorical
+        impl Entropy for Mixture<$type> {
+            fn entropy(&self) -> f64 {
+                (0..self.components()[0].k()).fold(0.0, |acc, x| {
+                    let ln_f = self.ln_f(&x);
+                    acc - ln_f.exp() * ln_f
+                })
+            }
+        }
+    };
 }
 
-// Exact computation for categorical
-impl Entropy for Mixture<&Categorical> {
-    fn entropy(&self) -> f64 {
-        (0..self.components()[0].k()).fold(0.0, |acc, x| {
-            let ln_f = self.ln_f(&x);
-            acc - ln_f.exp() * ln_f
-        })
-    }
+catmix_entropy!(Categorical);
+catmix_entropy!(&Categorical);
+
+macro_rules! countmix_entropy {
+    ($type:ty) => {
+        // Approximation for count-type distribution
+        impl Entropy for Mixture<$type> {
+            fn entropy(&self) -> f64 {
+                let max_mean = self.components.iter().fold(0.0, |max, cpnt| {
+                    let mean = cpnt.mean().expect("distr always has a mean");
+                    if mean > max {
+                        mean
+                    } else {
+                        max
+                    }
+                });
+
+                crate::misc::count_entropy(&self, 0, max_mean as u32)
+            }
+        }
+    };
 }
+
+countmix_entropy!(Poisson);
+countmix_entropy!(&Poisson);
 
 macro_rules! dual_step_quad_bounds {
     ($kind: ty) => {

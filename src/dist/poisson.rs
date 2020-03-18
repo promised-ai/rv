@@ -1,6 +1,7 @@
 #[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
+use crate::consts::LN_2PI_E;
 use crate::data::PoissonSuffStat;
 use crate::misc::ln_fact;
 use crate::traits::*;
@@ -228,6 +229,28 @@ impl Skewness for Poisson {
 impl Kurtosis for Poisson {
     fn kurtosis(&self) -> Option<f64> {
         Some(self.rate.recip())
+    }
+}
+
+impl Entropy for Poisson {
+    fn entropy(&self) -> f64 {
+        // TODO: optimize this
+        // - if we could compute the inverse cdf, we could find where the
+        //   PMF > 1E-16 so we wouldn't have to compute f(x) when the mass
+        //   hasn't stated yet
+        // - should be some better approximations out there
+        if self.rate() < 150.0 {
+            // compute expectation until f(x) is close to zero
+            let mean = self.rate().round() as u32;
+            crate::misc::count_entropy(&self, 0, mean)
+        } else {
+            // Approximation for large rate. Error is O(1/rate^3)
+            // https://en.wikipedia.org/wiki/Poisson_distribution
+            (0.5) * (LN_2PI_E + self.ln_rate())
+                - (12.0 * self.rate()).recip()
+                - (24.0 * self.rate().powi(2)).recip()
+                - 19.0 * (360.0 * self.rate().powi(3)).recip()
+        }
     }
 }
 

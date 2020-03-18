@@ -6,12 +6,22 @@ before_script:
   - rustup component add rustfmt-preview
 
 stages:
+  - format
   - test
   - bench
 
+format:
+  stage: format
+  image: "rust:1.42"
+  script:
+    # there should be no println in src
+    - [[ `grep -r "println" src/*` == "" ]]
+    - rustup component add rustfmt
+    - cargo fmt -- --check
+
 test:cargo-stable:
   stage: test
-  image: "rust:1.41"
+  image: "rust:1.42"
   script:
     - rustc --version && cargo --version
     - cargo build  --features serde1
@@ -21,9 +31,9 @@ test:cargo-nigtly:
   stage: test
   image: "rustlang/rust:nightly"
   # Sometimes nightly breaks, so we have to roll back
-  before_script:
-    - rustup install nightly-2020-02-06 --no-self-update
-    - rustup override set nightly-2020-02-06
+  # before_script:
+  #   - rustup install nightly-2020-02-06 --no-self-update
+  #   - rustup override set nightly-2020-02-06
   script:
     - rustc --version && cargo --version
     - cargo build  --features serde1
@@ -31,6 +41,8 @@ test:cargo-nigtly:
 
 bench:cargo-stable:
   stage: bench
-  image: "rust:1.41"
+  only:
+    - master
+  image: "rust:1.42"
   script:
     - cargo bench --no-run

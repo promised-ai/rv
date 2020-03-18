@@ -2,6 +2,7 @@
 
 ## 0.9.2
 - Benchmarks
+- implement `Entropy` for `Poisson`
 
 ## 0.9.1
 - Remove printlns
