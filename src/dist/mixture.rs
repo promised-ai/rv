@@ -407,7 +407,7 @@ macro_rules! continuous_uv_mean_and_var {
     ($kind: ty) => {
         impl<Fx> Mean<$kind> for Mixture<Fx>
         where
-            Fx: ContinuousDistr<$kind> + Mean<$kind>,
+            Fx: Mean<$kind>,
         {
             fn mean(&self) -> Option<$kind> {
                 self.weights
@@ -478,7 +478,6 @@ where
     where
         D: Deserializer<'de>,
     {
-        use std::fmt;
         use std::marker::PhantomData;
 
         #[derive(Deserialize)]
@@ -682,6 +681,37 @@ dual_step_quad_bounds!(Mixture<&Gaussian>);
 
 quadrature_entropy!(Mixture<Gaussian>);
 quadrature_entropy!(Mixture<&Gaussian>);
+
+macro_rules! ds_discrete_quad_bounds {
+    ($fxtype:ty, $xtype:ty, $minval:expr, $maxval:expr) => {
+        impl QuadBounds for $fxtype {
+            fn quad_bounds(&self) -> (f64, f64) {
+                let mean = self.mean().unwrap();
+                let (mut left, mut right) = {
+                    let left = mean.floor() as $xtype;
+                    let mut right = mean.ceil() as $xtype;
+                    if left == right {
+                        right += 1;
+                    }
+                    (left, right)
+                };
+
+                while self.f(&left) > 1e-16 && left > $minval {
+                    left -= 1;
+                }
+
+                while self.f(&right) > 1e-16 && left < $maxval {
+                    right -= 1;
+                }
+
+                (left as f64, right as f64)
+            }
+        }
+    };
+}
+
+ds_discrete_quad_bounds!(Mixture<Poisson>, u32, 0, u32::max_value());
+ds_discrete_quad_bounds!(Mixture<&Poisson>, u32, 0, u32::max_value());
 
 #[cfg(test)]
 mod tests {

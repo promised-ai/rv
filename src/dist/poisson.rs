@@ -232,6 +232,13 @@ impl Kurtosis for Poisson {
     }
 }
 
+impl KlDivergence for Poisson {
+    fn kl(&self, other: &Poisson) -> f64 {
+        self.rate() * (self.ln_rate() - other.ln_rate()) + other.rate()
+            - self.rate()
+    }
+}
+
 impl Entropy for Poisson {
     fn entropy(&self) -> f64 {
         // TODO: optimize this

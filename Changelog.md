@@ -2,7 +2,9 @@
 
 ## 0.9.2
 - Benchmarks
-- implement `Entropy` for `Poisson`
+- implement `Entropy` and `KlDivergence` for `Poisson`
+- Implement `QuadBounds` for `Mixture<Poisson>`
+- Implement `Mean` for mixtures of distributions that implement `Mean<f64>` or `Mean<f32>`
 
 ## 0.9.1
 - Remove printlns
