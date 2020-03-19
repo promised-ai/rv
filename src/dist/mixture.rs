@@ -619,16 +619,41 @@ macro_rules! countmix_entropy {
         // Approximation for count-type distribution
         impl Entropy for Mixture<$type> {
             fn entropy(&self) -> f64 {
-                let max_mean = self.components.iter().fold(0.0, |max, cpnt| {
-                    let mean = cpnt.mean().expect("distr always has a mean");
-                    if mean > max {
-                        mean
-                    } else {
-                        max
-                    }
-                });
-
-                crate::misc::count_entropy(&self, 0, max_mean as u32)
+                if self.k() == 1 {
+                    crate::misc::entropy::count_entropy(
+                        &self,
+                        self.mean().unwrap() as u32,
+                    )
+                } else {
+                    let (min_mean, max_mean) = {
+                        let mut ma = self.components[0].mean().unwrap();
+                        let mut mb = self.components[1].mean().unwrap();
+                        if ma > mb {
+                            std::mem::swap(&mut ma, &mut mb);
+                        }
+                        (ma, mb)
+                    };
+                    let (lower, upper) = self.components.iter().fold(
+                        (min_mean, max_mean),
+                        |(lower, upper), cpnt| {
+                            let mean =
+                                cpnt.mean().expect("distr always has a mean");
+                            if mean > upper {
+                                (lower, mean)
+                            } else if mean < lower {
+                                (mean, upper)
+                            } else {
+                                (lower, upper)
+                            }
+                        },
+                    );
+                    crate::misc::entropy::count_entropy_range(
+                        &self,
+                        ((lower + upper) / 2.0) as u32,
+                        lower as u32,
+                        upper as u32,
+                    )
+                }
             }
         }
     };
@@ -700,7 +725,7 @@ macro_rules! ds_discrete_quad_bounds {
                     left -= 1;
                 }
 
-                while self.f(&right) > 1e-16 && left < $maxval {
+                while self.f(&right) > 1e-16 && right < $maxval {
                     right -= 1;
                 }
 
@@ -1195,6 +1220,17 @@ mod tests {
                 .sum::<f64>();
             let jsd = mm.entropy() - sum_h;
             assert!(0.0 < jsd);
+        }
+
+        #[test]
+        fn poisson_2_entropy() {
+            let components =
+                vec![Poisson::new(1.2).unwrap(), Poisson::new(20.0).unwrap()];
+            let mm = Mixture::uniform(components).unwrap();
+
+            let entropy =
+                -(0_u32..10_000).map(|x| mm.ln_f(&x) * mm.f(&x)).sum::<f64>();
+            assert::close(entropy, mm.entropy(), 1e-3);
         }
     }
 }

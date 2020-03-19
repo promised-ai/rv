@@ -79,6 +79,13 @@ pub trait Rv<X> {
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<X> {
         (0..n).map(|_| self.draw(&mut rng)).collect()
     }
+
+    fn sample_stream<'r, R: Rng>(
+        &'r self,
+        mut rng: &'r mut R,
+    ) -> Box<dyn Iterator<Item = X> + 'r> {
+        Box::new(std::iter::repeat_with(move || self.draw(&mut rng)))
+    }
 }
 
 // Auto impl for deref types

@@ -1,5 +1,4 @@
 use crate::consts::{LN_2PI, LN_PI};
-use crate::traits::Rv;
 use rand::distributions::Open01;
 use rand::Rng;
 use special::Gamma;
@@ -7,35 +6,6 @@ use std::cmp::Ordering;
 use std::cmp::PartialOrd;
 use std::fmt::Debug;
 use std::ops::AddAssign;
-
-/// Compute the entropy for count-type distributions by enumeration
-///
-/// # Notes
-/// Enumeration begins at `x` and ends at the first `x` after `mid` for which
-/// f(x) < 1E-16.
-///
-/// # Example
-///
-/// ```rust
-/// # use rv::misc::count_entropy;
-/// use rv::dist::Poisson;
-///
-/// let pois = Poisson::new(1.2).unwrap();
-/// let h = count_entropy(&pois, 0, 2);
-/// assert!((h - 1.4100058897431968).abs() < 1e-9) ;
-/// ```
-pub fn count_entropy<Fx: Rv<u32>>(fx: &Fx, mut x: u32, mid: u32) -> f64 {
-    let mut h = 0.0;
-    loop {
-        let ln_f = fx.ln_f(&x);
-        let f = ln_f.exp();
-        h -= f * ln_f;
-        if x > mid && f < 1E-16 {
-            return h;
-        }
-        x += 1;
-    }
-}
 
 /// Convert a Vector to a printable string
 ///

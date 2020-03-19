@@ -1,5 +1,6 @@
 //! Random utilities
 pub mod bessel;
+pub(crate) mod entropy;
 mod func;
 mod ks;
 mod mardia;
