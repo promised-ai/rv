@@ -45,9 +45,6 @@ pub trait Rv<X> {
     /// Flip a coin
     ///
     /// ```
-    /// # extern crate rv;
-    /// extern crate rand;
-    ///
     /// use rv::dist::Bernoulli;
     /// use rv::traits::Rv;
     ///
@@ -64,9 +61,6 @@ pub trait Rv<X> {
     /// Flip a lot of coins
     ///
     /// ```
-    /// # extern crate rv;
-    /// extern crate rand;
-    ///
     /// use rv::dist::Bernoulli;
     /// use rv::traits::Rv;
     ///
@@ -80,6 +74,27 @@ pub trait Rv<X> {
         (0..n).map(|_| self.draw(&mut rng)).collect()
     }
 
+    /// Create a never-ending iterator of samples
+    ///
+    /// # Example
+    ///
+    /// Estimate the mean of a Gamma distribution
+    ///
+    /// ```
+    /// use rv::traits::Rv;
+    /// use rv::dist::Gamma;
+    ///
+    /// let mut rng = rand::thread_rng();
+    ///
+    /// let gamma = Gamma::new(2.0, 1.0).unwrap();
+    ///
+    /// let n = 100_000_usize;
+    /// let mean = <Gamma as Rv<f64>>::sample_stream(&gamma, &mut rng)
+    ///     .take(n)
+    ///     .sum::<f64>() / n as f64;;
+    ///
+    /// assert::close(mean, 2.0, 1e-2);
+    /// ```
     fn sample_stream<'r, R: Rng>(
         &'r self,
         mut rng: &'r mut R,
@@ -157,7 +172,6 @@ pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
     /// Compute the Gaussian PDF, f(x)
     ///
     /// ```
-    /// # extern crate rv;
     /// use rv::dist::Gaussian;
     /// use rv::traits::ContinuousDistr;
     ///
@@ -186,7 +200,6 @@ pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
     /// Compute the natural logarithm of the Gaussian PDF, ln(f(x))
     ///
     /// ```
-    /// # extern crate rv;
     /// use rv::dist::Gaussian;
     /// use rv::traits::ContinuousDistr;
     ///
@@ -224,7 +237,6 @@ pub trait Cdf<X>: Rv<X> {
     /// The proportion of probability in (-∞, μ) in N(μ, σ) is 50%
     ///
     /// ```
-    /// # extern crate rv;
     /// use rv::dist::Gaussian;
     /// use rv::traits::Cdf;
     ///
@@ -263,7 +275,6 @@ pub trait InverseCdf<X>: Rv<X> + Support<X> {
     /// The CDF identity: p = CDF(x) => x = CDF<sup>-1</sup>(p)
     ///
     /// ```
-    /// # extern crate rv;
     /// use rv::dist::Gaussian;
     /// use rv::traits::Cdf;
     /// use rv::traits::InverseCdf;
@@ -291,7 +302,6 @@ pub trait InverseCdf<X>: Rv<X> + Support<X> {
     /// Confidence interval
     ///
     /// ```
-    /// # extern crate rv;
     /// use rv::dist::Gaussian;
     /// use rv::traits::InverseCdf;
     ///
