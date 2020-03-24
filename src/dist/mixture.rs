@@ -5,7 +5,7 @@ use serde::ser::{SerializeStruct, Serializer};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::dist::{Categorical, Gaussian};
+use crate::dist::{Categorical, Gaussian, Poisson};
 use crate::misc::{logsumexp, pflip};
 use crate::traits::*;
 use rand::Rng;
@@ -407,7 +407,7 @@ macro_rules! continuous_uv_mean_and_var {
     ($kind: ty) => {
         impl<Fx> Mean<$kind> for Mixture<Fx>
         where
-            Fx: ContinuousDistr<$kind> + Mean<$kind>,
+            Fx: Mean<$kind>,
         {
             fn mean(&self) -> Option<$kind> {
                 self.weights
@@ -478,7 +478,6 @@ where
     where
         D: Deserializer<'de>,
     {
-        use std::fmt;
         use std::marker::PhantomData;
 
         #[derive(Deserialize)]
@@ -597,25 +596,71 @@ impl fmt::Display for MixtureError {
         }
     }
 }
-// Exact computation for categorical
-impl Entropy for Mixture<Categorical> {
-    fn entropy(&self) -> f64 {
-        (0..self.components()[0].k()).fold(0.0, |acc, x| {
-            let ln_f = self.ln_f(&x);
-            acc - ln_f.exp() * ln_f
-        })
-    }
+
+macro_rules! catmix_entropy {
+    ($type:ty) => {
+        // Exact computation for categorical
+        impl Entropy for Mixture<$type> {
+            fn entropy(&self) -> f64 {
+                (0..self.components()[0].k()).fold(0.0, |acc, x| {
+                    let ln_f = self.ln_f(&x);
+                    acc - ln_f.exp() * ln_f
+                })
+            }
+        }
+    };
 }
 
-// Exact computation for categorical
-impl Entropy for Mixture<&Categorical> {
-    fn entropy(&self) -> f64 {
-        (0..self.components()[0].k()).fold(0.0, |acc, x| {
-            let ln_f = self.ln_f(&x);
-            acc - ln_f.exp() * ln_f
-        })
-    }
+catmix_entropy!(Categorical);
+catmix_entropy!(&Categorical);
+
+macro_rules! countmix_entropy {
+    ($type:ty) => {
+        // Approximation for count-type distribution
+        impl Entropy for Mixture<$type> {
+            fn entropy(&self) -> f64 {
+                if self.k() == 1 {
+                    crate::misc::entropy::count_entropy(
+                        &self,
+                        self.mean().unwrap() as u32,
+                    )
+                } else {
+                    let (min_mean, max_mean) = {
+                        let mut ma = self.components[0].mean().unwrap();
+                        let mut mb = self.components[1].mean().unwrap();
+                        if ma > mb {
+                            std::mem::swap(&mut ma, &mut mb);
+                        }
+                        (ma, mb)
+                    };
+                    let (lower, upper) = self.components.iter().fold(
+                        (min_mean, max_mean),
+                        |(lower, upper), cpnt| {
+                            let mean =
+                                cpnt.mean().expect("distr always has a mean");
+                            if mean > upper {
+                                (lower, mean)
+                            } else if mean < lower {
+                                (mean, upper)
+                            } else {
+                                (lower, upper)
+                            }
+                        },
+                    );
+                    crate::misc::entropy::count_entropy_range(
+                        &self,
+                        ((lower + upper) / 2.0) as u32,
+                        lower as u32,
+                        upper as u32,
+                    )
+                }
+            }
+        }
+    };
 }
+
+countmix_entropy!(Poisson);
+countmix_entropy!(&Poisson);
 
 macro_rules! dual_step_quad_bounds {
     ($kind: ty) => {
@@ -661,6 +706,37 @@ dual_step_quad_bounds!(Mixture<&Gaussian>);
 
 quadrature_entropy!(Mixture<Gaussian>);
 quadrature_entropy!(Mixture<&Gaussian>);
+
+macro_rules! ds_discrete_quad_bounds {
+    ($fxtype:ty, $xtype:ty, $minval:expr, $maxval:expr) => {
+        impl QuadBounds for $fxtype {
+            fn quad_bounds(&self) -> (f64, f64) {
+                let mean = self.mean().unwrap();
+                let (mut left, mut right) = {
+                    let left = mean.floor() as $xtype;
+                    let mut right = mean.ceil() as $xtype;
+                    if left == right {
+                        right += 1;
+                    }
+                    (left, right)
+                };
+
+                while self.f(&left) > 1e-16 && left > $minval {
+                    left -= 1;
+                }
+
+                while self.f(&right) > 1e-16 && right < $maxval {
+                    right -= 1;
+                }
+
+                (left as f64, right as f64)
+            }
+        }
+    };
+}
+
+ds_discrete_quad_bounds!(Mixture<Poisson>, u32, 0, u32::max_value());
+ds_discrete_quad_bounds!(Mixture<&Poisson>, u32, 0, u32::max_value());
 
 #[cfg(test)]
 mod tests {
@@ -1095,12 +1171,9 @@ mod tests {
                 let pdf_a = mm.pdf(&a);
                 let pdf_b = mm.pdf(&b);
 
-                println!("({}, {}) => ({}, {})", a, b, pdf_a, pdf_b);
-
                 pdf_a > 1E-10 || pdf_b > 1E-10
             });
 
-            println!("{:?}", bad_bounds);
             assert!(bad_bounds.is_none());
         }
 
@@ -1147,6 +1220,17 @@ mod tests {
                 .sum::<f64>();
             let jsd = mm.entropy() - sum_h;
             assert!(0.0 < jsd);
+        }
+
+        #[test]
+        fn poisson_2_entropy() {
+            let components =
+                vec![Poisson::new(1.2).unwrap(), Poisson::new(20.0).unwrap()];
+            let mm = Mixture::uniform(components).unwrap();
+
+            let entropy =
+                -(0_u32..10_000).map(|x| mm.ln_f(&x) * mm.f(&x)).sum::<f64>();
+            assert::close(entropy, mm.entropy(), 1e-3);
         }
     }
 }

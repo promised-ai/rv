@@ -16,3 +16,5 @@ pub const LN_2PI: f64 = 1.837_877_066_409_345_3;
 pub const EULER_MASCERONI: f64 = 0.577_215_664_901_532_9;
 /// ln(ln(2))
 pub const LN_LN_2: f64 = -0.366_512_920_581_664_3;
+/// ln(2 * pi * e)
+pub const LN_2PI_E: f64 = 2.837_877_066_409_345_3;

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.2
+- Benchmarks
+- implement `Entropy` and `KlDivergence` for `Poisson`
+- Implement `QuadBounds` and `Entropy` for `Mixture<Poisson>`
+- Implement `Mean` for mixtures of distributions that implement `Mean<f64>` or `Mean<f32>`
+- `Rv` trait has `sample_stream` method that produces a never-ending iterator of random numbers.
+
+## 0.9.1
+- Remove printlns
+
 ## 0.9.0
 - Refactor errors to provide more information
 - Errors implement the `std::error::Error` trait

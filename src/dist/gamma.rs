@@ -101,9 +101,7 @@ impl Gamma {
     /// Get ln(gamma(rate))
     #[inline]
     fn ln_gamma_shape(&self) -> f64 {
-        *self.ln_gamma_shape.get_or_init(|| {
-            self.shape.ln_gamma().0
-        })
+        *self.ln_gamma_shape.get_or_init(|| self.shape.ln_gamma().0)
     }
 
     /// Get the shape parameter

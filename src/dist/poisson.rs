@@ -1,6 +1,7 @@
 #[cfg(feature = "serde1")]
 use serde_derive::{Deserialize, Serialize};
 
+use crate::consts::LN_2PI_E;
 use crate::data::PoissonSuffStat;
 use crate::misc::ln_fact;
 use crate::traits::*;
@@ -231,6 +232,31 @@ impl Kurtosis for Poisson {
     }
 }
 
+impl KlDivergence for Poisson {
+    fn kl(&self, other: &Poisson) -> f64 {
+        self.rate() * (self.ln_rate() - other.ln_rate()) + other.rate()
+            - self.rate()
+    }
+}
+
+impl Entropy for Poisson {
+    fn entropy(&self) -> f64 {
+        // TODO: optimize this. Should be some better approximations out there
+        if self.rate() < 200.0 {
+            // compute expectation until f(x) is close to zero
+            let mid = self.rate().floor() as u32;
+            crate::misc::entropy::count_entropy(&self, mid)
+        } else {
+            // Approximation for large rate. Error is O(1/rate^3)
+            // https://en.wikipedia.org/wiki/Poisson_distribution
+            (0.5) * (LN_2PI_E + self.ln_rate())
+                - (12.0 * self.rate()).recip()
+                - (24.0 * self.rate().powi(2)).recip()
+                - 19.0 * (360.0 * self.rate().powi(3)).recip()
+        }
+    }
+}
+
 impl_traits!(u8);
 impl_traits!(u16);
 impl_traits!(u32);
@@ -260,6 +286,16 @@ mod tests {
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
+
+    fn brute_force_kl(fx: &Poisson, fy: &Poisson, x_max: u32) -> f64 {
+        (0..=x_max)
+            .map(|x| {
+                let lnfx = fx.ln_f(&x);
+                let lnfy = fy.ln_f(&x);
+                lnfx.exp() * (lnfx - lnfy)
+            })
+            .sum()
+    }
 
     test_basic_impls!([count] Poisson::new(0.5).unwrap());
 
@@ -384,5 +420,40 @@ mod tests {
             }
         });
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn kl_divergence_vs_brute() {
+        let prior = crate::dist::Gamma::new(1.0, 1.0).unwrap();
+        let mut rng = rand::thread_rng();
+
+        for _ in 0..10 {
+            let pois_x: Poisson = prior.draw(&mut rng);
+            let pois_y: Poisson = prior.draw(&mut rng);
+
+            let kl_true = pois_x.kl(&pois_y);
+            let kl_est = brute_force_kl(&pois_x, &pois_y, 1_000);
+            assert::close(kl_true, kl_est, TOL);
+        }
+    }
+
+    #[test]
+    fn entropy_value_checks() {
+        let rates = vec![0.1, 0.5, 1.0, 2.2, 3.4, 10.2, 131.4];
+        // from scipy, which I think uses an approximation via simulation. Not
+        // 100% sure.
+        let hs = vec![
+            0.3336769965012327,
+            0.9276374674957975,
+            1.3048422422562516,
+            1.758957749331246,
+            1.9995315141091008,
+            2.571495552115918,
+            3.857424953514813,
+        ];
+        rates.iter().zip(hs.iter()).for_each(|(rate, h)| {
+            let pois = Poisson::new(*rate).unwrap();
+            assert::close(*h, pois.entropy(), TOL);
+        })
     }
 }

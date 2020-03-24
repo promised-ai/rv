@@ -38,7 +38,6 @@ where
     /// # Example
     ///
     /// ```
-    /// # extern crate rv;
     /// use std::sync::Arc;
     /// use rv::prelude::*;
     /// use rv::ConjugateModel;
@@ -69,7 +68,6 @@ where
     /// # Example
     ///
     /// ```
-    /// # extern crate rv;
     /// use std::sync::Arc;
     /// use rv::prelude::*;
     /// use rv::ConjugateModel;
