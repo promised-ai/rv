@@ -70,6 +70,19 @@ pub trait Rv<X> {
     ///
     /// assert_eq!(xs.len(), 22);
     /// ```
+    ///
+    /// Estimate Gaussian mean
+    ///
+    /// ```
+    /// use rv::dist::Gaussian;
+    /// use rv::traits::Rv;
+    ///
+    /// let gauss = Gaussian::standard();
+    /// let mut rng = rand::thread_rng();
+    /// let xs: Vec<f64> = gauss.sample(100_000, &mut rng);
+    ///
+    /// assert::close(xs.iter().sum::<f64>()/100_000.0, 0.0, 1e-2);
+    /// ```
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<X> {
         (0..n).map(|_| self.draw(&mut rng)).collect()
     }
