@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.9.2
+- Categorical::new_unchecked is now public
+
+## 0.9.2
 - Benchmarks
 - implement `Entropy` and `KlDivergence` for `Poisson`
 - Implement `QuadBounds` and `Entropy` for `Mixture<Poisson>`
