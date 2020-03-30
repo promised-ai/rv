@@ -11,6 +11,6 @@ mod x2;
 pub use func::*;
 pub use ks::*;
 pub use mardia::mardia;
-pub use quad::{quad, quad_eps, try_quad, try_quad_eps};
+pub use quad::*;
 pub use seq::*;
 pub use x2::x2_test;

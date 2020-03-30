@@ -101,7 +101,7 @@ pub trait Rv<X> {
     ///
     /// let gamma = Gamma::new(2.0, 1.0).unwrap();
     ///
-    /// let n = 100_000_usize;
+    /// let n = 1_000_000_usize;
     /// let mean = <Gamma as Rv<f64>>::sample_stream(&gamma, &mut rng)
     ///     .take(n)
     ///     .sum::<f64>() / n as f64;;
