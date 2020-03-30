@@ -84,12 +84,12 @@ fn validate_weights(weights: &[f64]) -> Result<(), MixtureError> {
 }
 
 impl<Fx> Mixture<Fx> {
-    /// Create a new micture distribution
+    /// Create a new mixture distribution
     ///
     /// # Arguments
     /// - weights: The weights for each component distribution. All entries
     ///   must be positive and sum to 1.
-    /// - components: The componen distributions.
+    /// - components: The component distributions.
     pub fn new(
         weights: Vec<f64>,
         components: Vec<Fx>,
@@ -685,17 +685,56 @@ macro_rules! dual_step_quad_bounds {
     };
 }
 
+fn gauss_quad_points<G>(components: &Vec<G>) -> Vec<f64>
+where
+    G: std::borrow::Borrow<Gaussian>,
+{
+    let params: Vec<(f64, f64)> = {
+        let mut params: Vec<(f64, f64)> = components
+            .iter()
+            .map(|cpnt| (cpnt.borrow().mu(), cpnt.borrow().sigma()))
+            .collect();
+        params.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+        params
+    };
+
+    let mut points = Vec::new();
+    points.push(params[0].0);
+
+    let mut last_point = (params[0].0, params[0].0 + params[0].1);
+
+    for &(mu, sigma) in params.iter().skip(1) {
+        let halfway = (mu + last_point.0) / 2.0;
+        if (mu - sigma) > halfway || last_point.0 < halfway {
+            points.push(mu);
+            last_point = (mu, mu + sigma)
+        }
+    }
+    points
+}
+
 // Entropy by quadrature. Should be faster and more accurate than monte carlo
 macro_rules! quadrature_entropy {
     ($kind: ty) => {
         impl Entropy for $kind {
             fn entropy(&self) -> f64 {
+                // use crate::misc::quad_eps;
+                use crate::misc::{quadp, QuadConfig};
+
                 let (lower, upper) = self.quad_bounds();
                 let f = |x| {
                     let ln_f = self.ln_f(&x);
                     ln_f.exp() * ln_f
                 };
-                -crate::misc::quad_eps(f, lower, upper, Some(1E-8))
+
+                let points = gauss_quad_points(self.components());
+                let config = QuadConfig {
+                    err_tol: 1e-8,
+                    seed_points: Some(&points),
+                    ..Default::default()
+                };
+
+                -quadp(&f, lower, upper, config)
             }
         }
     };

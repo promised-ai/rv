@@ -1,6 +1,7 @@
 # Changelog
 
-## 0.9.2
+## 0.9.3
+- Entropy for Gaussian mixtures more robust to models with dispersed low-variance components
 - Categorical::new_unchecked is now public
 
 ## 0.9.2
