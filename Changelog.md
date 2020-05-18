@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.4
+- Store `GaussianSuffStat` in a more numerically stable way. The extra numerical stability comes at the cost of slower `observe` and `forget`.
+
 ## 0.9.3
 - Entropy for Gaussian mixtures more robust to models with dispersed low-variance components
 - Categorical::new_unchecked is now public

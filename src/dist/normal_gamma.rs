@@ -321,7 +321,7 @@ impl Rv<Gaussian> for NormalGamma {
         let rho: f64 = Gamma::new(self.v / 2.0, self.s / 2.0)
             .expect("Invalid σ posterior params")
             .draw(&mut rng);
-        let post_sigma: f64 = (self.r * rho).recip().sqrt();
+        let post_sigma: f64 = (self.r * rho).sqrt().recip();
         let mu: f64 = Gaussian::new(self.m, post_sigma)
             .expect("Invalid μ posterior params")
             .draw(&mut rng);
