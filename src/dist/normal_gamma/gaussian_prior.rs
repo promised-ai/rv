@@ -123,6 +123,21 @@ mod tests {
     }
 
     #[test]
+    fn ln_marginal_likelihood_suffstat_forgotten() {
+        let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4).unwrap();
+        let mut stat = GaussianSuffStat::new();
+        stat.observe(&1.0);
+        stat.observe(&2.0);
+        stat.observe(&3.0);
+        stat.observe(&4.0);
+        stat.observe(&5.0);
+        stat.forget(&5.0);
+        let x = DataOrSuffStat::SuffStat(&stat);
+        let m = ng.ln_m(&x);
+        assert::close(m, -7.69707018344038, TOL);
+    }
+
+    #[test]
     fn posterior_predictive_positive_value() {
         let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4).unwrap();
         let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
