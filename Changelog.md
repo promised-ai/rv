@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.5
+- Implement Poisson Mode
+
 ## 0.9.4
 - Store `GaussianSuffStat` in a more numerically stable way. The extra numerical stability comes at the cost of slower `observe` and `forget`.
 

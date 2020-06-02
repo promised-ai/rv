@@ -31,6 +31,25 @@ use std::fmt;
 /// let xs: Vec<u32> = pois.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
+///
+/// The Poisson mode can have two values
+///
+/// ```
+/// # use rv::prelude::*;
+/// {
+///     let pois = Poisson::new(2.1).unwrap();
+///     let modes: (u32, u32) = pois.mode().unwrap();
+///
+///     assert_eq!(modes, (2, 2))
+/// }
+///
+/// {
+///     let pois = Poisson::new(2.0).unwrap();
+///     let modes: (u32, u32) = pois.mode().unwrap();
+///
+///     assert_eq!(modes, (1, 2))
+/// }
+/// ```
 #[derive(Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Poisson {
@@ -203,6 +222,14 @@ macro_rules! impl_traits {
             type Stat = PoissonSuffStat;
             fn empty_suffstat(&self) -> Self::Stat {
                 PoissonSuffStat::new()
+            }
+        }
+
+        impl Mode<($kind, $kind)> for Poisson {
+            fn mode(&self) -> Option<($kind, $kind)> {
+                let left = self.rate.ceil() as $kind - 1;
+                let right = self.rate.floor() as $kind;
+                Some((left, right))
             }
         }
     };
