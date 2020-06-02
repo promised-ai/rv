@@ -1,10 +1,8 @@
 # Changelog
 
-## 0.9.5
+## 0.10.0
 - Implement Poisson Mode
-
-## 0.9.4
-- Store `GaussianSuffStat` in a more numerically stable way. The extra numerical stability comes at the cost of slower `observe` and `forget`.
+- Store `GaussianSuffStat` in a more numerically stable way. The extra numerical stability comes at the cost of slower `observe` and `forget`. Serialization on `GaussianSuffStat` has changed.
 
 ## 0.9.3
 - Entropy for Gaussian mixtures more robust to models with dispersed low-variance components
