@@ -32,23 +32,36 @@ use std::fmt;
 /// assert_eq!(xs.len(), 100)
 /// ```
 ///
-/// The Poisson mode can have two values
+/// The Poisson can have two modes. The modes are distinct only if the rate is
+/// an integer.
 ///
 /// ```
 /// # use rv::prelude::*;
-/// {
-///     let pois = Poisson::new(2.1).unwrap();
-///     let modes: (u32, u32) = pois.mode().unwrap();
-///
-///     assert_eq!(modes, (2, 2))
-/// }
-///
 /// {
 ///     let pois = Poisson::new(2.0).unwrap();
 ///     let modes: (u32, u32) = pois.mode().unwrap();
 ///
 ///     assert_eq!(modes, (1, 2))
 /// }
+///
+/// {
+///     let pois = Poisson::new(2.1).unwrap();
+///     let modes: (u32, u32) = pois.mode().unwrap();
+///
+///     assert_eq!(modes, (2, 2))
+/// }
+/// ```
+///
+/// If we know that the rate is not an integer, or we only care about one of
+/// the modes, we can call mode for an unsigned type, which will return the
+/// leftmost (lowest) mode.
+///
+/// ```
+/// # use rv::prelude::*;
+/// let pois = Poisson::new(2.1).unwrap();
+/// let mode: u32 = pois.mode().unwrap();
+///
+/// assert_eq!(mode, 2)
 /// ```
 #[derive(Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -230,6 +243,12 @@ macro_rules! impl_traits {
                 let left = self.rate.ceil() as $kind - 1;
                 let right = self.rate.floor() as $kind;
                 Some((left, right))
+            }
+        }
+
+        impl Mode<$kind> for Poisson {
+            fn mode(&self) -> Option<$kind> {
+                Some(self.rate.ceil() as $kind - 1)
             }
         }
     };
@@ -482,5 +501,32 @@ mod tests {
             let pois = Poisson::new(*rate).unwrap();
             assert::close(*h, pois.entropy(), TOL);
         })
+    }
+
+    #[test]
+    fn mode_value_checks() {
+        {
+            let pois = Poisson::new(2.0).unwrap();
+            let mode: (u32, u32) = pois.mode().unwrap();
+            assert_eq!(mode, (1, 2));
+        }
+
+        {
+            let pois = Poisson::new(2.1).unwrap();
+            let mode: (u32, u32) = pois.mode().unwrap();
+            assert_eq!(mode, (2, 2));
+        }
+
+        {
+            let pois = Poisson::new(2.1).unwrap();
+            let mode: u32 = pois.mode().unwrap();
+            assert_eq!(mode, 2);
+        }
+
+        {
+            let pois = Poisson::new(2.0).unwrap();
+            let mode: u32 = pois.mode().unwrap();
+            assert_eq!(mode, 1);
+        }
     }
 }
