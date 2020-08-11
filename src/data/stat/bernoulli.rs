@@ -23,6 +23,13 @@ impl BernoulliSuffStat {
         BernoulliSuffStat { n: 0, k: 0 }
     }
 
+    /// Create a sufficient statistic from components without checking whether
+    /// they are valid.
+    #[inline]
+    pub fn from_parts_unchecked(n: usize, k: usize) -> Self {
+        BernoulliSuffStat { n, k }
+    }
+
     /// Get the total number of trials, n.
     ///
     /// # Example
@@ -143,6 +150,13 @@ mod tests {
         let stat = BernoulliSuffStat::new();
         assert_eq!(stat.n, 0);
         assert_eq!(stat.k, 0);
+    }
+
+    #[test]
+    fn from_parts_unchecked() {
+        let stat = BernoulliSuffStat::from_parts_unchecked(10, 3);
+        assert_eq!(stat.n(), 10);
+        assert_eq!(stat.k(), 3);
     }
 
     #[test]

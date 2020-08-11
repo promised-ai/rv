@@ -22,6 +22,17 @@ impl MvGaussianSuffStat {
         }
     }
 
+    /// Create a sufficient statistic from components without checking whether
+    /// they are valid.
+    #[inline]
+    pub fn from_parts_unchecked(
+        n: usize,
+        sum_x: DVector<f64>,
+        sum_x_sq: DMatrix<f64>,
+    ) -> Self {
+        MvGaussianSuffStat { n, sum_x, sum_x_sq }
+    }
+
     /// Get the number of observations
     #[inline]
     pub fn n(&self) -> usize {

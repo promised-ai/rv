@@ -30,6 +30,13 @@ impl GaussianSuffStat {
         }
     }
 
+    /// Create a sufficient statistic from components without checking whether
+    /// they are valid.
+    #[inline]
+    pub fn from_parts_unchecked(n: usize, mean: f64, sx: f64) -> Self {
+        GaussianSuffStat { n, mean, sx }
+    }
+
     /// Get the number of observations
     #[inline]
     pub fn n(&self) -> usize {
@@ -123,6 +130,14 @@ impl_gaussian_suffstat!(f64);
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn from_parts_unchecked() {
+        let stat = GaussianSuffStat::from_parts_unchecked(10, 0.5, 1.2);
+        assert_eq!(stat.n(), 10);
+        assert_eq!(stat.mean(), 0.5);
+        assert_eq!(stat.sx, 1.2);
+    }
 
     #[test]
     fn suffstat_increments_correctly() {
