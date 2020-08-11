@@ -12,7 +12,7 @@ stages:
 
 format:
   stage: format
-  image: "rust:1.42"
+  image: "rust:1.45"
   script:
     # there should be no println in src
     - '[[ `grep -r "println" src/*` == "" ]]'
@@ -22,18 +22,6 @@ format:
 test:cargo-stable:
   stage: test
   image: "rust:1.45"
-  script:
-    - rustc --version && cargo --version
-    - cargo build  --features serde1
-    - time cargo test --jobs 1
-
-test:cargo-nigtly:
-  stage: test
-  image: "rustlang/rust:nightly"
-  # Sometimes nightly breaks, so we have to roll back
-  # before_script:
-  #   - rustup install nightly-2020-03-11 --no-self-update
-  #   - rustup override set nightly-2020-03-11
   script:
     - rustc --version && cargo --version
     - cargo build  --features serde1
