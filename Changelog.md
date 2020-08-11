@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.1
+- Add `from_parts_unchecked` method for constructing sufficient statistic since there was no way of manipulating statistic's fields or creating them manually.
+
 ## 0.10.0
 - Implement Poisson Mode
 - Store `GaussianSuffStat` in a more numerically stable way. The extra numerical stability comes at the cost of slower `observe` and `forget`. Serialization on `GaussianSuffStat` has changed.

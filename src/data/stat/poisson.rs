@@ -31,6 +31,17 @@ impl PoissonSuffStat {
         }
     }
 
+    /// Create a sufficient statistic from components without checking whether
+    /// they are valid.
+    #[inline]
+    pub fn from_parts_unchecked(n: usize, sum: f64, sum_ln_fact: f64) -> Self {
+        Self {
+            n,
+            sum,
+            sum_ln_fact,
+        }
+    }
+
     /// Get the number of observations
     #[inline]
     pub fn n(&self) -> usize {

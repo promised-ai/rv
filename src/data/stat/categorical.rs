@@ -26,6 +26,13 @@ impl CategoricalSuffStat {
         }
     }
 
+    /// Create a sufficient statistic from components without checking whether
+    /// they are valid.
+    #[inline]
+    pub fn from_parts_unchecked(n: usize, counts: Vec<f64>) -> Self {
+        CategoricalSuffStat { n, counts }
+    }
+
     /// Get the total number of trials
     ///
     /// # Example
@@ -112,5 +119,19 @@ mod tests {
         assert_eq!(sf.counts.len(), 4);
         assert_eq!(sf.n, 0);
         assert!(sf.counts.iter().all(|&ct| ct.abs() < 1E-12))
+    }
+
+    #[test]
+    fn from_parts_unchecked() {
+        let stat = CategoricalSuffStat::from_parts_unchecked(
+            10,
+            vec![1.0, 2.0, 3.0, 4.0],
+        );
+
+        assert_eq!(stat.n(), 10);
+        assert_eq!(stat.counts()[0], 1.0);
+        assert_eq!(stat.counts()[1], 2.0);
+        assert_eq!(stat.counts()[2], 3.0);
+        assert_eq!(stat.counts()[3], 4.0);
     }
 }

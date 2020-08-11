@@ -21,7 +21,7 @@ format:
 
 test:cargo-stable:
   stage: test
-  image: "rust:1.42"
+  image: "rust:1.45"
   script:
     - rustc --version && cargo --version
     - cargo build  --features serde1
@@ -31,9 +31,9 @@ test:cargo-nigtly:
   stage: test
   image: "rustlang/rust:nightly"
   # Sometimes nightly breaks, so we have to roll back
-  before_script:
-    - rustup install nightly-2020-03-11 --no-self-update
-    - rustup override set nightly-2020-03-11
+  # before_script:
+  #   - rustup install nightly-2020-03-11 --no-self-update
+  #   - rustup override set nightly-2020-03-11
   script:
     - rustc --version && cargo --version
     - cargo build  --features serde1
@@ -43,6 +43,6 @@ bench:cargo-stable:
   stage: bench
   only:
     - master
-  image: "rust:1.42"
+  image: "rust:1.45"
   script:
     - cargo bench --no-run
