@@ -36,19 +36,15 @@ impl CategoricalDatum for usize {
 
 impl CategoricalDatum for bool {
     fn into_usize(&self) -> usize {
-        if *self {
-            1
-        } else {
+        if !self {
             0
+        } else {
+            1
         }
     }
 
     fn from_usize(n: usize) -> Self {
-        match n {
-            0 => false,
-            1 => true,
-            _ => panic!("cannot convert {} into bool", n),
-        }
+        n > 0
     }
 }
 
@@ -229,5 +225,105 @@ where
             DataOrSuffStat::None => true,
             _ => false,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod categorical_datum {
+        use super::*;
+
+        #[test]
+        fn impl_usize_into_usize() {
+            let x = 8usize;
+            assert_eq!(x.into_usize(), 8);
+        }
+
+        #[test]
+        fn impl_usize_from_usize() {
+            let x: usize = CategoricalDatum::from_usize(8usize);
+            assert_eq!(x, 8usize);
+        }
+
+        #[test]
+        fn impl_bool_into_usize() {
+            assert_eq!(false.into_usize(), 0);
+            assert_eq!(true.into_usize(), 1);
+        }
+
+        #[test]
+        fn impl_bool_from_usize() {
+            let x: bool = CategoricalDatum::from_usize(0usize);
+            assert_eq!(x, false);
+
+            let y: bool = CategoricalDatum::from_usize(1usize);
+            assert_eq!(y, true);
+
+            let z: bool = CategoricalDatum::from_usize(122usize);
+            assert_eq!(z, true);
+        }
+
+        macro_rules! catdatum_test {
+            ($type: ty, $from_test: ident, $into_test: ident) => {
+                #[test]
+                fn $from_test() {
+                    let x: usize = 123;
+                    let y: $type = CategoricalDatum::from_usize(x);
+                    assert_eq!(y, 123);
+                }
+
+                #[test]
+                fn $into_test() {
+                    let x: $type = 123;
+                    assert_eq!(x.into_usize(), 123usize);
+                }
+            };
+        }
+
+        catdatum_test!(u8, impl_u8_into_usize, impl_u8_from_usize);
+        catdatum_test!(u16, impl_u16_into_usize, impl_u16_from_usize);
+        catdatum_test!(u32, impl_u32_into_usize, impl_u32_from_usize);
+    }
+
+    mod booleable {
+        use super::*;
+
+        macro_rules! booleable_test {
+            ($type: ty, $from_test: ident, $into_test: ident) => {
+                #[test]
+                fn $from_test() {
+                    let xt: $type = Booleable::from_bool(true);
+                    let xf: $type = Booleable::from_bool(false);
+
+                    assert_eq!(xt, 1);
+                    assert_eq!(xf, 0);
+                }
+
+                #[test]
+                fn $into_test() {
+                    let xf: $type = 0;
+                    let xt: $type = 1;
+                    let xe: $type = 123;
+
+                    assert_eq!(xf.try_into_bool(), Some(false));
+                    assert_eq!(xt.try_into_bool(), Some(true));
+                    assert_eq!(xe.try_into_bool(), None);
+                }
+            };
+        }
+
+        booleable_test!(u8, impl_u8_from_bool, impl_u8_try_into_bool);
+        booleable_test!(u16, impl_u16_from_bool, impl_u16_try_into_bool);
+        booleable_test!(u32, impl_u32_from_bool, impl_u32_try_into_bool);
+        booleable_test!(u64, impl_u64_from_bool, impl_u64_try_into_bool);
+        booleable_test!(usize, impl_usize_from_bool, impl_usize_try_into_bool);
+
+        booleable_test!(i8, impl_i8_from_bool, impl_i8_try_into_bool);
+        booleable_test!(i16, impl_i16_from_bool, impl_i16_try_into_bool);
+        booleable_test!(i32, impl_i32_from_bool, impl_i32_try_into_bool);
+        booleable_test!(i64, impl_i64_from_bool, impl_i64_try_into_bool);
+        booleable_test!(isize, impl_isize_from_bool, impl_isize_try_into_bool);
     }
 }
