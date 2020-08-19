@@ -1,9 +1,13 @@
 # rv
 
-Random variables (RV) for rust. rv offers basic functionality for many
-probability distributions.
+Random variables (RV) for rust. 
 
-For example, if we wanted to perform a conjugate analysis of Bernoulli trials:
+[![pipeline status](https://gitlab.com/baxe/rv/badges/master/pipeline.svg)](https://gitlab.com/baxe/rv/-/commits/master)
+[![coverage report](https://gitlab.com/baxe/rv/badges/master/coverage.svg)](https://gitlab.com/baxe/rv/-/commits/master)
+
+
+rv offers basic functionality for many probability distributions.  For example,
+if we wanted to perform a conjugate analysis of Bernoulli trials:
 
 ```rust
 use rv::prelude::*;
