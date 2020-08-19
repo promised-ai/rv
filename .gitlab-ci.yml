@@ -24,8 +24,9 @@ test:cargo-stable:
   image: "rust:1.45"
   script:
     - rustc --version && cargo --version
+    - cargo install cargo-tarpaulin -f
     - cargo build  --features serde1
-    - time cargo test --jobs 1
+    - cargo tarpaulin -v -t 240
 
 bench:cargo-stable:
   stage: bench
