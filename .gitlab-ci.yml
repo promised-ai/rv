@@ -19,14 +19,20 @@ format:
     - rustup component add rustfmt
     - cargo fmt -- --check
 
+test:coverage-nightly:
+  stage: test
+  image: "rustlang/rust:nightly"
+  script:
+    - rustc --version && cargo --version
+    - cargo install cargo-tarpaulin -f
+    - cargo tarpaulin -v -t 240 --features serde1 --run-types Tests Doctests
+
 test:cargo-stable:
   stage: test
   image: "rust:1.45"
   script:
     - rustc --version && cargo --version
-    - cargo install cargo-tarpaulin -f
-    - cargo build  --features serde1
-    - cargo tarpaulin -v -t 240
+    - cargo test --all --features serde1
 
 bench:cargo-stable:
   stage: bench
