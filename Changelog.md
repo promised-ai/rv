@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.2
+- Categorical datum converters work like standard usize-to-boolean casting where 0 is false, and anything greater than 0 is true.
+
 ## 0.10.1
 - Add `from_parts_unchecked` method for constructing sufficient statistic since there was no way of manipulating statistic's fields or creating them manually.
 
