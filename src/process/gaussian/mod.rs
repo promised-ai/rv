@@ -4,9 +4,9 @@ use argmin::solver::{linesearch::MoreThuenteLineSearch, quasinewton::LBFGS};
 use log::warn;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dynamic};
-use once_cell::sync::OnceCell;
 use rand::Rng;
 
+use once_cell::sync::OnceCell;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -64,7 +64,7 @@ where
     /// y values used in training
     y_train: DVector<f64>,
     /// Inverse covariance matrix
-    k_inv: OnceCell<DMatrix<f64>>,
+    k_inv: DMatrix<f64>,
     /// Noise Model
     pub noise_model: NoiseModel,
 }
@@ -95,6 +95,7 @@ where
             None => Err(GaussianProcessError::NotPositiveSemiDefinite),
         }?;
 
+        let k_inv = k_chol.inverse();
         let alpha = k_chol.solve(&y_train);
 
         Ok(GaussianProcess {
@@ -103,14 +104,14 @@ where
             kernel,
             x_train,
             y_train,
-            k_inv: OnceCell::new(),
+            k_inv,
             noise_model,
         })
     }
 
     /// Return the inverse of K.
     pub fn k_inv(&self) -> &DMatrix<f64> {
-        self.k_inv.get_or_init(|| self.k_chol.inverse())
+        &self.k_inv
     }
 
     /// Return the Cholesky decomposition of K
