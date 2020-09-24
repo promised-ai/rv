@@ -91,7 +91,7 @@ impl Kernel for RBFKernel {
     }
 
     fn consume_parameters(params: &[f64]) -> (Self, &[f64]) {
-        assert!(params.len() > 0, "RBFKernel requires one parameters");
+        assert!(!params.is_empty(), "RBFKernel requires one parameters");
         let (cur, next) = params.split_at(1);
         let ck = Self::from_parameters(cur);
         (ck, next)

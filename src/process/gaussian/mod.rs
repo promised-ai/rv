@@ -1,6 +1,7 @@
 //! Gaussian Processes
 
 use argmin::solver::{linesearch::MoreThuenteLineSearch, quasinewton::LBFGS};
+use log::warn;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dynamic};
 use once_cell::sync::OnceCell;
@@ -31,6 +32,15 @@ pub enum GaussianProcessError {
     NotPositiveSemiDefinite,
     /// Optimization Error
     OptimizerError,
+    /// Extranious Parameters
+    ExtraniousParameters(Vec<f64>),
+}
+
+impl std::error::Error for GaussianProcessError {}
+impl std::fmt::Display for GaussianProcessError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -117,6 +127,7 @@ where
     type Index = Vec<f64>;
     type Parameter = Vec<f64>;
     type SampleFunction = GaussianProcessPrediction<K>;
+    type ParameterError = GaussianProcessError;
 
     fn sample_function(
         &self,
@@ -153,7 +164,7 @@ where
     fn ln_m_with_parameters(
         &self,
         parameter: Self::Parameter,
-    ) -> (f64, Self::Parameter) {
+    ) -> Option<(f64, Self::Parameter)> {
         let kernel = K::from_parameters(&parameter);
 
         // GPML Equation 2.30
@@ -165,10 +176,13 @@ where
         let maybe_k_chol = Cholesky::new(k.clone());
 
         if maybe_k_chol.is_none() {
-            println!("failed to find chol of k = {}", k);
+            warn!(
+                "failed to find chol of k = {}, with parameters = {:?}",
+                k, parameter
+            );
         }
 
-        let k_chol = maybe_k_chol.expect("Cholesky decomposition failed...");
+        let k_chol = maybe_k_chol?;
         let alpha = k_chol.solve(&self.y_train);
         let dlog_sum = k_chol.l_dirty().diagonal().map(|x| x.ln()).sum();
         let n: f64 = self.x_train.nrows() as f64;
@@ -187,21 +201,40 @@ where
                 0.5 * sum
             })
             .collect();
-        (ln_m, grad_ln_m)
+        Some((ln_m, grad_ln_m))
     }
 
     fn parameters(&self) -> Self::Parameter {
         self.kernel().parameters()
     }
 
-    fn set_parameters(&mut self, parameters: Self::Parameter) {
-        let (new_kernel, leftovers) = K::consume_parameters(&parameters);
-        assert!(
-            leftovers.is_empty(),
-            "Extranious parameters sent to set_parameters: {:?}",
-            leftovers
+    fn set_parameters(
+        &mut self,
+        parameters: Self::Parameter,
+    ) -> Result<(), GaussianProcessError> {
+        let (kernel, leftovers) = K::consume_parameters(&parameters);
+
+        let k = self.noise_model.add_noise_to_kernel(
+            &kernel.covariance(&self.x_train, &self.x_train),
         );
-        self.kernel = new_kernel;
+
+        // Decompose K into Cholesky lower lower triangular matrix
+        let k_chol = match Cholesky::new(k) {
+            Some(ch) => Ok(ch),
+            None => Err(GaussianProcessError::NotPositiveSemiDefinite),
+        }?;
+
+        let alpha = k_chol.solve(&self.y_train);
+        if !leftovers.is_empty() {
+            return Err(GaussianProcessError::ExtraniousParameters(
+                leftovers.to_vec(),
+            ));
+        }
+
+        self.kernel = kernel;
+        self.k_chol = k_chol;
+        self.alpha = alpha;
+        Ok(())
     }
 }
 
@@ -218,6 +251,15 @@ where
     fn generate_solver() -> Self::Solver {
         let linesearch = MoreThuenteLineSearch::new();
         LBFGS::new(linesearch, 7)
+    }
+
+    fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Parameter {
+        let (lower, upper) = self.kernel.parameter_bounds();
+        lower
+            .into_iter()
+            .zip(upper.into_iter())
+            .map(|(l, u)| rng.gen_range(l.ln(), u.ln()))
+            .collect()
     }
 }
 
@@ -336,6 +378,8 @@ where
 mod tests {
     use super::*;
     use crate::test::relative_eq;
+    use rand::rngs::SmallRng;
+    use rand::SeedableRng;
 
     fn arange(start: f64, stop: f64, step_size: f64) -> Vec<f64> {
         let size = ((stop - start) / step_size).floor() as usize;
@@ -518,7 +562,7 @@ mod tests {
         assert::close(gp.ln_m(), expected_ln_m, 1E-7);
 
         // With Gradient
-        let (ln_m, grad_ln_m) = gp.ln_m_with_parameters(parameters);
+        let (ln_m, grad_ln_m) = gp.ln_m_with_parameters(parameters).unwrap();
         assert::close(ln_m, expected_ln_m, 1E-7);
         assert!(relative_eq(grad_ln_m, expected_grad, 1E-7, 1E-7));
     }
@@ -556,7 +600,7 @@ mod tests {
         assert::close(ln_m, expected_ln_m, 1E-7);
 
         // With Gradient
-        let (ln_m, grad_ln_m) = gp.ln_m_with_parameters(parameters);
+        let (ln_m, grad_ln_m) = gp.ln_m_with_parameters(parameters).unwrap();
         println!("ln_m = {}, grad_ln_m = {:?}", ln_m, grad_ln_m);
         assert::close(ln_m, expected_ln_m, 1E-7);
         assert!(relative_eq(grad_ln_m, expected_grad, 1E-6, 1E-6));
@@ -574,7 +618,8 @@ mod tests {
         let gp = GaussianProcess::train(kernel, x_train, y_train, noise_model)
             .unwrap();
 
-        let gp = gp.optimize(1000).expect("Failed to optimize");
+        let mut rng = SmallRng::seed_from_u64(0xABCD);
+        let gp = gp.optimize(100, 10, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
 
         println!("Found Opt Params = {:?}", opt_params);
@@ -584,7 +629,7 @@ mod tests {
         assert::close(gp.ln_m(), -3.444937833462115, 1E-7);
         assert::close(
             gp.ln_m(),
-            gp.ln_m_with_parameters(gp.kernel().parameters()).0,
+            gp.ln_m_with_parameters(gp.kernel().parameters()).unwrap().0,
             1E-7,
         );
     }
@@ -601,14 +646,15 @@ mod tests {
         let gp = GaussianProcess::train(kernel, x_train, y_train, noise_model)
             .unwrap();
 
-        let gp = gp.optimize(100).expect("Failed to optimize");
+        let mut rng = SmallRng::seed_from_u64(0xABCD);
+        let gp = gp.optimize(100, 10, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
         println!("Found Opt Params = {:?}", opt_params);
         println!("Found ln_m = {}", gp.ln_m());
 
         assert!(relative_eq(
             opt_params,
-            vec![0.69058965, 0.19980403],
+            vec![0.19980403, 0.69058965],
             1E-5,
             1E-5
         ));
@@ -616,7 +662,7 @@ mod tests {
         assert::close(gp.ln_m(), -3.414870095916796, 1E-7);
         assert::close(
             gp.ln_m(),
-            gp.ln_m_with_parameters(gp.kernel().parameters()).0,
+            gp.ln_m_with_parameters(gp.kernel().parameters()).unwrap().0,
             1E-7,
         );
     }

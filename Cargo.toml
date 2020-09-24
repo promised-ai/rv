@@ -18,8 +18,8 @@ gitlab = { repository = "baxe/rv", tag = "v0.10.3" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-num = "0.3"
-rand = "0.7"
+num = "0.2"
+rand = { version = "0.7", features = ["small_rng"] }
 special = "0.8"
 nalgebra = "0.22"
 doc-comment = "0.3"
@@ -27,6 +27,7 @@ rand_distr = "0.2"
 once_cell = "1"
 lru = "0.4"
 argmin = "0.3"
+log = "0.4"
 
 serde = {version = "1", features=["derive"]}
 serde_derive = {version = "1", optional = true}

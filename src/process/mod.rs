@@ -6,6 +6,7 @@ use argmin::prelude::ArgminOp;
 use argmin::prelude::Executor;
 use nalgebra::DVector;
 use nalgebra::Scalar;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::traits::Rv;
@@ -18,6 +19,7 @@ pub trait Parameter:
     + for<'de> Deserialize<'de>
     + IntoIterator<Item = f64>
     + FromIterator<f64>
+    + Debug
 {
 }
 
@@ -27,6 +29,7 @@ impl<P> Parameter for P where
         + for<'de> Deserialize<'de>
         + IntoIterator<Item = f64>
         + FromIterator<f64>
+        + Debug
 {
 }
 
@@ -39,6 +42,9 @@ where
 
     /// Parameter type
     type Parameter: Parameter;
+
+    /// Errors from setting parameters
+    type ParameterError: std::error::Error + Send + Sync + 'static;
 
     /// Type of the sample function, aka trajectory of the process.
     type SampleFunction: Rv<DVector<X>>;
@@ -54,17 +60,20 @@ where
     fn ln_m_with_parameters(
         &self,
         parameter: Self::Parameter,
-    ) -> (f64, Self::Parameter);
+    ) -> Option<(f64, Self::Parameter)>;
 
     /// Get the parameters
     fn parameters(&self) -> Self::Parameter;
 
     /// Set with the given parameters
-    fn set_parameters(&mut self, parameters: Self::Parameter);
+    fn set_parameters(
+        &mut self,
+        parameters: Self::Parameter,
+    ) -> Result<(), Self::ParameterError>;
 }
 
 /// Random Process which can be optimized to reach a maximum likelihood estimate.
-pub trait RandomProcessMle<X>: RandomProcess<X>
+pub trait RandomProcessMle<X>: RandomProcess<X> + Clone
 where
     Self: Sized,
     X: Scalar + Debug,
@@ -75,22 +84,57 @@ where
     /// Generator for optimizer
     fn generate_solver() -> Self::Solver;
 
-    /// Run the optimization
-    fn optimize(self, max_iters: u64) -> Result<Self, argmin::core::Error> {
-        let params = self.parameters();
-        let op = RandomProcessMleOp {
-            process: self,
-            phantom_x: PhantomData,
-        };
-        let solver = Self::generate_solver();
+    /// Create random parameters for this Process
+    fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Parameter;
 
-        let res = Executor::new(op, solver, params)
-            .max_iters(max_iters)
-            .run()?;
-        let best = res.state().get_best_param();
-        let mut new_model = res.operator.process;
-        new_model.set_parameters(best);
-        Ok(new_model)
+    /// Run the optimization
+    fn optimize<R: Rng>(
+        self,
+        max_iters: u64,
+        random_reinits: usize,
+        rng: &mut R,
+    ) -> Result<Self, argmin::core::Error> {
+        let mut best_params = self.parameters();
+        let random_params: Vec<Self::Parameter> = (0..random_reinits)
+            .map(|_| self.random_params(rng))
+            .collect();
+
+        let mut best_cost = std::f64::INFINITY;
+        let mut successes = 0;
+        let mut last_err = None;
+
+        for params in std::iter::once(best_params.clone())
+            .chain(random_params.into_iter())
+        {
+            let solver = Self::generate_solver();
+            // FIXME: This is waseful, we don't need to copy
+            let op = RandomProcessMleOp::new(self.clone());
+            let maybe_res =
+                Executor::new(op, solver, params).max_iters(max_iters).run();
+
+            match maybe_res {
+                Ok(res) => {
+                    successes += 1;
+                    if best_cost > res.state.best_cost {
+                        best_cost = res.state.best_cost;
+                        best_params = res.state.best_param;
+                    }
+                }
+                Err(e) => {
+                    last_err = Some(e);
+                }
+            }
+        }
+
+        if successes > 0 {
+            let mut new_model = self;
+            new_model
+                .set_parameters(best_params)
+                .map_err(argmin::core::Error::from)?;
+            Ok(new_model)
+        } else {
+            Err(last_err.unwrap())
+        }
     }
 }
 
@@ -103,7 +147,20 @@ where
     phantom_x: PhantomData<X>,
 }
 
-impl<'a, P, X> ArgminOp for RandomProcessMleOp<P, X>
+impl<P, X> RandomProcessMleOp<P, X>
+where
+    P: RandomProcessMle<X>,
+    X: Scalar + Debug,
+{
+    pub fn new(process: P) -> Self {
+        Self {
+            process,
+            phantom_x: PhantomData,
+        }
+    }
+}
+
+impl<P, X> ArgminOp for RandomProcessMleOp<P, X>
 where
     P: RandomProcessMle<X>,
     X: Scalar + Debug,
@@ -115,19 +172,18 @@ where
     type Float = f64;
 
     fn apply(&self, param: &Self::Param) -> Result<Self::Output, ArgminError> {
-        Ok(-self.process.ln_m_with_parameters(param.clone()).0)
+        self.process.ln_m_with_parameters(param.clone())
+            .map(|x| -x.0)
+            .ok_or_else(|| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
     }
 
     fn gradient(
         &self,
         param: &Self::Param,
     ) -> Result<Self::Param, ArgminError> {
-        Ok(Self::Param::from_iter(
-            self.process
-                .ln_m_with_parameters(param.clone())
-                .1
-                .into_iter()
-                .map(|x| -x),
-        ))
+        self.process
+            .ln_m_with_parameters(param.clone())
+            .map(|x| Self::Param::from_iter(x.1.into_iter().map(|y| -y)))
+            .ok_or_else(|| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
     }
 }
