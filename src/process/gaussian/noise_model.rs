@@ -15,7 +15,7 @@ pub enum NoiseModel {
 
 impl Default for NoiseModel {
     fn default() -> Self {
-        NoiseModel::Uniform(1E-8)
+        NoiseModel::Uniform(1E-10)
     }
 }
 

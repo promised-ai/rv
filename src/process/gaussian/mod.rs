@@ -43,7 +43,7 @@ where
     /// Dual coefficients of training data in kernel space.
     alpha: DVector<f64>,
     /// Covariance Kernel
-    kernel: K,
+    pub kernel: K,
     /// x values used in training
     x_train: DMatrix<f64>,
     /// y values used in training
@@ -51,7 +51,7 @@ where
     /// Inverse covariance matrix
     k_inv: OnceCell<DMatrix<f64>>,
     /// Noise Model
-    noise_model: NoiseModel,
+    pub noise_model: NoiseModel,
 }
 
 impl<K> GaussianProcess<K>
@@ -495,16 +495,17 @@ mod tests {
     }
 
     #[test]
-    fn log_marginal() {
+    fn log_marginal_a() {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
 
-        let kernel = RBFKernel::new(1.0);
+        let kernel = RBFKernel::new(1.0) * ConstantKernel::new(1.0);
         let parameters = kernel.parameters();
+        assert!(relative_eq(&parameters, &vec![0.0, 0.0], 1E-9, 1E-9));
 
         let expected_ln_m = -5.029140040847684;
-        let expected_grad = vec![2.06828541];
+        let expected_grad = vec![2.06828541, -1.19111032];
 
         let gp = GaussianProcess::train(
             kernel,
@@ -523,6 +524,45 @@ mod tests {
     }
 
     #[test]
+    fn log_marginal_b() {
+        let x_train: DMatrix<f64> =
+            DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
+        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+
+        let kernel = RBFKernel::new(1.9948914742700008)
+            * ConstantKernel::new(1.221163421070665);
+        let parameters = kernel.parameters();
+        println!("parameters = {:?}", parameters);
+        assert!(relative_eq(
+            &parameters,
+            &vec![0.69058965, 0.19980403],
+            1E-7,
+            1E-7
+        ));
+
+        let expected_ln_m = -3.414870095916796;
+        let expected_grad = vec![0.0, 0.0];
+
+        let gp = GaussianProcess::train(
+            kernel,
+            x_train,
+            y_train,
+            NoiseModel::default(),
+        )
+        .unwrap();
+        // Without Gradient
+        let ln_m = gp.ln_m();
+        println!("ln_m = {}", ln_m);
+        assert::close(ln_m, expected_ln_m, 1E-7);
+
+        // With Gradient
+        let (ln_m, grad_ln_m) = gp.ln_m_with_parameters(parameters);
+        println!("ln_m = {}, grad_ln_m = {:?}", ln_m, grad_ln_m);
+        assert::close(ln_m, expected_ln_m, 1E-7);
+        assert!(relative_eq(grad_ln_m, expected_grad, 1E-6, 1E-6));
+    }
+
+    #[test]
     fn optimize_gp_1_param() {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
@@ -537,14 +577,11 @@ mod tests {
         let gp = gp.optimize(1000).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
 
-        assert!(relative_eq(
-            opt_params,
-            vec![0.6578541991730281],
-            1E-7,
-            1E-7
-        ));
+        println!("Found Opt Params = {:?}", opt_params);
+        println!("Found ln_m = {}", gp.ln_m());
 
-        assert::close(gp.ln_m(), -3.4449378334620895, 1E-7);
+        assert!(relative_eq(opt_params, vec![0.65785421], 1E-5, 1E-5));
+        assert::close(gp.ln_m(), -3.444937833462115, 1E-7);
         assert::close(
             gp.ln_m(),
             gp.ln_m_with_parameters(gp.kernel().parameters()).0,
@@ -558,8 +595,7 @@ mod tests {
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
 
-        let kernel =
-            ProductKernel::new(ConstantKernel::new(1.0), RBFKernel::new(1.0));
+        let kernel = ConstantKernel::new(1.0) * RBFKernel::new(1.0);
         let noise_model = NoiseModel::default();
 
         let gp = GaussianProcess::train(kernel, x_train, y_train, noise_model)
@@ -572,12 +608,12 @@ mod tests {
 
         assert!(relative_eq(
             opt_params,
-            vec![0.19980395, 0.69058964],
+            vec![0.69058965, 0.19980403],
             1E-5,
             1E-5
         ));
 
-        assert::close(gp.ln_m(), -3.414870095916784, 1E-7);
+        assert::close(gp.ln_m(), -3.414870095916796, 1E-7);
         assert::close(
             gp.ln_m(),
             gp.ln_m_with_parameters(gp.kernel().parameters()).0,
