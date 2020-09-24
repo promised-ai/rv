@@ -13,6 +13,7 @@ use crate::traits::Rv;
 
 pub mod gaussian;
 
+/// Parameters Much implement this trait
 pub trait Parameter:
     Clone
     + Serialize
@@ -33,6 +34,7 @@ impl<P> Parameter for P where
 {
 }
 
+/// A representation of a generic random process
 pub trait RandomProcess<X>
 where
     X: Scalar + Debug,
@@ -88,6 +90,11 @@ where
     fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Parameter;
 
     /// Run the optimization
+    ///
+    /// # Arguments
+    /// - `max_iters` - Maximum number of iterations per optimization run
+    /// - `random_reinits` - Number of times to retry with random initialization
+    /// - `rng` - Random number generator for random initialization
     fn optimize<R: Rng>(
         self,
         max_iters: u64,
@@ -138,6 +145,7 @@ where
     }
 }
 
+/// Random Process Optimization target for Argmin
 pub struct RandomProcessMleOp<P, X>
 where
     P: RandomProcessMle<X>,
@@ -152,6 +160,7 @@ where
     P: RandomProcessMle<X>,
     X: Scalar + Debug,
 {
+    /// Create a new Process wrapper for optimization
     pub fn new(process: P) -> Self {
         Self {
             process,

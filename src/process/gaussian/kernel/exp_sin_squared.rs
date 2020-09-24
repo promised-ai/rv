@@ -7,9 +7,13 @@ use nalgebra::{base::storage::Storage, Norm};
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
 use std::f64;
 
+#[cfg(feature = "serde1")]
+use serde::{Deserialize, Serialize};
+
 /// Exp Sine^2 Kernel
 /// k(x_i, x_j) = exp(-2 (sin(pi / periodicity * d(x_i, x_j)) / length_scale) ^ 2)
 #[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct ExpSineSquaredKernel {
     length_scale: f64,
     length_scale_lower_bound: f64,

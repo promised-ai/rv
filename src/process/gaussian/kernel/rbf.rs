@@ -4,6 +4,9 @@ use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
 use std::f64;
 
+#[cfg(feature = "serde1")]
+use serde::{Deserialize, Serialize};
+
 /// Radial-basis function (RBF) kernel
 /// The distance metric here is L2 (Euclidean).
 ///
@@ -15,6 +18,7 @@ use std::f64;
 /// * `l` - Length scale.
 ///
 #[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct RBFKernel {
     length_scale: f64,
     lower_bound: f64,

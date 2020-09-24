@@ -7,6 +7,9 @@ use nalgebra::{DMatrix, DVector, Dynamic};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 
+#[cfg(feature = "serde1")]
+use serde::{Deserialize, Serialize};
+
 use crate::consts::HALF_LN_2PI;
 use crate::dist::MvGaussian;
 use crate::traits::*;
@@ -27,6 +30,7 @@ fn outer_product_self(col: &DVector<f64>) -> DMatrix<f64> {
 
 /// Errors from GaussianProcess
 #[derive(Debug)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum GaussianProcessError {
     /// The kernel is not returning a positive-definite matrix. Try adding a small, constant noise parameter as y_train_sigma.
     NotPositiveSemiDefinite,
@@ -44,6 +48,7 @@ impl std::fmt::Display for GaussianProcessError {
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct GaussianProcess<K>
 where
     K: Kernel,
@@ -74,8 +79,7 @@ where
     /// * `kernel` - Kernel to use to determine covariance
     /// * `x_train` - Values to use for input into `f`
     /// * `y_train` - Known values for `f(x)`
-    /// * `params` - GaussianProcessParams to use. Can just use `GaussianProcessParams::default()`.
-    ///
+    /// * `noise_model` - Noise model to use for fitting
     pub fn train(
         kernel: K,
         x_train: DMatrix<f64>,
@@ -250,7 +254,7 @@ where
 
     fn generate_solver() -> Self::Solver {
         let linesearch = MoreThuenteLineSearch::new();
-        LBFGS::new(linesearch, 7)
+        LBFGS::new(linesearch, 50)
     }
 
     fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Parameter {

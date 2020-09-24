@@ -1,10 +1,7 @@
 # Changelog
 
-## 0.10.4
-- Updated math in `NormalGamma` and `GaussianSuffStat` to reduce rounding errors
-
 ## 0.10.3
-- Updated dependencies to get past yanked dependency issue.
+- Added Gaussian processes
 
 ## 0.10.2
 - Categorical datum converters work like standard usize-to-boolean casting where 0 is false, and anything greater than 0 is true.

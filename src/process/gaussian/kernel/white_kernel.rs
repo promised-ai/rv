@@ -4,8 +4,12 @@ use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
 use std::f64;
 
+#[cfg(feature = "serde1")]
+use serde::{Deserialize, Serialize};
+
 /// White Noise Kernel
 #[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct WhiteKernel {
     /// Level of the noise
     noise_level: f64,

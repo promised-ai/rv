@@ -7,12 +7,16 @@ use nalgebra::{
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
 use std::f64;
 
+#[cfg(feature = "serde1")]
+use serde::{Deserialize, Serialize};
+
 /// Rational Quadratic Kernel
 ///
 /// # Parameters
 /// `scale` -- Length scale
 /// `mixture` -- Mixture Scale
 #[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct RationalQuadratic {
     scale: f64,
     scale_upper_bound: f64,
