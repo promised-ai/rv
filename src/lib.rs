@@ -77,6 +77,7 @@ pub mod dist;
 pub mod misc;
 mod model;
 pub mod prelude;
+pub mod process;
 pub(crate) mod test;
 pub mod traits;
 

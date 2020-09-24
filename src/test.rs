@@ -1,3 +1,6 @@
+#[cfg(test)]
+use approx::RelativeEq;
+
 // tests that Clone, Debug, and PartialEq are implemented for a distribution
 // Tests that partial eq is not sensitive to OnceCell initialization, which
 // often happens in ln_f is called
@@ -39,4 +42,29 @@ macro_rules! test_basic_impls {
             let _s1 = format!("{:?}", fx);
         }
     };
+}
+
+#[cfg(test)]
+/// Assert Relative Eq for sequences
+pub fn relative_eq<T, I>(
+    left: I,
+    right: I,
+    epsilon: T::Epsilon,
+    max_relative: T::Epsilon,
+) -> bool
+where
+    T: RelativeEq,
+    T::Epsilon: Copy,
+    I: IntoIterator<Item = T>,
+    <I as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    let a = left.into_iter();
+    let b = right.into_iter();
+
+    if a.len() != b.len() {
+        return false;
+    }
+
+    a.zip(b)
+        .all(|(a, b)| a.relative_eq(&b, epsilon, max_relative))
 }
