@@ -130,8 +130,6 @@ mod tests {
 
         let (cov, grad) = kernel.covariance_with_gradient(&x);
 
-        println!("cov = {}\ngrad = {}", cov, grad);
-
         let expected_cov = DMatrix::from_row_slice(2, 2, &[PI, 0.0, 0.0, PI]);
 
         let expected_grad = CovGrad::from_row_slices(2, 1, &[PI, 0.0, 0.0, PI]);

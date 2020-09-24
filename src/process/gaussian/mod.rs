@@ -580,7 +580,6 @@ mod tests {
         let kernel = RBFKernel::new(1.9948914742700008)
             * ConstantKernel::new(1.221163421070665);
         let parameters = kernel.parameters();
-        println!("parameters = {:?}", parameters);
         assert!(relative_eq(
             &parameters,
             &vec![0.69058965, 0.19980403],
@@ -600,12 +599,10 @@ mod tests {
         .unwrap();
         // Without Gradient
         let ln_m = gp.ln_m();
-        println!("ln_m = {}", ln_m);
         assert::close(ln_m, expected_ln_m, 1E-7);
 
         // With Gradient
         let (ln_m, grad_ln_m) = gp.ln_m_with_parameters(parameters).unwrap();
-        println!("ln_m = {}, grad_ln_m = {:?}", ln_m, grad_ln_m);
         assert::close(ln_m, expected_ln_m, 1E-7);
         assert!(relative_eq(grad_ln_m, expected_grad, 1E-6, 1E-6));
     }
@@ -625,9 +622,6 @@ mod tests {
         let mut rng = SmallRng::seed_from_u64(0xABCD);
         let gp = gp.optimize(100, 10, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
-
-        println!("Found Opt Params = {:?}", opt_params);
-        println!("Found ln_m = {}", gp.ln_m());
 
         assert!(relative_eq(opt_params, vec![0.65785421], 1E-5, 1E-5));
         assert::close(gp.ln_m(), -3.444937833462115, 1E-7);
@@ -653,8 +647,6 @@ mod tests {
         let mut rng = SmallRng::seed_from_u64(0xABCD);
         let gp = gp.optimize(100, 10, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
-        println!("Found Opt Params = {:?}", opt_params);
-        println!("Found ln_m = {}", gp.ln_m());
 
         assert!(relative_eq(
             opt_params,

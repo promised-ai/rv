@@ -304,8 +304,6 @@ mod tests {
         ]);
 
         let (cov, grad) = kernel.covariance_with_gradient(&x);
-        println!("cov = {}, grad = {}", cov, grad);
-
         assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7));
         assert!(grad.relative_eq(&expected_grad, 1E-7, 1E-7));
     }
@@ -351,8 +349,6 @@ mod tests {
         ]);
 
         let (cov, grad) = kernel.covariance_with_gradient(&x);
-        println!("cov = {}, grad = {}", cov, grad);
-
         assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7));
         assert!(grad.relative_eq(&expected_grad, 1E-7, 1E-7));
     }
