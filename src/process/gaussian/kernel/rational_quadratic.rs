@@ -30,8 +30,8 @@ impl RationalQuadratic {
     pub fn new(scale: f64, mixture: f64) -> Self {
         Self {
             scale,
-            scale_upper_bound: 1E-5,
-            scale_lower_bound: 1E5,
+            scale_lower_bound: 1E-5,
+            scale_upper_bound: 1E5,
             mixture,
             mixture_lower_bound: 1E-5,
             mixture_upper_bound: 1E5,

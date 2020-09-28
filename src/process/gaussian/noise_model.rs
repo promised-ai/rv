@@ -33,8 +33,7 @@ impl NoiseModel {
                     sigma.nrows(),
                     "Per point noise must be the same size as y_train"
                 );
-                let s = sigma.map(|e| e * e);
-                cov + &DMatrix::from_diagonal(&s)
+                cov + &DMatrix::from_diagonal(&sigma)
             }
         }
     }

@@ -1,6 +1,8 @@
 //! Gaussian Processes
 
-use argmin::solver::{linesearch::MoreThuenteLineSearch, quasinewton::LBFGS};
+use argmin::solver::{
+    gradientdescent::SteepestDescent, linesearch::MoreThuenteLineSearch,
+};
 use log::warn;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dynamic};
@@ -214,32 +216,17 @@ where
     }
 
     fn set_parameters(
-        &mut self,
+        self,
         parameters: Self::Parameter,
-    ) -> Result<(), GaussianProcessError> {
+    ) -> Result<Self, GaussianProcessError> {
         let (kernel, leftovers) = K::consume_parameters(&parameters);
-
-        let k = self.noise_model.add_noise_to_kernel(
-            &kernel.covariance(&self.x_train, &self.x_train),
-        );
-
-        // Decompose K into Cholesky lower lower triangular matrix
-        let k_chol = match Cholesky::new(k) {
-            Some(ch) => Ok(ch),
-            None => Err(GaussianProcessError::NotPositiveSemiDefinite),
-        }?;
-
-        let alpha = k_chol.solve(&self.y_train);
         if !leftovers.is_empty() {
             return Err(GaussianProcessError::ExtraniousParameters(
                 leftovers.to_vec(),
             ));
         }
 
-        self.kernel = kernel;
-        self.k_chol = k_chol;
-        self.alpha = alpha;
-        Ok(())
+        Self::train(kernel, self.x_train, self.y_train, self.noise_model)
     }
 }
 
@@ -247,15 +234,19 @@ impl<K> RandomProcessMle<f64> for GaussianProcess<K>
 where
     K: Kernel,
 {
+    /*
     type Solver = LBFGS<
         MoreThuenteLineSearch<Self::Parameter, f64>,
         Self::Parameter,
         f64,
     >;
+    */
+    type Solver = SteepestDescent<MoreThuenteLineSearch<Self::Parameter, f64>>;
 
     fn generate_solver() -> Self::Solver {
         let linesearch = MoreThuenteLineSearch::new();
-        LBFGS::new(linesearch, 50)
+        //LBFGS::new(linesearch, 50)
+        SteepestDescent::new(linesearch)
     }
 
     fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Parameter {
@@ -662,5 +653,129 @@ mod tests {
             gp.ln_m_with_parameters(gp.kernel().parameters()).unwrap().0,
             1E-7,
         );
+    }
+
+    #[test]
+    fn no_noise_k_chol() {
+        let xs: DMatrix<f64> =
+            DMatrix::from_column_slice(6, 1, &[1., 3., 5., 6., 7., 8.]);
+        let ys: DVector<f64> = xs.map(|x| x * x.sin()).column(0).into();
+
+        let kernel: ProductKernel<ConstantKernel, RBFKernel> =
+            ProductKernel::from_parameters(&[3.09975267, 0.51633823]);
+        let gp =
+            GaussianProcess::train(kernel, xs, ys, NoiseModel::Uniform(0.0))
+                .expect("Should produce GP");
+        let expected_k_chol: DMatrix<f64> = DMatrix::from_row_slice(
+            6,
+            6,
+            &[
+                4.71088758e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                2.31120928e+00,
+                4.10496936e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                2.72928489e-01,
+                2.49869155e+00,
+                3.98428317e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                5.49801688e-02,
+                1.05810706e+00,
+                3.99430301e+00,
+                2.26172320e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                7.75767414e-03,
+                3.08846597e-01,
+                2.53847856e+00,
+                3.58428088e+00,
+                1.67513357e+00,
+                0.00000000e+00,
+                7.66699649e-04,
+                6.26639003e-02,
+                1.08269933e+00,
+                2.87253128e+00,
+                3.28904854e+00,
+                1.39535672e+00,
+            ],
+        );
+
+        assert!(gp.k_chol().l().relative_eq(&expected_k_chol, 1E-8, 1E-8));
+    }
+
+    #[test]
+    fn noisy_k_chol() {
+        let xs: DMatrix<f64> =
+            DMatrix::from_column_slice(6, 1, &[1., 3., 5., 6., 7., 8.]);
+        let ys: DVector<f64> = xs.map(|x| x * x.sin()).column(0).into();
+        let dy = DVector::from_row_slice(&[
+            0.917022, 1.22032449, 0.50011437, 0.80233257, 0.64675589,
+            0.59233859,
+        ]);
+
+        let ys = &ys + &dy;
+
+        let kernel: ProductKernel<ConstantKernel, RBFKernel> =
+            ProductKernel::from_parameters(&[2.88672093, -0.03332773]);
+        let gp = GaussianProcess::train(
+            kernel,
+            xs,
+            ys,
+            NoiseModel::PerPoint(dy.map(|x| x * x)),
+        )
+        .expect("Should produce GP");
+        let expected_k_chol: DMatrix<f64> = DMatrix::from_row_slice(
+            6,
+            6,
+            &[
+                4.33305138e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                4.88016869e-01,
+                4.38011830e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                7.99944659e-04,
+                4.82683717e-01,
+                4.23692519e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                6.51671570e-06,
+                3.33549665e-02,
+                2.47659940e+00,
+                3.52753247e+00,
+                0.00000000e+00,
+                0.00000000e+00,
+                1.82292356e-08,
+                7.91346757e-04,
+                4.98998709e-01,
+                2.62886878e+00,
+                3.34555626e+00,
+                0.00000000e+00,
+                1.75097116e-11,
+                6.44668785e-06,
+                3.44822627e-02,
+                5.75247207e-01,
+                2.68410080e+00,
+                3.27853235e+00,
+            ],
+        );
+
+        assert!(gp.k_chol().l().relative_eq(&expected_k_chol, 1E-7, 1E-7));
     }
 }

@@ -38,6 +38,7 @@ impl<P> Parameter for P where
 pub trait RandomProcess<X>
 where
     X: Scalar + Debug,
+    Self: Sized,
 {
     /// Type of the indexing set.
     type Index;
@@ -69,9 +70,9 @@ where
 
     /// Set with the given parameters
     fn set_parameters(
-        &mut self,
+        self,
         parameters: Self::Parameter,
-    ) -> Result<(), Self::ParameterError>;
+    ) -> Result<Self, Self::ParameterError>;
 }
 
 /// Random Process which can be optimized to reach a maximum likelihood estimate.
@@ -134,11 +135,8 @@ where
         }
 
         if successes > 0 {
-            let mut new_model = self;
-            new_model
-                .set_parameters(best_params)
-                .map_err(argmin::core::Error::from)?;
-            Ok(new_model)
+            self.set_parameters(best_params)
+                .map_err(argmin::core::Error::from)
         } else {
             Err(last_err.unwrap())
         }

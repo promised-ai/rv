@@ -37,17 +37,17 @@ pub fn main() -> io::Result<()> {
     println!("Loaded {} datapoints", xs.len());
 
     // Create GaussianProcess
-    let kernel = ConstantKernel::new(1.0) * RBFKernel::new(1.0);
+    let kernel = ConstantKernel::new(2.44_f64.powi(2)) * RBFKernel::new(48.1)
+        + ConstantKernel::new(0.535_f64.powi(2))
+            * RBFKernel::new(4.02e+3)
+            * ExpSineSquaredKernel::new(24.4, 1.03)
+        + ConstantKernel::new(0.239_f64.powi(2))
+            * RationalQuadratic::new(14.9, 4.58e+03)
+        + ConstantKernel::new(0.0119_f64.powi(2)) * RBFKernel::new(1.76e+03)
+        + WhiteKernel::new(0.0147);
 
     println!("kernel = {:#?}", kernel);
     println!("kernel theta = {:?}", kernel.parameters());
-    let (lower_bounds, upper_bounds) = kernel.parameter_bounds();
-    let bounds: Vec<(f64, f64)> = lower_bounds
-        .into_iter()
-        .zip(upper_bounds.into_iter())
-        .map(|(a, b)| (a.ln(), b.ln()))
-        .collect();
-    println!("Kernel param bounds = {:?}", bounds);
 
     let xs: DMatrix<f64> = DMatrix::from_column_slice(xs.len(), 1, &xs);
     let ys: DVector<f64> = DVector::from_column_slice(&ys);
@@ -64,9 +64,10 @@ pub fn main() -> io::Result<()> {
 
     println!("Optimizing...");
     let mut rng = SmallRng::seed_from_u64(0xABCD);
-    let gp = gp.optimize(10, 20, &mut rng).expect("Failed to optimize");
+    let gp = gp.optimize(10, 0, &mut rng).expect("Failed to optimize");
 
     println!("Optimum Kernel = {:?}", gp.kernel());
+    println!("ln_m = {}", gp.ln_m());
 
     Ok(())
 }

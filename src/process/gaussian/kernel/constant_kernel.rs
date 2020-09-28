@@ -89,7 +89,10 @@ impl Kernel for ConstantKernel {
     }
 
     fn consume_parameters(param_vec: &[f64]) -> (Self, &[f64]) {
-        assert!(param_vec.len() > 0, "ConstantKernel requires one parameter");
+        assert!(
+            !param_vec.is_empty(),
+            "ConstantKernel requires one parameter"
+        );
         let (cur, next) = param_vec.split_at(1);
         let ck = Self::from_parameters(cur);
         (ck, next)
