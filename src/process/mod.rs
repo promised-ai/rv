@@ -14,7 +14,7 @@ use crate::traits::Rv;
 pub mod gaussian;
 
 /// Parameters Much implement this trait
-pub trait Parameter:
+pub trait Param:
     Clone
     + Serialize
     + for<'de> Deserialize<'de>
@@ -24,7 +24,7 @@ pub trait Parameter:
 {
 }
 
-impl<P> Parameter for P where
+impl<P> Param for P where
     P: Clone
         + Serialize
         + for<'de> Deserialize<'de>
@@ -40,14 +40,13 @@ where
     X: Scalar + Debug,
     Self: Sized,
 {
+    /// Error from
+    type Error: std::error::Error + Send + Sync + 'static;
     /// Type of the indexing set.
     type Index;
 
     /// Parameter type
-    type Parameter: Parameter;
-
-    /// Errors from setting parameters
-    type ParameterError: std::error::Error + Send + Sync + 'static;
+    type Param: Param;
 
     /// Type of the sample function, aka trajectory of the process.
     type SampleFunction: Rv<DVector<X>>;
@@ -60,19 +59,19 @@ where
 
     /// Compute the log marginal likelihood with an different set of parameters and compute the
     /// gradient.
-    fn ln_m_with_parameters(
+    fn ln_m_with_params(
         &self,
-        parameter: Self::Parameter,
-    ) -> Option<(f64, Self::Parameter)>;
+        parameter: Self::Param,
+    ) -> Result<(f64, Self::Param), Self::Error>;
 
     /// Get the parameters
-    fn parameters(&self) -> Self::Parameter;
+    fn parameters(&self) -> Self::Param;
 
     /// Set with the given parameters
     fn set_parameters(
         self,
-        parameters: Self::Parameter,
-    ) -> Result<Self, Self::ParameterError>;
+        parameters: Self::Param,
+    ) -> Result<Self, Self::Error>;
 }
 
 /// Random Process which can be optimized to reach a maximum likelihood estimate.
@@ -88,7 +87,7 @@ where
     fn generate_solver() -> Self::Solver;
 
     /// Create random parameters for this Process
-    fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Parameter;
+    fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Param;
 
     /// Run the optimization
     ///
@@ -103,7 +102,7 @@ where
         rng: &mut R,
     ) -> Result<Self, argmin::core::Error> {
         let mut best_params = self.parameters();
-        let random_params: Vec<Self::Parameter> = (0..random_reinits)
+        let random_params: Vec<Self::Param> = (0..random_reinits)
             .map(|_| self.random_params(rng))
             .collect();
 
@@ -115,7 +114,7 @@ where
             .chain(random_params.into_iter())
         {
             let solver = Self::generate_solver();
-            // FIXME: This is waseful, we don't need to copy
+            // TODO: This is waseful, we don't need to copy
             let op = RandomProcessMleOp::new(self.clone());
             let maybe_res =
                 Executor::new(op, solver, params).max_iters(max_iters).run();
@@ -172,16 +171,16 @@ where
     P: RandomProcessMle<X>,
     X: Scalar + Debug,
 {
-    type Param = <P as RandomProcess<X>>::Parameter;
+    type Param = <P as RandomProcess<X>>::Param;
     type Output = f64;
     type Hessian = ();
     type Jacobian = ();
     type Float = f64;
 
     fn apply(&self, param: &Self::Param) -> Result<Self::Output, ArgminError> {
-        self.process.ln_m_with_parameters(param.clone())
+        self.process.ln_m_with_params(param.clone())
             .map(|x| -x.0)
-            .ok_or_else(|| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
+            .map_err(|_| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
     }
 
     fn gradient(
@@ -189,8 +188,8 @@ where
         param: &Self::Param,
     ) -> Result<Self::Param, ArgminError> {
         self.process
-            .ln_m_with_parameters(param.clone())
+            .ln_m_with_params(param.clone())
             .map(|x| Self::Param::from_iter(x.1.into_iter().map(|y| -y)))
-            .ok_or_else(|| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
+            .map_err(|_| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
     }
 }

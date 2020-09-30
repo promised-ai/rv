@@ -1,4 +1,4 @@
-use super::{e2_norm, CovGrad, Kernel, E2METRIC};
+use super::{e2_norm, CovGrad, Kernel, KernelError, E2METRIC};
 use nalgebra::base::storage::Storage;
 use nalgebra::{
     base::constraint::{SameNumberOfColumns, ShapeConstraint},
@@ -19,23 +19,32 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct RationalQuadratic {
     scale: f64,
-    scale_upper_bound: f64,
-    scale_lower_bound: f64,
     mixture: f64,
-    mixture_lower_bound: f64,
-    mixture_upper_bound: f64,
 }
 
 impl RationalQuadratic {
-    pub fn new(scale: f64, mixture: f64) -> Self {
-        Self {
-            scale,
-            scale_lower_bound: 1E-5,
-            scale_upper_bound: 1E5,
-            mixture,
-            mixture_lower_bound: 1E-5,
-            mixture_upper_bound: 1E5,
+    /// Create a new RationalQuadratic kernel
+    pub fn new(scale: f64, mixture: f64) -> Result<Self, KernelError> {
+        if scale <= 0.0 {
+            Err(KernelError::ParameterOutOfBounds {
+                name: "scale",
+                given: scale,
+                bounds: (0.0, f64::INFINITY),
+            })
+        } else if mixture <= 0.0 {
+            Err(KernelError::ParameterOutOfBounds {
+                name: "mixture",
+                given: mixture,
+                bounds: (0.0, f64::INFINITY),
+            })
+        } else {
+            Ok(Self { scale, mixture })
         }
+    }
+
+    /// Create a new RationalQuadratic without checking values
+    pub fn new_unchecked(scale: f64, mixture: f64) -> Self {
+        Self { scale, mixture }
     }
 }
 
@@ -78,28 +87,27 @@ impl Kernel for RationalQuadratic {
         vec![self.scale.ln(), self.mixture.ln()]
     }
 
-    fn parameter_bounds(&self) -> (Vec<f64>, Vec<f64>) {
-        (
-            vec![self.scale_lower_bound, self.mixture_lower_bound],
-            vec![self.scale_upper_bound, self.mixture_upper_bound],
-        )
+    fn from_parameters(params: &[f64]) -> Result<Self, KernelError> {
+        match params {
+            [] => Err(KernelError::MisingParameters(2)),
+            [_] => Err(KernelError::MisingParameters(1)),
+            [length_scale, mixture] => {
+                Self::new(length_scale.exp(), mixture.exp())
+            }
+            _ => Err(KernelError::ExtraniousParameters(params.len() - 1)),
+        }
     }
 
-    fn from_parameters(params: &[f64]) -> Self {
-        assert_eq!(params.len(), 2, "");
-        let scale = params[0].exp();
-        let mixture = params[1].exp();
-        Self::new(scale, mixture)
-    }
-
-    fn consume_parameters(params: &[f64]) -> (Self, &[f64]) {
-        assert!(
-            params.len() >= 2,
-            "RationalQuadratic requires two parameters"
-        );
-        let (cur, next) = params.split_at(2);
-        let ck = Self::from_parameters(cur);
-        (ck, next)
+    fn consume_parameters(
+        params: &[f64],
+    ) -> Result<(Self, &[f64]), KernelError> {
+        if params.len() < 2 {
+            Err(KernelError::MisingParameters(2))
+        } else {
+            let (cur, next) = params.split_at(2);
+            let ck = Self::from_parameters(cur)?;
+            Ok((ck, next))
+        }
     }
 
     fn covariance_with_gradient<R, C, S>(
@@ -149,8 +157,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn rational_quadratic() {
-        let kernel = RationalQuadratic::new(3.0, 5.0);
+    fn rational_quadratic() -> Result<(), KernelError> {
+        let kernel = RationalQuadratic::new(3.0, 5.0)?;
         assert::close(kernel.parameters()[0], 3.0_f64.ln(), 1E-10);
         assert::close(kernel.parameters()[1], 5.0_f64.ln(), 1E-10);
         assert!(relative_eq(
@@ -198,5 +206,6 @@ mod tests {
         );
         assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
         assert!(grad.relative_eq(&expected_grad, 1E-8, 1E-8));
+        Ok(())
     }
 }

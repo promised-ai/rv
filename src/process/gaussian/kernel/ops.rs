@@ -1,4 +1,4 @@
-use super::{CovGrad, Kernel};
+use super::{CovGrad, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
@@ -103,26 +103,18 @@ where
         a.into_iter().chain(b.into_iter()).collect()
     }
 
-    fn parameter_bounds(&self) -> (Vec<f64>, Vec<f64>) {
-        let (a_lower, a_upper) = self.a.parameter_bounds();
-        let (b_lower, b_upper) = self.b.parameter_bounds();
-
-        let lower = a_lower.into_iter().chain(b_lower.into_iter()).collect();
-        let upper = a_upper.into_iter().chain(b_upper.into_iter()).collect();
-
-        (lower, upper)
+    fn from_parameters(params: &[f64]) -> Result<Self, KernelError> {
+        let (a, b_params) = A::consume_parameters(params)?;
+        let b = B::from_parameters(b_params)?;
+        Ok(Self::new(a, b))
     }
 
-    fn from_parameters(params: &[f64]) -> Self {
-        let (a, b_params) = A::consume_parameters(params);
-        let b = B::from_parameters(b_params);
-        Self::new(a, b)
-    }
-
-    fn consume_parameters(params: &[f64]) -> (Self, &[f64]) {
-        let (a, b_params) = A::consume_parameters(params);
-        let (b, left) = B::consume_parameters(&b_params);
-        (Self::new(a, b), left)
+    fn consume_parameters(
+        params: &[f64],
+    ) -> Result<(Self, &[f64]), KernelError> {
+        let (a, b_params) = A::consume_parameters(params)?;
+        let (b, left) = B::consume_parameters(&b_params)?;
+        Ok((Self::new(a, b), left))
     }
 
     fn covariance_with_gradient<R, C, S>(
@@ -239,26 +231,18 @@ where
         a.into_iter().chain(b.into_iter()).collect()
     }
 
-    fn parameter_bounds(&self) -> (Vec<f64>, Vec<f64>) {
-        let (a_lower, a_upper) = self.a.parameter_bounds();
-        let (b_lower, b_upper) = self.b.parameter_bounds();
-
-        (
-            a_lower.into_iter().chain(b_lower.into_iter()).collect(),
-            a_upper.into_iter().chain(b_upper.into_iter()).collect(),
-        )
+    fn from_parameters(param_vec: &[f64]) -> Result<Self, KernelError> {
+        let (a, b_params) = A::consume_parameters(param_vec)?;
+        let b = B::from_parameters(b_params)?;
+        Ok(Self::new(a, b))
     }
 
-    fn from_parameters(param_vec: &[f64]) -> Self {
-        let (a, b_params) = A::consume_parameters(param_vec);
-        let b = B::from_parameters(b_params);
-        Self::new(a, b)
-    }
-
-    fn consume_parameters(param_vec: &[f64]) -> (Self, &[f64]) {
-        let (a, b_params) = A::consume_parameters(param_vec);
-        let (b, left) = B::consume_parameters(&b_params);
-        (Self::new(a, b), left)
+    fn consume_parameters(
+        param_vec: &[f64],
+    ) -> Result<(Self, &[f64]), KernelError> {
+        let (a, b_params) = A::consume_parameters(param_vec)?;
+        let (b, left) = B::consume_parameters(&b_params)?;
+        Ok((Self::new(a, b), left))
     }
 
     fn covariance_with_gradient<R, C, S>(
@@ -291,9 +275,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn add_kernel() {
+    fn add_kernel() -> Result<(), KernelError> {
         let kernel =
-            AddKernel::new(ConstantKernel::new(3.0), WhiteKernel::new(2.0));
+            AddKernel::new(ConstantKernel::new(3.0)?, WhiteKernel::new(2.0)?);
         let x = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0]);
 
         let expected_cov = DMatrix::from_row_slice(2, 2, &[5.0, 3.0, 3.0, 5.0]);
@@ -306,12 +290,13 @@ mod tests {
         let (cov, grad) = kernel.covariance_with_gradient(&x);
         assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7));
         assert!(grad.relative_eq(&expected_grad, 1E-7, 1E-7));
+        Ok(())
     }
 
     #[test]
-    fn product_kernel() {
-        let var_name = ConstantKernel::new(3.0);
-        let kernel = var_name * RBFKernel::new(5.0);
+    fn product_kernel() -> Result<(), KernelError> {
+        let var_name = ConstantKernel::new(3.0)?;
+        let kernel = var_name * RBFKernel::new(5.0)?;
         let x = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0]);
         let y = DMatrix::from_row_slice(2, 2, &[5.0, 7.0, 6.0, 8.0]);
 
@@ -351,5 +336,6 @@ mod tests {
         let (cov, grad) = kernel.covariance_with_gradient(&x);
         assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7));
         assert!(grad.relative_eq(&expected_grad, 1E-7, 1E-7));
+        Ok(())
     }
 }

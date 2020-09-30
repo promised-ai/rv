@@ -1,4 +1,4 @@
-use super::{CovGrad, Kernel};
+use super::{CovGrad, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
@@ -13,25 +13,24 @@ use serde::{Deserialize, Serialize};
 pub struct WhiteKernel {
     /// Level of the noise
     noise_level: f64,
-    lower_bound: f64,
-    upper_bound: f64,
 }
 
 impl WhiteKernel {
-    pub fn new(noise_level: f64) -> Self {
-        Self {
-            noise_level,
-            lower_bound: 1E-5,
-            upper_bound: 1E5,
+    /// Create a new WhiteKernel with the given level of noise
+    pub fn new(noise_level: f64) -> Result<Self, KernelError> {
+        if noise_level <= 0.0 {
+            return Err(KernelError::ParameterOutOfBounds {
+                name: "noise_level",
+                given: noise_level,
+                bounds: (0.0, std::f64::INFINITY),
+            });
         }
+        Ok(Self { noise_level })
     }
 
-    pub fn with_bounds(self, lower_bound: f64, upper_bound: f64) -> Self {
-        Self {
-            lower_bound,
-            upper_bound,
-            ..self
-        }
+    /// Create a new WhiteKernel without check the parameters
+    pub fn new_unchecked(noise_level: f64) -> Self {
+        Self { noise_level }
     }
 }
 
@@ -71,20 +70,24 @@ impl Kernel for WhiteKernel {
         vec![self.noise_level.ln()]
     }
 
-    fn parameter_bounds(&self) -> (Vec<f64>, Vec<f64>) {
-        (vec![self.lower_bound], vec![self.upper_bound])
+    fn from_parameters(param_vec: &[f64]) -> Result<Self, KernelError> {
+        match param_vec {
+            [] => Err(KernelError::MisingParameters(1)),
+            [value] => Self::new(value.exp()),
+            _ => Err(KernelError::ExtraniousParameters(param_vec.len() - 1)),
+        }
     }
 
-    fn from_parameters(param_vec: &[f64]) -> Self {
-        assert_eq!(param_vec.len(), 1, "Only one parameter expected");
-        Self::new(param_vec[0].exp())
-    }
-
-    fn consume_parameters(params: &[f64]) -> (Self, &[f64]) {
-        assert!(params.len() > 0, "WhiteKernel requires one parameters");
-        let (cur, next) = params.split_at(1);
-        let ck = Self::from_parameters(cur);
-        (ck, next)
+    fn consume_parameters(
+        params: &[f64],
+    ) -> Result<(Self, &[f64]), KernelError> {
+        if params.is_empty() {
+            Err(KernelError::MisingParameters(1))
+        } else {
+            let (cur, next) = params.split_at(1);
+            let ck = Self::from_parameters(cur)?;
+            Ok((ck, next))
+        }
     }
 
     fn covariance_with_gradient<R, C, S>(
@@ -115,7 +118,7 @@ mod tests {
     #[test]
     fn white_kernel() {
         const PI: f64 = std::f64::consts::PI;
-        let kernel = WhiteKernel::new(PI);
+        let kernel = WhiteKernel::new(PI).expect("given value is valid");
 
         assert::close(kernel.parameters()[0], PI.ln(), 1E-10);
 

@@ -11,8 +11,7 @@ pub fn noiseless() {
         DMatrix::from_column_slice(6, 1, &[1., 3., 5., 6., 7., 8.]);
     let ys: DVector<f64> = xs.map(|x| x * x.sin()).column(0).into();
 
-    let kernel = ConstantKernel::new(1.0).with_bounds(1E-3, 1E3)
-        * RBFKernel::new(1.0).with_bounds(1E-2, 1E2);
+    let kernel = ConstantKernel::default() * RBFKernel::default();
     let gp = GaussianProcess::train(kernel, xs, ys, NoiseModel::Uniform(0.0))
         .expect("Data is valid so this should succeed")
         .optimize(1000, 0, &mut small_rng)
@@ -46,8 +45,7 @@ pub fn noisy() {
 
     let ys = &ys + &dy;
 
-    let kernel = ConstantKernel::new(1.0).with_bounds(1E-3, 1E3)
-        * RBFKernel::new(1.0).with_bounds(1E-2, 1E2);
+    let kernel = ConstantKernel::default() * RBFKernel::default();
     let gp = GaussianProcess::train(
         kernel,
         xs,

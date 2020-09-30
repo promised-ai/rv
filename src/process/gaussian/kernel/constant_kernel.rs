@@ -1,4 +1,4 @@
-use super::{CovGrad, Kernel};
+use super::{CovGrad, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
@@ -10,38 +10,40 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct ConstantKernel {
-    value: f64,
-    lower_bound: f64,
-    upper_bound: f64,
+    scale: f64,
 }
 
 impl ConstantKernel {
-    pub fn new(value: f64) -> Self {
-        Self {
-            value,
-            lower_bound: 1E-5,
-            upper_bound: 1E5,
+    /// Create a new kernel with the given constant value
+    pub fn new(value: f64) -> Result<Self, KernelError> {
+        if value <= 0.0 {
+            Err(KernelError::ParameterOutOfBounds {
+                name: "value",
+                given: value,
+                bounds: (0.0, std::f64::INFINITY),
+            })
+        } else {
+            Ok(Self { scale: value })
         }
     }
 
-    pub fn with_bounds(self, lower_bound: f64, upper_bound: f64) -> Self {
-        Self {
-            lower_bound,
-            upper_bound,
-            ..self
-        }
+    /// Create a new constant function kernel without checking the parameters
+    pub fn new_unchecked(scale: f64) -> Self {
+        Self { scale }
+    }
+}
+
+impl Default for ConstantKernel {
+    fn default() -> Self {
+        Self { scale: 1.0 }
     }
 }
 
 impl std::convert::TryFrom<f64> for ConstantKernel {
-    type Error = &'static str;
+    type Error = KernelError;
 
     fn try_from(value: f64) -> Result<Self, Self::Error> {
-        if value < 0.0 {
-            Err("Constant Kernel values must not be negative")
-        } else {
-            Ok(ConstantKernel::new(value))
-        }
+        Self::new(value)
     }
 }
 
@@ -60,7 +62,7 @@ impl Kernel for ConstantKernel {
         S2: Storage<f64, R2, C2>,
         ShapeConstraint: SameNumberOfColumns<C1, C2>,
     {
-        DMatrix::from_element(x1.nrows(), x2.nrows(), self.value)
+        DMatrix::from_element(x1.nrows(), x2.nrows(), self.scale)
     }
 
     fn is_stationary(&self) -> bool {
@@ -73,29 +75,31 @@ impl Kernel for ConstantKernel {
         C: Dim,
         S: Storage<f64, R, C>,
     {
-        DVector::from_element(x.nrows(), self.value)
+        DVector::from_element(x.nrows(), self.scale)
     }
 
     fn parameters(&self) -> Vec<f64> {
-        vec![self.value.ln()]
+        vec![self.scale.ln()]
     }
 
-    fn parameter_bounds(&self) -> (Vec<f64>, Vec<f64>) {
-        (vec![self.lower_bound], vec![self.upper_bound])
+    fn from_parameters(param_vec: &[f64]) -> Result<Self, KernelError> {
+        match param_vec {
+            [] => Err(KernelError::MisingParameters(1)),
+            [value] => Self::new(value.exp()),
+            _ => Err(KernelError::ExtraniousParameters(param_vec.len() - 1)),
+        }
     }
 
-    fn from_parameters(param_vec: &[f64]) -> Self {
-        Self::new(param_vec[0].exp())
-    }
-
-    fn consume_parameters(param_vec: &[f64]) -> (Self, &[f64]) {
-        assert!(
-            !param_vec.is_empty(),
-            "ConstantKernel requires one parameter"
-        );
-        let (cur, next) = param_vec.split_at(1);
-        let ck = Self::from_parameters(cur);
-        (ck, next)
+    fn consume_parameters(
+        param_vec: &[f64],
+    ) -> Result<(Self, &[f64]), KernelError> {
+        if param_vec.is_empty() {
+            Err(KernelError::MisingParameters(1))
+        } else {
+            let (cur, next) = param_vec.split_at(1);
+            let ck = Self::from_parameters(cur)?;
+            Ok((ck, next))
+        }
     }
 
     fn covariance_with_gradient<R, C, S>(
@@ -111,7 +115,7 @@ impl Kernel for ConstantKernel {
         let grad = CovGrad::new(&[DMatrix::from_element(
             x.nrows(),
             x.nrows(),
-            self.value,
+            self.scale,
         )]);
         (cov, grad)
     }
@@ -125,7 +129,7 @@ mod tests {
 
     #[test]
     fn constant_kernel() {
-        let kernel = ConstantKernel::new(3.0);
+        let kernel = ConstantKernel::new(3.0).unwrap();
         assert::close(kernel.parameters()[0], 3.0_f64.ln(), 1E-10);
         assert!(relative_eq(
             kernel.parameters(),

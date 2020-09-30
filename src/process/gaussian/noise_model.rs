@@ -21,11 +21,14 @@ impl Default for NoiseModel {
 
 impl NoiseModel {
     /// Enact the given noise model onto the given covariance matrix
-    pub fn add_noise_to_kernel(&self, cov: &DMatrix<f64>) -> DMatrix<f64> {
+    pub fn add_noise_to_kernel(
+        &self,
+        cov: &DMatrix<f64>,
+    ) -> Result<DMatrix<f64>, String> {
         match self {
             NoiseModel::Uniform(noise) => {
                 let diag = DVector::from_element(cov.nrows(), noise.powi(2));
-                cov + &DMatrix::from_diagonal(&diag)
+                Ok(cov + &DMatrix::from_diagonal(&diag))
             }
             NoiseModel::PerPoint(sigma) => {
                 assert_eq!(
@@ -33,7 +36,11 @@ impl NoiseModel {
                     sigma.nrows(),
                     "Per point noise must be the same size as y_train"
                 );
-                cov + &DMatrix::from_diagonal(&sigma)
+                if cov.nrows() == sigma.nrows() {
+                    Ok(cov + &DMatrix::from_diagonal(&sigma))
+                } else {
+                    Err(format!("Per point noise must be the same size a y_train (expected: {}, got: {})", cov.nrows(), sigma.nrows()))
+                }
             }
         }
     }

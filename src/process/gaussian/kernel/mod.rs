@@ -55,17 +55,16 @@ pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
     /// The parameters here are in a log-scale
     fn parameters(&self) -> Vec<f64>;
 
-    /// Returns the bounds on the parameters
-    fn parameter_bounds(&self) -> (Vec<f64>, Vec<f64>);
-
     /// Create a new kernel of the given type from the provided parameters.
     /// The parameters here are in a log-scale
-    fn from_parameters(param: &[f64]) -> Self;
+    fn from_parameters(param: &[f64]) -> Result<Self, KernelError>;
 
     /// Takes a sequence of parameters and consumes only the ones it needs
     /// to create itself.
     /// The parameters here are in a log-scale
-    fn consume_parameters(params: &[f64]) -> (Self, &[f64]);
+    fn consume_parameters(
+        params: &[f64],
+    ) -> Result<(Self, &[f64]), KernelError>;
 
     /// Covariance and Gradient with the log-scaled hyper-parameters
     fn covariance_with_gradient<R, C, S>(
@@ -83,6 +82,50 @@ pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
 
     fn mul<B: Kernel>(self, other: B) -> ProductKernel<Self, B> {
         ProductKernel::new(self, other)
+    }
+}
+
+/// Errors from Kernel construction
+#[derive(Debug, Clone, PartialEq)]
+pub enum KernelError {
+    /// Lower bounds must be lower that upper bounds
+    InproperBounds(f64, f64),
+    /// Parameter Out of Bounds
+    ParameterOutOfBounds {
+        name: &'static str,
+        given: f64,
+        bounds: (f64, f64),
+    },
+    /// Too many parameters provided
+    ExtraniousParameters(usize),
+    /// Too few parameters provided
+    MisingParameters(usize),
+}
+
+impl std::error::Error for KernelError {}
+
+impl std::fmt::Display for KernelError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InproperBounds(lower, upper) => {
+                writeln!(f, "Bounds are not in order: ({}, {})", lower, upper)
+            }
+            Self::ParameterOutOfBounds {
+                name,
+                given,
+                bounds,
+            } => writeln!(
+                f,
+                "Parameter {} is out of bounds ({}, {}), given: {}",
+                name, bounds.0, bounds.1, given
+            ),
+            Self::ExtraniousParameters(n) => {
+                writeln!(f, "{} extra parameters proved to kernel", n)
+            }
+            Self::MisingParameters(n) => {
+                writeln!(f, "Missing {} parameters", n)
+            }
+        }
     }
 }
 

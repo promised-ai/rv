@@ -1,4 +1,4 @@
-use super::{e2_norm, CovGrad, Kernel};
+use super::{e2_norm, CovGrad, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
@@ -21,25 +21,31 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct RBFKernel {
     length_scale: f64,
-    lower_bound: f64,
-    upper_bound: f64,
 }
 
 impl RBFKernel {
-    pub fn new(length_scale: f64) -> Self {
-        Self {
-            length_scale,
-            upper_bound: 1E5,
-            lower_bound: 1E-5,
+    /// Create a new rbf kernel with the given length scale
+    pub fn new(length_scale: f64) -> Result<Self, KernelError> {
+        if length_scale <= 0.0 {
+            Err(KernelError::ParameterOutOfBounds {
+                name: "length_scale",
+                given: length_scale,
+                bounds: (0.0, std::f64::INFINITY),
+            })
+        } else {
+            Ok(Self { length_scale })
         }
     }
 
-    pub fn with_bounds(self, lower_bound: f64, upper_bound: f64) -> Self {
-        Self {
-            lower_bound,
-            upper_bound,
-            ..self
-        }
+    /// Create a new RBFKernel without checking parameters
+    pub fn new_unchecked(length_scale: f64) -> Self {
+        Self { length_scale }
+    }
+}
+
+impl Default for RBFKernel {
+    fn default() -> Self {
+        Self { length_scale: 1.0 }
     }
 }
 
@@ -90,24 +96,24 @@ impl Kernel for RBFKernel {
         vec![self.length_scale.ln()]
     }
 
-    fn parameter_bounds(&self) -> (Vec<f64>, Vec<f64>) {
-        (vec![self.lower_bound], vec![self.upper_bound])
+    fn consume_parameters(
+        params: &[f64],
+    ) -> Result<(Self, &[f64]), KernelError> {
+        if params.is_empty() {
+            Err(KernelError::MisingParameters(1))
+        } else {
+            let (cur, next) = params.split_at(1);
+            let ck = Self::from_parameters(cur)?;
+            Ok((ck, next))
+        }
     }
 
-    fn consume_parameters(params: &[f64]) -> (Self, &[f64]) {
-        assert!(!params.is_empty(), "RBFKernel requires one parameters");
-        let (cur, next) = params.split_at(1);
-        let ck = Self::from_parameters(cur);
-        (ck, next)
-    }
-
-    fn from_parameters(params: &[f64]) -> Self {
-        assert_eq!(
-            params.len(),
-            1,
-            "The parameter vector for RBFKernel must be of length 1"
-        );
-        Self::new(params[0].exp())
+    fn from_parameters(params: &[f64]) -> Result<Self, KernelError> {
+        match params {
+            [] => Err(KernelError::MisingParameters(1)),
+            [value] => Self::new(value.exp()),
+            _ => Err(KernelError::ExtraniousParameters(params.len() - 1)),
+        }
     }
 
     fn covariance_with_gradient<R, C, S>(
@@ -154,7 +160,7 @@ mod tests {
     fn rbf_gradient() {
         const E: f64 = std::f64::consts::E;
         let x = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0]);
-        let r = RBFKernel::new(1.0);
+        let r = RBFKernel::default();
         let (cov, grad) = r.covariance_with_gradient(&x);
 
         let expected_cov = DMatrix::from_row_slice(
@@ -171,7 +177,7 @@ mod tests {
         assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
         assert!(grad.relative_eq(&expected_grad, 1E-8, 1E-8));
 
-        let r = RBFKernel::new(4.0);
+        let r = RBFKernel::new(4.0).expect("Has valid parameter");
         let (cov, grad) = r.covariance_with_gradient(&x);
 
         let expected_cov = DMatrix::from_row_slice(
@@ -197,16 +203,20 @@ mod tests {
 
     #[test]
     fn rbf_simple() {
-        let kernel = RBFKernel::new(1.0);
+        let kernel = RBFKernel::default();
         assert::close(kernel.parameters()[0], 0.0, 1E-10);
-        assert_eq!(kernel, RBFKernel::from_parameters(&[0.0]));
+        assert_eq!(
+            kernel,
+            RBFKernel::from_parameters(&[0.0])
+                .expect("Should create kernel from params")
+        );
         assert!(kernel.is_stationary());
     }
 
     #[test]
     fn rbf_1d() {
         let xs = DVector::from_column_slice(&[0.0, 1.0, 2.0, 3.0]);
-        let kernel = RBFKernel::new(1.0);
+        let kernel = RBFKernel::default();
 
         let cov = kernel.covariance(&xs, &xs);
         let expected_cov = DMatrix::from_column_slice(
@@ -228,7 +238,7 @@ mod tests {
     fn rbf_2d() {
         use nalgebra::Matrix4x2;
 
-        let kernel = RBFKernel::new(1.0);
+        let kernel = RBFKernel::default();
         let xs =
             Matrix4x2::from_column_slice(&[0., 1., 2., 3., 4., 5., 6., 7.]);
         let expected_cov = DMatrix::from_column_slice(
@@ -261,7 +271,7 @@ mod tests {
     #[test]
     fn rbf_different_sizes() {
         use nalgebra::Matrix5x1;
-        let kernel = RBFKernel::new(1.0);
+        let kernel = RBFKernel::default();
 
         let x1 = Matrix5x1::from_column_slice(&[-4., -3., -2., -1., 1.]);
         let x2 = DMatrix::from_column_slice(

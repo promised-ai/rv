@@ -11,7 +11,7 @@ categories = ["science"]
 edition = "2018"
 
 [features]
-serde1 = ["serde_derive", "nalgebra/serde-serialize"]
+serde1 = ["nalgebra/serde-serialize"]
 
 [badges]
 gitlab = { repository = "baxe/rv", tag = "v0.10.3" }
@@ -30,7 +30,6 @@ argmin = "0.3"
 log = "0.4"
 
 serde = {version = "1", features=["derive"]}
-serde_derive = {version = "1", optional = true}
 
 [dev-dependencies]
 assert = "0.7"

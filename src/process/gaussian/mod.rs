@@ -2,6 +2,7 @@
 
 use argmin::solver::{
     gradientdescent::SteepestDescent, linesearch::MoreThuenteLineSearch,
+    quasinewton::LBFGS,
 };
 use log::warn;
 use nalgebra::linalg::Cholesky;
@@ -12,15 +13,14 @@ use once_cell::sync::OnceCell;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::consts::HALF_LN_2PI;
 use crate::dist::MvGaussian;
-use crate::traits::*;
+use crate::{consts::HALF_LN_2PI, traits::Mean, traits::Rv, traits::Variance};
 
 pub mod kernel;
-use kernel::*;
+use kernel::{Kernel, KernelError};
 
 mod noise_model;
-pub use self::noise_model::*;
+pub use self::noise_model::NoiseModel;
 
 use super::{RandomProcess, RandomProcessMle};
 
@@ -36,16 +36,24 @@ fn outer_product_self(col: &DVector<f64>) -> DMatrix<f64> {
 pub enum GaussianProcessError {
     /// The kernel is not returning a positive-definite matrix. Try adding a small, constant noise parameter as y_train_sigma.
     NotPositiveSemiDefinite,
-    /// Optimization Error
-    OptimizerError,
-    /// Extranious Parameters
-    ExtraniousParameters(Vec<f64>),
+    /// Error from the kernel function
+    KernelError(KernelError),
+    /// The given noise model does not match the training data
+    MisshapenNoiseModel(String),
 }
 
 impl std::error::Error for GaussianProcessError {}
 impl std::fmt::Display for GaussianProcessError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        match self {
+            GaussianProcessError::NotPositiveSemiDefinite => {
+                writeln!(f, "Covariance matrix is not semi-positive definite")
+            }
+            GaussianProcessError::MisshapenNoiseModel(msg) => {
+                writeln!(f, "Noise model error: {}", msg)
+            }
+            Self::KernelError(e) => writeln!(f, "Error from kernel: {}", e),
+        }
     }
 }
 
@@ -89,7 +97,8 @@ where
         noise_model: NoiseModel,
     ) -> Result<Self, GaussianProcessError> {
         let k = noise_model
-            .add_noise_to_kernel(&kernel.covariance(&x_train, &x_train));
+            .add_noise_to_kernel(&kernel.covariance(&x_train, &x_train))
+            .map_err(GaussianProcessError::MisshapenNoiseModel)?;
 
         // Decompose K into Cholesky lower lower triangular matrix
         let k_chol = match Cholesky::new(k) {
@@ -132,9 +141,9 @@ where
     K: Kernel,
 {
     type Index = Vec<f64>;
-    type Parameter = Vec<f64>;
+    type Param = Vec<f64>;
     type SampleFunction = GaussianProcessPrediction<K>;
-    type ParameterError = GaussianProcessError;
+    type Error = GaussianProcessError;
 
     fn sample_function(
         &self,
@@ -168,15 +177,16 @@ where
         -0.5 * self.y_train.dot(&alpha) - dlog_sum - n * HALF_LN_2PI
     }
 
-    fn ln_m_with_parameters(
+    fn ln_m_with_params(
         &self,
-        parameter: Self::Parameter,
-    ) -> Option<(f64, Self::Parameter)> {
-        let kernel = K::from_parameters(&parameter);
+        parameter: Self::Param,
+    ) -> Result<(f64, Self::Param), GaussianProcessError> {
+        let kernel = K::from_parameters(&parameter)
+            .map_err(GaussianProcessError::KernelError)?;
 
         // GPML Equation 2.30
         let (k, k_grad) = kernel.covariance_with_gradient(&self.x_train);
-        let k = self.noise_model.add_noise_to_kernel(&k);
+        let k = self.noise_model.add_noise_to_kernel(&k).unwrap(); // if we got here, the noise model will be okay
 
         let m = k.nrows();
         // TODO: try to symmetricize the matrix
@@ -189,7 +199,8 @@ where
             );
         }
 
-        let k_chol = maybe_k_chol?;
+        let k_chol = maybe_k_chol
+            .ok_or(GaussianProcessError::NotPositiveSemiDefinite)?;
         let alpha = k_chol.solve(&self.y_train);
         let dlog_sum = k_chol.l_dirty().diagonal().map(|x| x.ln()).sum();
         let n: f64 = self.x_train.nrows() as f64;
@@ -208,21 +219,22 @@ where
                 0.5 * sum
             })
             .collect();
-        Some((ln_m, grad_ln_m))
+        Ok((ln_m, grad_ln_m))
     }
 
-    fn parameters(&self) -> Self::Parameter {
+    fn parameters(&self) -> Self::Param {
         self.kernel().parameters()
     }
 
     fn set_parameters(
         self,
-        parameters: Self::Parameter,
+        parameters: Self::Param,
     ) -> Result<Self, GaussianProcessError> {
-        let (kernel, leftovers) = K::consume_parameters(&parameters);
+        let (kernel, leftovers) = K::consume_parameters(&parameters)
+            .map_err(GaussianProcessError::KernelError)?;
         if !leftovers.is_empty() {
-            return Err(GaussianProcessError::ExtraniousParameters(
-                leftovers.to_vec(),
+            return Err(GaussianProcessError::KernelError(
+                KernelError::ExtraniousParameters(leftovers.len()),
             ));
         }
 
@@ -234,28 +246,17 @@ impl<K> RandomProcessMle<f64> for GaussianProcess<K>
 where
     K: Kernel,
 {
-    /*
-    type Solver = LBFGS<
-        MoreThuenteLineSearch<Self::Parameter, f64>,
-        Self::Parameter,
-        f64,
-    >;
-    */
-    type Solver = SteepestDescent<MoreThuenteLineSearch<Self::Parameter, f64>>;
+    type Solver =
+        LBFGS<MoreThuenteLineSearch<Self::Param, f64>, Self::Param, f64>;
 
     fn generate_solver() -> Self::Solver {
         let linesearch = MoreThuenteLineSearch::new();
-        //LBFGS::new(linesearch, 50)
-        SteepestDescent::new(linesearch)
+        LBFGS::new(linesearch, 10)
     }
 
-    fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Parameter {
-        let (lower, upper) = self.kernel.parameter_bounds();
-        lower
-            .into_iter()
-            .zip(upper.into_iter())
-            .map(|(l, u)| rng.gen_range(l.ln(), u.ln()))
-            .collect()
+    fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Param {
+        let n = self.parameters().len();
+        (0..n).map(|_| rng.gen_range(1E-5, 1E5)).collect()
     }
 }
 
@@ -308,10 +309,10 @@ where
 
     /// Return the MV Gaussian distribution which shows the predicted values
     pub fn dist(&self) -> &MvGaussian {
-        let mean = self.mean().unwrap();
+        let mean = self.y_mean.clone();
         let cov = (self.cov()).clone();
         self.dist
-            .get_or_init(|| MvGaussian::new(mean, cov).unwrap())
+            .get_or_init(|| MvGaussian::new_unchecked(mean, cov))
     }
 
     /// Draw a single value from the corresponding MV Gaussian
@@ -320,10 +321,10 @@ where
     }
 
     /// Return a number of samples from the MV Gaussian
-    pub fn sample<RNG: Rng>(
+    pub fn sample<R: Rng>(
         &self,
         size: usize,
-        rng: &mut RNG,
+        rng: &mut R,
     ) -> Vec<DVector<f64>> {
         self.dist().sample(size, rng)
     }
@@ -372,6 +373,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use self::kernel::{ConstantKernel, ProductKernel, RBFKernel};
     use super::*;
     use crate::test::relative_eq;
     use rand::rngs::SmallRng;
@@ -388,7 +390,7 @@ mod tests {
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
 
-        let kernel = RBFKernel::new(1.0);
+        let kernel = RBFKernel::default();
         let gp = GaussianProcess::train(
             kernel,
             x_train,
@@ -540,7 +542,7 @@ mod tests {
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
 
-        let kernel = RBFKernel::new(1.0) * ConstantKernel::new(1.0);
+        let kernel = RBFKernel::default() * ConstantKernel::default();
         let parameters = kernel.parameters();
         assert!(relative_eq(&parameters, &vec![0.0, 0.0], 1E-9, 1E-9));
 
@@ -558,19 +560,19 @@ mod tests {
         assert::close(gp.ln_m(), expected_ln_m, 1E-7);
 
         // With Gradient
-        let (ln_m, grad_ln_m) = gp.ln_m_with_parameters(parameters).unwrap();
+        let (ln_m, grad_ln_m) = gp.ln_m_with_params(parameters).unwrap();
         assert::close(ln_m, expected_ln_m, 1E-7);
         assert!(relative_eq(grad_ln_m, expected_grad, 1E-7, 1E-7));
     }
 
     #[test]
-    fn log_marginal_b() {
+    fn log_marginal_b() -> Result<(), KernelError> {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
 
-        let kernel = RBFKernel::new(1.9948914742700008)
-            * ConstantKernel::new(1.221163421070665);
+        let kernel = RBFKernel::new(1.9948914742700008)?
+            * ConstantKernel::new(1.221163421070665)?;
         let parameters = kernel.parameters();
         assert!(relative_eq(
             &parameters,
@@ -594,9 +596,10 @@ mod tests {
         assert::close(ln_m, expected_ln_m, 1E-7);
 
         // With Gradient
-        let (ln_m, grad_ln_m) = gp.ln_m_with_parameters(parameters).unwrap();
+        let (ln_m, grad_ln_m) = gp.ln_m_with_params(parameters).unwrap();
         assert::close(ln_m, expected_ln_m, 1E-7);
         assert!(relative_eq(grad_ln_m, expected_grad, 1E-6, 1E-6));
+        Ok(())
     }
 
     #[test]
@@ -605,7 +608,7 @@ mod tests {
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
 
-        let kernel = RBFKernel::new(1.0);
+        let kernel = RBFKernel::default();
         let noise_model = NoiseModel::default();
 
         let gp = GaussianProcess::train(kernel, x_train, y_train, noise_model)
@@ -619,7 +622,7 @@ mod tests {
         assert::close(gp.ln_m(), -3.444937833462115, 1E-7);
         assert::close(
             gp.ln_m(),
-            gp.ln_m_with_parameters(gp.kernel().parameters()).unwrap().0,
+            gp.ln_m_with_params(gp.kernel().parameters()).unwrap().0,
             1E-7,
         );
     }
@@ -630,15 +633,17 @@ mod tests {
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
 
-        let kernel = ConstantKernel::new(1.0) * RBFKernel::new(1.0);
+        let kernel = ConstantKernel::default() * RBFKernel::default();
         let noise_model = NoiseModel::default();
 
         let gp = GaussianProcess::train(kernel, x_train, y_train, noise_model)
             .unwrap();
 
         let mut rng = SmallRng::seed_from_u64(0xABCD);
-        let gp = gp.optimize(100, 10, &mut rng).expect("Failed to optimize");
+        let gp = gp.optimize(200, 10, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
+
+        println!("opt_params = {:?}", opt_params);
 
         assert!(relative_eq(
             opt_params,
@@ -650,19 +655,19 @@ mod tests {
         assert::close(gp.ln_m(), -3.414870095916796, 1E-7);
         assert::close(
             gp.ln_m(),
-            gp.ln_m_with_parameters(gp.kernel().parameters()).unwrap().0,
+            gp.ln_m_with_params(gp.kernel().parameters()).unwrap().0,
             1E-7,
         );
     }
 
     #[test]
-    fn no_noise_k_chol() {
+    fn no_noise_k_chol() -> Result<(), KernelError> {
         let xs: DMatrix<f64> =
             DMatrix::from_column_slice(6, 1, &[1., 3., 5., 6., 7., 8.]);
         let ys: DVector<f64> = xs.map(|x| x * x.sin()).column(0).into();
 
         let kernel: ProductKernel<ConstantKernel, RBFKernel> =
-            ProductKernel::from_parameters(&[3.09975267, 0.51633823]);
+            ProductKernel::from_parameters(&[3.09975267, 0.51633823])?;
         let gp =
             GaussianProcess::train(kernel, xs, ys, NoiseModel::Uniform(0.0))
                 .expect("Should produce GP");
@@ -710,10 +715,11 @@ mod tests {
         );
 
         assert!(gp.k_chol().l().relative_eq(&expected_k_chol, 1E-8, 1E-8));
+        Ok(())
     }
 
     #[test]
-    fn noisy_k_chol() {
+    fn noisy_k_chol() -> Result<(), KernelError> {
         let xs: DMatrix<f64> =
             DMatrix::from_column_slice(6, 1, &[1., 3., 5., 6., 7., 8.]);
         let ys: DVector<f64> = xs.map(|x| x * x.sin()).column(0).into();
@@ -725,7 +731,7 @@ mod tests {
         let ys = &ys + &dy;
 
         let kernel: ProductKernel<ConstantKernel, RBFKernel> =
-            ProductKernel::from_parameters(&[2.88672093, -0.03332773]);
+            ProductKernel::from_parameters(&[2.88672093, -0.03332773])?;
         let gp = GaussianProcess::train(
             kernel,
             xs,
@@ -777,5 +783,6 @@ mod tests {
         );
 
         assert!(gp.k_chol().l().relative_eq(&expected_k_chol, 1E-7, 1E-7));
+        Ok(())
     }
 }

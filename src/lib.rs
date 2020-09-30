@@ -78,6 +78,7 @@ pub mod misc;
 mod model;
 pub mod prelude;
 pub mod process;
+#[cfg(test)]
 pub(crate) mod test;
 pub mod traits;
 

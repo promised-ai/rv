@@ -1,6 +1,28 @@
 //! This is an example of how to use the GaussianProcess code to predict functional
 //! form of the CO2 concentration at Mauna Loa from 1958-2008
 //!
+//! This example appears in the Gaussian Processes for Machine Learning book by Rasmussen and
+//! Williams.
+//!
+//! # Model
+//! This model uses the kernel function
+//! ```math
+//! K(x, x', \theta) = C_1 * RBF(x, x', \theta_1) + C_2 * RBF(x, x', \theta_2) * SE(x, x', \theta_3) + C_3 * RQ(x, x', \theta_4) + C_4 * RBF(x, x', \theta_5)
+//! + GN(x, x', \theta_6)
+//! ```
+//! Where the following are kernels:
+//! * `C_k` - A constant kernel derived from `\theta`
+//! * `RBF` - A Radial Basis Function kernel
+//! * `SE` - Squared Exponential kernel
+//! * `RQ` - Rational quadratic kernel
+//! * `GN` - Gaussian Noise kernel
+//!
+//! The following represent the design for each portion of the kernel
+//! * `C_1 * RBF(x, x', \theta_1)` - Long term smooth rising trend
+//! * `C_2 * RBF(x, x', \theta_2) * SE(x, x', \theta_3)` - Seasonal component
+//! * `C_3 * RQ(x, x', \theta_4)` - Mid-term irregularity
+//! * `C_4 * RBF(x, x', \theta_5) + GN(x, x', \theta_6)` - Noise
+//!
 //! # Reference
 //! Keeling, R. F., Piper, S. C., Bollenbacher, A. F., and Walker, J. S. Atmospheric Carbon Dioxide
 //! Record from Mauna Loa (1958-2008). United States: N. p., 2009. Web. doi:10.3334/CDIAC/atg.035.
@@ -37,31 +59,38 @@ pub fn main() -> io::Result<()> {
     println!("Loaded {} datapoints", xs.len());
 
     // Create GaussianProcess
-    let kernel = ConstantKernel::new(2.44_f64.powi(2)) * RBFKernel::new(48.1)
-        + ConstantKernel::new(0.535_f64.powi(2))
-            * RBFKernel::new(4.02e+3)
-            * ExpSineSquaredKernel::new(24.4, 1.03)
-        + ConstantKernel::new(0.239_f64.powi(2))
-            * RationalQuadratic::new(14.9, 4.58e+03)
-        + ConstantKernel::new(0.0119_f64.powi(2)) * RBFKernel::new(1.76e+03)
-        + WhiteKernel::new(0.0147);
+    let kernel = ConstantKernel::new_unchecked(2.44_f64.powi(2))
+        * RBFKernel::new_unchecked(48.1)
+        + ConstantKernel::new_unchecked(0.535_f64.powi(2))
+            * RBFKernel::new_unchecked(4.02e+3)
+            * ExpSineSquaredKernel::new_unchecked(24.4, 1.03)
+        + ConstantKernel::new_unchecked(0.239_f64.powi(2))
+            * RationalQuadratic::new_unchecked(14.9, 4.58e+03)
+        + ConstantKernel::new_unchecked(0.0119_f64.powi(2))
+            * RBFKernel::new_unchecked(1.76e+03)
+        + WhiteKernel::new_unchecked(0.0147);
 
     println!("kernel = {:#?}", kernel);
+    // These parameters define the kernel, keep in mind these are in log-scale
     println!("kernel theta = {:?}", kernel.parameters());
 
+    // The {x,y}-train must be a DMatrix and DVector
     let xs: DMatrix<f64> = DMatrix::from_column_slice(xs.len(), 1, &xs);
     let ys: DVector<f64> = DVector::from_column_slice(&ys);
 
     println!("xs shape = {:?}", xs.shape());
     println!("ys shape = {:?}", ys.shape());
 
+    // We now train a gaussian process on these training data
     let gp = GaussianProcess::train(kernel, xs, ys, NoiseModel::Uniform(1E-5))
-        .unwrap();
+        .expect("This should only fail if the covariance matrix from the kernel is not semi-positive definite");
 
+    // The given parameters given the following log likelihood and the gradient at the location is
     let (ln_m, grad_ln_m) =
-        gp.ln_m_with_parameters(gp.kernel().parameters()).unwrap();
+        gp.ln_m_with_params(gp.kernel().parameters()).unwrap();
     println!("ln_m = {}\ngrad_ln_m = {:?}", ln_m, grad_ln_m);
 
+    // Let's find better parametes
     println!("Optimizing...");
     let mut rng = SmallRng::seed_from_u64(0xABCD);
     let gp = gp.optimize(10, 0, &mut rng).expect("Failed to optimize");
