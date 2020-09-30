@@ -1,4 +1,4 @@
-use super::{CovGrad, Kernel, KernelError};
+use super::{CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
@@ -105,19 +105,19 @@ impl Kernel for ConstantKernel {
     fn covariance_with_gradient<R, C, S>(
         &self,
         x: &Matrix<f64, R, C, S>,
-    ) -> (DMatrix<f64>, CovGrad)
+    ) -> Result<(DMatrix<f64>, CovGrad), CovGradError>
     where
         R: Dim,
         C: Dim,
         S: Storage<f64, R, C>,
     {
         let cov = self.covariance(x, x);
-        let grad = CovGrad::new(&[DMatrix::from_element(
+        let grad = CovGrad::new_unchecked(&[DMatrix::from_element(
             x.nrows(),
             x.nrows(),
             self.scale,
         )]);
-        (cov, grad)
+        Ok((cov, grad))
     }
 }
 
@@ -141,12 +141,12 @@ mod tests {
         let x = DMatrix::from_column_slice(2, 2, &[1.0, 3.0, 2.0, 4.0]);
         let y = DMatrix::from_column_slice(2, 2, &[5.0, 6.0, 7.0, 8.0]);
 
-        let (cov, grad) = kernel.covariance_with_gradient(&x);
+        let (cov, grad) = kernel.covariance_with_gradient(&x).unwrap();
 
         let expected_cov = DMatrix::from_row_slice(2, 2, &[3.0, 3.0, 3.0, 3.0]);
 
         let expected_grad =
-            CovGrad::from_row_slices(2, 1, &[3.0, 3.0, 3.0, 3.0]);
+            CovGrad::from_row_slices(2, 1, &[3.0, 3.0, 3.0, 3.0]).unwrap();
 
         assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
         assert!(grad.relative_eq(&expected_grad, 1E-8, 1E-8));

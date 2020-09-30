@@ -42,14 +42,20 @@ impl std::error::Error for GaussianProcessError {}
 impl std::fmt::Display for GaussianProcessError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            GaussianProcessError::NotPositiveSemiDefinite => {
+            Self::NotPositiveSemiDefinite => {
                 writeln!(f, "Covariance matrix is not semi-positive definite")
             }
-            GaussianProcessError::MisshapenNoiseModel(msg) => {
+            Self::MisshapenNoiseModel(msg) => {
                 writeln!(f, "Noise model error: {}", msg)
             }
             Self::KernelError(e) => writeln!(f, "Error from kernel: {}", e),
         }
+    }
+}
+
+impl From<KernelError> for GaussianProcessError {
+    fn from(e: KernelError) -> Self {
+        Self::KernelError(e)
     }
 }
 
@@ -181,7 +187,9 @@ where
             .map_err(GaussianProcessError::KernelError)?;
 
         // GPML Equation 2.30
-        let (k, k_grad) = kernel.covariance_with_gradient(&self.x_train);
+        let (k, k_grad) = kernel
+            .covariance_with_gradient(&self.x_train)
+            .map_err(|e| GaussianProcessError::KernelError(e.into()))?;
         let k = self.noise_model.add_noise_to_kernel(&k).unwrap(); // if we got here, the noise model will be okay
 
         let m = k.nrows();

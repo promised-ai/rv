@@ -1,4 +1,4 @@
-use super::{CovGrad, Kernel, KernelError};
+use super::{CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::{
     base::constraint::{SameNumberOfColumns, ShapeConstraint},
     EuclideanNorm,
@@ -132,7 +132,7 @@ impl Kernel for ExpSineSquaredKernel {
     fn covariance_with_gradient<R, C, S>(
         &self,
         x: &Matrix<f64, R, C, S>,
-    ) -> (DMatrix<f64>, CovGrad)
+    ) -> Result<(DMatrix<f64>, CovGrad), CovGradError>
     where
         R: Dim,
         C: Dim,
@@ -169,7 +169,7 @@ impl Kernel for ExpSineSquaredKernel {
             // Diag is always one
             cov[(i, i)] = 1.0;
         }
-        (cov, grad)
+        Ok((cov, grad))
     }
 }
 
@@ -202,7 +202,7 @@ mod tests {
         );
         assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7));
 
-        let (cov, grad) = kernel.covariance_with_gradient(&x);
+        let (cov, grad) = kernel.covariance_with_gradient(&x)?;
 
         let expected_cov = DMatrix::from_row_slice(
             5,
@@ -213,7 +213,7 @@ mod tests {
             ],
         );
 
-        let expected_grad = CovGrad::new(&[
+        let expected_grad = CovGrad::new_unchecked(&[
             DMatrix::from_row_slice(
                 5,
                 5,
@@ -288,7 +288,7 @@ mod tests {
             DMatrix::from_row_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         // Non default variables
         let kernel = ExpSineSquaredKernel::new(5.0, 2.0 * f64::consts::PI)?;
-        let (cov, grad) = kernel.covariance_with_gradient(&x);
+        let (cov, grad) = kernel.covariance_with_gradient(&x)?;
         let expected_cov = DMatrix::from_row_slice(
             5,
             5,
@@ -301,7 +301,7 @@ mod tests {
             ],
         );
 
-        let expected_grad = CovGrad::new(&[
+        let expected_grad = CovGrad::new_unchecked(&[
             DMatrix::from_row_slice(
                 5,
                 5,

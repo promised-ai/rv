@@ -1,4 +1,4 @@
-use super::{e2_norm, CovGrad, Kernel, KernelError};
+use super::{e2_norm, CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
@@ -119,7 +119,7 @@ impl Kernel for RBFKernel {
     fn covariance_with_gradient<R, C, S>(
         &self,
         x: &Matrix<f64, R, C, S>,
-    ) -> (DMatrix<f64>, CovGrad)
+    ) -> Result<(DMatrix<f64>, CovGrad), CovGradError>
     where
         R: Dim,
         C: Dim,
@@ -148,7 +148,7 @@ impl Kernel for RBFKernel {
             dm[(i, i)] = 1.0;
         }
 
-        (dm, grad)
+        Ok((dm, grad))
     }
 }
 
@@ -157,11 +157,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn rbf_gradient() {
+    fn rbf_gradient() -> Result<(), KernelError> {
         const E: f64 = std::f64::consts::E;
         let x = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0]);
         let r = RBFKernel::default();
-        let (cov, grad) = r.covariance_with_gradient(&x);
+        let (cov, grad) = r.covariance_with_gradient(&x)?;
 
         let expected_cov = DMatrix::from_row_slice(
             2,
@@ -173,12 +173,13 @@ mod tests {
             2,
             1,
             &[0.0, 8.0 / E.powi(4), 8.0 / E.powi(4), 0.0],
-        );
+        )
+        .unwrap();
         assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
         assert!(grad.relative_eq(&expected_grad, 1E-8, 1E-8));
 
         let r = RBFKernel::new(4.0).expect("Has valid parameter");
-        let (cov, grad) = r.covariance_with_gradient(&x);
+        let (cov, grad) = r.covariance_with_gradient(&x)?;
 
         let expected_cov = DMatrix::from_row_slice(
             2,
@@ -195,10 +196,12 @@ mod tests {
                 (1.0 / 2.0) / E.powf(0.25),
                 0.0,
             ],
-        );
+        )
+        .unwrap();
 
         assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
         assert!(grad.relative_eq(&expected_grad, 1E-8, 1E-8));
+        Ok(())
     }
 
     #[test]

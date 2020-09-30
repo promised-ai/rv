@@ -1,4 +1,4 @@
-use super::{e2_norm, CovGrad, Kernel, KernelError, E2METRIC};
+use super::{e2_norm, CovGrad, CovGradError, Kernel, KernelError, E2METRIC};
 use nalgebra::base::storage::Storage;
 use nalgebra::{
     base::constraint::{SameNumberOfColumns, ShapeConstraint},
@@ -113,7 +113,7 @@ impl Kernel for RationalQuadratic {
     fn covariance_with_gradient<R, C, S>(
         &self,
         x: &Matrix<f64, R, C, S>,
-    ) -> (DMatrix<f64>, CovGrad)
+    ) -> Result<(DMatrix<f64>, CovGrad), CovGradError>
     where
         R: Dim,
         C: Dim,
@@ -146,7 +146,7 @@ impl Kernel for RationalQuadratic {
             // diag
             cov[(i, i)] = 1.0;
         }
-        (cov, grad)
+        Ok((cov, grad))
     }
 }
 
@@ -184,7 +184,7 @@ mod tests {
         );
         assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
 
-        let (cov, grad) = kernel.covariance_with_gradient(&x);
+        let (cov, grad) = kernel.covariance_with_gradient(&x)?;
 
         let expected_cov = DMatrix::from_row_slice(
             2,
@@ -203,7 +203,8 @@ mod tests {
             2,
             2,
             &[0.0, eg_l, eg_l, 0.0, 0.0, eg_a, eg_a, 0.0],
-        );
+        )
+        .unwrap();
         assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
         assert!(grad.relative_eq(&expected_grad, 1E-8, 1E-8));
         Ok(())

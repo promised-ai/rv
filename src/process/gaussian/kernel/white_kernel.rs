@@ -1,4 +1,4 @@
-use super::{CovGrad, Kernel, KernelError};
+use super::{CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
@@ -93,7 +93,7 @@ impl Kernel for WhiteKernel {
     fn covariance_with_gradient<R, C, S>(
         &self,
         x: &Matrix<f64, R, C, S>,
-    ) -> (DMatrix<f64>, CovGrad)
+    ) -> Result<(DMatrix<f64>, CovGrad), CovGradError>
     where
         R: Dim,
         C: Dim,
@@ -101,12 +101,12 @@ impl Kernel for WhiteKernel {
     {
         let n = x.nrows();
         let cov = DMatrix::from_diagonal_element(n, n, self.noise_level);
-        let grad = CovGrad::new(&[DMatrix::from_diagonal_element(
+        let grad = CovGrad::new_unchecked(&[DMatrix::from_diagonal_element(
             x.nrows(),
             x.nrows(),
             self.noise_level,
         )]);
-        (cov, grad)
+        Ok((cov, grad))
     }
 }
 
@@ -116,7 +116,7 @@ mod tests {
     use crate::test::relative_eq;
 
     #[test]
-    fn white_kernel() {
+    fn white_kernel() -> Result<(), KernelError> {
         const PI: f64 = std::f64::consts::PI;
         let kernel = WhiteKernel::new(PI).expect("given value is valid");
 
@@ -131,12 +131,14 @@ mod tests {
         let expected_cov = DMatrix::from_row_slice(2, 2, &[0.0, 0.0, 0.0, 0.0]);
         assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
 
-        let (cov, grad) = kernel.covariance_with_gradient(&x);
+        let (cov, grad) = kernel.covariance_with_gradient(&x)?;
 
         let expected_cov = DMatrix::from_row_slice(2, 2, &[PI, 0.0, 0.0, PI]);
 
-        let expected_grad = CovGrad::from_row_slices(2, 1, &[PI, 0.0, 0.0, PI]);
+        let expected_grad =
+            CovGrad::from_row_slices(2, 1, &[PI, 0.0, 0.0, PI]).unwrap();
         assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
         assert!(grad.relative_eq(&expected_grad, 1E-8, 1E-8));
+        Ok(())
     }
 }

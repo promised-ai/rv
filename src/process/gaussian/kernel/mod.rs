@@ -73,7 +73,7 @@ pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
     fn covariance_with_gradient<R, C, S>(
         &self,
         x: &Matrix<f64, R, C, S>,
-    ) -> (DMatrix<f64>, CovGrad)
+    ) -> Result<(DMatrix<f64>, CovGrad), CovGradError>
     where
         R: Dim,
         C: Dim,
@@ -104,6 +104,8 @@ pub enum KernelError {
     ExtraniousParameters(usize),
     /// Too few parameters provided
     MisingParameters(usize),
+    /// An error in computing cov-grad
+    CovGrad(CovGradError),
 }
 
 impl std::error::Error for KernelError {}
@@ -129,7 +131,16 @@ impl std::fmt::Display for KernelError {
             Self::MisingParameters(n) => {
                 writeln!(f, "Missing {} parameters", n)
             }
+            Self::CovGrad(e) => {
+                writeln!(f, "Covariance Gradient couldn't be computed: {}", e)
+            }
         }
+    }
+}
+
+impl From<CovGradError> for KernelError {
+    fn from(e: CovGradError) -> Self {
+        Self::CovGrad(e)
     }
 }
 

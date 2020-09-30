@@ -1,4 +1,4 @@
-use super::{CovGrad, Kernel, KernelError};
+use super::{CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
@@ -120,19 +120,19 @@ where
     fn covariance_with_gradient<R, C, S>(
         &self,
         x: &Matrix<f64, R, C, S>,
-    ) -> (DMatrix<f64>, CovGrad)
+    ) -> Result<(DMatrix<f64>, CovGrad), CovGradError>
     where
         R: Dim,
         C: Dim,
         S: Storage<f64, R, C>,
     {
-        let (cov_a, grad_a) = self.a.covariance_with_gradient(x);
-        let (cov_b, grad_b) = self.b.covariance_with_gradient(x);
+        let (cov_a, grad_a) = self.a.covariance_with_gradient(x)?;
+        let (cov_b, grad_b) = self.b.covariance_with_gradient(x)?;
 
         let new_cov = cov_a + cov_b;
 
-        let new_grad = grad_a.concat_cols(&grad_b);
-        (new_cov, new_grad)
+        let new_grad = grad_a.concat_cols(&grad_b)?;
+        Ok((new_cov, new_grad))
     }
 }
 
@@ -248,21 +248,21 @@ where
     fn covariance_with_gradient<R, C, S>(
         &self,
         x: &Matrix<f64, R, C, S>,
-    ) -> (DMatrix<f64>, CovGrad)
+    ) -> Result<(DMatrix<f64>, CovGrad), CovGradError>
     where
         R: Dim,
         C: Dim,
         S: Storage<f64, R, C>,
     {
-        let (cov_a, grad_a) = self.a.covariance_with_gradient(x);
-        let (cov_b, grad_b) = self.b.covariance_with_gradient(x);
+        let (cov_a, grad_a) = self.a.covariance_with_gradient(x)?;
+        let (cov_b, grad_b) = self.b.covariance_with_gradient(x)?;
 
         let new_cov = cov_a.component_mul(&cov_b);
         let new_grad = grad_a
-            .component_mul(&cov_b)
-            .concat_cols(&grad_b.component_mul(&cov_a));
+            .component_mul(&cov_b)?
+            .concat_cols(&grad_b.component_mul(&cov_a)?)?;
 
-        (new_cov, new_grad)
+        Ok((new_cov, new_grad))
     }
 }
 
@@ -282,12 +282,12 @@ mod tests {
 
         let expected_cov = DMatrix::from_row_slice(2, 2, &[5.0, 3.0, 3.0, 5.0]);
 
-        let expected_grad = CovGrad::new(&[
+        let expected_grad = CovGrad::new_unchecked(&[
             DMatrix::from_row_slice(2, 2, &[3.0, 3.0, 3.0, 3.0]),
             DMatrix::from_row_slice(2, 2, &[2.0, 0.0, 0.0, 2.0]),
         ]);
 
-        let (cov, grad) = kernel.covariance_with_gradient(&x);
+        let (cov, grad) = kernel.covariance_with_gradient(&x)?;
         assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7));
         assert!(grad.relative_eq(&expected_grad, 1E-7, 1E-7));
         Ok(())
@@ -320,7 +320,7 @@ mod tests {
             &[3.0, 2.556431366898634, 2.556431366898634, 3.0],
         );
 
-        let expected_grad = CovGrad::new(&[
+        let expected_grad = CovGrad::new_unchecked(&[
             DMatrix::from_row_slice(
                 2,
                 2,
@@ -333,7 +333,7 @@ mod tests {
             ),
         ]);
 
-        let (cov, grad) = kernel.covariance_with_gradient(&x);
+        let (cov, grad) = kernel.covariance_with_gradient(&x)?;
         assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7));
         assert!(grad.relative_eq(&expected_grad, 1E-7, 1E-7));
         Ok(())
