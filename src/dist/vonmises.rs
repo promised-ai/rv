@@ -1,5 +1,5 @@
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::consts::LN_2PI;
 use crate::impl_display;

@@ -1,6 +1,6 @@
 //! Skellam distribution on signed integers
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::dist::Poisson;
 use crate::impl_display;

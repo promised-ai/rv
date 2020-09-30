@@ -28,13 +28,13 @@ impl ExpSineSquaredKernel {
     ) -> Result<Self, KernelError> {
         if length_scale <= 0.0 {
             Err(KernelError::ParameterOutOfBounds {
-                name: "length_scale",
+                name: "length_scale".to_string(),
                 given: length_scale,
                 bounds: (0.0, f64::INFINITY),
             })
         } else if periodicity <= 0.0 {
             Err(KernelError::ParameterOutOfBounds {
-                name: "periodicity",
+                name: "periodicity".to_string(),
                 given: periodicity,
                 bounds: (0.0, f64::INFINITY),
             })

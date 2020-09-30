@@ -27,13 +27,13 @@ impl RationalQuadratic {
     pub fn new(scale: f64, mixture: f64) -> Result<Self, KernelError> {
         if scale <= 0.0 {
             Err(KernelError::ParameterOutOfBounds {
-                name: "scale",
+                name: "scale".to_string(),
                 given: scale,
                 bounds: (0.0, f64::INFINITY),
             })
         } else if mixture <= 0.0 {
             Err(KernelError::ParameterOutOfBounds {
-                name: "mixture",
+                name: "mixture".to_string(),
                 given: mixture,
                 bounds: (0.0, f64::INFINITY),
             })

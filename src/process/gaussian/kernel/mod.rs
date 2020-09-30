@@ -5,6 +5,9 @@ use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
 use std::f64;
 
+#[cfg(feature = "serde1")]
+use serde::{Deserialize, Serialize};
+
 mod covgrad;
 pub use covgrad::*;
 
@@ -87,12 +90,13 @@ pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
 
 /// Errors from Kernel construction
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum KernelError {
     /// Lower bounds must be lower that upper bounds
     InproperBounds(f64, f64),
     /// Parameter Out of Bounds
     ParameterOutOfBounds {
-        name: &'static str,
+        name: String,
         given: f64,
         bounds: (f64, f64),
     },

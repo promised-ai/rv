@@ -1,6 +1,6 @@
 //! Categorical distribution of x<sub>k</sub> in {0, 1, ..., k-1}
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::data::{CategoricalDatum, CategoricalSuffStat};
 use crate::impl_display;

@@ -1,15 +1,11 @@
 //! Gaussian Processes
 
-use argmin::solver::{
-    gradientdescent::SteepestDescent, linesearch::MoreThuenteLineSearch,
-    quasinewton::LBFGS,
-};
+use argmin::solver::{linesearch::MoreThuenteLineSearch, quasinewton::LBFGS};
 use log::warn;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dynamic};
-use rand::Rng;
-
 use once_cell::sync::OnceCell;
+use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -256,7 +252,7 @@ where
 
     fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Param {
         let n = self.parameters().len();
-        (0..n).map(|_| rng.gen_range(1E-5, 1E5)).collect()
+        (0..n).map(|_| rng.gen_range(-5.0, 5.0)).collect()
     }
 }
 

@@ -20,7 +20,7 @@ impl WhiteKernel {
     pub fn new(noise_level: f64) -> Result<Self, KernelError> {
         if noise_level <= 0.0 {
             return Err(KernelError::ParameterOutOfBounds {
-                name: "noise_level",
+                name: "noise_level".to_string(),
                 given: noise_level,
                 bounds: (0.0, std::f64::INFINITY),
             });

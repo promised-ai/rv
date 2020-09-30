@@ -18,7 +18,7 @@ impl ConstantKernel {
     pub fn new(value: f64) -> Result<Self, KernelError> {
         if value <= 0.0 {
             Err(KernelError::ParameterOutOfBounds {
-                name: "value",
+                name: "value".to_string(),
                 given: value,
                 bounds: (0.0, std::f64::INFINITY),
             })

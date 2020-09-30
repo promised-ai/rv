@@ -28,7 +28,7 @@ impl RBFKernel {
     pub fn new(length_scale: f64) -> Result<Self, KernelError> {
         if length_scale <= 0.0 {
             Err(KernelError::ParameterOutOfBounds {
-                name: "length_scale",
+                name: "length_scale".to_string(),
                 given: length_scale,
                 bounds: (0.0, std::f64::INFINITY),
             })

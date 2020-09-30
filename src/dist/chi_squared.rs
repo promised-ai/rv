@@ -1,6 +1,6 @@
 //! Χ</sup>2</sup> over x in (0, ∞)
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;

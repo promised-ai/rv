@@ -1,6 +1,6 @@
 //! Gaussian/Normal distribution over x in (-∞, ∞)
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use once_cell::sync::OnceCell;
 use rand::Rng;
