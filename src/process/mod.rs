@@ -178,11 +178,9 @@ where
     type Float = f64;
 
     fn apply(&self, param: &Self::Param) -> Result<Self::Output, ArgminError> {
-        println!("param = {:?}", param);
         let lnm = self.process.ln_m_with_params(param.clone())
             .map(|x| -x.0)
             .map_err(|_| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)));
-        println!("ln_m = {:?}", lnm);
         lnm
     }
 
@@ -190,12 +188,10 @@ where
         &self,
         param: &Self::Param,
     ) -> Result<Self::Param, ArgminError> {
-        println!("param = {:?}", param);
         let grad = self.process
             .ln_m_with_params(param.clone())
             .map(|x| Self::Param::from_iter(x.1.into_iter().map(|y| -y)))
             .map_err(|_| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)));
-        println!("grad = {:?}", grad);
         grad
     }
 }
