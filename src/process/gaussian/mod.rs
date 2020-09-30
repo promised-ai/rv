@@ -643,8 +643,6 @@ mod tests {
         let gp = gp.optimize(200, 10, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
 
-        println!("opt_params = {:?}", opt_params);
-
         assert!(relative_eq(
             opt_params,
             vec![0.19980403, 0.69058965],

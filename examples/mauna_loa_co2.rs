@@ -59,16 +59,16 @@ pub fn main() -> io::Result<()> {
     println!("Loaded {} datapoints", xs.len());
 
     // Create GaussianProcess
-    let kernel = ConstantKernel::new_unchecked(2.44_f64.powi(2))
-        * RBFKernel::new_unchecked(48.1)
-        + ConstantKernel::new_unchecked(0.535_f64.powi(2))
-            * RBFKernel::new_unchecked(4.02e+3)
-            * ExpSineSquaredKernel::new_unchecked(24.4, 1.03)
-        + ConstantKernel::new_unchecked(0.239_f64.powi(2))
-            * RationalQuadratic::new_unchecked(14.9, 4.58e+03)
-        + ConstantKernel::new_unchecked(0.0119_f64.powi(2))
-            * RBFKernel::new_unchecked(1.76e+03)
-        + WhiteKernel::new_unchecked(0.0147);
+    let kernel = ConstantKernel::new_unchecked(2.59_f64.powi(2))
+        * RBFKernel::new_unchecked(51.0)
+        + ConstantKernel::new_unchecked(0.257_f64.powi(2))
+            * RBFKernel::new_unchecked(137.0)
+            * ExpSineSquaredKernel::new_unchecked(2.15, 1.0)
+        + ConstantKernel::new_unchecked(0.118_f64.powi(2))
+            * RationalQuadratic::new_unchecked(2.32, 70.6)
+        + ConstantKernel::new_unchecked(0.03_f64.powi(2))
+            * RBFKernel::new_unchecked(1.01)
+        + WhiteKernel::new_unchecked(0.001);
 
     println!("kernel = {:#?}", kernel);
     // These parameters define the kernel, keep in mind these are in log-scale
