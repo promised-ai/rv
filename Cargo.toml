@@ -32,7 +32,7 @@ special = "0.8"
 
 [dev-dependencies]
 assert = "0.7"
-criterion = "0.2"
+criterion = "0.3"
 indoc = "1"
 serde_yaml = "0.8"
 approx = "0.3"
