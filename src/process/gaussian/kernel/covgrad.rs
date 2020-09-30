@@ -177,20 +177,12 @@ impl Index<usize> for CovGrad {
     type Output = DMatrix<f64>;
 
     fn index(&self, k: usize) -> &Self::Output {
-        assert!(
-            k < self.slices.len(),
-            "The requested value was outside of available values"
-        );
         &self.slices[k]
     }
 }
 
 impl IndexMut<usize> for CovGrad {
     fn index_mut(&mut self, k: usize) -> &mut Self::Output {
-        assert!(
-            k < self.slices.len(),
-            "The requested value was outside of available values"
-        );
         &mut self.slices[k]
     }
 }
@@ -199,10 +191,6 @@ impl Index<(usize, usize, usize)> for CovGrad {
     type Output = f64;
 
     fn index(&self, (i, j, k): (usize, usize, usize)) -> &Self::Output {
-        assert!(
-            k < self.slices.len(),
-            "The requested value was outside of available values"
-        );
         &self.slices[k][(i, j)]
     }
 }
@@ -212,10 +200,6 @@ impl IndexMut<(usize, usize, usize)> for CovGrad {
         &mut self,
         (i, j, k): (usize, usize, usize),
     ) -> &mut Self::Output {
-        assert!(
-            k < self.slices.len(),
-            "The requested value was outside of available values"
-        );
         &mut self.slices[k][(i, j)]
     }
 }

@@ -96,8 +96,11 @@ pub enum KernelError {
     InproperBounds(f64, f64),
     /// Parameter Out of Bounds
     ParameterOutOfBounds {
+        /// Name of parameter
         name: String,
+        /// Value given
         given: f64,
+        /// Lower and upper bounds on value
         bounds: (f64, f64),
     },
     /// Too many parameters provided
