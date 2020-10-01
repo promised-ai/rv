@@ -45,8 +45,10 @@ pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
         S1: Storage<f64, R1, C1>,
         S2: Storage<f64, R2, C2>,
         ShapeConstraint: SameNumberOfColumns<C1, C2>;
+
     /// Reports if the given kernel function is stationary.
     fn is_stationary(&self) -> bool;
+
     /// Returns the diagnal of the kernel(x, x)
     fn diag<R, C, S>(&self, x: &Matrix<f64, R, C, S>) -> DVector<f64>
     where

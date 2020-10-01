@@ -80,6 +80,7 @@ impl Kernel for ExpSineSquaredKernel {
             (-2.0 * s2 / l2).exp()
         })
     }
+
     fn is_stationary(&self) -> bool {
         true
     }

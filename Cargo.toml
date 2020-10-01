@@ -11,7 +11,7 @@ categories = ["science"]
 edition = "2018"
 
 [features]
-serde1 = ["nalgebra/serde-serialize"]
+serde1 = ["serde", "nalgebra/serde-serialize"]
 
 [badges]
 gitlab = { repository = "baxe/rv", tag = "v0.10.3" }
@@ -27,7 +27,7 @@ num = "0.3"
 once_cell = "1"
 rand = { version = "0.7", features = ["small_rng"] }
 rand_distr = "0.2"
-serde = {version = "1", features = ["derive"]}
+serde = {version = "1", features = ["derive"], optional = true}
 special = "0.8"
 
 [dev-dependencies]

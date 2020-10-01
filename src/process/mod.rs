@@ -7,7 +7,6 @@ use argmin::prelude::Executor;
 use nalgebra::DVector;
 use nalgebra::Scalar;
 use rand::Rng;
-use serde::{Deserialize, Serialize};
 
 use crate::traits::Rv;
 
@@ -16,8 +15,8 @@ pub mod gaussian;
 /// Parameters Much implement this trait
 pub trait Param:
     Clone
-    + Serialize
-    + for<'de> Deserialize<'de>
+    + Into<Vec<f64>>
+    + From<Vec<f64>>
     + IntoIterator<Item = f64>
     + FromIterator<f64>
     + Debug
@@ -26,8 +25,8 @@ pub trait Param:
 
 impl<P> Param for P where
     P: Clone
-        + Serialize
-        + for<'de> Deserialize<'de>
+        + Into<Vec<f64>>
+        + From<Vec<f64>>
         + IntoIterator<Item = f64>
         + FromIterator<f64>
         + Debug
@@ -116,15 +115,16 @@ where
             let solver = Self::generate_solver();
             // TODO: This is waseful, we don't need to copy
             let op = RandomProcessMleOp::new(self.clone());
-            let maybe_res =
-                Executor::new(op, solver, params).max_iters(max_iters).run();
+            let maybe_res = Executor::new(op, solver, params.into())
+                .max_iters(max_iters)
+                .run();
 
             match maybe_res {
                 Ok(res) => {
                     successes += 1;
                     if best_cost > res.state.best_cost {
                         best_cost = res.state.best_cost;
-                        best_params = res.state.best_param;
+                        best_params = res.state.best_param.into();
                     }
                 }
                 Err(e) => {
@@ -171,27 +171,25 @@ where
     P: RandomProcessMle<X>,
     X: Scalar + Debug,
 {
-    type Param = <P as RandomProcess<X>>::Param;
+    type Param = Vec<f64>;
     type Output = f64;
     type Hessian = ();
     type Jacobian = ();
     type Float = f64;
 
     fn apply(&self, param: &Self::Param) -> Result<Self::Output, ArgminError> {
-        let lnm = self.process.ln_m_with_params(param.clone())
+        self.process.ln_m_with_params(param.clone().into())
             .map(|x| -x.0)
-            .map_err(|_| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)));
-        lnm
+            .map_err(|_| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
     }
 
     fn gradient(
         &self,
         param: &Self::Param,
     ) -> Result<Self::Param, ArgminError> {
-        let grad = self.process
-            .ln_m_with_params(param.clone())
+        self.process
+            .ln_m_with_params(param.clone().into())
             .map(|x| Self::Param::from_iter(x.1.into_iter().map(|y| -y)))
-            .map_err(|_| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)));
-        grad
+            .map_err(|_| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
     }
 }
