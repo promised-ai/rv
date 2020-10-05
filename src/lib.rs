@@ -77,6 +77,7 @@ pub mod dist;
 pub mod misc;
 mod model;
 pub mod prelude;
+#[cfg(feature = "process")]
 pub mod process;
 #[cfg(test)]
 pub(crate) mod test;

@@ -7,6 +7,7 @@ use argmin::prelude::Executor;
 use nalgebra::DVector;
 use nalgebra::Scalar;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 
 use crate::traits::Rv;
 
@@ -15,8 +16,8 @@ pub mod gaussian;
 /// Parameters Much implement this trait
 pub trait Param:
     Clone
-    + Into<Vec<f64>>
-    + From<Vec<f64>>
+    + for<'de> Deserialize<'de>
+    + Serialize
     + IntoIterator<Item = f64>
     + FromIterator<f64>
     + Debug
@@ -25,8 +26,8 @@ pub trait Param:
 
 impl<P> Param for P where
     P: Clone
-        + Into<Vec<f64>>
-        + From<Vec<f64>>
+        + for<'de> Deserialize<'de>
+        + Serialize
         + IntoIterator<Item = f64>
         + FromIterator<f64>
         + Debug
@@ -171,7 +172,7 @@ where
     P: RandomProcessMle<X>,
     X: Scalar + Debug,
 {
-    type Param = Vec<f64>;
+    type Param = <P as RandomProcess<X>>::Param;
     type Output = f64;
     type Hessian = ();
     type Jacobian = ();

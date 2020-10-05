@@ -45,6 +45,7 @@ macro_rules! test_basic_impls {
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 /// Assert Relative Eq for sequences
 pub fn relative_eq<T, I>(
     left: I,
