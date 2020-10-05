@@ -6,6 +6,7 @@ use rv::process::{RandomProcess, RandomProcessMle};
 
 /// Example of a noiseless Gaussian process.
 /// Setting the noise model to a uniform 0 noise may cause numerical instability issues.
+#[cfg(feature = "process")]
 pub fn noiseless() {
     println!("Starting noiseless");
     let mut small_rng = SmallRng::seed_from_u64(0xABCD);
@@ -30,6 +31,7 @@ pub fn noiseless() {
 }
 
 /// Example of a noisy gaussian process where the uncertainty of each data point is known.
+#[cfg(feature = "process")]
 pub fn noisy() {
     println!("Starting noisy");
     let mut small_rng = SmallRng::seed_from_u64(0xABCD);
@@ -74,7 +76,13 @@ pub fn noisy() {
     println!("ln_m = {}", gp.ln_m());
 }
 
+#[cfg(feature = "process")]
 pub fn main() {
     noiseless();
     noisy();
+}
+
+#[cfg(not(feature = "process"))]
+pub fn main() {
+    panic!("feature \"process\" required to run this example");
 }

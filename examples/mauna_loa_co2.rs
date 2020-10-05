@@ -26,17 +26,17 @@
 //! # Reference
 //! Keeling, R. F., Piper, S. C., Bollenbacher, A. F., and Walker, J. S. Atmospheric Carbon Dioxide
 //! Record from Mauna Loa (1958-2008). United States: N. p., 2009. Web. doi:10.3334/CDIAC/atg.035.
+#[cfg(feature = "process")]
+pub fn main() -> std::io::Result<()> {
+    use nalgebra::{DMatrix, DVector};
+    use rand::{rngs::SmallRng, SeedableRng};
+    use rv::process::gaussian::kernel::*;
+    use rv::process::gaussian::{GaussianProcess, NoiseModel};
+    use rv::process::{RandomProcess, RandomProcessMle};
+    use std::fs::File;
+    use std::io;
+    use std::io::prelude::*;
 
-use nalgebra::{DMatrix, DVector};
-use rand::{rngs::SmallRng, SeedableRng};
-use rv::process::gaussian::kernel::*;
-use rv::process::gaussian::{GaussianProcess, NoiseModel};
-use rv::process::{RandomProcess, RandomProcessMle};
-use std::fs::File;
-use std::io;
-use std::io::prelude::*;
-
-pub fn main() -> io::Result<()> {
     // Load the data from the data-file
     let file = File::open("./examples/simplified_mauna_loa_co2.txt")?;
     let reader = io::BufReader::new(file);
@@ -99,4 +99,9 @@ pub fn main() -> io::Result<()> {
     println!("ln_m = {}", gp.ln_m());
 
     Ok(())
+}
+
+#[cfg(not(feature = "process"))]
+pub fn main() {
+    panic!("feature \"process\" required to run this example")
 }

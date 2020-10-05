@@ -11,7 +11,6 @@ categories = ["science"]
 edition = "2018"
 
 [features]
-default = ["process"]
 serde1 = ["serde", "nalgebra/serde-serialize"]
 process = ["serde", "nalgebra/serde-serialize", "argmin"]
 
