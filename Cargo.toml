@@ -1,6 +1,6 @@
 [package]
 name = "rv"
-version = "0.10.2"
+version = "0.10.3"
 authors = ["Baxter Eaves", "Michael Schmidt"]
 description = "Random variables"
 repository = "https://gitlab.com/baxe/rv"
@@ -14,26 +14,26 @@ edition = "2018"
 serde1 = ["serde", "serde_derive", "nalgebra/serde-serialize"]
 
 [badges]
-gitlab = { repository = "baxe/rv", tag = "v0.10.2" }
+gitlab = { repository = "baxe/rv", tag = "v0.10.3" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-num = "0.2"
+num = "0.3"
 rand = "0.7"
 special = "0.8"
 nalgebra = "0.20"
 doc-comment = "0.3"
 rand_distr = "0.2"
 once_cell = "1"
-lru = "0.4"
+lru = "0.6"
 
 serde = {version = "1", optional = true, features=["derive"]}
 serde_derive = {version = "1", optional = true}
 
 [dev-dependencies]
 assert = "0.7"
-criterion = "0.2"
-indoc = "0.3"
+criterion = "0.3"
+indoc = "1"
 serde_yaml = "0.8"
 
 
