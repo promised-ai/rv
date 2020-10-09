@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.4
+- Updated math in `NormalGamma` and `GaussianSuffStat` to reduce rounding errors
+
 ## 0.10.3
 - Updated dependencies to get past yanked dependency issue.
 

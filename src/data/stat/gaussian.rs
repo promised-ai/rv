@@ -59,7 +59,7 @@ impl GaussianSuffStat {
     #[inline]
     pub fn sum_x_sq(&self) -> f64 {
         let nf = self.n as f64;
-        self.sx + self.mean() * self.mean() * nf
+        self.mean().powi(2).mul_add(nf, self.sx)
     }
 }
 
@@ -85,7 +85,6 @@ macro_rules! impl_gaussian_suffstat {
             }
         }
 
-        // TODO: store in a more numerically stable form
         impl SuffStat<$kind> for GaussianSuffStat {
             fn n(&self) -> usize {
                 self.n
@@ -96,9 +95,9 @@ macro_rules! impl_gaussian_suffstat {
 
                 self.n += 1;
 
-                let mean_xn = self.mean + (xf - self.mean) / (self.n as f64);
-
-                self.sx += (xf - self.mean) * (xf - mean_xn);
+                let mean_xn = (xf - self.mean)
+                    .mul_add((self.n as f64).recip(), self.mean);
+                self.sx = (xf - self.mean).mul_add(xf - mean_xn, self.sx);
                 self.mean = mean_xn;
             }
 
@@ -109,7 +108,7 @@ macro_rules! impl_gaussian_suffstat {
                     let n = self.n as f64;
                     let nm1 = (self.n - 1) as f64;
 
-                    let old_mean = n / nm1 * self.mean - xf / nm1;
+                    let old_mean = (n / nm1).mul_add(self.mean, -xf / nm1);
 
                     self.sx -= (xf - old_mean) * (xf - self.mean);
                     self.mean = old_mean;
