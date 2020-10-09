@@ -318,6 +318,13 @@ impl Rv<Gaussian> for NormalGamma {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
         // NOTE: The parameter errors in this fn shouldn't happen if the prior
         // parameters are valid.
+        // BAX: The problem is, in another library, I've been having trouble
+        // with the posterior having invalid parameters, or with a valid
+        // posterior drawing Inf sigma, which I suppose means it is drawing a
+        // zero rho. Since things seem to go wrong in normal use, I'm using the
+        // `new` constructors here rather than `new_unchecked` because I want to
+        // catch things when they go wrong here so they don't spread. Of course,
+        // all this input validation hurts performance 😞.
         let rho: f64 = Gamma::new(self.v / 2.0, self.s / 2.0)
             .expect("Invalid σ posterior params")
             .draw(&mut rng);

@@ -25,18 +25,26 @@ macro_rules! extract_stat_then {
 }
 
 fn ln_z(r: f64, s: f64, v: f64) -> f64 {
-    (v + 1.0) / 2.0 * LN_2 + HALF_LN_PI - 0.5 * r.ln() - (v / 2.0) * s.ln()
-        + (v / 2.0).ln_gamma().0
+    // This is what is should be in clearer, normal, operations
+    // (v + 1.0) / 2.0 * LN_2 + HALF_LN_PI - 0.5 * r.ln() - (v / 2.0) * s.ln()
+    //     + (v / 2.0).ln_gamma().0
+    // ... and here is what is is when we use mul_add to reduce rounding errors
+    let half_v = 0.5 * v;
+    (half_v + 0.5).mul_add(LN_2, HALF_LN_PI)
+        - 0.5f64.mul_add(r.ln(), half_v.mul_add(s.ln(), -half_v.ln_gamma().0))
 }
 
 fn posterior_from_stat(
     ng: &NormalGamma,
     stat: &GaussianSuffStat,
 ) -> NormalGamma {
-    let r = ng.r() + stat.n() as f64;
-    let v = ng.v() + stat.n() as f64;
-    let m = (ng.m() * ng.r() + stat.sum_x()) / r;
-    let s = ng.s() + stat.sum_x_sq() + ng.r() * ng.m() * ng.m() - r * m * m;
+    let nf = stat.n() as f64;
+    let r = ng.r() + nf;
+    let v = ng.v() + nf;
+    let m = ng.m().mul_add(ng.r(), stat.sum_x()) / r;
+    let s = ng.s()
+        + stat.sum_x_sq()
+        + ng.r().mul_add(ng.m().powi(2), -r * m.powi(2));
     NormalGamma::new(m, r, s, v).expect("Invalid posterior params.")
 }
 
@@ -53,7 +61,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
             let post = posterior_from_stat(&self, &stat);
             let lnz_0 = ln_z(self.r(), self.s(), self.v());
             let lnz_n = ln_z(post.r(), post.s(), post.v());
-            -(stat.n() as f64) * HALF_LN_2PI + lnz_n - lnz_0
+            (-(stat.n() as f64)).mul_add(HALF_LN_2PI, lnz_n) - lnz_0
         })
     }
 
