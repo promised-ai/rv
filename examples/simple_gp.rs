@@ -1,8 +1,10 @@
 use nalgebra::{DMatrix, DVector};
 use rand::{rngs::SmallRng, SeedableRng};
-use rv::process::gaussian::kernel::*;
-use rv::process::gaussian::{GaussianProcess, NoiseModel};
-use rv::process::{RandomProcess, RandomProcessMle};
+#[cfg(feature = "process")]
+use rv::process::{
+    gaussian::{kernel::*, GaussianProcess, NoiseModel},
+    RandomProcess, RandomProcessMle,
+};
 
 /// Example of a noiseless Gaussian process.
 /// Setting the noise model to a uniform 0 noise may cause numerical instability issues.

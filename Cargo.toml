@@ -1,6 +1,6 @@
 [package]
 name = "rv"
-version = "0.10.3"
+version = "0.10.5"
 authors = ["Baxter Eaves", "Michael Schmidt"]
 description = "Random variables"
 repository = "https://gitlab.com/baxe/rv"
@@ -15,7 +15,7 @@ serde1 = ["serde", "nalgebra/serde-serialize"]
 process = ["serde", "nalgebra/serde-serialize", "argmin"]
 
 [badges]
-gitlab = { repository = "baxe/rv", tag = "v0.10.3" }
+gitlab = { repository = "baxe/rv", tag = "v0.10.5" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
