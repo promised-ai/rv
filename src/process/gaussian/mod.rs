@@ -377,7 +377,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use self::kernel::{ConstantKernel, ProductKernel, RBFKernel};
+    use self::kernel::{ConstantKernel, ProductKernel, RBFKernel, SEardKernel};
     use super::*;
     use crate::test::relative_eq;
     use rand::rngs::SmallRng;

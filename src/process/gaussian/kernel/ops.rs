@@ -269,7 +269,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::process::gaussian::kernel::{
-        ConstantKernel, RBFKernel, WhiteKernel,
+        ConstantKernel, RBFKernel, SEardKernel, WhiteKernel,
     };
 
     use super::*;

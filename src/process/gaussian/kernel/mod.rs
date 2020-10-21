@@ -28,6 +28,8 @@ mod rational_quadratic;
 pub use self::rational_quadratic::*;
 mod exp_sin_squared;
 pub use self::exp_sin_squared::*;
+mod seard;
+pub use self::seard::*;
 
 /// Kernel Function
 pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
@@ -177,6 +179,7 @@ macro_rules! impl_mul_add {
 
 impl_mul_add!(ConstantKernel);
 impl_mul_add!(RBFKernel);
+impl_mul_add!(SEardKernel);
 impl_mul_add!(ExpSineSquaredKernel);
 impl_mul_add!(RationalQuadratic);
 impl_mul_add!(WhiteKernel);
