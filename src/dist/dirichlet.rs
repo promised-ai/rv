@@ -203,7 +203,7 @@ pub enum DirichletError {
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Dirichlet {
     /// A `Vec` of real numbers in (0, ∞)
-    alphas: Vec<f64>,
+    pub(crate) alphas: Vec<f64>,
 }
 
 impl From<SymmetricDirichlet> for Dirichlet {

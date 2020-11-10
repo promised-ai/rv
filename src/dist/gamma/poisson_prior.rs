@@ -34,6 +34,8 @@ macro_rules! impl_traits {
     ($kind: ty) => {
         impl ConjugatePrior<$kind, Poisson> for Gamma {
             type Posterior = Self;
+            type LnMCache = f64;
+            type LnPpCache = (f64, f64, f64);
 
             fn posterior(&self, x: &DataOrSuffStat<$kind, Poisson>) -> Self {
                 let (n, sum) = match x {
@@ -53,7 +55,17 @@ macro_rules! impl_traits {
                 Self::new(a, b).expect("Invalid posterior parameters")
             }
 
-            fn ln_m(&self, x: &DataOrSuffStat<$kind, Poisson>) -> f64 {
+            #[inline]
+            fn ln_m_cache(&self) -> Self::LnMCache {
+                let z0 = self.ln_gamma_shape() - self.shape() * self.ln_rate();
+                z0
+            }
+
+            fn ln_m_with_cache(
+                &self,
+                cache: &Self::LnMCache,
+                x: &DataOrSuffStat<$kind, Poisson>,
+            ) -> f64 {
                 let stat: PoissonSuffStat = match x {
                     DataOrSuffStat::Data(ref xs) => {
                         let mut stat = PoissonSuffStat::new();
@@ -68,24 +80,31 @@ macro_rules! impl_traits {
                     DataOrSuffStat::SuffStat(&stat);
                 let post = self.posterior(&data_or_suff);
 
-                let z0 = self.ln_gamma_shape() - self.shape() * self.ln_rate();
                 let zn = post.ln_gamma_shape() - post.shape() * post.ln_rate();
 
-                zn - z0 - stat.sum_ln_fact()
+                zn - cache - stat.sum_ln_fact()
             }
 
-            fn ln_pp(
+            #[inline]
+            fn ln_pp_cache(
                 &self,
-                y: &$kind,
                 x: &DataOrSuffStat<$kind, Poisson>,
-            ) -> f64 {
+            ) -> Self::LnPpCache {
                 let post = self.posterior(x);
                 let r = post.shape();
                 let p = 1.0 / (1.0 + post.rate());
+                (r, p, p.ln())
+            }
 
+            fn ln_pp_with_cache(
+                &self,
+                cache: &Self::LnPpCache,
+                y: &$kind,
+            ) -> f64 {
+                let (r, p, ln_p) = cache;
                 let k = f64::from(*y);
                 let bnp = ln_binom(k + r - 1.0, k);
-                bnp + (1.0 - p).ln() * r + k * p.ln()
+                bnp + (1.0 - p).ln() * r + k * ln_p
             }
         }
     };

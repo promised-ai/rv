@@ -717,16 +717,43 @@ pub trait ConjugatePrior<X, Fx>: Rv<Fx>
 where
     Fx: Rv<X> + HasSuffStat<X>,
 {
+    /// Type of the posterior distribution
     type Posterior: Rv<Fx>;
+    /// Type of the `ln_m` cache
+    type LnMCache;
+    /// Type of the `ln_pp` cache
+    type LnPpCache;
 
     /// Computes the posterior distribution from the data
     fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
 
     /// Log marginal likelihood
-    fn ln_m(&self, x: &DataOrSuffStat<X, Fx>) -> f64;
+    fn ln_m_cache(&self) -> Self::LnMCache;
+
+    /// Log marginal likelihood with supplied ln(norm)
+    fn ln_m_with_cache(
+        &self,
+        cache: &Self::LnMCache,
+        x: &DataOrSuffStat<X, Fx>,
+    ) -> f64;
+
+    /// Log marginal cache
+    fn ln_m(&self, x: &DataOrSuffStat<X, Fx>) -> f64 {
+        let cache = self.ln_m_cache();
+        self.ln_m_with_cache(&cache, &x)
+    }
 
     /// Log posterior predictive of y given x
-    fn ln_pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64;
+    fn ln_pp_cache(&self, x: &DataOrSuffStat<X, Fx>) -> Self::LnPpCache;
+
+    /// Log posterior predictive of y given x with supplied ln(norm)
+    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &X) -> f64;
+
+    /// Log posterior predictive of y given x
+    fn ln_pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64 {
+        let cache = self.ln_pp_cache(&x);
+        self.ln_pp_with_cache(&cache, &y)
+    }
 
     /// Marginal likelihood of x
     fn m(&self, x: &DataOrSuffStat<X, Fx>) -> f64 {

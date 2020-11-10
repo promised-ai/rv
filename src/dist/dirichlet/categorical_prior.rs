@@ -38,6 +38,9 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     for SymmetricDirichlet
 {
     type Posterior = Dirichlet;
+    type LnMCache = f64;
+    type LnPpCache = (Vec<f64>, f64);
+
     fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
         extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
             let alphas: Vec<f64> =
@@ -47,27 +50,44 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
         })
     }
 
-    fn ln_m(&self, x: &CategoricalData<X>) -> f64 {
+    #[inline]
+    fn ln_m_cache(&self) -> Self::LnMCache {
         let sum_alpha = self.alpha() * self.k() as f64;
+        let a = sum_alpha.ln_gamma().0;
+        let d = self.alpha().ln_gamma().0 * self.k() as f64;
+        let ln_norm = a - d;
+        ln_norm
+    }
+
+    fn ln_m_with_cache(
+        &self,
+        cache: &Self::LnMCache,
+        x: &CategoricalData<X>,
+    ) -> f64 {
+        let sum_alpha = self.alpha() * self.k() as f64;
+
         extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
             // terms
-            let a = sum_alpha.ln_gamma().0;
             let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
             let c = stat
                 .counts()
                 .iter()
                 .fold(0.0, |acc, &ct| acc + (self.alpha() + ct).ln_gamma().0);
-            let d = self.alpha().ln_gamma().0 * self.k() as f64;
 
-            a - b + c - d
+            b + c + cache
         })
     }
 
-    fn ln_pp(&self, y: &X, x: &CategoricalData<X>) -> f64 {
+    #[inline]
+    fn ln_pp_cache(&self, x: &CategoricalData<X>) -> Self::LnPpCache {
         let post = self.posterior(x);
         let norm = post.alphas().iter().fold(0.0, |acc, &a| acc + a);
+        (post.alphas, norm.ln())
+    }
+
+    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &X) -> f64 {
         let ix = y.into_usize();
-        post.alphas()[ix].ln() - norm.ln()
+        cache.0[ix].ln() - cache.1
     }
 }
 
@@ -84,6 +104,9 @@ impl Rv<Categorical> for Dirichlet {
 
 impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     type Posterior = Self;
+    type LnMCache = (f64, f64);
+    type LnPpCache = (Vec<f64>, f64);
+
     fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
         extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
             let alphas: Vec<f64> = self
@@ -97,31 +120,46 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
         })
     }
 
-    fn ln_m(&self, x: &CategoricalData<X>) -> f64 {
+    #[inline]
+    fn ln_m_cache(&self) -> Self::LnMCache {
         let sum_alpha = self.alphas().iter().fold(0.0, |acc, &a| acc + a);
+        let a = sum_alpha.ln_gamma().0;
+        let d = self
+            .alphas()
+            .iter()
+            .fold(0.0, |acc, &a| acc + a.ln_gamma().0);
+        (sum_alpha, a - d)
+    }
+
+    fn ln_m_with_cache(
+        &self,
+        cache: &Self::LnMCache,
+        x: &CategoricalData<X>,
+    ) -> f64 {
+        let (sum_alpha, ln_norm) = cache;
         extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
             // terms
-            let a = sum_alpha.ln_gamma().0;
             let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
             let c = self
                 .alphas()
                 .iter()
                 .zip(stat.counts().iter())
                 .fold(0.0, |acc, (&a, &ct)| acc + (a + ct).ln_gamma().0);
-            let d = self
-                .alphas()
-                .iter()
-                .fold(0.0, |acc, &a| acc + a.ln_gamma().0);
 
-            a - b + c - d
+            -b + c + ln_norm
         })
     }
 
-    fn ln_pp(&self, y: &X, x: &CategoricalData<X>) -> f64 {
+    #[inline]
+    fn ln_pp_cache(&self, x: &CategoricalData<X>) -> Self::LnPpCache {
         let post = self.posterior(x);
         let norm = post.alphas().iter().fold(0.0, |acc, &a| acc + a);
-        let ix: usize = y.into_usize();
-        post.alphas()[ix].ln() - norm.ln()
+        (post.alphas, norm.ln())
+    }
+
+    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &X) -> f64 {
+        let ix = y.into_usize();
+        cache.0[ix].ln() - cache.1
     }
 }
 
