@@ -1,5 +1,5 @@
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::data::Booleable;
 use crate::data::DataOrSuffStat;
@@ -72,38 +72,6 @@ impl BernoulliSuffStat {
 impl Default for BernoulliSuffStat {
     fn default() -> Self {
         BernoulliSuffStat::new()
-    }
-}
-
-impl SuffStat<bool> for BernoulliSuffStat {
-    fn n(&self) -> usize {
-        self.n
-    }
-
-    fn observe(&mut self, x: &bool) {
-        self.n += 1;
-        if *x {
-            self.k += 1
-        }
-    }
-
-    fn forget(&mut self, x: &bool) {
-        self.n -= 1;
-        if *x {
-            self.k -= 1
-        }
-    }
-}
-
-impl<'a> Into<DataOrSuffStat<'a, bool, Bernoulli>> for &'a BernoulliSuffStat {
-    fn into(self) -> DataOrSuffStat<'a, bool, Bernoulli> {
-        DataOrSuffStat::SuffStat(self)
-    }
-}
-
-impl<'a> Into<DataOrSuffStat<'a, bool, Bernoulli>> for &'a Vec<bool> {
-    fn into(self) -> DataOrSuffStat<'a, bool, Bernoulli> {
-        DataOrSuffStat::Data(self)
     }
 }
 

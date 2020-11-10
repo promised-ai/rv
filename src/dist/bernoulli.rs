@@ -1,6 +1,6 @@
 //! Bernoulli distribution of x in {0, 1}
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::data::{BernoulliSuffStat, Booleable};
 use crate::impl_display;
@@ -327,82 +327,6 @@ impl Median<f64> for Bernoulli {
 impl Variance<f64> for Bernoulli {
     fn variance(&self) -> Option<f64> {
         Some(self.p * (1.0 - self.p))
-    }
-}
-
-impl Rv<bool> for Bernoulli {
-    fn f(&self, x: &bool) -> f64 {
-        if *x {
-            self.p
-        } else {
-            1.0_f64 - self.p
-        }
-    }
-
-    fn ln_f(&self, x: &bool) -> f64 {
-        self.f(x).ln()
-    }
-
-    fn draw<R: Rng>(&self, rng: &mut R) -> bool {
-        let u = rand_distr::Open01;
-        let x: f64 = rng.sample(u);
-        x < self.p
-    }
-
-    fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<bool> {
-        let u = rand_distr::Open01;
-        (0..n)
-            .map(|_| {
-                let x: f64 = rng.sample(u);
-                x < self.p
-            })
-            .collect()
-    }
-}
-
-impl Support<bool> for Bernoulli {
-    fn supports(&self, _x: &bool) -> bool {
-        true
-    }
-}
-
-impl DiscreteDistr<bool> for Bernoulli {
-    fn pmf(&self, x: &bool) -> f64 {
-        self.f(x)
-    }
-
-    fn ln_pmf(&self, x: &bool) -> f64 {
-        self.ln_f(x)
-    }
-}
-
-impl Cdf<bool> for Bernoulli {
-    fn cdf(&self, x: &bool) -> f64 {
-        if *x {
-            1.0
-        } else {
-            self.q()
-        }
-    }
-}
-
-impl Mode<bool> for Bernoulli {
-    fn mode(&self) -> Option<bool> {
-        let q = self.q();
-        if self.p < q {
-            Some(false)
-        } else if (self.p - q).abs() < f64::EPSILON {
-            None
-        } else {
-            Some(true)
-        }
-    }
-}
-
-impl HasSuffStat<bool> for Bernoulli {
-    type Stat = BernoulliSuffStat;
-    fn empty_suffstat(&self) -> Self::Stat {
-        BernoulliSuffStat::new()
     }
 }
 

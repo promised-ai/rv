@@ -80,6 +80,20 @@ pub trait Booleable: Sized + Sync + Copy {
     fn try_into_bool(self) -> Option<bool>;
 }
 
+impl Booleable for bool {
+    fn into_bool(self) -> bool {
+        self
+    }
+
+    fn try_into_bool(self) -> Option<bool> {
+        Some(self)
+    }
+
+    fn from_bool(b: bool) -> Self {
+        b
+    }
+}
+
 macro_rules! impl_booleable {
     ($kind:ty) => {
         impl Booleable for $kind {

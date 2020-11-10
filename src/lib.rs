@@ -64,8 +64,6 @@
 //! // (true) given the observed flips (posterior predictive)?
 //! let p_heads = prior.pp(&true, &obs);
 //! ```
-#[cfg(feature = "serde1")]
-extern crate serde_derive;
 
 // Test the README
 use doc_comment::doctest;

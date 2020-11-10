@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.11.0
+- Added `_with_cache` variants to `ConjucatePrior` `ln_m` and `ln_pp` methods
+    for use cases where these methods are called many times in different data
+    without changing the underlying distribution. This also adds two more
+    associated types to the trait (`LnMCache` and `LnPpCache`), and one method
+    each to compute the caches.
+- Remove all references to `serde_derive` crate
+
+## 0.10.5
+- Added Gaussian processes
+-
 ## 0.10.4
 - Updated math in `NormalGamma` and `GaussianSuffStat` to reduce rounding errors
 

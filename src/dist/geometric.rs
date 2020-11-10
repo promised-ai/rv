@@ -1,6 +1,6 @@
 //! Possion distribution on unisgned integers
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::dist::Uniform;
 use crate::impl_display;

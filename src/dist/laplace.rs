@@ -1,6 +1,6 @@
 //! Laplace (double exponential) distribution
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;

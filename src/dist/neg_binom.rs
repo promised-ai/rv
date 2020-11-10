@@ -1,3 +1,6 @@
+#[cfg(feature = "serde1")]
+use serde::{Deserialize, Serialize};
+
 use crate::clone_cache_f64;
 use crate::dist::Poisson;
 use crate::misc::ln_binom;
@@ -5,9 +8,6 @@ use crate::traits::*;
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use std::fmt;
-
-#[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
 
 /// Negative Binomial distribution errors
 #[derive(Clone, Copy, Debug)]

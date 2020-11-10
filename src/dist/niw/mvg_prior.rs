@@ -34,7 +34,9 @@ fn ln_z(k: f64, df: usize, scale: &DMatrix<f64>) -> f64 {
 }
 
 impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
-    type Posterior = NormalInvWishart;
+    type Posterior = Self;
+    type LnMCache = f64;
+    type LnPpCache = (Self, f64);
 
     fn posterior(&self, x: &MvgData) -> NormalInvWishart {
         if x.n() == 0 {
@@ -59,25 +61,41 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         })
     }
 
-    fn ln_m(&self, x: &MvgData) -> f64 {
-        let post = self.posterior(&x);
-        let z0 = ln_z(self.k(), self.df(), self.scale());
-        let zn = ln_z(post.k(), post.df(), post.scale());
+    #[inline]
+    fn ln_m_cache(&self) -> f64 {
+        ln_z(self.k(), self.df(), self.scale())
+    }
 
+    fn ln_m_with_cache(&self, cache: &Self::LnMCache, x: &MvgData) -> f64 {
+        let z0 = *cache;
+        let post = self.posterior(&x);
+        let zn = ln_z(post.k(), post.df(), post.scale());
         let nd: f64 = (self.ndims() as f64) * (x.n() as f64);
 
         zn - z0 - nd / 2.0 * LN_2PI
     }
 
-    fn ln_pp(&self, y: &DVector<f64>, x: &MvgData) -> f64 {
+    #[inline]
+    fn ln_pp_cache(&self, x: &MvgData) -> Self::LnPpCache {
+        let post = self.posterior(&x);
+        let zn = ln_z(post.k(), post.df(), post.scale());
+        (post, zn)
+    }
+
+    fn ln_pp_with_cache(
+        &self,
+        cache: &Self::LnPpCache,
+        y: &DVector<f64>,
+    ) -> f64 {
+        let post = &cache.0;
+        let zn = cache.1;
+
         let mut y_stat = MvGaussianSuffStat::new(self.ndims());
         y_stat.observe(&y);
         let y_packed = DataOrSuffStat::SuffStat(&y_stat);
 
-        let post = self.posterior(&x);
         let pred = post.posterior(&y_packed);
 
-        let zn = ln_z(post.k(), post.df(), post.scale());
         let zm = ln_z(pred.k(), pred.df(), pred.scale());
 
         let d: f64 = self.ndims() as f64;
