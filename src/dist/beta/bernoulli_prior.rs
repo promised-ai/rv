@@ -54,7 +54,7 @@ impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
 
     fn ln_m_with_cache(
         &self,
-        cache: &Self::LnMCache,
+        cache: Self::LnMCache,
         x: &DataOrSuffStat<X, Bernoulli>,
     ) -> f64 {
         let post = self.posterior(x);

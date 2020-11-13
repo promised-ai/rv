@@ -61,7 +61,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
 
     fn ln_m_with_cache(
         &self,
-        cache: &Self::LnMCache,
+        cache: Self::LnMCache,
         x: &CategoricalData<X>,
     ) -> f64 {
         let sum_alpha = self.alpha() * self.k() as f64;
@@ -133,7 +133,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
 
     fn ln_m_with_cache(
         &self,
-        cache: &Self::LnMCache,
+        cache: Self::LnMCache,
         x: &CategoricalData<X>,
     ) -> f64 {
         let (sum_alpha, ln_norm) = cache;

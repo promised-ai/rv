@@ -67,7 +67,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
 
     fn ln_m_with_cache(
         &self,
-        cache: &Self::LnMCache,
+        cache: Self::LnMCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
         extract_stat_then!(x, |stat: &GaussianSuffStat| {
