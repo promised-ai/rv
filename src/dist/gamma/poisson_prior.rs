@@ -63,7 +63,7 @@ macro_rules! impl_traits {
 
             fn ln_m_with_cache(
                 &self,
-                cache: Self::LnMCache,
+                cache: &Self::LnMCache,
                 x: &DataOrSuffStat<$kind, Poisson>,
             ) -> f64 {
                 let stat: PoissonSuffStat = match x {

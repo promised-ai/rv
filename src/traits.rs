@@ -797,14 +797,14 @@ where
     /// Log marginal likelihood with supplied cache.
     fn ln_m_with_cache(
         &self,
-        cache: Self::LnMCache,
+        cache: &Self::LnMCache,
         x: &DataOrSuffStat<X, Fx>,
     ) -> f64;
 
     /// The log marginal likelihood
     fn ln_m(&self, x: &DataOrSuffStat<X, Fx>) -> f64 {
         let cache = self.ln_m_cache();
-        self.ln_m_with_cache(cache, &x)
+        self.ln_m_with_cache(&cache, &x)
     }
 
     /// Compute the cache for the Log posterior predictive of y given x.
