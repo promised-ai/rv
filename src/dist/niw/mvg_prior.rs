@@ -67,7 +67,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
     }
 
     fn ln_m_with_cache(&self, cache: &Self::LnMCache, x: &MvgData) -> f64 {
-        let z0 = *cache;
+        let z0 = cache;
         let post = self.posterior(&x);
         let zn = ln_z(post.k(), post.df(), post.scale());
         let nd: f64 = (self.ndims() as f64) * (x.n() as f64);

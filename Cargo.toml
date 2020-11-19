@@ -1,6 +1,6 @@
 [package]
 name = "rv"
-version = "0.11.0-beta.2"
+version = "0.11.0-beta.3"
 authors = ["Baxter Eaves", "Michael Schmidt"]
 description = "Random variables"
 repository = "https://gitlab.com/baxe/rv"
@@ -9,13 +9,14 @@ license = "MIT"
 keywords = ["Probability", "Statistics", "Bayesian", "Machine-learning"]
 categories = ["science"]
 edition = "2018"
+include = ["README.md", "src/**/*", "benches/*", "Cargo.toml"]
 
 [features]
 serde1 = ["serde", "nalgebra/serde-serialize"]
 process = ["serde", "nalgebra/serde-serialize", "argmin"]
 
 [badges]
-gitlab = { repository = "baxe/rv", tag = "v0.11.0-beta.2" }
+gitlab = { repository = "baxe/rv", tag = "v0.11.0-beta.3" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
