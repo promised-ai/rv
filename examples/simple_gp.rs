@@ -1,3 +1,9 @@
+//! This is a simple example of a Gaussian Process with a noiseless and noisy cases.
+//!
+//! In both cases, the kernel is a constant times the Radial Basis Function Kernel (or RBFKernel).
+//! For the noiseless case, no noise is added to the diagonal of the covariance matrix.
+//! For the noisy case, the variance (dy^2 is added to the coveriance diagonal).
+
 use nalgebra::{DMatrix, DVector};
 use rand::{rngs::SmallRng, SeedableRng};
 #[cfg(feature = "process")]
@@ -62,7 +68,8 @@ pub fn noisy() {
 
     // Same kernel as noiseless
     let kernel = ConstantKernel::default() * RBFKernel::default();
-    // Create a new GP but add per-point noise from dy
+    // Create a new GP but add per-point noise from dy then optimize the parameters of the model
+    // with (100 steps, 10 restarts).
     let gp = GaussianProcess::train(
         kernel,
         xs,
@@ -84,6 +91,7 @@ pub fn main() {
     noisy();
 }
 
+/// Examples require a main function so we'll add it here if the feature processes is not enabled.
 #[cfg(not(feature = "process"))]
 pub fn main() {
     panic!("feature \"process\" required to run this example");
