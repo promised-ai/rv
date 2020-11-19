@@ -9,6 +9,7 @@ license = "MIT"
 keywords = ["Probability", "Statistics", "Bayesian", "Machine-learning"]
 categories = ["science"]
 edition = "2018"
+include = ["README.md", "src/**/*", "benches/*", "Cargo.toml"]
 
 [features]
 serde1 = ["serde", "nalgebra/serde-serialize"]
