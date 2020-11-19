@@ -12,7 +12,7 @@ stages:
 
 format:
   stage: format
-  image: "rust:1.45"
+  image: "rust:1.46"
   script:
     # there should be no println in src
     - '[[ `grep -r "println" src/*` == "" ]]'
@@ -29,15 +29,15 @@ test:coverage-nightly:
 
 test:cargo-stable:
   stage: test
-  image: "rust:1.45"
+  image: "rust:1.47"
   script:
     - rustc --version && cargo --version
-    - cargo test --all --features serde1
+    - cargo test --all --all-features
 
 bench:cargo-stable:
   stage: bench
   only:
     - master
-  image: "rust:1.45"
+  image: "rust:1.47"
   script:
     - cargo bench --no-run

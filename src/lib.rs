@@ -64,6 +64,8 @@
 //! // (true) given the observed flips (posterior predictive)?
 //! let p_heads = prior.pp(&true, &obs);
 //! ```
+#[cfg(feature = "serde1")]
+extern crate serde;
 
 // Test the README
 use doc_comment::doctest;
@@ -75,6 +77,9 @@ pub mod dist;
 pub mod misc;
 mod model;
 pub mod prelude;
+#[cfg(feature = "process")]
+pub mod process;
+#[cfg(test)]
 pub(crate) mod test;
 pub mod traits;
 
