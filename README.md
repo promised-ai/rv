@@ -1,6 +1,6 @@
 # rv
 
-Random variables (RV) for rust. 
+Random variables (RV) for rust.
 
 [![pipeline status](https://gitlab.com/baxe/rv/badges/master/pipeline.svg)](https://gitlab.com/baxe/rv/-/commits/master)
 [![coverage report](https://gitlab.com/baxe/rv/badges/master/coverage.svg)](https://gitlab.com/baxe/rv/-/commits/master)
@@ -75,6 +75,13 @@ let pdf_bern = beta.ln_pdf(&berns[42]);
 
 For more interesting examples, including use in machine learning, see
 `examples/`.
+
+## Feature Flags
+
+The following feature flags are available:
+
+* `serde1` - Enable Serde implementations for Serialization/Deserialization
+* `process` - Enable Random Processes (presently only Gaussian Processes; See examples [here](./examples/simple_gp.rs))
 
 ## Contributing
 
