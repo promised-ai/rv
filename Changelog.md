@@ -7,10 +7,11 @@
     associated types to the trait (`LnMCache` and `LnPpCache`), and one method
     each to compute the caches.
 - Remove all references to `serde_derive` crate
+- Gaussian process improvements including new kernels
 
 ## 0.10.5
 - Added Gaussian processes
--
+
 ## 0.10.4
 - Updated math in `NormalGamma` and `GaussianSuffStat` to reduce rounding errors
 
