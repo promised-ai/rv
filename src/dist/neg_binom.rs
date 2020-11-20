@@ -7,7 +7,7 @@ use rand::Rng;
 use std::fmt;
 
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 /// Negative Binomial distribution errors
 #[derive(Clone, Copy, Debug)]

@@ -1,6 +1,6 @@
 //! Kumaraswamy distribution over x in (0, 1)
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::consts::EULER_MASCERONI;
 use crate::traits::*;

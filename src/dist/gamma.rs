@@ -1,6 +1,6 @@
 //! Gamma distribution over x in (0, ∞)
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::traits::*;
 use crate::{clone_cache_f64, impl_display};

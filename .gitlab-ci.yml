@@ -12,32 +12,34 @@ stages:
 
 format:
   stage: format
-  image: "rust:1.45"
+  image: "rust:1.46"
   script:
     # there should be no println in src
     - '[[ `grep -r "println" src/*` == "" ]]'
     - rustup component add rustfmt
     - cargo fmt -- --check
 
-test:coverage-nightly:
-  stage: test
-  image: "rustlang/rust:nightly"
-  script:
-    - rustc --version && cargo --version
-    - cargo install cargo-tarpaulin -f
-    - cargo tarpaulin -v -t 240 --features serde1 --run-types Tests Doctests
+# # Temporarily disabling due to strange breakages
+# test:coverage-nightly:
+#   stage: test
+#   image: "rustlang/rust:nightly"
+#   script:
+#     - rustc --version && cargo --version
+#     - cargo install cargo-tarpaulin -f
+#     - cargo tarpaulin -v -t 240 --features serde1 --run-types Tests Doctests
 
 test:cargo-stable:
   stage: test
-  image: "rust:1.45"
+  image: "rust:1.47"
   script:
     - rustc --version && cargo --version
-    - cargo test --all --features serde1
+    - cargo test --all --all-features
 
+# just make sure that the benched didn't get broken
 bench:cargo-stable:
   stage: bench
   only:
     - master
-  image: "rust:1.45"
+  image: "rust:1.47"
   script:
     - cargo bench --no-run

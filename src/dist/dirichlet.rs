@@ -1,6 +1,6 @@
 //! Dirichlet and Symmetric Dirichlet distributions over simplexes
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::vec_to_string;
@@ -203,7 +203,7 @@ pub enum DirichletError {
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Dirichlet {
     /// A `Vec` of real numbers in (0, ∞)
-    alphas: Vec<f64>,
+    pub(crate) alphas: Vec<f64>,
 }
 
 impl From<SymmetricDirichlet> for Dirichlet {

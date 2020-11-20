@@ -45,6 +45,11 @@ let post_mean_fixed: f64 = post_fixed.mean().unwrap();
 assert!(post_mean_fixed > post_mean_fair);
 ```
 
+## Feature flags
+
+- `serde1`: enables serialization and de-serialization of structs via [serde](https://crates.io/crates/serde)
+- `process`: Gives you access to Gaussian processes.
+
 ## Design
 
 Random variables are designed to be flexible. For example, we don't just want a

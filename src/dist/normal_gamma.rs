@@ -1,6 +1,6 @@
 //! A common conjugate prior for Gaussians
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::consts::HALF_LN_2PI;
 use crate::data::GaussianSuffStat;

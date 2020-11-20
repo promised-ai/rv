@@ -1,6 +1,6 @@
 //! Continuous uniform distribution, U(a, b) on the interval x in [a, b]
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::traits::*;
 use crate::{clone_cache_f64, impl_display};

@@ -713,20 +713,113 @@ where
 ///
 /// assert!(pp_obs < pp_no_obs);
 /// ```
+///
+/// Use a cache to speed up repeated computations.
+///
+/// ```
+/// # use rv::traits::ConjugatePrior;
+/// use rv::traits::{Rv, SuffStat};
+/// use rv::dist::{Categorical, SymmetricDirichlet};
+/// use rv::data::{CategoricalSuffStat, DataOrSuffStat};
+/// use std::time::Instant;
+///
+/// let ncats = 10;
+/// let symdir = SymmetricDirichlet::jeffreys(ncats).unwrap();
+/// let mut suffstat = CategoricalSuffStat::new(ncats);
+/// let mut rng = rand::thread_rng();
+///
+/// Categorical::new(&vec![1.0, 1.0, 5.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0])
+///     .unwrap()
+///     .sample_stream(&mut rng)
+///     .take(1000)
+///     .for_each(|x: u8| suffstat.observe(&x));
+///
+///
+/// let stat = DataOrSuffStat::SuffStat(&suffstat);
+///
+/// // Get predictions from predictive distribution using the cache
+/// let t_cache = {
+///     let t_start = Instant::now();
+///     let cache = symdir.ln_pp_cache(&stat);
+///     // Argmax
+///     let k_max = (0..ncats).fold((0, std::f64::NEG_INFINITY), |(ix, f), y| {
+///             let f_r = symdir.ln_pp_with_cache(&cache, &y);
+///             if f_r > f {
+///                 (y, f_r)
+///             } else {
+///                 (ix, f)
+///             }
+///
+///         });
+///
+///     assert_eq!(k_max.0, 2);
+///     t_start.elapsed()
+/// };
+///
+/// // Get predictions from predictive distribution w/o cache
+/// let t_no_cache = {
+///     let t_start = Instant::now();
+///     // Argmax
+///     let k_max = (0..ncats).fold((0, std::f64::NEG_INFINITY), |(ix, f), y| {
+///             let f_r = symdir.ln_pp(&y, &stat);
+///             if f_r > f {
+///                 (y, f_r)
+///             } else {
+///                 (ix, f)
+///             }
+///
+///         });
+///
+///     assert_eq!(k_max.0, 2);
+///     t_start.elapsed()
+/// };
+///
+/// // Using cache improves runtime
+/// assert!(t_no_cache.as_nanos() > 2 * t_cache.as_nanos());
+/// ```
 pub trait ConjugatePrior<X, Fx>: Rv<Fx>
 where
     Fx: Rv<X> + HasSuffStat<X>,
 {
+    /// Type of the posterior distribution
     type Posterior: Rv<Fx>;
+    /// Type of the `ln_m` cache
+    type LnMCache;
+    /// Type of the `ln_pp` cache
+    type LnPpCache;
 
     /// Computes the posterior distribution from the data
     fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
 
-    /// Log marginal likelihood
-    fn ln_m(&self, x: &DataOrSuffStat<X, Fx>) -> f64;
+    /// Compute the cache for the log marginal likelihood.
+    fn ln_m_cache(&self) -> Self::LnMCache;
+
+    /// Log marginal likelihood with supplied cache.
+    fn ln_m_with_cache(
+        &self,
+        cache: &Self::LnMCache,
+        x: &DataOrSuffStat<X, Fx>,
+    ) -> f64;
+
+    /// The log marginal likelihood
+    fn ln_m(&self, x: &DataOrSuffStat<X, Fx>) -> f64 {
+        let cache = self.ln_m_cache();
+        self.ln_m_with_cache(&cache, &x)
+    }
+
+    /// Compute the cache for the Log posterior predictive of y given x.
+    ///
+    /// The cache should encompass all information about `x`.
+    fn ln_pp_cache(&self, x: &DataOrSuffStat<X, Fx>) -> Self::LnPpCache;
+
+    /// Log posterior predictive of y given x with supplied ln(norm)
+    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &X) -> f64;
 
     /// Log posterior predictive of y given x
-    fn ln_pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64;
+    fn ln_pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64 {
+        let cache = self.ln_pp_cache(&x);
+        self.ln_pp_with_cache(&cache, &y)
+    }
 
     /// Marginal likelihood of x
     fn m(&self, x: &DataOrSuffStat<X, Fx>) -> f64 {

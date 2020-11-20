@@ -8,7 +8,7 @@
 //! (0, ∞). Higher α causes there to be more partitions, as it encourages new
 //! entries to create new partitions.
 #[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::data::Partition;
 use crate::impl_display;

@@ -6,11 +6,11 @@ use rand_distr::uniform::SampleUniform;
 use std::f64;
 use std::fmt;
 
+#[cfg(feature = "serde1")]
+use serde::{Deserialize, Serialize};
+
 pub trait DuParam: Integer + Copy {}
 impl<T> DuParam for T where T: Integer + Copy {}
-
-#[cfg(feature = "serde1")]
-use serde_derive::{Deserialize, Serialize};
 
 /// [Discrete uniform distribution](https://en.wikipedia.org/wiki/Discrete_uniform_distribution),
 /// U(a, b) on the interval x in [a, b]

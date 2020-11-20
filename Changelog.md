@@ -1,10 +1,19 @@
 # Changelog
 
+## 0.11.0
+- Added `_with_cache` variants to `ConjucatePrior` `ln_m` and `ln_pp` methods
+    for use cases where these methods are called many times in different data
+    without changing the underlying distribution. This also adds two more
+    associated types to the trait (`LnMCache` and `LnPpCache`), and one method
+    each to compute the caches.
+- Remove all references to `serde_derive` crate
+- Gaussian process improvements including new kernels
+
+## 0.10.5
+- Added Gaussian processes
+
 ## 0.10.4
 - Updated math in `NormalGamma` and `GaussianSuffStat` to reduce rounding errors
-
-## 0.10.3
-- Updated dependencies to get past yanked dependency issue.
 
 ## 0.10.2
 - Categorical datum converters work like standard usize-to-boolean casting where 0 is false, and anything greater than 0 is true.
