@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.1
+- Added Inverse Chi-Squared distribution
+- Improved some error messages in `NormalGamma`
+
 ## 0.11.0
 - Added `_with_cache` variants to `ConjucatePrior` `ln_m` and `ln_pp` methods
     for use cases where these methods are called many times in different data
