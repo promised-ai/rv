@@ -1,57 +1,85 @@
+// Dirichlet Process Mixture Model
+// -------------------------------
+//
+// In this example, we're going to build a Dirichlet Process Mixture Model
+// (DPMM). In a typical mixture model, we assume we know the number of
+// copmonents and learn the parameters for each component that best fit the
+// data. For example, we might use a 2-component model to fit to bi-modal data.
+// The DPMM uses a probabilistic process -- the Diriclet Process -- to describe
+// how data are assigned to components, and does inference on the parameters of
+// that process as well as the component parameters. The DPMM weighs simplicity
+// (prefer fewer componets) with explanation.
+//
+// Below, we implement the collapsed Gibbs algorithm for sampling from s DPMM.
+// The code is generic to any type of mixture as long as it has a conjugate
+// prior.
+//
+// References
+// ----------
+//
+// Neal, R. M. (2000). Markov chain sampling methods for Dirichlet process
+//     mixture models. Journal of computational and graphical statistics, 9(2),
+//     249-265.
+//
+// Rasmussen, C. E. (1999, December). The infinite Gaussian mixture model. In
+//     NIPS (Vol. 12, pp. 554-560).
+
 use rand::seq::SliceRandom;
 use rand::Rng;
 use rv::data::Partition;
-use rv::dist::{Crp, Gaussian, NormalGamma};
+use rv::dist::{Crp, Gaussian, NormalInvGamma};
 use rv::misc::ln_pflip;
 use rv::traits::*;
 use rv::ConjugateModel;
 use std::sync::Arc;
 
-// Save keystrokes!
-type GaussComponent = ConjugateModel<f64, Gaussian, NormalGamma>;
-
-// Infinite mixture (CRP) model of univariate Gaussians
-struct Dpgmm {
+// Infinite mixture (CRP) model
+//
+// This code is general to any type of mixture as long as it has a conjugate
+// prior
+struct Dpmm<X, Fx, Pr>
+where
+    Fx: Rv<X> + HasSuffStat<X>,
+    Pr: ConjugatePrior<X, Fx>,
+{
     // The data
-    xs: Vec<f64>,
+    xs: Vec<X>,
     // Keeps track of the data IDs as they're removed and replaced
     ixs: Vec<usize>,
     // The prior on the partition of data
     crp: Crp,
     // The current partition
     partition: Partition,
-    // The Prior on each of the components. Component means are from a Gaussian
-    // (Normal) distribution, and the precisions (reciprocal of the variance)
-    // is from a gamma distribution.
-    prior: Arc<NormalGamma>,
-    // A vector of univariate normals with the conjugate Normal Gamma prior.
-    components: Vec<GaussComponent>,
+    // The Prior on each of the components.
+    prior: Arc<Pr>,
+    // A vector of component models with conjugate priors
+    components: Vec<ConjugateModel<X, Fx, Pr>>,
 }
 
-impl Dpgmm {
-    // Draws a Dpgmm from the prior
-    fn new<R: Rng>(
-        xs: Vec<f64>,
-        prior: NormalGamma,
-        alpha: f64,
-        mut rng: &mut R,
-    ) -> Self {
+impl<X, Fx, Pr> Dpmm<X, Fx, Pr>
+where
+    Fx: Rv<X> + HasSuffStat<X>,
+    Pr: ConjugatePrior<X, Fx>,
+{
+    // Draws a Dpmm from the prior
+    fn new<R: Rng>(xs: Vec<X>, prior: Pr, alpha: f64, rng: &mut R) -> Self {
         let n = xs.len();
 
         // Partition prior
         let crp = Crp::new(alpha, n).expect("Invalid params");
 
         // Initial partition drawn from the prior
-        let partition = crp.draw(&mut rng);
+        let partition = crp.draw(rng);
 
         // Put the prior in a reference counter
         let prior_arc = Arc::new(prior);
 
-        // Create an empty component for each partition. Gaussian::default()
-        // is used as a template; The parameters don't matter.
-        let mut components: Vec<GaussComponent> = (0..partition.k())
+        // Create an empty component for each partition. Drawing component
+        // models is used as a template; The parameters don't matter because we
+        // marginalize them away through the magic of conjugate priors.
+        let mut components: Vec<ConjugateModel<X, Fx, Pr>> = (0..partition.k())
             .map(|_| {
-                ConjugateModel::new(&Gaussian::default(), prior_arc.clone())
+                ConjugateModel::new(&prior_arc.draw(rng), prior_arc.clone())
             })
             .collect();
 
@@ -61,13 +89,13 @@ impl Dpgmm {
             .zip(partition.z().iter())
             .for_each(|(xi, &zi)| components[zi].observe(xi));
 
-        Dpgmm {
-            xs: xs,
+        Dpmm {
+            xs,
             ixs: (0..n).collect(),
-            crp: crp,
-            partition: partition,
+            crp,
+            partition,
             prior: prior_arc,
-            components: components,
+            components,
         }
     }
 
@@ -78,7 +106,7 @@ impl Dpgmm {
 
     /// Remove and return the datum at index `ix`. Return the datum and its
     /// index.
-    fn remove(&mut self, pos: usize) -> (f64, usize) {
+    fn remove(&mut self, pos: usize) -> (X, usize) {
         let x = self.xs.remove(pos);
         let ix = self.ixs.remove(pos);
         let zi = self.partition.z()[pos];
@@ -100,7 +128,7 @@ impl Dpgmm {
     // For a datum `x` with index `ix`, assigns `x` to a partition
     // probabilistically according to the DPGMM. The datum is appended to the
     // end of `xs` and the assignment, `z`.
-    fn insert<R: Rng>(&mut self, x: f64, ix: usize, mut rng: &mut R) {
+    fn insert<R: Rng>(&mut self, x: X, ix: usize, rng: &mut R) {
         let mut ln_weights: Vec<f64> = self
             .partition
             .counts()
@@ -109,14 +137,14 @@ impl Dpgmm {
             .map(|(&w, cj)| (w as f64).ln() + cj.ln_pp(&x)) // nk * p(xi|xk)
             .collect();
 
-        let mut ctmp: GaussComponent =
-            ConjugateModel::new(&Gaussian::default(), self.prior.clone());
+        let mut ctmp: ConjugateModel<X, Fx, Pr> =
+            ConjugateModel::new(&self.prior.draw(rng), self.prior.clone());
 
         // probability of being in a new category -- α * p(xi)
         ln_weights.push(self.crp.alpha().ln() + ctmp.ln_pp(&x));
 
         // Draws a new assignment in proportion with the weights
-        let zi = ln_pflip(&ln_weights, 1, false, &mut rng)[0];
+        let zi = ln_pflip(&ln_weights, 1, false, rng)[0];
 
         // Here is where we re-insert the data back into xs, ixs, and the
         // partition.
@@ -134,21 +162,21 @@ impl Dpgmm {
     }
 
     // reassigns a the datum at the position `pos`
-    fn step<R: Rng>(&mut self, pos: usize, mut rng: &mut R) {
+    fn step<R: Rng>(&mut self, pos: usize, rng: &mut R) {
         let (x, ix) = self.remove(pos);
-        self.insert(x, ix, &mut rng);
+        self.insert(x, ix, rng);
     }
 
     // Reassigns each datum in random order
-    fn scan<R: Rng>(&mut self, mut rng: &mut R) {
+    fn scan<R: Rng>(&mut self, rng: &mut R) {
         let mut positions: Vec<usize> = (0..self.n()).collect();
-        positions.shuffle(&mut rng);
-        positions.iter().for_each(|&pos| self.step(pos, &mut rng));
+        positions.shuffle(rng);
+        positions.iter().for_each(|&pos| self.step(pos, rng));
     }
 
     // Run the DPGMM for `iters` iterations
-    fn run<R: Rng>(&mut self, iters: usize, mut rng: &mut R) {
-        (0..iters).for_each(|_| self.scan(&mut rng));
+    fn run<R: Rng>(&mut self, iters: usize, rng: &mut R) {
+        (0..iters).for_each(|_| self.scan(rng));
         self.sort() // restore data/assignment order
     }
 
@@ -156,15 +184,17 @@ impl Dpgmm {
     // need to re-sort the data by their indices to ensure the data and the
     // assignment are in the same order they were when they were passed in
     fn sort(&mut self) {
-        let mut xs: Vec<f64> = vec![0.0; self.n()];
-        let mut z: Vec<usize> = vec![0; self.n()];
-        self.ixs.iter().enumerate().for_each(|(pos, &ix)| {
-            xs[ix] = self.xs[pos];
-            z[ix] = self.partition.z()[pos];
-        });
-        std::mem::swap(self.partition.z_mut(), &mut z);
-        self.xs = xs;
-        self.ixs = (0..self.n()).collect();
+        // This will at most do n swaps, but I feel like there's probably some
+        // really obvious way to do better. Oh well... I'm an ML guy, not an
+        // algorithms guy.
+        for i in 0..self.n() {
+            while self.ixs[i] != i {
+                let j = self.ixs[i];
+                self.ixs.swap(i, j);
+                self.partition.z_mut().swap(i, j);
+                self.xs.swap(i, j);
+            }
+        }
     }
 }
 
@@ -181,10 +211,10 @@ fn main() {
 
     // Parameters are more or less arbitrary. The only thing we need to worry
     // about is scale.
-    let prior = NormalGamma::new(0.0, 1.0, 1.0, 1.0).unwrap();
+    let prior = NormalInvGamma::new(0.0, 1.0, 1.0, 1.0).unwrap();
 
     // Draw a DPGMM from the prior
-    let mut dpgmm = Dpgmm::new(xs, prior, 1.0, &mut rng);
+    let mut dpgmm = Dpmm::new(xs, prior, 1.0, &mut rng);
 
     // .. and run it
     dpgmm.run(200, &mut rng);

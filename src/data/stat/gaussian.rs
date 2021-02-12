@@ -71,17 +71,25 @@ impl Default for GaussianSuffStat {
 
 macro_rules! impl_gaussian_suffstat {
     ($kind:ty) => {
-        impl<'a> Into<DataOrSuffStat<'a, $kind, Gaussian>>
-            for &'a GaussianSuffStat
+        impl<'a> From<&'a GaussianSuffStat>
+            for DataOrSuffStat<'a, $kind, Gaussian>
         {
-            fn into(self) -> DataOrSuffStat<'a, $kind, Gaussian> {
-                DataOrSuffStat::SuffStat(self)
+            fn from(stat: &'a GaussianSuffStat) -> Self {
+                DataOrSuffStat::SuffStat(stat)
             }
         }
 
-        impl<'a> Into<DataOrSuffStat<'a, $kind, Gaussian>> for &'a Vec<$kind> {
-            fn into(self) -> DataOrSuffStat<'a, $kind, Gaussian> {
-                DataOrSuffStat::Data(self)
+        impl<'a> From<&'a Vec<$kind>> for DataOrSuffStat<'a, $kind, Gaussian> {
+            fn from(xs: &'a Vec<$kind>) -> Self {
+                DataOrSuffStat::Data(xs)
+            }
+        }
+
+        impl From<&Vec<$kind>> for GaussianSuffStat {
+            fn from(xs: &Vec<$kind>) -> Self {
+                let mut stat = GaussianSuffStat::new();
+                stat.observe_many(xs);
+                stat
             }
         }
 

@@ -28,9 +28,6 @@ pub struct InvChiSquared {
     // ln( 2^{-v/2} / gamma(v/2))
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_f_const: OnceCell<f64>,
-    // gamma(v/2)
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    gamma_v2: OnceCell<f64>,
 }
 
 impl Clone for InvChiSquared {
@@ -38,7 +35,6 @@ impl Clone for InvChiSquared {
         InvChiSquared {
             v: self.v,
             ln_f_const: clone_cache_f64!(self, ln_f_const),
-            gamma_v2: clone_cache_f64!(self, gamma_v2),
         }
     }
 }
@@ -73,7 +69,6 @@ impl InvChiSquared {
             Ok(InvChiSquared {
                 v,
                 ln_f_const: OnceCell::new(),
-                gamma_v2: OnceCell::new(),
             })
         }
     }
@@ -85,7 +80,6 @@ impl InvChiSquared {
         InvChiSquared {
             v,
             ln_f_const: OnceCell::new(),
-            gamma_v2: OnceCell::new(),
         }
     }
 
@@ -142,7 +136,6 @@ impl InvChiSquared {
     pub fn set_v_unchecked(&mut self, v: f64) {
         self.v = v;
         self.ln_f_const = OnceCell::new();
-        self.gamma_v2 = OnceCell::new();
     }
 
     /// Get ln( 2^{-v/2} / Gamma(v/2) )
@@ -152,12 +145,6 @@ impl InvChiSquared {
             let v2 = self.v / 2.0;
             -v2 * LN_2 - v2.ln_gamma().0
         })
-    }
-
-    /// Get Gamma(v/2)
-    #[inline]
-    fn gamma_v2(&self) -> f64 {
-        *self.gamma_v2.get_or_init(|| (self.v / 2.0).gamma())
     }
 }
 
