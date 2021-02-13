@@ -74,20 +74,21 @@ impl CategoricalSuffStat {
     }
 }
 
-impl<'a, X> Into<DataOrSuffStat<'a, X, Categorical>> for &'a CategoricalSuffStat
+impl<'a, X> From<&'a CategoricalSuffStat> for DataOrSuffStat<'a, X, Categorical>
 where
     X: CategoricalDatum,
 {
-    fn into(self) -> DataOrSuffStat<'a, X, Categorical> {
-        DataOrSuffStat::SuffStat(self)
+    fn from(stat: &'a CategoricalSuffStat) -> Self {
+        DataOrSuffStat::SuffStat(stat)
     }
 }
 
-impl<'a, X: CategoricalDatum> Into<DataOrSuffStat<'a, X, Categorical>>
-    for &'a Vec<X>
+impl<'a, X> From<&'a Vec<X>> for DataOrSuffStat<'a, X, Categorical>
+where
+    X: CategoricalDatum,
 {
-    fn into(self) -> DataOrSuffStat<'a, X, Categorical> {
-        DataOrSuffStat::Data(self)
+    fn from(xs: &'a Vec<X>) -> Self {
+        DataOrSuffStat::Data(xs)
     }
 }
 

@@ -51,7 +51,7 @@ impl ChiSquared {
         }
     }
 
-    /// Create a new ChiSquared wihout checking whether the parameters are
+    /// Create a new ChiSquared without checking whether the parameters are
     /// valid.
     #[inline]
     pub fn new_unchecked(k: f64) -> Self {
@@ -72,7 +72,7 @@ impl ChiSquared {
         self.k
     }
 
-    /// Get the degrees of freedom, `k`.
+    /// Set the degrees of freedom, `k`.
     ///
     /// # Example
     ///

@@ -68,17 +68,17 @@ impl Default for PoissonSuffStat {
 
 macro_rules! impl_poisson_suffstat {
     ($kind:ty) => {
-        impl<'a> Into<DataOrSuffStat<'a, $kind, Poisson>>
-            for &'a PoissonSuffStat
+        impl<'a> From<&'a PoissonSuffStat>
+            for DataOrSuffStat<'a, $kind, Poisson>
         {
-            fn into(self) -> DataOrSuffStat<'a, $kind, Poisson> {
-                DataOrSuffStat::SuffStat(self)
+            fn from(stat: &'a PoissonSuffStat) -> Self {
+                DataOrSuffStat::SuffStat(stat)
             }
         }
 
-        impl<'a> Into<DataOrSuffStat<'a, $kind, Poisson>> for &'a Vec<$kind> {
-            fn into(self) -> DataOrSuffStat<'a, $kind, Poisson> {
-                DataOrSuffStat::Data(self)
+        impl<'a> From<&'a Vec<$kind>> for DataOrSuffStat<'a, $kind, Poisson> {
+            fn from(xs: &'a Vec<$kind>) -> Self {
+                DataOrSuffStat::Data(xs)
             }
         }
 

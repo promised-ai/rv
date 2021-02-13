@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.1
+- Added Inverse Chi-Squared distribution
+- Added Normal Inverse Gamma (`NormalInvGamma`) distribution as prior for
+    Gaussian
+- Implemented `From` instead of `Into` for sufficient statistic converters to
+    allow the more explicit/ergonmic `From` conversions.
+- Improved some error messages in `NormalGamma`
+
 ## 0.11.0
 - Added `_with_cache` variants to `ConjucatePrior` `ln_m` and `ln_pp` methods
     for use cases where these methods are called many times in different data
@@ -16,25 +24,33 @@
 - Updated math in `NormalGamma` and `GaussianSuffStat` to reduce rounding errors
 
 ## 0.10.2
-- Categorical datum converters work like standard usize-to-boolean casting where 0 is false, and anything greater than 0 is true.
+- Categorical datum converters work like standard usize-to-boolean casting where
+    0 is false, and anything greater than 0 is true.
 
 ## 0.10.1
-- Add `from_parts_unchecked` method for constructing sufficient statistic since there was no way of manipulating statistic's fields or creating them manually.
+- Add `from_parts_unchecked` method for constructing sufficient statistic since
+    there was no way of manipulating statistic's fields or creating them
+    manually.
 
 ## 0.10.0
 - Implement Poisson Mode
-- Store `GaussianSuffStat` in a more numerically stable way. The extra numerical stability comes at the cost of slower `observe` and `forget`. Serialization on `GaussianSuffStat` has changed.
+- Store `GaussianSuffStat` in a more numerically stable way. The extra numerical
+    stability comes at the cost of slower `observe` and `forget`. Serialization
+    on `GaussianSuffStat` has changed.
 
 ## 0.9.3
-- Entropy for Gaussian mixtures more robust to models with dispersed low-variance components
+- Entropy for Gaussian mixtures more robust to models with dispersed
+    low-variance components
 - Categorical::new_unchecked is now public
 
 ## 0.9.2
 - Benchmarks
 - implement `Entropy` and `KlDivergence` for `Poisson`
 - Implement `QuadBounds` and `Entropy` for `Mixture<Poisson>`
-- Implement `Mean` for mixtures of distributions that implement `Mean<f64>` or `Mean<f32>`
-- `Rv` trait has `sample_stream` method that produces a never-ending iterator of random numbers.
+- Implement `Mean` for mixtures of distributions that implement `Mean<f64>` or
+    `Mean<f32>`
+- `Rv` trait has `sample_stream` method that produces a never-ending iterator of
+    random numbers.
 
 ## 0.9.1
 - Remove printlns
@@ -53,7 +69,9 @@
 ## 0.8.3
 - Added Negative Binomial distribution
 - Added Skellam Distribution
-- Add `try_quad` function for numerical integration of functions that return `Result<f64, E>`.
+- Add `try_quad` function for numerical integration of functions that return
+    `Result<f64, E>`.
 
 ## 0.8.2
-- Remove dependency on `quadrature` crate in favor of hand-rolled adaptive Simpson's rule, which handles multimodal distributions better.
+- Remove dependency on `quadrature` crate in favor of hand-rolled adaptive
+    Simpson's rule, which handles multimodal distributions better.

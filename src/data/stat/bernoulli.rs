@@ -75,17 +75,21 @@ impl Default for BernoulliSuffStat {
     }
 }
 
-impl<'a, X: Booleable> Into<DataOrSuffStat<'a, X, Bernoulli>>
-    for &'a BernoulliSuffStat
+impl<'a, X> From<&'a BernoulliSuffStat> for DataOrSuffStat<'a, X, Bernoulli>
+where
+    X: Booleable,
 {
-    fn into(self) -> DataOrSuffStat<'a, X, Bernoulli> {
-        DataOrSuffStat::SuffStat(self)
+    fn from(stat: &'a BernoulliSuffStat) -> Self {
+        DataOrSuffStat::SuffStat(stat)
     }
 }
 
-impl<'a, X: Booleable> Into<DataOrSuffStat<'a, X, Bernoulli>> for &'a Vec<X> {
-    fn into(self) -> DataOrSuffStat<'a, X, Bernoulli> {
-        DataOrSuffStat::Data(self)
+impl<'a, X> From<&'a Vec<X>> for DataOrSuffStat<'a, X, Bernoulli>
+where
+    X: Booleable,
+{
+    fn from(xs: &'a Vec<X>) -> Self {
+        DataOrSuffStat::Data(xs)
     }
 }
 

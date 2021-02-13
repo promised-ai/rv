@@ -1,4 +1,4 @@
-//! A common conjugate prior for Gaussians
+//! A common conjugate prior for Gaussians with unknown mean and variance
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -326,11 +326,11 @@ impl Rv<Gaussian> for NormalGamma {
         // catch things when they go wrong here so they don't spread. Of course,
         // all this input validation hurts performance 😞.
         let rho: f64 = Gamma::new(self.v / 2.0, self.s / 2.0)
-            .expect("Invalid σ posterior params")
+            .expect("Invalid σ params when drawing Gaussian")
             .draw(&mut rng);
         let post_sigma: f64 = (self.r * rho).sqrt().recip();
         let mu: f64 = Gaussian::new(self.m, post_sigma)
-            .expect("Invalid μ posterior params")
+            .expect("Invalid μ internal when drawing Gaussian")
             .draw(&mut rng);
 
         Gaussian::new(mu, rho.sqrt().recip()).expect("Invalid params")
