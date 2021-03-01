@@ -264,7 +264,7 @@ where
 
     fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Param {
         let n = self.parameters().len();
-        (0..n).map(|_| rng.gen_range(-5.0, 5.0)).collect()
+        (0..n).map(|_| rng.gen_range(-5.0..5.0)).collect()
     }
 }
 
@@ -648,7 +648,7 @@ mod tests {
             .unwrap();
 
         let mut rng = SmallRng::seed_from_u64(0xABCD);
-        let gp = gp.optimize(200, 10, &mut rng).expect("Failed to optimize");
+        let gp = gp.optimize(200, 20, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
 
         assert!(relative_eq(
