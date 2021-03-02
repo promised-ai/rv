@@ -38,6 +38,7 @@ criterion = "0.3"
 indoc = "1"
 serde_yaml = "0.8"
 approx = "0.3"
+rand_xoshiro = "0.4"
 
 
 # Benchmarks
