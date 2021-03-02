@@ -562,8 +562,8 @@ mod tests {
     #[test]
     fn ln_f_standard_x_nonzeros() {
         let mvg = MvGaussian::standard(3).unwrap();
-        let x = DVector::<f64>::from_column_slice(&vec![0.5, 3.1, -6.2]);
-        assert::close(mvg.ln_f(&x), -26.906815599614021, TOL);
+        let x = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
+        assert::close(mvg.ln_f(&x), -26.906_815_599_614_02, TOL);
     }
 
     #[test]
@@ -580,10 +580,10 @@ mod tests {
             1.27247972,
         ];
         let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
-        let mu = DVector::<f64>::from_column_slice(&vec![0.5, 3.1, -6.2]);
+        let mu = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
         let mvg = MvGaussian::new(mu, cov).unwrap();
         let x = DVector::<f64>::zeros(3);
-        assert::close(mvg.ln_f(&x), -24.602370253215661, TOL);
+        assert::close(mvg.ln_f(&x), -24.602_370_253_215_66, TOL);
     }
 
     #[test]
@@ -600,9 +600,9 @@ mod tests {
             1.27247972,
         ];
         let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
-        let mu = DVector::<f64>::from_column_slice(&vec![0.5, 3.1, -6.2]);
+        let mu = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
         let mvg = MvGaussian::new(mu, cov).unwrap();
-        let x = DVector::<f64>::from_column_slice(&vec![0.5, 3.1, -6.2]);
+        let x = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
         assert::close(mvg.ln_f(&x), -2.5915350538112296, TOL);
     }
 
@@ -620,7 +620,7 @@ mod tests {
             1.27247972,
         ];
         let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
-        let mu = DVector::<f64>::from_column_slice(&vec![0.5, 3.1, -6.2]);
+        let mu = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
         let mvg = MvGaussian::new(mu, cov).unwrap();
 
         let mut rng = rand::thread_rng();
@@ -650,7 +650,7 @@ mod tests {
             1.27247972,
         ];
         let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
-        let mu = DVector::<f64>::from_column_slice(&vec![0.5, 3.1, -6.2]);
+        let mu = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
         let mvg = MvGaussian::new(mu, cov).unwrap();
         assert::close(mvg.entropy(), 4.0915350538112305, TOL);
     }
@@ -668,8 +668,8 @@ mod tests {
                 acc
             } else {
                 let xys = mvg.sample(500, &mut rng);
-                let xs: Vec<f64> = xys.iter().map(|xy| xy[0].clone()).collect();
-                let ys: Vec<f64> = xys.iter().map(|xy| xy[1].clone()).collect();
+                let xs: Vec<f64> = xys.iter().map(|xy| xy[0]).collect();
+                let ys: Vec<f64> = xys.iter().map(|xy| xy[1]).collect();
 
                 let (_, px) = ks_test(&xs, cdf);
                 let (_, py) = ks_test(&ys, cdf);
@@ -713,7 +713,7 @@ mod tests {
             1.27247972,
         ];
         let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
-        let mu = DVector::<f64>::from_column_slice(&vec![0.5, 3.1, -6.2]);
+        let mu = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
         let mvg = MvGaussian::new(mu, cov).unwrap();
 
         let passed = (0..NTRIES).fold(false, |acc, _| {

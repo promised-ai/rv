@@ -308,24 +308,24 @@ mod tests {
     #[test]
     fn entropy() {
         let h: f64 = Uniform::new(2.0, 4.0).unwrap().entropy();
-        assert::close(h, 0.69314718055994529, TOL);
+        assert::close(h, std::f64::consts::LN_2, TOL);
     }
 
     #[test]
     fn ln_pdf() {
         let u = Uniform::new(2.0, 4.0).unwrap();
-        assert::close(u.ln_pdf(&2.0_f64), -0.69314718055994529, TOL);
-        assert::close(u.ln_pdf(&2.3_f64), -0.69314718055994529, TOL);
-        assert::close(u.ln_pdf(&3.3_f64), -0.69314718055994529, TOL);
-        assert::close(u.ln_pdf(&4.0_f64), -0.69314718055994529, TOL);
+        assert::close(u.ln_pdf(&2.0_f64), -std::f64::consts::LN_2, TOL);
+        assert::close(u.ln_pdf(&2.3_f64), -std::f64::consts::LN_2, TOL);
+        assert::close(u.ln_pdf(&3.3_f64), -std::f64::consts::LN_2, TOL);
+        assert::close(u.ln_pdf(&4.0_f64), -std::f64::consts::LN_2, TOL);
     }
 
     #[test]
     fn cdf() {
         let u = Uniform::new(2.0, 4.0).unwrap();
         assert::close(u.cdf(&2.0_f64), 0.0, TOL);
-        assert::close(u.cdf(&2.3_f64), 0.14999999999999991, TOL);
-        assert::close(u.cdf(&3.3_f64), 0.64999999999999991, TOL);
+        assert::close(u.cdf(&2.3_f64), 0.149_999_999_999_999_9, TOL);
+        assert::close(u.cdf(&3.3_f64), 0.649_999_999_999_999_9, TOL);
         assert::close(u.cdf(&4.0_f64), 1.0, TOL);
     }
 

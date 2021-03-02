@@ -126,6 +126,7 @@ pub enum KsError {
 /// assert::close(stat, 0.3, 1E-8);
 /// assert::close(alpha, 0.7869297884777761, 1E-8);
 /// ```
+#[allow(clippy::clippy::many_single_char_names)]
 pub fn ks_two_sample<X>(
     xs: &[X],
     ys: &[X],
@@ -265,6 +266,7 @@ where
     }
 }
 
+#[allow(clippy::clippy::many_single_char_names)]
 fn paths_outside(m: usize, n: usize, g: usize, h: f64) -> usize {
     let (m, n) = (m.max(n), m.min(n));
     let mg = m / g;
@@ -322,6 +324,7 @@ fn paths_outside_proportion(n: usize, h: f64) -> f64 {
 }
 
 /// Compute the proportion of paths that stay inside lines x - y = ± h
+#[allow(clippy::clippy::many_single_char_names)]
 fn paths_inside_proportion(m: usize, n: usize, g: usize, h: f64) -> f64 {
     let (m, n) = (m.max(n), m.min(n));
     let n_f = n as f64;
@@ -491,7 +494,7 @@ mod tests {
         let cdf = |x: f64| g.cdf(&x);
         let (ks, p) = ks_test(&xs, cdf);
 
-        assert::close(ks, 0.55171678665456114, TOL);
+        assert::close(ks, 0.551_716_786_654_561_1, TOL);
         assert::close(p, 0.0021804502526949765, TOL);
     }
 

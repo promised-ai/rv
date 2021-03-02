@@ -387,13 +387,13 @@ mod tests {
     fn cdf_above_mu() {
         let laplace = Laplace::new(1.2, 3.4).unwrap();
         let cdf = laplace.cdf(&3.0_f64);
-        assert::close(cdf, 0.70552434512472328, TOL);
+        assert::close(cdf, 0.705_524_345_124_723_3, TOL);
     }
 
     #[test]
     fn ln_pdf() {
         let laplace = Laplace::new(1.2, 3.4).unwrap();
-        assert::close(laplace.ln_pdf(&1.2), -1.9169226121820611, TOL);
+        assert::close(laplace.ln_pdf(&1.2), -1.916_922_612_182_061, TOL);
         assert::close(laplace.ln_pdf(&0.2), -2.2110402592408844, TOL);
     }
 

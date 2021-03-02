@@ -31,6 +31,7 @@ fn ln_z(v: f64, a: f64, b: f64) -> f64 {
 
 // XXX: Check out section 6.3 from Kevin Murphy's paper
 // https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf
+#[allow(clippy::clippy::many_single_char_names)]
 fn posterior_from_stat(
     nig: &NormalInvGamma,
     stat: &GaussianSuffStat,

@@ -478,7 +478,7 @@ mod tests {
             let dir = Dirichlet::symmetric(1.0, 3).unwrap();
             assert::close(
                 dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
-                0.69314718055994529,
+                0.693_147_180_559_945_3,
                 TOL,
             );
         }
@@ -488,7 +488,7 @@ mod tests {
             let dir = Dirichlet::jeffreys(3).unwrap();
             assert::close(
                 dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
-                -0.084598117749354218,
+                -0.084_598_117_749_354_22,
                 TOL,
             );
         }
@@ -525,7 +525,7 @@ mod tests {
             let symdir = SymmetricDirichlet::jeffreys(3).unwrap();
             assert::close(
                 symdir.ln_pdf(&vec![0.2, 0.3, 0.5]),
-                -0.084598117749354218,
+                -0.084_598_117_749_354_22,
                 TOL,
             );
         }

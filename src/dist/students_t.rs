@@ -255,7 +255,7 @@ mod tests {
     fn ln_pdf() {
         let t = StudentsT::new(2.3).unwrap();
         assert::close(t.ln_pdf(&0.0_f64), -1.0247440238937566, TOL);
-        assert::close(t.ln_pdf(&1.0_f64), -1.6204160440303521, TOL);
+        assert::close(t.ln_pdf(&1.0_f64), -1.620_416_044_030_352, TOL);
         assert::close(t.ln_pdf(&2.5_f64), -3.191230587916138, TOL);
         assert::close(t.ln_pdf(&-2.5_f64), -3.191230587916138, TOL);
     }

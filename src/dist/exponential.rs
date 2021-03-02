@@ -278,7 +278,7 @@ mod tests {
         let expon = Exponential::new_unchecked(1.5);
         assert::close(expon.ln_f(&1.2_f64), -1.3945348918918357, TOL);
         assert::close(expon.ln_f(&0.2_f64), 0.1054651081081644, TOL);
-        assert::close(expon.ln_f(&4.4_f64), -6.1945348918918359, TOL);
+        assert::close(expon.ln_f(&4.4_f64), -6.194_534_891_891_836, TOL);
         assert_eq!(expon.ln_f(&-1.0_f64), f64::NEG_INFINITY);
     }
 
@@ -287,21 +287,21 @@ mod tests {
         let expon = Exponential::new(1.5).unwrap();
         assert::close(expon.ln_pdf(&1.2_f64), -1.3945348918918357, TOL);
         assert::close(expon.ln_pdf(&0.2_f64), 0.1054651081081644, TOL);
-        assert::close(expon.ln_pdf(&4.4_f64), -6.1945348918918359, TOL);
+        assert::close(expon.ln_pdf(&4.4_f64), -6.194_534_891_891_836, TOL);
     }
 
     #[test]
     fn cdf() {
         let expon = Exponential::new(1.5).unwrap();
-        assert::close(expon.cdf(&1.2_f64), 0.83470111177841344, TOL);
-        assert::close(expon.cdf(&0.2_f64), 0.25918177931828218, TOL);
-        assert::close(expon.cdf(&4.4_f64), 0.99863963196245209, TOL);
+        assert::close(expon.cdf(&1.2_f64), 0.834_701_111_778_413_4, TOL);
+        assert::close(expon.cdf(&0.2_f64), 0.259_181_779_318_282_2, TOL);
+        assert::close(expon.cdf(&4.4_f64), 0.998_639_631_962_452_1, TOL);
     }
 
     #[test]
     fn mean() {
         let m: f64 = Exponential::new(1.5).unwrap().mean().unwrap();
-        assert::close(m, 0.66666666666666663, TOL);
+        assert::close(m, 0.666_666_666_666_666_6, TOL);
     }
 
     #[test]
@@ -319,7 +319,7 @@ mod tests {
     #[test]
     fn variance() {
         let v: f64 = Exponential::new(1.5).unwrap().variance().unwrap();
-        assert::close(v, 0.44444444444444442, TOL);
+        assert::close(v, 0.444_444_444_444_444_4, TOL);
     }
 
     #[test]
@@ -346,7 +346,7 @@ mod tests {
         let q25: f64 = expon.quantile(0.25);
         let q75: f64 = expon.quantile(0.75);
         assert::close(q25, 0.19178804830118726, TOL);
-        assert::close(q75, 0.92419624074659368, TOL);
+        assert::close(q75, 0.924_196_240_746_593_7, TOL);
     }
 
     #[test]

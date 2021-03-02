@@ -55,8 +55,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
         let sum_alpha = self.alpha() * self.k() as f64;
         let a = sum_alpha.ln_gamma().0;
         let d = self.alpha().ln_gamma().0 * self.k() as f64;
-        let ln_norm = a - d;
-        ln_norm
+        a - d
     }
 
     fn ln_m_with_cache(
@@ -333,9 +332,9 @@ mod test {
         #[test]
         fn csd_loglike_value_1() {
             let csd = SymmetricDirichlet::new(0.5, 3).unwrap();
-            let cat = Categorical::new(&vec![0.2, 0.3, 0.5]).unwrap();
+            let cat = Categorical::new(&[0.2, 0.3, 0.5]).unwrap();
             let lf = csd.ln_f(&cat);
-            assert::close(lf, -0.084598117749354218, TOL);
+            assert::close(lf, -0.084_598_117_749_354_22, TOL);
         }
     }
 }

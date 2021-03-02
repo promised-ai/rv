@@ -1,6 +1,7 @@
 use nalgebra::{DMatrix, DVector};
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256Plus;
+
 #[cfg(feature = "process")]
 use rv::process::{
     gaussian::{kernel::*, GaussianProcess, NoiseModel},
