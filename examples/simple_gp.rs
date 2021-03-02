@@ -1,5 +1,6 @@
 use nalgebra::{DMatrix, DVector};
-use rand::{rngs::SmallRng, SeedableRng};
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256Plus;
 #[cfg(feature = "process")]
 use rv::process::{
     gaussian::{kernel::*, GaussianProcess, NoiseModel},
@@ -11,7 +12,7 @@ use rv::process::{
 #[cfg(feature = "process")]
 pub fn noiseless() {
     println!("Starting noiseless");
-    let mut small_rng = SmallRng::seed_from_u64(0xABCD);
+    let mut small_rng = Xoshiro256Plus::seed_from_u64(0xABCD);
     let xs: DMatrix<f64> =
         DMatrix::from_column_slice(6, 1, &[1., 3., 5., 6., 7., 8.]);
     let ys: DVector<f64> = xs.map(|x| x * x.sin()).column(0).into();
@@ -36,7 +37,7 @@ pub fn noiseless() {
 #[cfg(feature = "process")]
 pub fn noisy() {
     println!("Starting noisy");
-    let mut small_rng = SmallRng::seed_from_u64(0xABCD);
+    let mut small_rng = Xoshiro256Plus::seed_from_u64(0xABCD);
     let xs: DMatrix<f64> = DMatrix::from_column_slice(
         20,
         1,

@@ -384,8 +384,8 @@ mod tests {
     use self::kernel::{ConstantKernel, ProductKernel, RBFKernel};
     use super::*;
     use crate::test::relative_eq;
-    use rand::rngs::SmallRng;
     use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256Plus;
 
     fn arange(start: f64, stop: f64, step_size: f64) -> Vec<f64> {
         let size = ((stop - start) / step_size).floor() as usize;
@@ -622,7 +622,7 @@ mod tests {
         let gp = GaussianProcess::train(kernel, x_train, y_train, noise_model)
             .unwrap();
 
-        let mut rng = SmallRng::seed_from_u64(0xABCD);
+        let mut rng = Xoshiro256Plus::seed_from_u64(0xABCD);
         let gp = gp.optimize(100, 10, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
 
@@ -647,8 +647,8 @@ mod tests {
         let gp = GaussianProcess::train(kernel, x_train, y_train, noise_model)
             .unwrap();
 
-        let mut rng = SmallRng::seed_from_u64(0xABCD);
-        let gp = gp.optimize(200, 10, &mut rng).expect("Failed to optimize");
+        let mut rng = Xoshiro256Plus::seed_from_u64(0xABCD);
+        let gp = gp.optimize(200, 30, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
 
         assert!(relative_eq(
