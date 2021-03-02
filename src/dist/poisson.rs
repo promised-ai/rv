@@ -200,7 +200,7 @@ macro_rules! impl_traits {
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let pois = RPossion::new(self.rate).unwrap();
-                let x: u64 = rng.sample(pois);
+                let x: u64 = rng.sample(pois) as u64;
                 x as $kind
             }
 
@@ -208,7 +208,7 @@ macro_rules! impl_traits {
                 let pois = RPossion::new(self.rate).unwrap();
                 (0..n)
                     .map(|_| {
-                        let x: u64 = rng.sample(pois);
+                        let x: u64 = rng.sample(pois) as u64;
                         x as $kind
                     })
                     .collect()

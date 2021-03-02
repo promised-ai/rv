@@ -264,7 +264,7 @@ where
 
     fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Param {
         let n = self.parameters().len();
-        (0..n).map(|_| rng.gen_range(-5.0, 5.0)).collect()
+        (0..n).map(|_| rng.gen_range(-5.0..5.0)).collect()
     }
 }
 

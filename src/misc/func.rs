@@ -605,7 +605,7 @@ mod tests {
     fn bisection_and_stanard_catflip_equivalence() {
         let mut rng = rand::thread_rng();
         for _ in 0..1000 {
-            let n: usize = rng.gen_range(10, 100);
+            let n: usize = rng.gen_range(10..100);
             let cws: Vec<f64> = (1..=n).map(|i| i as f64).collect();
             let u2 = rand::distributions::Uniform::new(0.0, n as f64);
             let r = rng.sample(u2);
