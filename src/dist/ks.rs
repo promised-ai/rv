@@ -27,8 +27,6 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
 /// ```rust
 /// use rv::traits::*;
 /// use rv::dist::KsTwoAsymptotic;
-/// use rand::SeedableRng;
-/// use rand::rngs::StdRng;
 ///
 /// let ks = KsTwoAsymptotic::default();
 /// let sf = ks.sf(&1.0);
@@ -307,8 +305,8 @@ impl_traits!(f64);
 mod test {
     use super::*;
     use crate::misc::ks_test;
-    use rand::rngs::StdRng;
     use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256Plus;
     const TOL: f64 = 1E-5;
 
     #[test]
@@ -393,7 +391,7 @@ mod test {
     #[test]
     fn draw() {
         let ks = KsTwoAsymptotic::new();
-        let mut rng = StdRng::seed_from_u64(0x1234);
+        let mut rng = Xoshiro256Plus::seed_from_u64(0x1234);
         let sample: Vec<f64> = ks.sample(1000, &mut rng);
         let (_, alpha) = ks_test(&sample, |x| ks.cdf(&x));
         assert!(alpha >= 0.05);
