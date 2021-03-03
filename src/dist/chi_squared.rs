@@ -248,8 +248,8 @@ mod tests {
     #[test]
     fn cdf() {
         let x2 = ChiSquared::new(2.5).unwrap();
-        assert::close(x2.cdf(&1.2_f64), 0.33859384379982849, TOL);
-        assert::close(x2.cdf(&3.4_f64), 0.74430510487063328, TOL);
+        assert::close(x2.cdf(&1.2_f64), 0.338_593_843_799_828_5, TOL);
+        assert::close(x2.cdf(&3.4_f64), 0.744_305_104_870_633_3, TOL);
     }
 
     #[test]

@@ -370,7 +370,7 @@ mod tests {
         let pois = Poisson::new(5.3).unwrap();
         assert::close(pois.ln_pmf(&1_u32), -3.6322931794419238, TOL);
         assert::close(pois.ln_pmf(&5_u32), -1.7489576399916658, TOL);
-        assert::close(pois.ln_pmf(&11_u32), -4.4575328197350492, TOL);
+        assert::close(pois.ln_pmf(&11_u32), -4.457_532_819_735_049, TOL);
     }
 
     #[test]
@@ -402,13 +402,13 @@ mod tests {
     fn cdf_mid() {
         let pois = Poisson::new(5.3).unwrap();
         // at floor of rate
-        assert::close(pois.cdf(&5_u32), 0.56347339228807169, TOL);
+        assert::close(pois.cdf(&5_u32), 0.563_473_392_288_071_7, TOL);
     }
 
     #[test]
     fn cdf_high() {
         let pois = Poisson::new(5.3).unwrap();
-        assert::close(pois.cdf(&15_u32), 0.99986699950835034, TOL);
+        assert::close(pois.cdf(&15_u32), 0.999_866_999_508_350_3, TOL);
     }
 
     #[test]

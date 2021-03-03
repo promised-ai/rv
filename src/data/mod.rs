@@ -20,13 +20,13 @@ pub type PoissonData<'a, X> = DataOrSuffStat<'a, X, Poisson>;
 /// The trait that data must implemented by all data used with the
 /// `Categorical` distribution
 pub trait CategoricalDatum: Sized + Sync + Copy {
-    fn into_usize(&self) -> usize;
+    fn into_usize(self) -> usize;
     fn from_usize(n: usize) -> Self;
 }
 
 impl CategoricalDatum for usize {
-    fn into_usize(&self) -> usize {
-        *self
+    fn into_usize(self) -> usize {
+        self
     }
 
     fn from_usize(n: usize) -> Self {
@@ -35,7 +35,7 @@ impl CategoricalDatum for usize {
 }
 
 impl CategoricalDatum for bool {
-    fn into_usize(&self) -> usize {
+    fn into_usize(self) -> usize {
         if !self {
             0
         } else {
@@ -51,8 +51,8 @@ impl CategoricalDatum for bool {
 macro_rules! impl_categorical_datum {
     ($kind:ty) => {
         impl CategoricalDatum for $kind {
-            fn into_usize(&self) -> usize {
-                *self as usize
+            fn into_usize(self) -> usize {
+                self as usize
             }
 
             fn from_usize(n: usize) -> Self {
@@ -179,10 +179,7 @@ where
     /// assert!(!suffstat.is_data());
     /// ```
     pub fn is_data(&self) -> bool {
-        match &self {
-            DataOrSuffStat::Data(..) => true,
-            _ => false,
-        }
+        matches!(&self, DataOrSuffStat::Data(..))
     }
 
     /// Determine whether the object contains sufficient statistics
@@ -205,10 +202,7 @@ where
     /// assert!(suffstat.is_suffstat());
     /// ```
     pub fn is_suffstat(&self) -> bool {
-        match &self {
-            DataOrSuffStat::SuffStat(..) => true,
-            _ => false,
-        }
+        matches!(&self, DataOrSuffStat::SuffStat(..))
     }
 
     /// Determine whether the object is empty
@@ -235,10 +229,7 @@ where
     /// assert!(none.is_none());
     /// ```
     pub fn is_none(&self) -> bool {
-        match &self {
-            DataOrSuffStat::None => true,
-            _ => false,
-        }
+        matches!(&self, DataOrSuffStat::None)
     }
 }
 

@@ -337,7 +337,7 @@ mod tests {
     #[test]
     fn skewness() {
         let s = Geometric::new(0.5).unwrap().skewness().unwrap();
-        assert::close(s, 2.12132034355964257, TOL);
+        assert::close(s, 2.121_320_343_559_642_4, TOL);
     }
 
     #[test]

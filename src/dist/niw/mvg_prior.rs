@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn ln_z_identity() {
         let z1 = ln_z(1.0, 2, &DMatrix::identity(2, 2));
-        assert::close(z1, 4.3689013133786361, TOL);
+        assert::close(z1, 4.368_901_313_378_636, TOL);
     }
 
     #[test]

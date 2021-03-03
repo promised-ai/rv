@@ -685,7 +685,7 @@ macro_rules! dual_step_quad_bounds {
     };
 }
 
-fn gauss_quad_points<G>(components: &Vec<G>) -> Vec<f64>
+fn gauss_quad_points<G>(components: &[G]) -> Vec<f64>
 where
     G: std::borrow::Borrow<Gaussian>,
 {
@@ -698,8 +698,8 @@ where
         params
     };
 
-    let mut points = Vec::new();
-    points.push(params[0].0);
+    let mut points = vec![params[0].0];
+    points.reserve(params.len().saturating_sub(1));
 
     let mut last_point = (params[0].0, params[0].0 + params[0].1);
 
@@ -801,7 +801,7 @@ mod tests {
 
         assert!(Mixture::new(vec![0.5, 0.51], components.clone()).is_err());
         assert!(Mixture::new(vec![0.5, 0.49], components.clone()).is_err());
-        assert!(Mixture::new(vec![0.5, 0.5], components.clone()).is_ok());
+        assert!(Mixture::new(vec![0.5, 0.5], components).is_ok());
     }
 
     #[test]
@@ -809,7 +809,7 @@ mod tests {
         let components = vec![Gaussian::standard(), Gaussian::standard()];
         let empty_components: Vec<Gaussian> = vec![];
 
-        assert!(Mixture::new(vec![], components.clone()).is_err());
+        assert!(Mixture::new(vec![], components).is_err());
         assert!(Mixture::new(vec![], empty_components).is_err());
     }
 
@@ -817,13 +817,13 @@ mod tests {
     fn new_should_not_allow_empty_components() {
         let empty_components: Vec<Gaussian> = vec![];
         assert!(Mixture::new(vec![0.5, 0.5], empty_components.clone()).is_err());
-        assert!(Mixture::new(vec![], empty_components.clone()).is_err());
+        assert!(Mixture::new(vec![], empty_components).is_err());
     }
 
     #[test]
     fn new_should_not_allow_mismatched_inputs() {
         let components = vec![Gaussian::standard(), Gaussian::standard()];
-        assert!(Mixture::new(vec![0.5, 0.3, 0.2], components.clone()).is_err());
+        assert!(Mixture::new(vec![0.5, 0.3, 0.2], components).is_err());
     }
 
     #[test]
@@ -1157,7 +1157,7 @@ mod tests {
             let weights = vec![0.5, 0.5];
             let mm = Mixture::new(weights, components).unwrap();
             let h: f64 = mm.entropy();
-            assert::close(h, -0.25_f64.ln(), TOL);
+            assert::close(h, -(0.25_f64.ln()), TOL);
         }
 
         #[test]
@@ -1179,7 +1179,7 @@ mod tests {
             let mm = Mixture::combine(vec![m1, m2]);
 
             let h: f64 = mm.entropy();
-            assert::close(h, -0.25_f64.ln(), TOL);
+            assert::close(h, -(0.25_f64.ln()), TOL);
         }
 
         #[test]

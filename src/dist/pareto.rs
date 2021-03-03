@@ -577,7 +577,7 @@ mod tests {
     fn entropy() {
         let par1 = Pareto::new(1.0, 1.0).unwrap();
         let par2 = Pareto::new(1.2, 3.4).unwrap();
-        assert::close(par1.entropy(), 0.86858896380650363, TOL);
+        assert::close(par1.entropy(), 0.868_588_963_806_503_6, TOL);
         assert::close(par2.entropy(), 1.2485042211505921, TOL);
     }
 

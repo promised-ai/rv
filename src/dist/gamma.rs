@@ -363,7 +363,7 @@ mod tests {
     #[test]
     fn ln_pdf_low_value() {
         let gam = Gamma::new(1.2, 3.4).unwrap();
-        assert::close(gam.ln_pdf(&0.1_f64), 0.75338758935104555, TOL);
+        assert::close(gam.ln_pdf(&0.1_f64), 0.753_387_589_351_045_6, TOL);
     }
 
     #[test]
@@ -375,10 +375,10 @@ mod tests {
     #[test]
     fn cdf() {
         let gam = Gamma::new(1.2, 3.4).unwrap();
-        assert::close(gam.cdf(&0.5_f32), 0.75943654431805463, TOL);
+        assert::close(gam.cdf(&0.5_f32), 0.759_436_544_318_054_6, TOL);
         assert::close(
             gam.cdf(&0.35294117647058826_f64),
-            0.62091806552384998,
+            0.620_918_065_523_85,
             TOL,
         );
         assert::close(gam.cdf(&100.0_f64), 1.0, TOL);

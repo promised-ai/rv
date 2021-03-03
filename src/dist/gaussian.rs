@@ -359,6 +359,7 @@ impl Kurtosis for Gaussian {
 }
 
 impl KlDivergence for Gaussian {
+    #[allow(clippy::clippy::suspicious_operation_groupings)]
     fn kl(&self, other: &Self) -> f64 {
         let m1 = self.mu;
         let m2 = other.mu;
@@ -482,7 +483,7 @@ mod tests {
     #[test]
     fn standard_ln_pdf_at_zero() {
         let gauss = Gaussian::standard();
-        assert::close(gauss.ln_pdf(&0.0_f64), -0.91893853320467267, TOL);
+        assert::close(gauss.ln_pdf(&0.0_f64), -0.918_938_533_204_672_7, TOL);
     }
 
     #[test]
@@ -500,7 +501,7 @@ mod tests {
     #[test]
     fn nonstandard_ln_pdf_off_mean() {
         let gauss = Gaussian::new(-1.2, 0.33).unwrap();
-        assert::close(gauss.ln_pdf(&0.0_f32), -6.4218461566169447, TOL);
+        assert::close(gauss.ln_pdf(&0.0_f32), -6.421_846_156_616_945, TOL);
     }
 
     #[test]
@@ -550,7 +551,7 @@ mod tests {
     #[test]
     fn cdf_value_at_one() {
         let gauss = Gaussian::standard();
-        assert::close(gauss.cdf(&1.0_f64), 0.84134474606854293, TOL);
+        assert::close(gauss.cdf(&1.0_f64), 0.841_344_746_068_542_9, TOL);
     }
 
     #[test]
@@ -609,10 +610,10 @@ mod tests {
     #[test]
     fn ln_f_after_set_mu_works() {
         let mut gauss = Gaussian::standard();
-        assert::close(gauss.ln_pdf(&0.0_f64), -0.91893853320467267, TOL);
+        assert::close(gauss.ln_pdf(&0.0_f64), -0.918_938_533_204_672_7, TOL);
 
         gauss.set_mu(1.0).unwrap();
-        assert::close(gauss.ln_pdf(&1.0_f64), -0.91893853320467267, TOL);
+        assert::close(gauss.ln_pdf(&1.0_f64), -0.918_938_533_204_672_7, TOL);
     }
 
     #[test]
@@ -621,6 +622,6 @@ mod tests {
 
         gauss.set_sigma(0.33).unwrap();
         assert::close(gauss.ln_pdf(&-1.2_f64), 0.18972409131693846, TOL);
-        assert::close(gauss.ln_pdf(&0.0_f32), -6.4218461566169447, TOL);
+        assert::close(gauss.ln_pdf(&0.0_f32), -6.421_846_156_616_945, TOL);
     }
 }
