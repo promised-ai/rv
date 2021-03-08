@@ -485,11 +485,11 @@ where
         enum Field {
             Weights,
             Components,
-        };
+        }
 
         struct MixtureVisitor<Fx> {
             _fx: PhantomData<Fx>,
-        };
+        }
 
         impl<Fx> MixtureVisitor<Fx> {
             fn new() -> Self {

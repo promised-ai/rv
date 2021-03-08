@@ -582,6 +582,20 @@ mod tests {
     }
 
     #[test]
+    fn quad_on_pdf_agrees_with_cdf_x() {
+        use crate::misc::quad_eps;
+        let ig = Gaussian::new(-2.3, 0.5).unwrap();
+        let pdf = |x: f64| ig.f(&x);
+        let mut rng = rand::thread_rng();
+        for _ in 0..100 {
+            let x: f64 = ig.draw(&mut rng);
+            let res = quad_eps(pdf, -10.0, x, Some(1e-13));
+            let cdf = ig.cdf(&x);
+            assert::close(res, cdf, 1e-7);
+        }
+    }
+
+    #[test]
     fn standard_gaussian_entropy() {
         let gauss = Gaussian::standard();
         assert::close(gauss.entropy(), 1.4189385332046727, TOL);

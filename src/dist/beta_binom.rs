@@ -2,13 +2,15 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::impl_display;
-use crate::misc::{ln_binom, ln_pflip};
-use crate::traits::*;
+use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Beta as _;
 use std::f64;
 use std::fmt;
+
+use crate::misc::{ln_binom, ln_pflip};
+use crate::traits::*;
+use crate::{clone_cache_f64, impl_display};
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// over k in {0, ..., n}
@@ -48,7 +50,7 @@ use std::fmt;
 /// beta_binom.pmf(&21_u32); // panics
 /// ```
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct BetaBinomial {
     /// Total number of trials
@@ -57,6 +59,28 @@ pub struct BetaBinomial {
     alpha: f64,
     /// Analogous to Beta Distribution β parameter
     beta: f64,
+    // ln_beta(alpha, beta)
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    ln_beta_ab: OnceCell<f64>,
+}
+
+impl Clone for BetaBinomial {
+    fn clone(&self) -> Self {
+        Self {
+            n: self.n,
+            alpha: self.alpha,
+            beta: self.beta,
+            ln_beta_ab: clone_cache_f64!(self, ln_beta_ab),
+        }
+    }
+}
+
+impl PartialEq for BetaBinomial {
+    fn eq(&self, other: &BetaBinomial) -> bool {
+        self.n == other.n
+            && self.alpha == other.alpha
+            && self.beta == other.beta
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -98,7 +122,12 @@ impl BetaBinomial {
         } else if n == 0 {
             Err(BetaBinomialError::NIsZero)
         } else {
-            Ok(BetaBinomial { n, alpha, beta })
+            Ok(BetaBinomial {
+                n,
+                alpha,
+                beta,
+                ln_beta_ab: OnceCell::new(),
+            })
         }
     }
 
@@ -106,7 +135,20 @@ impl BetaBinomial {
     /// valid.
     #[inline]
     pub fn new_unchecked(n: u32, alpha: f64, beta: f64) -> Self {
-        BetaBinomial { n, alpha, beta }
+        BetaBinomial {
+            n,
+            alpha,
+            beta,
+            ln_beta_ab: OnceCell::new(),
+        }
+    }
+
+    /// Evaluate or fetch cached log sigma
+    #[inline]
+    fn ln_beta_ab(&self) -> f64 {
+        *self
+            .ln_beta_ab
+            .get_or_init(|| self.alpha.ln_beta(self.beta))
     }
 
     /// Get `n`, the number of trials.
@@ -176,6 +218,7 @@ impl BetaBinomial {
     /// Set alpha without input validation
     #[inline]
     pub fn set_alpha_unchecked(&mut self, alpha: f64) {
+        self.ln_beta_ab = OnceCell::new();
         self.alpha = alpha
     }
 
@@ -231,6 +274,7 @@ impl BetaBinomial {
     /// Set beta without input validation
     #[inline]
     pub fn set_beta_unchecked(&mut self, beta: f64) {
+        self.ln_beta_ab = OnceCell::new();
         self.beta = beta
     }
 
@@ -288,10 +332,9 @@ macro_rules! impl_int_traits {
             fn ln_f(&self, k: &$kind) -> f64 {
                 let nf = f64::from(self.n);
                 let kf = *k as f64;
-                // TODO: cache ln_beta(alpha, beta)
                 ln_binom(nf, kf)
                     + (kf + self.alpha).ln_beta(nf - kf + self.beta)
-                    - self.alpha.ln_beta(self.beta)
+                    - self.ln_beta_ab()
             }
 
             fn draw<R: Rng>(&self, mut rng: &mut R) -> $kind {

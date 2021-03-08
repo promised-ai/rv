@@ -120,6 +120,7 @@ where
             let _cj = self.components.remove(zi);
         } else {
             self.components[zi].forget(&x);
+            assert!(self.components[zi].n() > 0);
         }
 
         (x, ix)
@@ -223,5 +224,8 @@ fn main() {
     // and the second half belong to the other. Something like
     // [0, 0, 0, 0, ...,0, 1, ..., 1, 1, 1, 1] -- subject to some noise,
     // because we don't actually know how many components there are.
-    println!("{:?}", dpgmm.partition.z());
+    let mut zs_a = dpgmm.partition.z().clone();
+    let zs_b = zs_a.split_off(50);
+    println!("{:?}", zs_a);
+    println!("{:?}", zs_b);
 }
