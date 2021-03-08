@@ -1,5 +1,5 @@
 use crate::consts::LN_2PI;
-use crate::data::{DataOrSuffStat, MvGaussianSuffStat};
+use crate::data::{extract_stat_then, DataOrSuffStat, MvGaussianSuffStat};
 use crate::dist::{MvGaussian, NormalInvWishart};
 use crate::misc::lnmv_gamma;
 use crate::traits::{ConjugatePrior, SuffStat};
@@ -7,23 +7,6 @@ use nalgebra::{DMatrix, DVector};
 use std::f64::consts::{LN_2, PI};
 
 type MvgData<'a> = DataOrSuffStat<'a, DVector<f64>, MvGaussian>;
-
-macro_rules! extract_stat_then {
-    ($ndims: expr, $x: ident, $func: expr) => {{
-        match $x {
-            DataOrSuffStat::SuffStat(ref stat) => $func(&stat),
-            DataOrSuffStat::Data(xs) => {
-                let mut stat = MvGaussianSuffStat::new($ndims);
-                stat.observe_many(&xs);
-                $func(&stat)
-            }
-            DataOrSuffStat::None => {
-                let stat = MvGaussianSuffStat::new($ndims);
-                $func(&stat)
-            }
-        }
-    }};
-}
 
 fn ln_z(k: f64, df: usize, scale: &DMatrix<f64>) -> f64 {
     let d = scale.nrows();
@@ -44,21 +27,27 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         }
 
         let nf = x.n() as f64;
-        extract_stat_then!(self.ndims(), x, |stat: &MvGaussianSuffStat| {
-            let xbar = stat.sum_x() / stat.n() as f64;
-            let diff = &xbar - self.mu();
-            let s = stat.sum_x_sq() - nf * (&xbar * &xbar.transpose());
+        extract_stat_then(
+            x,
+            || MvGaussianSuffStat::new(self.ndims()),
+            |stat: MvGaussianSuffStat| {
+                let xbar = stat.sum_x() / stat.n() as f64;
+                let diff = &xbar - self.mu();
+                let s = stat.sum_x_sq() - nf * (&xbar * &xbar.transpose());
 
-            let kn = self.k() + stat.n() as f64;
-            let vn = self.df() + stat.n();
-            let mn = (self.k() * self.mu() + stat.sum_x()) / kn;
-            let sn = self.scale()
-                + s
-                + (self.k() * stat.n() as f64) / kn * &diff * &diff.transpose();
+                let kn = self.k() + stat.n() as f64;
+                let vn = self.df() + stat.n();
+                let mn = (self.k() * self.mu() + stat.sum_x()) / kn;
+                let sn = self.scale()
+                    + s
+                    + (self.k() * stat.n() as f64) / kn
+                        * &diff
+                        * &diff.transpose();
 
-            NormalInvWishart::new(mn, kn, vn, sn)
-                .expect("Invalid posterior parameters")
-        })
+                NormalInvWishart::new(mn, kn, vn, sn)
+                    .expect("Invalid posterior parameters")
+            },
+        )
     }
 
     #[inline]

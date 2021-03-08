@@ -27,7 +27,7 @@ impl ContinuousDistr<Bernoulli> for Beta {}
 impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
     type Posterior = Self;
     type LnMCache = f64;
-    type LnPpCache = f64;
+    type LnPpCache = (f64, f64);
 
     #[allow(clippy::many_single_char_names)]
     fn posterior(&self, x: &DataOrSuffStat<X, Bernoulli>) -> Self {
@@ -66,16 +66,15 @@ impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
         //  P(y=1 | xs) happens to be the posterior mean
         let post = self.posterior(x);
         let p: f64 = post.mean().expect("Mean undefined");
-        p
+        (p.ln(), (1.0 - p).ln())
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &X) -> f64 {
         //  P(y=1 | xs) happens to be the posterior mean
-        let p = *cache;
         if y.into_bool() {
-            p.ln()
+            cache.0
         } else {
-            (1.0 - p).ln()
+            cache.1
         }
     }
 }

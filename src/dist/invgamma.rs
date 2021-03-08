@@ -210,13 +210,13 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let g = rand_distr::Gamma::new(self.shape, 1.0 / self.scale)
+                let g = rand_distr::Gamma::new(self.shape, self.scale.recip())
                     .unwrap();
                 (1.0 / rng.sample(g)) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let g = rand_distr::Gamma::new(self.shape, 1.0 / self.scale)
+                let g = rand_distr::Gamma::new(self.shape, self.scale.recip())
                     .unwrap();
                 (0..n).map(|_| (1.0 / rng.sample(g)) as $kind).collect()
             }
@@ -392,6 +392,29 @@ mod tests {
     fn ln_pdf_at_mode() {
         let ig = InvGamma::new(3.0, 2.0).unwrap();
         assert::close(ig.ln_pdf(&0.5_f64), 0.158_883_083_359_671_6, TOL);
+    }
+
+    #[test]
+    fn quad_on_pdf_agrees_with_cdf_range() {
+        use crate::misc::quad_eps;
+        let ig = InvGamma::new(5.2, 3.3).unwrap();
+        let pdf = |x: f64| ig.f(&x);
+        let res = quad_eps(pdf, 1e-16, 1000.0, Some(1e-13));
+        assert::close(res, 1.0, 1e-7);
+    }
+
+    #[test]
+    fn quad_on_pdf_agrees_with_cdf_2() {
+        use crate::misc::quad_eps;
+        let ig = InvGamma::new(2.3, 3.1).unwrap();
+        let pdf = |x: f64| ig.f(&x);
+        let mut rng = rand::thread_rng();
+        for _ in 0..100 {
+            let x: f64 = ig.draw(&mut rng);
+            let res = quad_eps(pdf, 1e-16, x, Some(1e-13));
+            let cdf = ig.cdf(&x);
+            assert::close(res, cdf, 1e-7);
+        }
     }
 
     #[test]

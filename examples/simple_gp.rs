@@ -1,5 +1,8 @@
+#[cfg(feature = "process")]
 use nalgebra::{DMatrix, DVector};
+#[cfg(feature = "process")]
 use rand::SeedableRng;
+#[cfg(feature = "process")]
 use rand_xoshiro::Xoshiro256Plus;
 
 #[cfg(feature = "process")]

@@ -15,7 +15,7 @@ format:
   image: "rust:1.46"
   script:
     # there should be no println in src
-    - '[[ `grep -r "println" src/*` == "" ]]'
+    - '[[ `grep -E -r -e "(\s+|^)println" src/*` == "" ]]'
     - rustup component add rustfmt
     - cargo fmt -- --check
 
