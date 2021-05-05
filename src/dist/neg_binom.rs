@@ -71,7 +71,7 @@ impl NegBinomial {
             Err(NegBinomialError::RLessThanOne { r })
         } else if !r.is_finite() {
             Err(NegBinomialError::RNotFinite { r })
-        } else if 1.0 < p || p < 0.0 {
+        } else if !(0.0..=1.0).contains(&p) {
             Err(NegBinomialError::POutOfRange { p })
         } else if !p.is_finite() {
             Err(NegBinomialError::PNotFinite { p })
@@ -191,7 +191,7 @@ impl NegBinomial {
     /// ```
     #[inline]
     pub fn set_p(&mut self, p: f64) -> Result<(), NegBinomialError> {
-        if 1.0 < p || p < 0.0 {
+        if !(0.0..=1.0).contains(&p) {
             Err(NegBinomialError::POutOfRange { p })
         } else if !p.is_finite() {
             Err(NegBinomialError::PNotFinite { p })
@@ -498,8 +498,8 @@ mod tests {
             0.0004152360960000008,
             0.00018119393279999974,
             7.85173708800001e-05,
-            3.3822867456000154e-05,
-            1.449551462400003e-05,
+            3.382_286_745_600_015_4e-5,
+            1.449_551_462_400_003e-5,
         ];
         let nbin = NegBinomial::new(2.0, 0.6).unwrap();
         (0..15).zip(fs.iter()).for_each(|(x, f)| {

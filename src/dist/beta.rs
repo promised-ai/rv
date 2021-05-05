@@ -468,7 +468,7 @@ mod tests {
     #[test]
     fn ln_pdf_low_value() {
         let beta = Beta::new(1.5, 2.0).unwrap();
-        assert::close(beta.ln_pdf(&0.01), -0.99087958886522731, TOL);
+        assert::close(beta.ln_pdf(&0.01), -0.990_879_588_865_227_3, TOL);
     }
 
     #[test]
@@ -598,7 +598,7 @@ mod tests {
     #[test]
     fn variance() {
         let beta = Beta::new(1.5, 2.0).unwrap();
-        assert::close(beta.variance().unwrap(), 0.054421768707482991, TOL);
+        assert::close(beta.variance().unwrap(), 0.054_421_768_707_482_99, TOL);
     }
 
     #[test]

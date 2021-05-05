@@ -1,7 +1,7 @@
 use rand::Rng;
 use special::Gamma as SGamma;
 
-use crate::data::{CategoricalDatum, CategoricalSuffStat, DataOrSuffStat};
+use crate::data::{extract_stat_then, CategoricalDatum, CategoricalSuffStat};
 use crate::dist::{Categorical, Dirichlet, SymmetricDirichlet};
 use crate::prelude::CategoricalData;
 use crate::traits::*;
@@ -17,23 +17,6 @@ impl Rv<Categorical> for SymmetricDirichlet {
     }
 }
 
-macro_rules! extract_stat_then {
-    ($k: expr, $x: ident, $func: expr) => {{
-        match $x {
-            DataOrSuffStat::SuffStat(ref stat) => $func(&stat),
-            DataOrSuffStat::Data(xs) => {
-                let mut stat = CategoricalSuffStat::new($k);
-                xs.iter().for_each(|y| stat.observe(y));
-                $func(&stat)
-            }
-            DataOrSuffStat::None => {
-                let stat = CategoricalSuffStat::new($k);
-                $func(&stat)
-            }
-        }
-    }};
-}
-
 impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     for SymmetricDirichlet
 {
@@ -42,12 +25,16 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     type LnPpCache = (Vec<f64>, f64);
 
     fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
-        extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
-            let alphas: Vec<f64> =
-                stat.counts().iter().map(|&ct| self.alpha() + ct).collect();
+        extract_stat_then(
+            x,
+            || CategoricalSuffStat::new(self.k()),
+            |stat: CategoricalSuffStat| {
+                let alphas: Vec<f64> =
+                    stat.counts().iter().map(|&ct| self.alpha() + ct).collect();
 
-            Dirichlet::new(alphas).unwrap()
-        })
+                Dirichlet::new(alphas).unwrap()
+            },
+        )
     }
 
     #[inline]
@@ -55,8 +42,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
         let sum_alpha = self.alpha() * self.k() as f64;
         let a = sum_alpha.ln_gamma().0;
         let d = self.alpha().ln_gamma().0 * self.k() as f64;
-        let ln_norm = a - d;
-        ln_norm
+        a - d
     }
 
     fn ln_m_with_cache(
@@ -66,16 +52,19 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     ) -> f64 {
         let sum_alpha = self.alpha() * self.k() as f64;
 
-        extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
-            // terms
-            let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
-            let c = stat
-                .counts()
-                .iter()
-                .fold(0.0, |acc, &ct| acc + (self.alpha() + ct).ln_gamma().0);
+        extract_stat_then(
+            x,
+            || CategoricalSuffStat::new(self.k()),
+            |stat: CategoricalSuffStat| {
+                // terms
+                let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
+                let c = stat.counts().iter().fold(0.0, |acc, &ct| {
+                    acc + (self.alpha() + ct).ln_gamma().0
+                });
 
-            -b + c + cache
-        })
+                -b + c + cache
+            },
+        )
     }
 
     #[inline]
@@ -108,16 +97,20 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     type LnPpCache = (Vec<f64>, f64);
 
     fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
-        extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
-            let alphas: Vec<f64> = self
-                .alphas()
-                .iter()
-                .zip(stat.counts().iter())
-                .map(|(&a, &ct)| a + ct)
-                .collect();
+        extract_stat_then(
+            x,
+            || CategoricalSuffStat::new(self.k()),
+            |stat: CategoricalSuffStat| {
+                let alphas: Vec<f64> = self
+                    .alphas()
+                    .iter()
+                    .zip(stat.counts().iter())
+                    .map(|(&a, &ct)| a + ct)
+                    .collect();
 
-            Dirichlet::new(alphas).unwrap()
-        })
+                Dirichlet::new(alphas).unwrap()
+            },
+        )
     }
 
     #[inline]
@@ -137,17 +130,21 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
         x: &CategoricalData<X>,
     ) -> f64 {
         let (sum_alpha, ln_norm) = cache;
-        extract_stat_then!(self.k(), x, |stat: &CategoricalSuffStat| {
-            // terms
-            let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
-            let c = self
-                .alphas()
-                .iter()
-                .zip(stat.counts().iter())
-                .fold(0.0, |acc, (&a, &ct)| acc + (a + ct).ln_gamma().0);
+        extract_stat_then(
+            x,
+            || CategoricalSuffStat::new(self.k()),
+            |stat: CategoricalSuffStat| {
+                // terms
+                let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
+                let c = self
+                    .alphas()
+                    .iter()
+                    .zip(stat.counts().iter())
+                    .fold(0.0, |acc, (&a, &ct)| acc + (a + ct).ln_gamma().0);
 
-            -b + c + ln_norm
-        })
+                -b + c + ln_norm
+            },
+        )
     }
 
     #[inline]
@@ -166,6 +163,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::data::DataOrSuffStat;
 
     const TOL: f64 = 1E-12;
 
@@ -333,9 +331,9 @@ mod test {
         #[test]
         fn csd_loglike_value_1() {
             let csd = SymmetricDirichlet::new(0.5, 3).unwrap();
-            let cat = Categorical::new(&vec![0.2, 0.3, 0.5]).unwrap();
+            let cat = Categorical::new(&[0.2, 0.3, 0.5]).unwrap();
             let lf = csd.ln_f(&cat);
-            assert::close(lf, -0.084598117749354218, TOL);
+            assert::close(lf, -0.084_598_117_749_354_22, TOL);
         }
     }
 }

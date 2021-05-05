@@ -2,7 +2,6 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::consts::HALF_LN_2PI;
 use crate::data::GaussianSuffStat;
 use crate::dist::{Gamma, Gaussian};
 use crate::impl_display;
@@ -291,6 +290,12 @@ impl NormalGamma {
     pub fn set_v_unchecked(&mut self, v: f64) {
         self.v = v;
     }
+
+    /// Return (m, r, s, v)
+    #[inline]
+    pub fn params(&self) -> (f64, f64, f64, f64) {
+        (self.m, self.r, self.s, self.v)
+    }
 }
 
 impl From<&NormalGamma> for String {
@@ -312,7 +317,7 @@ impl Rv<Gaussian> for NormalGamma {
             Gamma::new_unchecked(self.v / 2.0, self.s / 2.0).ln_f(&rho);
         let prior_sigma = (self.r * rho).recip().sqrt();
         let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&x.mu());
-        lnf_rho + lnf_mu - HALF_LN_2PI
+        lnf_rho + lnf_mu
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
@@ -326,11 +331,24 @@ impl Rv<Gaussian> for NormalGamma {
         // catch things when they go wrong here so they don't spread. Of course,
         // all this input validation hurts performance 😞.
         let rho: f64 = Gamma::new(self.v / 2.0, self.s / 2.0)
-            .expect("Invalid σ params when drawing Gaussian")
+            .map_err(|err| {
+                panic!("Invalid ρ params when drawing Gaussian: {}", err)
+            })
+            .unwrap()
             .draw(&mut rng);
-        let post_sigma: f64 = (self.r * rho).sqrt().recip();
+
+        let sigma = if rho.is_infinite() {
+            std::f64::EPSILON
+        } else {
+            rho.recip().sqrt()
+        };
+
+        let post_sigma: f64 = self.r.recip().sqrt() * sigma;
         let mu: f64 = Gaussian::new(self.m, post_sigma)
-            .expect("Invalid μ internal when drawing Gaussian")
+            .map_err(|err| {
+                panic!("Invalid μ params when drawing Gaussian: {}", err)
+            })
+            .unwrap()
             .draw(&mut rng);
 
         Gaussian::new(mu, rho.sqrt().recip()).expect("Invalid params")

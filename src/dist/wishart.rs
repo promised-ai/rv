@@ -247,7 +247,7 @@ mod tests {
         assert!(InvWishart::new(inv_scale.clone(), 4).is_ok());
         assert!(InvWishart::new(inv_scale.clone(), 5).is_ok());
         assert_eq!(
-            InvWishart::new(inv_scale.clone(), 3),
+            InvWishart::new(inv_scale, 3),
             Err(InvWishartError::DfLessThanDimensions { df: 3, ndims: 4 })
         );
     }
@@ -298,7 +298,7 @@ mod tests {
         let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
         let iw = InvWishart::new(inv_scale, 5).unwrap();
         let x = DMatrix::<f64>::identity(4, 4);
-        assert::close(iw.ln_f(&x), -18.939673925150899, TOL)
+        assert::close(iw.ln_f(&x), -18.939_673_925_150_9, TOL)
     }
 
     #[test]

@@ -27,8 +27,8 @@ enum Color {
 /// Then we implement the CatgoricalDatum trait for Color which has methods to
 /// convert to and from a usize index.
 impl CategoricalDatum for Color {
-    fn into_usize(&self) -> usize {
-        *self as usize
+    fn into_usize(self) -> usize {
+        self as usize
     }
 
     fn from_usize(n: usize) -> Self {
@@ -44,7 +44,7 @@ impl CategoricalDatum for Color {
 fn main() {
     let mut rng = rand::thread_rng();
 
-    let ctgrl = Categorical::new(&vec![0.25, 0.25, 0.5]).unwrap();
+    let ctgrl = Categorical::new(&[0.25, 0.25, 0.5]).unwrap();
 
     // Compute the PMF, P(Red).
     let p = ctgrl.pmf(&Color::Red);

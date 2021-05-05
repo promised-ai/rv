@@ -13,7 +13,7 @@ fn bench_cat_draw(c: &mut Criterion) {
             |b, &k| {
                 let cat = &Categorical::uniform(k);
                 b.iter_batched_ref(
-                    || rand::thread_rng(),
+                    rand::thread_rng,
                     |mut rng| {
                         let _x: u8 = cat.draw(&mut rng);
                     },
@@ -25,7 +25,7 @@ fn bench_cat_draw(c: &mut Criterion) {
         .with_function("usize", |b, &k| {
             let cat = &Categorical::uniform(k);
             b.iter_batched_ref(
-                || rand::thread_rng(),
+                rand::thread_rng,
                 |mut rng| {
                     let _x: usize = cat.draw(&mut rng);
                 },

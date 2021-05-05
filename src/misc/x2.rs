@@ -42,7 +42,7 @@ mod tests {
         let ps: Vec<f64> = vec![0.25; 4];
         let (x2, p) = x2_test(&f_obs, &ps);
 
-        assert::close(x2, 2.4179104477611939, TOL);
-        assert::close(p, 0.49030930696538833, TOL);
+        assert::close(x2, 2.417_910_447_761_194, TOL);
+        assert::close(p, 0.490_309_306_965_388_3, TOL);
     }
 }

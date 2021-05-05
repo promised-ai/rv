@@ -79,8 +79,7 @@ mod model;
 pub mod prelude;
 #[cfg(feature = "process")]
 pub mod process;
-#[cfg(test)]
-pub(crate) mod test;
+pub mod test;
 pub mod traits;
 
 pub use crate::model::ConjugateModel;
@@ -105,4 +104,21 @@ macro_rules! clone_cache_f64 {
             OnceCell::new()
         }
     }
+}
+
+#[macro_export]
+macro_rules! extract_stat {
+    ($fx: ty, $stat_type: ty) => {
+        fn extract_stat(x: &DataOrSuffStat<f64, $fx>) -> $stat_type {
+            match x {
+                DataOrSuffStat::SuffStat(ref s) => (*s).clone(),
+                DataOrSuffStat::Data(xs) => {
+                    let mut stat = $stat_type::new();
+                    xs.iter().for_each(|y| stat.observe(y));
+                    stat
+                }
+                DataOrSuffStat::None => $stat_type::new(),
+            }
+        }
+    };
 }

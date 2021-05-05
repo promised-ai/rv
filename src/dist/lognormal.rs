@@ -393,7 +393,7 @@ mod tests {
     #[test]
     fn standard_ln_pdf_at_one() {
         let lognorm = LogNormal::standard();
-        assert::close(lognorm.ln_pdf(&1.0_f64), -0.91893853320467267, TOL);
+        assert::close(lognorm.ln_pdf(&1.0_f64), -0.918_938_533_204_672_7, TOL);
     }
 
     #[test]
@@ -436,7 +436,7 @@ mod tests {
     #[test]
     fn skewness() {
         let lognorm = LogNormal::new(-1.2, 3.4).unwrap();
-        assert::close(lognorm.skewness().unwrap(), 33936928.306623809, TOL);
+        assert::close(lognorm.skewness().unwrap(), 33_936_928.306_623_81, TOL);
     }
 
     #[test]
@@ -454,7 +454,7 @@ mod tests {
     #[test]
     fn cdf_standard_value_at_two() {
         let lognorm = LogNormal::standard();
-        assert::close(lognorm.cdf(&2.0_f64), 0.75589140421441725, TOL);
+        assert::close(lognorm.cdf(&2.0_f64), 0.755_891_404_214_417_3, TOL);
     }
 
     #[test]

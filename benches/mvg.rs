@@ -12,7 +12,7 @@ fn bench_mvg_draw(c: &mut Criterion) {
         |b, &&dims| {
             let mvg = MvGaussian::standard(dims).unwrap();
             b.iter_batched_ref(
-                || rand::thread_rng(),
+                rand::thread_rng,
                 |mut rng| black_box(mvg.draw(&mut rng)),
                 BatchSize::SmallInput,
             )
@@ -29,7 +29,7 @@ fn bench_mvg_sample(c: &mut Criterion) {
         "10-D MvGaussian, sample",
         move |b, &&n| {
             b.iter_batched_ref(
-                || rand::thread_rng(),
+                rand::thread_rng,
                 |mut rng| black_box(mvg.sample(n, &mut rng)),
                 BatchSize::SmallInput,
             )
