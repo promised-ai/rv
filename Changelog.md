@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.12
+## 0.12.0
 - Added Inverse X^2 distribution
 - Added Scaled Inverse X^2 distribution (`InvChiSquared`)
 - Added Inverse Gaussian distribution
