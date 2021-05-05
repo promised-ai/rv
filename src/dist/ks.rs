@@ -8,7 +8,10 @@ use serde::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
-use std::f64::consts::{PI, SQRT_2};
+use std::f64::{
+    consts::{PI, SQRT_2},
+    EPSILON,
+};
 
 #[inline]
 fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
@@ -27,8 +30,6 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
 /// ```rust
 /// use rv::traits::*;
 /// use rv::dist::KsTwoAsymptotic;
-/// use rand::SeedableRng;
-/// use rand::rngs::StdRng;
 ///
 /// let ks = KsTwoAsymptotic::default();
 /// let sf = ks.sf(&1.0);
@@ -56,6 +57,7 @@ impl KsTwoAsymptotic {
         Self {}
     }
 
+    #[allow(clippy::clippy::many_single_char_names)]
     fn compute(x: f64) -> CdfPdf {
         if x <= MIN_THRESHOLD {
             CdfPdf { cdf: 0.0, pdf: 0.0 }
@@ -139,9 +141,10 @@ impl KsTwoAsymptotic {
     /// Determine the value s.t.
     /// sf(x) = sf
     /// cdf(x) = cdf
+    #[allow(clippy::clippy::many_single_char_names)]
     fn inverse(sf: f64, cdf: f64) -> f64 {
         if !(sf >= 0.0 && cdf >= 0.0 && sf <= 1.0 && cdf <= 1.0)
-            || (1.0 - cdf - sf).abs() > 4.0 * std::f64::EPSILON
+            || (1.0 - cdf - sf).abs() > 4.0 * EPSILON
         {
             std::f64::NAN
         } else if cdf == 0.0 {
@@ -173,7 +176,7 @@ impl KsTwoAsymptotic {
                         * (-(logcdf + b.ln() - log_sqrt_2pi)).sqrt());
                 x = (a + b) / 2.0;
             } else {
-                const JITTERB: f64 = std::f64::EPSILON * 256.0;
+                const JITTERB: f64 = EPSILON * 256.0;
                 let pba = sf / (2.0 * (1.0 - (-4.0_f64).exp()));
                 let pbb = sf * (1.0 - JITTERB) / 2.0;
 
@@ -196,7 +199,7 @@ impl KsTwoAsymptotic {
                     x = (a + b) / 2.0;
                 }
             }
-            assert!(a <= b, format!("{} > {}", a, b));
+            assert!(a <= b, "{} > {}", a, b);
 
             for _ in 0..MAX_ITERS {
                 let x0 = x;
@@ -218,7 +221,7 @@ impl KsTwoAsymptotic {
                 }
 
                 let dfdx = -c.pdf;
-                if dfdx.abs() <= 0.0 {
+                if dfdx.abs() <= EPSILON {
                     x = (a + b) / 2.0;
                 } else {
                     let t = df / dfdx;
@@ -226,27 +229,18 @@ impl KsTwoAsymptotic {
                 }
 
                 if x >= a && x <= b {
-                    if within_tol(
-                        x,
-                        x0,
-                        std::f64::EPSILON,
-                        std::f64::EPSILON * 2.0,
-                    ) {
+                    if within_tol(x, x0, EPSILON, EPSILON * 2.0) {
                         break;
-                    } else if x == a || x == b {
+                    } else if (x - a).abs() < EPSILON || (x - b).abs() < EPSILON
+                    {
                         x = (a + b) / 2.0;
-                        if x == a || x == b {
+                        if (x - a).abs() > EPSILON || (x - b).abs() < EPSILON {
                             break;
                         }
                     }
                 } else {
                     x = (a + b) / 2.0;
-                    if within_tol(
-                        x,
-                        x0,
-                        std::f64::EPSILON,
-                        std::f64::EPSILON * 2.0,
-                    ) {
+                    if within_tol(x, x0, EPSILON, EPSILON * 2.0) {
                         break;
                     }
                 }
@@ -307,8 +301,8 @@ impl_traits!(f64);
 mod test {
     use super::*;
     use crate::misc::ks_test;
-    use rand::rngs::StdRng;
     use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256Plus;
     const TOL: f64 = 1E-5;
 
     #[test]
@@ -351,7 +345,7 @@ mod test {
         ];
         let ys: [f64; 10] = [
             6.609305242245699e-53,
-            2.347446802363517e-05,
+            2.347_446_802_363_517e-5,
             0.05207062833501679,
             0.3447355082583501,
             0.6656454869612993,
@@ -393,7 +387,7 @@ mod test {
     #[test]
     fn draw() {
         let ks = KsTwoAsymptotic::new();
-        let mut rng = StdRng::seed_from_u64(0x1234);
+        let mut rng = Xoshiro256Plus::seed_from_u64(0x1234);
         let sample: Vec<f64> = ks.sample(1000, &mut rng);
         let (_, alpha) = ks_test(&sample, |x| ks.cdf(&x));
         assert!(alpha >= 0.05);

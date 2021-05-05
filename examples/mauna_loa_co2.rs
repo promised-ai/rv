@@ -29,7 +29,8 @@
 #[cfg(feature = "process")]
 pub fn main() -> std::io::Result<()> {
     use nalgebra::{DMatrix, DVector};
-    use rand::{rngs::SmallRng, SeedableRng};
+    use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256Plus;
     use rv::process::gaussian::kernel::*;
     use rv::process::gaussian::{GaussianProcess, NoiseModel};
     use rv::process::{RandomProcess, RandomProcessMle};
@@ -92,7 +93,7 @@ pub fn main() -> std::io::Result<()> {
 
     // Let's find better parametes
     println!("Optimizing...");
-    let mut rng = SmallRng::seed_from_u64(0xABCD);
+    let mut rng = Xoshiro256Plus::seed_from_u64(0xABCD);
     let gp = gp.optimize(10, 0, &mut rng).expect("Failed to optimize");
 
     println!("Optimum Kernel = {:?}", gp.kernel());

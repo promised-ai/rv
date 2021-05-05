@@ -209,6 +209,7 @@ impl<X: Booleable> Rv<X> for Bernoulli {
     }
 
     fn ln_f(&self, x: &X) -> f64 {
+        // TODO: this is really slow, we should cache ln(p) and ln(q)
         self.f(x).ln()
     }
 

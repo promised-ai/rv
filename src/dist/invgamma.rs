@@ -210,13 +210,13 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let g = rand_distr::Gamma::new(self.shape, 1.0 / self.scale)
+                let g = rand_distr::Gamma::new(self.shape, self.scale.recip())
                     .unwrap();
                 (1.0 / rng.sample(g)) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let g = rand_distr::Gamma::new(self.shape, 1.0 / self.scale)
+                let g = rand_distr::Gamma::new(self.shape, self.scale.recip())
                     .unwrap();
                 (0..n).map(|_| (1.0 / rng.sample(g)) as $kind).collect()
             }
@@ -366,7 +366,7 @@ mod tests {
     #[test]
     fn variance() {
         let ig = InvGamma::new(2.3, 4.5).unwrap();
-        assert::close(ig.variance().unwrap(), 39.940828402366897, TOL);
+        assert::close(ig.variance().unwrap(), 39.940_828_402_366_9, TOL);
     }
 
     #[test]
@@ -379,19 +379,42 @@ mod tests {
     #[test]
     fn ln_pdf_low_value() {
         let ig = InvGamma::new(3.0, 2.0).unwrap();
-        assert::close(ig.ln_pdf(&0.1_f64), -9.4033652669039274, TOL);
+        assert::close(ig.ln_pdf(&0.1_f64), -9.403_365_266_903_927, TOL);
     }
 
     #[test]
     fn ln_pdf_at_mean() {
         let ig = InvGamma::new(3.0, 2.0).unwrap();
-        assert::close(ig.ln_pdf(&1.0_f64), -0.61370563888010954, TOL);
+        assert::close(ig.ln_pdf(&1.0_f64), -0.613_705_638_880_109_5, TOL);
     }
 
     #[test]
     fn ln_pdf_at_mode() {
         let ig = InvGamma::new(3.0, 2.0).unwrap();
-        assert::close(ig.ln_pdf(&0.5_f64), 0.15888308335967161, TOL);
+        assert::close(ig.ln_pdf(&0.5_f64), 0.158_883_083_359_671_6, TOL);
+    }
+
+    #[test]
+    fn quad_on_pdf_agrees_with_cdf_range() {
+        use crate::misc::quad_eps;
+        let ig = InvGamma::new(5.2, 3.3).unwrap();
+        let pdf = |x: f64| ig.f(&x);
+        let res = quad_eps(pdf, 1e-16, 1000.0, Some(1e-13));
+        assert::close(res, 1.0, 1e-7);
+    }
+
+    #[test]
+    fn quad_on_pdf_agrees_with_cdf_2() {
+        use crate::misc::quad_eps;
+        let ig = InvGamma::new(2.3, 3.1).unwrap();
+        let pdf = |x: f64| ig.f(&x);
+        let mut rng = rand::thread_rng();
+        for _ in 0..100 {
+            let x: f64 = ig.draw(&mut rng);
+            let res = quad_eps(pdf, 1e-16, x, Some(1e-13));
+            let cdf = ig.cdf(&x);
+            assert::close(res, cdf, 1e-7);
+        }
     }
 
     #[test]
@@ -451,13 +474,13 @@ mod tests {
     #[test]
     fn cdf_at_1() {
         let ig = InvGamma::new(1.2, 3.4).unwrap();
-        assert::close(ig.cdf(&1.0), 0.048714368540659622, TOL);
+        assert::close(ig.cdf(&1.0), 0.048_714_368_540_659_62, TOL);
     }
 
     #[test]
     fn cdf_at_mean() {
         let ig = InvGamma::new(1.2, 3.4).unwrap();
-        assert::close(ig.cdf(&17.0), 0.88185118032427523, TOL);
+        assert::close(ig.cdf(&17.0), 0.881_851_180_324_275_2, TOL);
     }
 
     #[test]

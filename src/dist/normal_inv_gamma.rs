@@ -313,10 +313,12 @@ impl_display!(NormalInvGamma);
 impl Rv<Gaussian> for NormalInvGamma {
     fn ln_f(&self, x: &Gaussian) -> f64 {
         // TODO: could cache the gamma and Gaussian distributions
+        let mu = x.mu();
+        let sigma = x.sigma();
         let lnf_sigma =
-            InvGamma::new_unchecked(self.a, self.b).ln_f(&x.sigma().powi(2));
-        let prior_sigma = self.v.sqrt() * x.sigma();
-        let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&x.mu());
+            InvGamma::new_unchecked(self.a, self.b).ln_f(&sigma.powi(2));
+        let prior_sigma = self.v.sqrt() * sigma;
+        let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&mu);
         lnf_sigma + lnf_mu
     }
 
@@ -324,13 +326,26 @@ impl Rv<Gaussian> for NormalInvGamma {
         // NOTE: The parameter errors in this fn shouldn't happen if the prior
         // parameters are valid.
         let var: f64 = InvGamma::new(self.a, self.b)
-            .expect("Invalid σ params when drawing Gaussian")
-            .draw(&mut rng);
-        let post_sigma: f64 = (self.v * var).sqrt();
-        let mu: f64 = Gaussian::new(self.m, post_sigma)
-            .expect("Invalid μ internal when drawing Gaussian")
+            .map_err(|err| {
+                panic!("Invalid σ² params when drawing Gaussian: {}", err)
+            })
+            .unwrap()
             .draw(&mut rng);
 
-        Gaussian::new(mu, var.sqrt()).expect("Invalid params")
+        let sigma = if var <= 0.0 {
+            std::f64::EPSILON
+        } else {
+            var.sqrt()
+        };
+
+        let post_sigma: f64 = self.v.sqrt() * sigma;
+        let mu: f64 = Gaussian::new(self.m, post_sigma)
+            .map_err(|err| {
+                panic!("Invalid μ params when drawing Gaussian: {}", err)
+            })
+            .unwrap()
+            .draw(&mut rng);
+
+        Gaussian::new(mu, sigma).expect("Invalid params")
     }
 }

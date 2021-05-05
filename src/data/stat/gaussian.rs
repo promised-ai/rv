@@ -156,8 +156,8 @@ mod tests {
         }
 
         assert_eq!(suffstat.n(), 4);
-        assert::close(suffstat.mean(), 2.0249999999999999, 1e-14);
-        assert::close(suffstat.sum_x(), 8.0999999999999996, 1e-14);
+        assert::close(suffstat.mean(), 2.025, 1e-14);
+        assert::close(suffstat.sum_x(), 8.1, 1e-14);
         assert::close(suffstat.sum_x_sq(), 27.889999999999993, 1e-14);
     }
 
@@ -174,8 +174,8 @@ mod tests {
         suffstat.forget(&5.0);
 
         assert_eq!(suffstat.n(), 4);
-        assert::close(suffstat.mean(), 2.0249999999999999, 1e-14);
-        assert::close(suffstat.sum_x(), 8.0999999999999996, 1e-14);
+        assert::close(suffstat.mean(), 2.025, 1e-14);
+        assert::close(suffstat.sum_x(), 8.1, 1e-14);
         assert::close(suffstat.sum_x_sq(), 27.889999999999993, 1e-13);
     }
 }

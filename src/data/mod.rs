@@ -6,27 +6,29 @@ pub use partition::Partition;
 pub use stat::BernoulliSuffStat;
 pub use stat::CategoricalSuffStat;
 pub use stat::GaussianSuffStat;
+pub use stat::InvGaussianSuffStat;
 pub use stat::MvGaussianSuffStat;
 pub use stat::PoissonSuffStat;
 
-use crate::dist::{Bernoulli, Categorical, Gaussian, Poisson};
+use crate::dist::{Bernoulli, Categorical, Gaussian, InvGaussian, Poisson};
 use crate::traits::{HasSuffStat, SuffStat};
 
 pub type BernoulliData<'a, X> = DataOrSuffStat<'a, X, Bernoulli>;
 pub type CategoricalData<'a, X> = DataOrSuffStat<'a, X, Categorical>;
 pub type GaussianData<'a, X> = DataOrSuffStat<'a, X, Gaussian>;
+pub type InvGaussianData<'a, X> = DataOrSuffStat<'a, X, InvGaussian>;
 pub type PoissonData<'a, X> = DataOrSuffStat<'a, X, Poisson>;
 
 /// The trait that data must implemented by all data used with the
 /// `Categorical` distribution
 pub trait CategoricalDatum: Sized + Sync + Copy {
-    fn into_usize(&self) -> usize;
+    fn into_usize(self) -> usize;
     fn from_usize(n: usize) -> Self;
 }
 
 impl CategoricalDatum for usize {
-    fn into_usize(&self) -> usize {
-        *self
+    fn into_usize(self) -> usize {
+        self
     }
 
     fn from_usize(n: usize) -> Self {
@@ -35,7 +37,7 @@ impl CategoricalDatum for usize {
 }
 
 impl CategoricalDatum for bool {
-    fn into_usize(&self) -> usize {
+    fn into_usize(self) -> usize {
         if !self {
             0
         } else {
@@ -51,8 +53,8 @@ impl CategoricalDatum for bool {
 macro_rules! impl_categorical_datum {
     ($kind:ty) => {
         impl CategoricalDatum for $kind {
-            fn into_usize(&self) -> usize {
-                *self as usize
+            fn into_usize(self) -> usize {
+                self as usize
             }
 
             fn from_usize(n: usize) -> Self {
@@ -179,10 +181,7 @@ where
     /// assert!(!suffstat.is_data());
     /// ```
     pub fn is_data(&self) -> bool {
-        match &self {
-            DataOrSuffStat::Data(..) => true,
-            _ => false,
-        }
+        matches!(&self, DataOrSuffStat::Data(..))
     }
 
     /// Determine whether the object contains sufficient statistics
@@ -205,10 +204,7 @@ where
     /// assert!(suffstat.is_suffstat());
     /// ```
     pub fn is_suffstat(&self) -> bool {
-        match &self {
-            DataOrSuffStat::SuffStat(..) => true,
-            _ => false,
-        }
+        matches!(&self, DataOrSuffStat::SuffStat(..))
     }
 
     /// Determine whether the object is empty
@@ -235,11 +231,47 @@ where
     /// assert!(none.is_none());
     /// ```
     pub fn is_none(&self) -> bool {
-        match &self {
-            DataOrSuffStat::None => true,
-            _ => false,
-        }
+        matches!(&self, DataOrSuffStat::None)
     }
+}
+
+/// Convert a `DataOrSuffStat` into a `Stat`
+#[inline]
+pub fn extract_stat<Fx, X, Ctor>(
+    x: &DataOrSuffStat<X, Fx>,
+    stat_ctor: Ctor,
+) -> Fx::Stat
+where
+    Fx: HasSuffStat<X>,
+    Fx::Stat: Clone,
+    Ctor: Fn() -> Fx::Stat,
+{
+    match x {
+        DataOrSuffStat::SuffStat(ref s) => (*s).clone(),
+        DataOrSuffStat::Data(xs) => {
+            let mut stat = stat_ctor();
+            xs.iter().for_each(|y| stat.observe(y));
+            stat
+        }
+        DataOrSuffStat::None => stat_ctor(),
+    }
+}
+
+/// Convert a `DataOrSuffStat` into a `Stat` then do something with it
+#[inline]
+pub fn extract_stat_then<Fx, X, Ctor, Fnx, Y>(
+    x: &DataOrSuffStat<X, Fx>,
+    stat_ctor: Ctor,
+    f_stat: Fnx,
+) -> Y
+where
+    Fx: HasSuffStat<X>,
+    Fx::Stat: Clone,
+    Ctor: Fn() -> Fx::Stat,
+    Fnx: Fn(Fx::Stat) -> Y,
+{
+    let stat = extract_stat(x, stat_ctor);
+    f_stat(stat)
 }
 
 #[cfg(test)]

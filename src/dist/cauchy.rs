@@ -294,7 +294,7 @@ mod tests {
     #[test]
     fn ln_pdf_loc_nonzero() {
         let c = Cauchy::new(1.2, 3.4).unwrap();
-        assert::close(c.ln_pdf(&0.2), -2.4514716152673368, TOL);
+        assert::close(c.ln_pdf(&0.2), -2.451_471_615_267_337, TOL);
     }
 
     #[test]
@@ -306,8 +306,8 @@ mod tests {
     #[test]
     fn cdf_off_loc() {
         let c = Cauchy::new(1.2, 3.4).unwrap();
-        assert::close(c.cdf(&2.2), 0.59105300185574883, TOL);
-        assert::close(c.cdf(&0.2), 1.0 - 0.59105300185574883, TOL);
+        assert::close(c.cdf(&2.2), 0.591_053_001_855_748_8, TOL);
+        assert::close(c.cdf(&0.2), 1.0 - 0.591_053_001_855_748_8, TOL);
     }
 
     #[test]
@@ -327,7 +327,7 @@ mod tests {
         let c = Cauchy::new(1.2, 3.4).unwrap();
         let lower: f64 = c.invcdf(0.4);
         let upper: f64 = c.invcdf(0.6);
-        assert::close(lower, 0.095273032808118607, TOL);
+        assert::close(lower, 0.095_273_032_808_118_61, TOL);
         assert::close(upper, 2.3047269671918813, TOL);
     }
 

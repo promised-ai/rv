@@ -316,7 +316,7 @@ mod tests {
 
     #[test]
     fn ln_f_should_be_ln_weight() {
-        let cat = Categorical::new(&vec![2.0, 1.0, 2.0, 4.0, 3.0]).unwrap();
+        let cat = Categorical::new(&[2.0, 1.0, 2.0, 4.0, 3.0]).unwrap();
         assert::close(cat.ln_f(&0_u8), -1.791759469228055, TOL);
         assert::close(cat.ln_f(&1_u8), -2.4849066497880004, TOL);
         assert::close(cat.ln_f(&2_u8), -1.791759469228055, TOL);
@@ -326,7 +326,7 @@ mod tests {
 
     #[test]
     fn ln_pmf_should_be_ln_weight() {
-        let cat = Categorical::new(&vec![2.0, 1.0, 2.0, 4.0, 3.0]).unwrap();
+        let cat = Categorical::new(&[2.0, 1.0, 2.0, 4.0, 3.0]).unwrap();
         assert::close(cat.ln_pmf(&0_u16), -1.791759469228055, TOL);
         assert::close(cat.ln_pmf(&1_u16), -2.4849066497880004, TOL);
         assert::close(cat.ln_pmf(&2_u16), -1.791759469228055, TOL);
@@ -375,7 +375,7 @@ mod tests {
 
     #[test]
     fn mode() {
-        let cat = Categorical::new(&vec![1.0, 2.0, 3.0, 1.0]).unwrap();
+        let cat = Categorical::new(&[1.0, 2.0, 3.0, 1.0]).unwrap();
         let mode: usize = cat.mode().unwrap();
         assert_eq!(mode, 2);
     }
@@ -383,7 +383,7 @@ mod tests {
     #[test]
     fn draw_test() {
         let mut rng = rand::thread_rng();
-        let cat = Categorical::new(&vec![1.0, 2.0, 3.0, 4.0]).unwrap();
+        let cat = Categorical::new(&[1.0, 2.0, 3.0, 4.0]).unwrap();
         let ps: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4];
 
         let passes = (0..N_TRIES).fold(0, |acc, _| {
@@ -402,11 +402,11 @@ mod tests {
 
     #[test]
     fn kl() {
-        let cat1 = Categorical::new(&vec![
+        let cat1 = Categorical::new(&[
             0.2280317, 0.1506706, 0.33620052, 0.13911904, 0.14597815,
         ])
         .unwrap();
-        let cat2 = Categorical::new(&vec![
+        let cat2 = Categorical::new(&[
             0.30050657, 0.04237857, 0.20973238, 0.32858568, 0.1187968,
         ])
         .unwrap();
@@ -418,7 +418,7 @@ mod tests {
 
     #[test]
     fn cdf() {
-        let cat = Categorical::new(&vec![1.0, 2.0, 4.0, 3.0]).unwrap();
+        let cat = Categorical::new(&[1.0, 2.0, 4.0, 3.0]).unwrap();
         assert::close(cat.cdf(&0_u8), 0.1, TOL);
         assert::close(cat.cdf(&1_u8), 0.3, TOL);
         assert::close(cat.cdf(&2_u8), 0.7, TOL);

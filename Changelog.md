@@ -1,15 +1,29 @@
 # Changelog
 
+## 0.12.0
+- Added Inverse X^2 distribution
+- Added Scaled Inverse X^2 distribution (`InvChiSquared`)
+- Added Inverse Gaussian distribution
+- Added Inverse Gaussian sufficient statistic
+- Added Normal Inverse X^2 (`NormalInvChiSquared`) distribution as prior for
+    Gaussian
+- Added Inverse X^2 distribution (`InvChiSquared`)
+- Implemented `From` instead of `Into` for sufficient statistic converters to
+    allow the more explicit/ergonomic `From` conversions.
+- Improved some error messages in `NormalGamma`
+- Caching of a normalizing constant in `BetaBinomial`
+- Lots of testing verifying proper conjugate prior behavior
+- Added Gaussian prior geweke tests and example
+- More robust dpgmm example -- can use different priors
+- Version updates
+- Misc styling and warning fixes
+
 ## 0.11.1
-- Added Inverse Chi-Squared distribution
 - Added Normal Inverse Gamma (`NormalInvGamma`) distribution as prior for
     Gaussian
-- Implemented `From` instead of `Into` for sufficient statistic converters to
-    allow the more explicit/ergonmic `From` conversions.
-- Improved some error messages in `NormalGamma`
 
 ## 0.11.0
-- Added `_with_cache` variants to `ConjucatePrior` `ln_m` and `ln_pp` methods
+- Added `_with_cache` variants to `ConjugatePrior` `ln_m` and `ln_pp` methods
     for use cases where these methods are called many times in different data
     without changing the underlying distribution. This also adds two more
     associated types to the trait (`LnMCache` and `LnPpCache`), and one method

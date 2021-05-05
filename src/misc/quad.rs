@@ -17,6 +17,7 @@ impl<'a> Default for QuadConfig<'a> {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn quad_recr<F>(
     func: &F,
     a: f64,
@@ -67,6 +68,7 @@ where
     }
 }
 
+#[allow(clippy::too_many_arguments, clippy::clippy::many_single_char_names)]
 pub(crate) fn quadp<F>(f: &F, a: f64, b: f64, config: QuadConfig) -> f64
 where
     F: Fn(f64) -> f64,
@@ -124,6 +126,7 @@ where
     (c, fc, h3 * (fa + 4.0 * fc + fb))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn recursive_asr<F>(
     func: &F,
     a: f64,
@@ -212,6 +215,7 @@ where
     Ok((c, fc, h3 * (fa + 4.0 * fc + fb)))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn try_recursive_asr<F, E>(
     func: &F,
     a: f64,

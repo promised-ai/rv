@@ -3,11 +3,11 @@ use std::f64;
 use criterion::Benchmark;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
-use rand::distributions::Beta;
+use rand_distr::Beta;
 use rv::traits::Rv;
 
 fn draw_rand_distr<R: rand::Rng>(rng: &mut R) -> f64 {
-    let beta = Beta::new(5.0, 2.0);
+    let beta = Beta::new(5.0, 2.0).unwrap();
     rng.sample(beta)
 }
 

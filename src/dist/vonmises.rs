@@ -55,7 +55,7 @@ pub enum VonMisesError {
 impl VonMises {
     /// Create a new VonMises distribution with mean mu, and precision, k.
     pub fn new(mu: f64, k: f64) -> Result<Self, VonMisesError> {
-        if 2.0 * PI < mu || mu < 0.0 {
+        if !(0.0..=2.0 * PI).contains(&mu) {
             Err(VonMisesError::MuOutOfBounds { mu })
         } else if !mu.is_finite() {
             Err(VonMisesError::MuNotFinite { mu })
@@ -124,7 +124,7 @@ impl VonMises {
     pub fn set_mu(&mut self, mu: f64) -> Result<(), VonMisesError> {
         if !mu.is_finite() {
             Err(VonMisesError::MuNotFinite { mu })
-        } else if 2.0 * PI < mu || mu < 0.0 {
+        } else if !(0.0..=2.0 * PI).contains(&mu) {
             Err(VonMisesError::MuOutOfBounds { mu })
         } else {
             self.set_mu_unchecked(mu);
@@ -251,7 +251,7 @@ macro_rules! impl_traits {
                         let y = (u3 - 0.5).signum() * f.acos() + self.mu;
                         let x = y.rem_euclid(2.0 * PI) as $kind;
                         if !self.supports(&x) {
-                            panic!(format!("VonMises does not support {}", x));
+                            panic!("VonMises does not support {}", x);
                         } else {
                             return x;
                         }
@@ -273,7 +273,7 @@ macro_rules! impl_traits {
         impl Support<$kind> for VonMises {
             fn supports(&self, x: &$kind) -> bool {
                 let xf = f64::from(*x);
-                0.0 <= xf && xf <= 2.0 * PI
+                (0.0..=2.0 * PI).contains(&xf)
             }
         }
 
@@ -400,16 +400,16 @@ mod tests {
         let xs: Vec<f64> = vec![
             0.2617993877991494,
             0.5235987755982988,
-            0.7853981633974483,
+            std::f64::consts::FRAC_PI_4,
             1.0471975511965976,
             1.308996938995747,
-            1.5707963267948966,
+            std::f64::consts::FRAC_PI_2,
             1.832595714594046,
             2.0943951023931953,
             2.356194490192345,
             2.617993877991494,
             2.8797932657906435,
-            3.141592653589793,
+            std::f64::consts::PI,
             3.4033920413889422,
             3.665191429188092,
             3.926990816987241,
