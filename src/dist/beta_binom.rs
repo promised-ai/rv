@@ -342,8 +342,9 @@ macro_rules! impl_int_traits {
             }
 
             fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<$kind> {
-                // TODO: Could speed this up if we didn't compute the
-                // k-independent terms in ln_f
+                // NOTE: Could speed this up if we didn't compute the
+                // k-independent terms in ln_f. But if we're caching well w/in
+                // the distribution objects, this is negligible.
                 let ln_weights: Vec<f64> =
                     (0..=self.n).map(|x| self.ln_f(&x)).collect();
 
@@ -365,9 +366,9 @@ macro_rules! impl_int_traits {
 
         impl Cdf<$kind> for BetaBinomial {
             fn cdf(&self, k: &$kind) -> f64 {
-                // XXX: Slow and awful.
-                // TODO: could make this faster with hypergeometric function,
-                // but the `special` crate doesn't implement it
+                // XXX: Slow and awful. Could make this faster with
+                // hypergeometric function, but the `special` crate doesn't
+                // implement it
                 (0..=*k).fold(0.0, |acc, x| acc + self.pmf(&x))
             }
         }

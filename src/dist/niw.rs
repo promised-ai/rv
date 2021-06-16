@@ -300,4 +300,80 @@ impl fmt::Display for NormalInvWishartError {
         }
     }
 }
-// TODO: Tests!
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn disallow_zero_k() {
+        let mu = DVector::zeros(2);
+        let scale = DMatrix::identity(2, 2);
+        let res = NormalInvWishart::new(mu, 0.0, 2, scale);
+        if let Err(NormalInvWishartError::KTooLow { .. }) = res {
+            ()
+        } else {
+            panic!("wrong error");
+        }
+    }
+
+    #[test]
+    fn disallow_negative_k() {
+        let mu = DVector::zeros(2);
+        let scale = DMatrix::identity(2, 2);
+        let res = NormalInvWishart::new(mu, -1.0, 2, scale);
+        if let Err(NormalInvWishartError::KTooLow { .. }) = res {
+            ()
+        } else {
+            panic!("wrong error");
+        }
+    }
+
+    #[test]
+    fn disallow_df_less_than_n_dims() {
+        let mu = DVector::zeros(2);
+        let scale = DMatrix::identity(2, 2);
+        let res = NormalInvWishart::new(mu, 1.0, 1, scale);
+        if let Err(NormalInvWishartError::DfLessThanDimensions {
+            df: 1,
+            ndims: 2,
+        }) = res
+        {
+            ()
+        } else {
+            panic!("wrong error");
+        }
+    }
+
+    #[test]
+    fn disallow_mu_and_sigma_different_dims() {
+        let mu = DVector::zeros(2);
+        let scale = DMatrix::identity(3, 3);
+        let res = NormalInvWishart::new(mu, 1.0, 4, scale);
+        if let Err(NormalInvWishartError::MuScaleDimensionMismatch {
+            n_mu: 2,
+            n_scale: 3,
+        }) = res
+        {
+            ()
+        } else {
+            panic!("wrong error");
+        }
+    }
+
+    #[test]
+    fn disallow_non_scale_square() {
+        let mu = DVector::zeros(2);
+        let scale = DMatrix::identity(2, 3);
+        let res = NormalInvWishart::new(mu, 1.0, 3, scale);
+        if let Err(NormalInvWishartError::ScaleMatrixNotSquare {
+            nrows: 2,
+            ncols: 3,
+        }) = res
+        {
+            ()
+        } else {
+            panic!("wrong error");
+        }
+    }
+}
