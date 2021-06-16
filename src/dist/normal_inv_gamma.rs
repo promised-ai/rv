@@ -316,7 +316,7 @@ impl Rv<Gaussian> for NormalInvGamma {
         let mu = x.mu();
         let sigma = x.sigma();
         let lnf_sigma =
-            InvGamma::new_unchecked(self.a, self.b).ln_f(&sigma.powi(2));
+            InvGamma::new_unchecked(self.a, self.b).ln_f(&(sigma * sigma));
         let prior_sigma = self.v.sqrt() * sigma;
         let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&mu);
         lnf_sigma + lnf_mu

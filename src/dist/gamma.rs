@@ -240,8 +240,10 @@ macro_rules! impl_traits {
         impl Rv<$kind> for Gamma {
             fn ln_f(&self, x: &$kind) -> f64 {
                 self.shape * self.ln_rate() - self.ln_gamma_shape()
-                    + (self.shape - 1.0) * f64::from(*x).ln()
-                    - (self.rate * f64::from(*x))
+                    + (self.shape - 1.0).mul_add(
+                        f64::from(*x).ln(),
+                        -(self.rate * f64::from(*x)),
+                    )
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -292,15 +294,15 @@ macro_rules! impl_traits {
 
 impl Variance<f64> for Gamma {
     fn variance(&self) -> Option<f64> {
-        Some(self.shape / self.rate.powi(2))
+        Some(self.shape / (self.rate * self.rate))
     }
 }
 
 impl Entropy for Gamma {
     fn entropy(&self) -> f64 {
         self.shape - self.ln_rate()
-            + self.ln_gamma_shape()
-            + (1.0 - self.shape) * self.shape.digamma()
+            + (1.0 - self.shape)
+                .mul_add(self.shape.digamma(), self.ln_gamma_shape())
     }
 }
 
@@ -369,7 +371,7 @@ mod tests {
     #[test]
     fn ln_pdf_at_mean() {
         let gam = Gamma::new(1.2, 3.4).unwrap();
-        assert::close(gam.ln_pdf(&100.0_f64), -337.52506135485254, TOL);
+        assert::close(gam.ln_pdf(&100.0_f64), -337.525_061_354_852_54, TOL);
     }
 
     #[test]
@@ -377,7 +379,7 @@ mod tests {
         let gam = Gamma::new(1.2, 3.4).unwrap();
         assert::close(gam.cdf(&0.5_f32), 0.759_436_544_318_054_6, TOL);
         assert::close(
-            gam.cdf(&0.35294117647058826_f64),
+            gam.cdf(&0.352_941_176_470_588_26_f64),
             0.620_918_065_523_85,
             TOL,
         );
@@ -388,8 +390,8 @@ mod tests {
     fn ln_pdf_hight_value() {
         let gam = Gamma::new(1.2, 3.4).unwrap();
         assert::close(
-            gam.ln_pdf(&0.35294117647058826_f64),
-            0.14561383298422248,
+            gam.ln_pdf(&0.352_941_176_470_588_26_f64),
+            0.145_613_832_984_222_48,
             TOL,
         );
     }
@@ -484,8 +486,8 @@ mod tests {
     fn entropy() {
         let gam1 = Gamma::new(2.0, 1.0).unwrap();
         let gam2 = Gamma::new(1.2, 3.4).unwrap();
-        assert::close(gam1.entropy(), 1.5772156649015328, TOL);
-        assert::close(gam2.entropy(), -0.05134154230699384, TOL);
+        assert::close(gam1.entropy(), 1.577_215_664_901_532_8, TOL);
+        assert::close(gam2.entropy(), -0.051_341_542_306_993_84, TOL);
     }
 
     #[test]

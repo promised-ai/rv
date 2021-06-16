@@ -257,8 +257,9 @@ macro_rules! impl_traits {
 impl Variance<f64> for InvGamma {
     fn variance(&self) -> Option<f64> {
         if self.shape > 2.0 {
-            let numer = self.scale.powi(2);
-            let denom = (self.shape - 1.0).powi(2) * (self.shape - 2.0);
+            let numer = self.scale * self.scale;
+            let denom =
+                (self.shape - 1.0) * (self.shape - 1.0) * (self.shape - 2.0);
             Some(numer / denom)
         } else {
             None
@@ -342,7 +343,7 @@ mod tests {
     #[test]
     fn mean() {
         let mean: f64 = InvGamma::new(1.2, 3.4).unwrap().mean().unwrap();
-        assert::close(mean, 17.000000000000004, TOL);
+        assert::close(mean, 17.000_000_000_000_004, TOL);
     }
 
     #[test]
@@ -433,7 +434,7 @@ mod tests {
 
     #[test]
     fn does_not_contain_negative_values() {
-        assert!(!InvGamma::new(1.0, 1.0).unwrap().supports(&-0.000001_f64));
+        assert!(!InvGamma::new(1.0, 1.0).unwrap().supports(&-0.000_001_f64));
         assert!(!InvGamma::new(1.0, 1.0).unwrap().supports(&-1.0_f64));
     }
 
@@ -444,7 +445,7 @@ mod tests {
 
     #[test]
     fn contains_positive_values() {
-        assert!(InvGamma::new(1.0, 1.0).unwrap().supports(&0.000001_f64));
+        assert!(InvGamma::new(1.0, 1.0).unwrap().supports(&0.000_001_f64));
         assert!(InvGamma::new(1.0, 1.0).unwrap().supports(&1.0_f64));
     }
 
@@ -486,7 +487,7 @@ mod tests {
     #[test]
     fn skewness() {
         let ig = InvGamma::new(5.2, 2.4).unwrap();
-        assert::close(ig.skewness().unwrap(), 3.2524625127269666, TOL);
+        assert::close(ig.skewness().unwrap(), 3.252_462_512_726_966_6, TOL);
     }
 
     #[test]
@@ -499,7 +500,7 @@ mod tests {
     #[test]
     fn kurtosis() {
         let ig = InvGamma::new(5.2, 2.4).unwrap();
-        assert::close(ig.kurtosis().unwrap(), 34.090909090909086, TOL);
+        assert::close(ig.kurtosis().unwrap(), 34.090_909_090_909_086, TOL);
     }
 
     #[test]

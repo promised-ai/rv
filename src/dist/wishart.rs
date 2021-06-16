@@ -146,7 +146,7 @@ impl Rv<DMatrix<f64>> for InvWishart {
         let det_x: f64 = -(v + pf + 1.0) * 0.5 * x.determinant().ln();
 
         // TODO: cache denom
-        let denom: f64 = v * pf * 0.5 * LN_2 + lnmv_gamma(p, 0.5 * v);
+        let denom: f64 = LN_2.mul_add(v * pf * 0.5, lnmv_gamma(p, 0.5 * v));
         let numer: f64 =
             -0.5 * (&self.inv_scale * x.clone().try_inverse().unwrap()).trace();
 
@@ -265,35 +265,35 @@ mod tests {
     fn ln_f_standard_ident() {
         let iw = InvWishart::identity(4);
         let x = DMatrix::<f64>::identity(4, 4);
-        assert::close(iw.ln_f(&x), -11.430949807317218, TOL)
+        assert::close(iw.ln_f(&x), -11.430_949_807_317_218, TOL)
     }
 
     #[test]
     fn ln_f_standard_mode() {
         let iw = InvWishart::identity(4);
         let x = DMatrix::<f64>::identity(4, 4) / 9.0;
-        assert::close(iw.ln_f(&x), 12.11909258473473, TOL)
+        assert::close(iw.ln_f(&x), 12.119_092_584_734_73, TOL)
     }
 
     #[test]
     fn ln_f_nonstandard_ident() {
         let slice = vec![
-            1.10576891,
-            -0.20160336,
-            0.09378834,
-            -0.19339029,
-            -0.20160336,
-            0.66794786,
-            -0.46020905,
-            -0.62806951,
-            0.09378834,
-            -0.46020905,
-            1.15263284,
-            0.98443641,
-            -0.19339029,
-            -0.62806951,
-            0.98443641,
-            1.21050189,
+            1.105_768_91,
+            -0.201_603_36,
+            0.093_788_34,
+            -0.193_390_29,
+            -0.201_603_36,
+            0.667_947_86,
+            -0.460_209_05,
+            -0.628_069_51,
+            0.093_788_34,
+            -0.460_209_05,
+            1.152_632_84,
+            0.984_436_41,
+            -0.193_390_29,
+            -0.628_069_51,
+            0.984_436_41,
+            1.210_501_89,
         ];
         let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
         let iw = InvWishart::new(inv_scale, 5).unwrap();
@@ -305,22 +305,22 @@ mod tests {
     fn draws_should_be_positive_definite() {
         let mut rng = rand::thread_rng();
         let slice = vec![
-            1.10576891,
-            -0.20160336,
-            0.09378834,
-            -0.19339029,
-            -0.20160336,
-            0.66794786,
-            -0.46020905,
-            -0.62806951,
-            0.09378834,
-            -0.46020905,
-            1.15263284,
-            0.98443641,
-            -0.19339029,
-            -0.62806951,
-            0.98443641,
-            1.21050189,
+            1.105_768_91,
+            -0.201_603_36,
+            0.093_788_34,
+            -0.193_390_29,
+            -0.201_603_36,
+            0.667_947_86,
+            -0.460_209_05,
+            -0.628_069_51,
+            0.093_788_34,
+            -0.460_209_05,
+            1.152_632_84,
+            0.984_436_41,
+            -0.193_390_29,
+            -0.628_069_51,
+            0.984_436_41,
+            1.210_501_89,
         ];
         let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
         let iw = InvWishart::new(inv_scale, 5).unwrap();
@@ -338,26 +338,26 @@ mod tests {
     #[test]
     fn ln_f_nonstandard_mode() {
         let slice = vec![
-            1.10576891,
-            -0.20160336,
-            0.09378834,
-            -0.19339029,
-            -0.20160336,
-            0.66794786,
-            -0.46020905,
-            -0.62806951,
-            0.09378834,
-            -0.46020905,
-            1.15263284,
-            0.98443641,
-            -0.19339029,
-            -0.62806951,
-            0.98443641,
-            1.21050189,
+            1.105_768_91,
+            -0.201_603_36,
+            0.093_788_34,
+            -0.193_390_29,
+            -0.201_603_36,
+            0.667_947_86,
+            -0.460_209_05,
+            -0.628_069_51,
+            0.093_788_34,
+            -0.460_209_05,
+            1.152_632_84,
+            0.984_436_41,
+            -0.193_390_29,
+            -0.628_069_51,
+            0.984_436_41,
+            1.210_501_89,
         ];
         let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
         let x = inv_scale.clone();
         let iw = InvWishart::new(inv_scale, 5).unwrap();
-        assert::close(iw.ln_f(&x), -6.187876016819759, TOL)
+        assert::close(iw.ln_f(&x), -6.187_876_016_819_759, TOL)
     }
 }

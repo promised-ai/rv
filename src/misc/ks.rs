@@ -58,6 +58,7 @@ where
 const KS_AUTO_CUTOVER: usize = 10_000;
 
 /// Mode in which to run the KS Test
+#[derive(Debug, Clone, Copy)]
 pub enum KsMode {
     /// Compute the exact statistic
     Exact,
@@ -74,6 +75,7 @@ impl Default for KsMode {
 }
 
 /// Hypothesis Alternative for ks_two_sample test
+#[derive(Debug, Clone, Copy)]
 pub enum KsAlternative {
     /// Alternative where the emperical CDFs could lie on either side on one another.
     TwoSided,
@@ -126,7 +128,7 @@ pub enum KsError {
 /// assert::close(stat, 0.3, 1E-8);
 /// assert::close(alpha, 0.7869297884777761, 1E-8);
 /// ```
-#[allow(clippy::clippy::many_single_char_names)]
+#[allow(clippy::many_single_char_names)]
 pub fn ks_two_sample<X>(
     xs: &[X],
     ys: &[X],
@@ -253,8 +255,8 @@ where
                     let n = n_x.min(n_y) as f64;
 
                     let z = (m * n / (m + n)).sqrt() * stat;
-                    let expt = -2.0 * z.powi(2)
-                        - 2.0 * z * (m + 2.0 * n)
+                    let expt = -2.0 * z * z
+                        - 2.0 * z * 2.0_f64.mul_add(n, m)
                             / (m * n * (m + n)).sqrt()
                             / 3.0;
                     let p = expt.exp();
@@ -266,7 +268,7 @@ where
     }
 }
 
-#[allow(clippy::clippy::many_single_char_names)]
+#[allow(clippy::many_single_char_names)]
 fn paths_outside(m: usize, n: usize, g: usize, h: f64) -> usize {
     let (m, n) = (m.max(n), m.min(n));
     let mg = m / g;
@@ -275,7 +277,7 @@ fn paths_outside(m: usize, n: usize, g: usize, h: f64) -> usize {
     let mg_f = mg as f64;
 
     let xj: Vec<usize> = (0..=n)
-        .map(|j| ((h + mg_f * (j as f64)) / ng_f).ceil() as usize)
+        .map(|j| (mg_f.mul_add(j as f64, h) / ng_f).ceil() as usize)
         .filter(|&x| x <= m)
         .collect();
 
@@ -316,7 +318,7 @@ fn paths_outside_proportion(n: usize, h: f64) -> f64 {
         for j in 0..(h as usize) {
             let j_f = j as f64;
             let k_f = k as f64;
-            p1 = (n_f - k_f * h - j_f) * p1 / (n_f + k_f * h + j_f + 1.0);
+            p1 = (n_f - k_f * h - j_f) * p1 / (k_f.mul_add(h, n_f) + j_f + 1.0);
         }
         p = p1 * (1.0 - p);
     }
@@ -324,7 +326,7 @@ fn paths_outside_proportion(n: usize, h: f64) -> f64 {
 }
 
 /// Compute the proportion of paths that stay inside lines x - y = ± h
-#[allow(clippy::clippy::many_single_char_names)]
+#[allow(clippy::many_single_char_names)]
 fn paths_inside_proportion(m: usize, n: usize, g: usize, h: f64) -> f64 {
     let (m, n) = (m.max(n), m.min(n));
     let n_f = n as f64;
@@ -350,7 +352,8 @@ fn paths_inside_proportion(m: usize, n: usize, g: usize, h: f64) -> f64 {
         min_j = (((ng_f * i_f - h) / mg_f).floor() + 1.0).max(0.0) as usize;
         min_j = min_j.min(n);
 
-        max_j = ((((ng_f * i_f + h) / mg_f).floor() + 1.0) as usize).max(n + 1);
+        max_j =
+            (((ng_f.mul_add(i_f, h) / mg_f).floor() + 1.0) as usize).max(n + 1);
         if max_j <= min_j {
             return 0.0;
         }
@@ -377,7 +380,8 @@ fn mmul(xs: &[Vec<f64>], ys: &[Vec<f64>]) -> Vec<Vec<f64>> {
     let mut zs = vec![vec![0.0; m]; m];
     for i in 0..m {
         for j in 0..m {
-            zs[i][j] = (0..m).fold(0.0, |acc, k| acc + xs[i][k] * ys[k][j])
+            zs[i][j] =
+                (0..m).fold(0.0, |acc, k| xs[i][k].mul_add(ys[k][j], acc))
         }
     }
     zs
@@ -395,7 +399,7 @@ fn mpow(xs: &[Vec<f64>], ea: i32, n: usize) -> (Vec<Vec<f64>>, i32) {
             zs = ys;
             ev = eb;
         } else {
-            zs = mmul(&xs, &ys);
+            zs = mmul(xs, &ys);
             ev = ea + eb;
         }
         if zs[m / 2][m / 2] > 1E140 {
@@ -477,12 +481,12 @@ mod tests {
 
     #[test]
     fn ks_cdf_normal() {
-        assert::close(ks_cdf(10, 0.274), 0.6284796154565043, TOL);
+        assert::close(ks_cdf(10, 0.274), 0.628_479_615_456_504_3, TOL);
     }
 
     #[test]
     fn ks_cdf_large_n() {
-        assert::close(ks_cdf(1000, 0.074), 0.9999671735299037, TOL);
+        assert::close(ks_cdf(1000, 0.074), 0.999_967_173_529_903_7, TOL);
     }
 
     #[test]
@@ -495,82 +499,82 @@ mod tests {
         let (ks, p) = ks_test(&xs, cdf);
 
         assert::close(ks, 0.551_716_786_654_561_1, TOL);
-        assert::close(p, 0.0021804502526949765, TOL);
+        assert::close(p, 0.002_180_450_252_694_976_5, TOL);
     }
 
     #[test]
     fn ks_two_sample_exact() {
         let xs = [
-            0.95692026,
-            1.1348812,
-            -0.76579239,
-            -0.58065653,
-            -0.05122393,
-            0.71598754,
-            1.39873528,
-            0.42790527,
-            1.84580764,
-            0.64228521,
+            0.956_920_26,
+            1.134_881_2,
+            -0.765_792_39,
+            -0.580_656_53,
+            -0.051_223_93,
+            0.715_987_54,
+            1.398_735_28,
+            0.427_905_27,
+            1.845_807_64,
+            0.642_285_21,
         ];
 
         let ys = [
-            0.6948678,
-            -0.3741825,
-            0.36657279,
-            1.15834174,
-            -0.32421706,
-            -0.38499295,
-            1.44976991,
-            0.2504608,
-            -0.53694774,
-            1.42221993,
+            0.694_867_8,
+            -0.374_182_5,
+            0.366_572_79,
+            1.158_341_74,
+            -0.324_217_06,
+            -0.384_992_95,
+            1.449_769_91,
+            0.250_460_8,
+            -0.536_947_74,
+            1.422_219_93,
         ];
 
         let (stat, alpha) =
             ks_two_sample(&xs, &ys, KsMode::Exact, KsAlternative::TwoSided)
                 .unwrap();
         assert::close(stat, 0.3, 1E-8);
-        assert::close(alpha, 0.7869297884777761, 1E-8);
+        assert::close(alpha, 0.786_929_788_477_776_1, 1E-8);
 
         let (stat, alpha) =
             ks_two_sample(&xs, &ys, KsMode::Exact, KsAlternative::Less)
                 .unwrap();
         assert::close(stat, 0.3, 1E-8);
-        assert::close(alpha, 0.41958041958041953, 1E-8);
+        assert::close(alpha, 0.419_580_419_580_419_53, 1E-8);
 
         let (stat, alpha) =
             ks_two_sample(&xs, &ys, KsMode::Exact, KsAlternative::Greater)
                 .unwrap();
         assert::close(stat, 0.2, 1E-8);
-        assert::close(alpha, 0.6818181818181818, 1E-8);
+        assert::close(alpha, 0.681_818_181_818_181_8, 1E-8);
     }
 
     #[test]
     fn ks_two_sample_asymp() {
         let xs = [
-            0.95692026,
-            1.1348812,
-            -0.76579239,
-            -0.58065653,
-            -0.05122393,
-            0.71598754,
-            1.39873528,
-            0.42790527,
-            1.84580764,
-            0.64228521,
+            0.956_920_26,
+            1.134_881_2,
+            -0.765_792_39,
+            -0.580_656_53,
+            -0.051_223_93,
+            0.715_987_54,
+            1.398_735_28,
+            0.427_905_27,
+            1.845_807_64,
+            0.642_285_21,
         ];
 
         let ys = [
-            0.6948678,
-            -0.3741825,
-            0.36657279,
-            1.15834174,
-            -0.32421706,
-            -0.38499295,
-            1.44976991,
-            0.2504608,
-            -0.53694774,
-            1.42221993,
+            0.694_867_8,
+            -0.374_182_5,
+            0.366_572_79,
+            1.158_341_74,
+            -0.324_217_06,
+            -0.384_992_95,
+            1.449_769_91,
+            0.250_460_8,
+            -0.536_947_74,
+            1.422_219_93,
         ];
 
         let (stat, alpha) = ks_two_sample(
@@ -581,18 +585,18 @@ mod tests {
         )
         .unwrap();
         assert::close(stat, 0.3, 1E-8);
-        assert::close(alpha, 0.7590978384203948, 1E-8);
+        assert::close(alpha, 0.759_097_838_420_394_8, 1E-8);
 
         let (stat, alpha) =
             ks_two_sample(&xs, &ys, KsMode::Asymptotic, KsAlternative::Less)
                 .unwrap();
         assert::close(stat, 0.3, 1E-8);
-        assert::close(alpha, 0.30119421191220214, 1E-8);
+        assert::close(alpha, 0.301_194_211_912_202_14, 1E-8);
 
         let (stat, alpha) =
             ks_two_sample(&xs, &ys, KsMode::Asymptotic, KsAlternative::Greater)
                 .unwrap();
         assert::close(stat, 0.2, 1E-8);
-        assert::close(alpha, 0.5488116360940264, 1E-8);
+        assert::close(alpha, 0.548_811_636_094_026_4, 1E-8);
     }
 }

@@ -82,6 +82,12 @@ macro_rules! impl_poisson_suffstat {
             }
         }
 
+        impl<'a> From<&'a [$kind]> for DataOrSuffStat<'a, $kind, Poisson> {
+            fn from(xs: &'a [$kind]) -> Self {
+                DataOrSuffStat::Data(xs)
+            }
+        }
+
         impl SuffStat<$kind> for PoissonSuffStat {
             fn n(&self) -> usize {
                 self.n

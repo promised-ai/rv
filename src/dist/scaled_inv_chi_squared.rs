@@ -245,7 +245,7 @@ macro_rules! impl_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let x64 = f64::from(*x);
                 let term_1 = -self.v * self.t2 / (2.0 * x64);
-                let term_2 = (1.0 + 0.5 * self.v) * x64.ln();
+                let term_2 = self.v.mul_add(0.5, 1.0) * x64.ln();
                 self.ln_f_const() - self.ln_gamma_v_2() + term_1 - term_2
             }
 
@@ -286,7 +286,8 @@ macro_rules! impl_traits {
             fn variance(&self) -> Option<$kind> {
                 if self.v > 4.0 {
                     let numer = 2.0 * self.v * self.v * self.t2 * self.t2;
-                    let denom = (self.v - 2.0).powi(2) * (self.v - 4.0);
+                    let v_minus_2 = self.v - 2.0;
+                    let denom = v_minus_2 * v_minus_2 * (self.v - 4.0);
                     Some((numer / denom) as $kind)
                 } else {
                     None
@@ -396,7 +397,7 @@ mod test {
         }
         {
             let m: Option<f64> =
-                ScaledInvChiSquared::new_unchecked(2.000001, 1.2).mean();
+                ScaledInvChiSquared::new_unchecked(2.000_001, 1.2).mean();
             assert!(m.is_some());
         }
     }
@@ -429,7 +430,7 @@ mod test {
         }
         {
             let m: Option<f64> =
-                ScaledInvChiSquared::new_unchecked(4.000001, 1.0).variance();
+                ScaledInvChiSquared::new_unchecked(4.000_001, 1.0).variance();
             assert!(m.is_some());
         }
     }

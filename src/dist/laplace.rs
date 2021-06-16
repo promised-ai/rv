@@ -246,7 +246,7 @@ macro_rules! impl_traits {
 
         impl Variance<$kind> for Laplace {
             fn variance(&self) -> Option<$kind> {
-                Some((2.0 * self.b.powi(2)) as $kind)
+                Some((2.0 * self.b * self.b) as $kind)
             }
         }
     };
@@ -348,13 +348,13 @@ mod tests {
     #[test]
     fn variance() {
         let v: f64 = Laplace::new(1.2, 3.4).unwrap().variance().unwrap();
-        assert::close(v, 23.119999999999997, TOL);
+        assert::close(v, 23.119_999_999_999_997, TOL);
     }
 
     #[test]
     fn entropy() {
         let h: f64 = Laplace::new(1.2, 3.4).unwrap().entropy();
-        assert::close(h, 2.916922612182061, TOL);
+        assert::close(h, 2.916_922_612_182_061, TOL);
     }
 
     #[test]
@@ -380,7 +380,7 @@ mod tests {
     fn cdf_below_mu() {
         let laplace = Laplace::new(1.2, 3.4).unwrap();
         let cdf = laplace.cdf(&0.0_f64);
-        assert::close(cdf, 0.35130926133149776, TOL);
+        assert::close(cdf, 0.351_309_261_331_497_76, TOL);
     }
 
     #[test]
@@ -394,7 +394,7 @@ mod tests {
     fn ln_pdf() {
         let laplace = Laplace::new(1.2, 3.4).unwrap();
         assert::close(laplace.ln_pdf(&1.2), -1.916_922_612_182_061, TOL);
-        assert::close(laplace.ln_pdf(&0.2), -2.2110402592408844, TOL);
+        assert::close(laplace.ln_pdf(&0.2), -2.211_040_259_240_884_4, TOL);
     }
 
     #[test]

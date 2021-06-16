@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.0
+- Clippy lints
+- Use `&'a [T]` instead of `&'a Vec<T>` in `DataOrSuffStat`
+- Use `&[T]` instead of `&Vec<T>` in `GewekeTester`
+- Renamed `BesselIvError` variants
+
 ## 0.12.0
 - Added Inverse X^2 distribution
 - Added Scaled Inverse X^2 distribution (`InvChiSquared`)

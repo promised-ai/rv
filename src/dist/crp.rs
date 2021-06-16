@@ -201,7 +201,7 @@ impl Rv<Partition> for Crp {
             .fold(0.0, |acc, ct| acc + (*ct as f64).ln_gamma().0);
 
         // TODO: could cache ln(alpha) and ln_gamma(alpha)
-        gsum + (x.k() as f64) * self.alpha.ln() + self.alpha.ln_gamma().0
+        (x.k() as f64).mul_add(self.alpha.ln(), gsum) + self.alpha.ln_gamma().0
             - (x.len() as f64 + self.alpha).ln_gamma().0
     }
 

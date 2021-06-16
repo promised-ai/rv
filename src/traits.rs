@@ -227,7 +227,7 @@ pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
     /// assert!((lnf_low - lnf_high).abs() < 1E-12);
     /// ```
     fn ln_pdf(&self, x: &X) -> f64 {
-        if !self.supports(&x) {
+        if !self.supports(x) {
             panic!("x not in support");
         }
         self.ln_f(x)
@@ -392,7 +392,7 @@ pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
     /// assert!( (b.ln_pmf(&true) - 0.5_f64.ln()).abs() < 1E-12);
     /// ```
     fn ln_pmf(&self, x: &X) -> f64 {
-        if !self.supports(&x) {
+        if !self.supports(x) {
             panic!("x not in support");
         }
         self.ln_f(x)
@@ -557,7 +557,7 @@ pub trait KlDivergence {
     /// assert!( (kl_12 + kl_21 - kl_sym).abs() < 1E-10 );
     /// ```
     fn kl_sym(&self, other: &Self) -> f64 {
-        self.kl(&other) + other.kl(&self)
+        self.kl(other) + other.kl(self)
     }
 }
 
@@ -804,7 +804,7 @@ where
     /// The log marginal likelihood
     fn ln_m(&self, x: &DataOrSuffStat<X, Fx>) -> f64 {
         let cache = self.ln_m_cache();
-        self.ln_m_with_cache(&cache, &x)
+        self.ln_m_with_cache(&cache, x)
     }
 
     /// Compute the cache for the Log posterior predictive of y given x.
@@ -817,8 +817,8 @@ where
 
     /// Log posterior predictive of y given x
     fn ln_pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64 {
-        let cache = self.ln_pp_cache(&x);
-        self.ln_pp_with_cache(&cache, &y)
+        let cache = self.ln_pp_cache(x);
+        self.ln_pp_with_cache(&cache, y)
     }
 
     /// Marginal likelihood of x
@@ -828,7 +828,7 @@ where
 
     /// Posterior Predictive distribution
     fn pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64 {
-        self.ln_pp(&y, x).exp()
+        self.ln_pp(y, x).exp()
     }
 }
 

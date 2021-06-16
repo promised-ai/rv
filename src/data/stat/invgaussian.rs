@@ -86,12 +86,26 @@ macro_rules! impl_invgaussian_suffstat {
             for DataOrSuffStat<'a, $kind, InvGaussian>
         {
             fn from(xs: &'a Vec<$kind>) -> Self {
+                DataOrSuffStat::Data(xs.as_slice())
+            }
+        }
+
+        impl<'a> From<&'a [$kind]> for DataOrSuffStat<'a, $kind, InvGaussian> {
+            fn from(xs: &'a [$kind]) -> Self {
                 DataOrSuffStat::Data(xs)
             }
         }
 
         impl From<&Vec<$kind>> for InvGaussianSuffStat {
             fn from(xs: &Vec<$kind>) -> Self {
+                let mut stat = InvGaussianSuffStat::new();
+                stat.observe_many(xs);
+                stat
+            }
+        }
+
+        impl From<&[$kind]> for InvGaussianSuffStat {
+            fn from(xs: &[$kind]) -> Self {
                 let mut stat = InvGaussianSuffStat::new();
                 stat.observe_many(xs);
                 stat

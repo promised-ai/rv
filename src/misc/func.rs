@@ -103,7 +103,7 @@ fn binary_search(cws: &[f64], r: f64) -> usize {
 
 #[inline]
 fn catflip_bisection(cws: &[f64], r: f64) -> Option<usize> {
-    let ix = binary_search(&cws, r);
+    let ix = binary_search(cws, r);
     if ix < cws.len() {
         Some(ix)
     } else {
@@ -118,9 +118,9 @@ fn catflip_standard(cws: &[f64], r: f64) -> Option<usize> {
 
 fn catflip(cws: &[f64], r: f64) -> Option<usize> {
     if cws.len() > 9 {
-        catflip_bisection(&cws, r)
+        catflip_bisection(cws, r)
     } else {
-        catflip_standard(&cws, r)
+        catflip_standard(cws, r)
     }
 }
 
@@ -269,32 +269,32 @@ pub fn ln_fact(n: usize) -> f64 {
         LN_FACT[n]
     } else {
         let y: f64 = (n as f64) + 1.0;
-        (y - 0.5) * y.ln() - y + 0.5 * LN_2PI + (12.0 * y).recip()
+        (y - 0.5) * y.ln() - y + 0.5_f64.mul_add(LN_2PI, (12.0 * y).recip())
     }
 }
 
 const LN_FACT: [f64; 255] = [
-    0.000000000000000,
-    0.000000000000000,
+    0.000_000_000_000_000,
+    0.000_000_000_000_000,
     std::f64::consts::LN_2,
-    1.791759469228055,
-    3.178053830347946,
-    4.787491742782046,
-    6.579251212010101,
-    8.525161361065415,
+    1.791_759_469_228_055,
+    3.178_053_830_347_946,
+    4.787_491_742_782_046,
+    6.579_251_212_010_101,
+    8.525_161_361_065_415,
     10.604_602_902_745_25,
-    12.801827480081469,
-    15.104412573075516,
-    17.502307845873887,
-    19.987214495661885,
+    12.801_827_480_081_469,
+    15.104_412_573_075_516,
+    17.502_307_845_873_887,
+    19.987_214_495_661_885,
     22.552_163_853_123_42,
-    25.191221182738683,
-    27.899271383840894,
-    30.671860106080675,
+    25.191_221_182_738_683,
+    27.899_271_383_840_894,
+    30.671_860_106_080_675,
     33.505_073_450_136_89,
     36.395_445_208_033_05,
-    39.339884187199495,
-    42.335616460753485,
+    39.339_884_187_199_495,
+    42.335_616_460_753_485,
     45.380_138_898_476_91,
     48.471_181_351_835_23,
     51.606_675_567_764_38,
@@ -565,25 +565,25 @@ mod tests {
     fn logsumexp_on_vector_of_zeros() {
         let xs: Vec<f64> = vec![0.0; 5];
         // should be about log(5)
-        assert::close(logsumexp(&xs), 1.6094379124341003, TOL);
+        assert::close(logsumexp(&xs), 1.609_437_912_434_100_3, TOL);
     }
 
     #[test]
     fn logsumexp_on_random_values() {
         let xs: Vec<f64> = vec![
-            0.30415386,
-            -0.07072296,
-            -1.04287019,
-            0.27855407,
-            -0.81896765,
+            0.304_153_86,
+            -0.070_722_96,
+            -1.042_870_19,
+            0.278_554_07,
+            -0.818_967_65,
         ];
-        assert::close(logsumexp(&xs), 1.4820007894263059, TOL);
+        assert::close(logsumexp(&xs), 1.482_000_789_426_305_9, TOL);
     }
 
     #[test]
     fn logsumexp_returns_only_value_on_one_element_container() {
-        let xs: Vec<f64> = vec![0.30415386];
-        assert::close(logsumexp(&xs), 0.30415386, TOL);
+        let xs: Vec<f64> = vec![0.304_153_86];
+        assert::close(logsumexp(&xs), 0.304_153_86, TOL);
     }
 
     #[test]
@@ -596,9 +596,9 @@ mod tests {
     #[test]
     fn lnmv_gamma_values() {
         assert::close(lnmv_gamma(1, 1.0), 0.0, TOL);
-        assert::close(lnmv_gamma(1, 12.0), 17.502307845873887, TOL);
+        assert::close(lnmv_gamma(1, 12.0), 17.502_307_845_873_887, TOL);
         assert::close(lnmv_gamma(3, 12.0), 50.615_815_724_290_74, TOL);
-        assert::close(lnmv_gamma(3, 8.23), 25.709195968438628, TOL);
+        assert::close(lnmv_gamma(3, 8.23), 25.709_195_968_438_628, TOL);
     }
 
     #[test]

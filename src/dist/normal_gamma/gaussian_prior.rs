@@ -20,7 +20,7 @@ fn ln_z(r: f64, s: f64, v: f64) -> f64 {
     // ... and here is what is is when we use mul_add to reduce rounding errors
     let half_v = 0.5 * v;
     (half_v + 0.5).mul_add(LN_2, HALF_LN_PI)
-        - 0.5f64.mul_add(r.ln(), half_v.mul_add(s.ln(), -half_v.ln_gamma().0))
+        - 0.5_f64.mul_add(r.ln(), half_v.mul_add(s.ln(), -half_v.ln_gamma().0))
 }
 
 fn posterior_from_stat(
@@ -31,9 +31,8 @@ fn posterior_from_stat(
     let r = ng.r() + nf;
     let v = ng.v() + nf;
     let m = ng.m().mul_add(ng.r(), stat.sum_x()) / r;
-    let s = ng.s()
-        + stat.sum_x_sq()
-        + ng.r().mul_add(ng.m().powi(2), -r * m.powi(2));
+    let s =
+        ng.s() + stat.sum_x_sq() + ng.r().mul_add(ng.m() * ng.m(), -r * m * m);
     NormalGamma::new(m, r, s, v).expect("Invalid posterior params.")
 }
 
@@ -43,11 +42,9 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
     type LnPpCache = (GaussianSuffStat, f64);
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        extract_stat_then(
-            x,
-            || GaussianSuffStat::new(),
-            |stat: GaussianSuffStat| posterior_from_stat(&self, &stat),
-        )
+        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
+            posterior_from_stat(self, &stat)
+        })
     }
 
     #[inline]
@@ -60,15 +57,11 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
         cache: &Self::LnMCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
-        extract_stat_then(
-            x,
-            || GaussianSuffStat::new(),
-            |stat: GaussianSuffStat| {
-                let post = posterior_from_stat(&self, &stat);
-                let lnz_n = ln_z(post.r, post.s, post.v);
-                (-(stat.n() as f64)).mul_add(HALF_LN_2PI, lnz_n) - cache
-            },
-        )
+        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
+            let post = posterior_from_stat(self, &stat);
+            let lnz_n = ln_z(post.r, post.s, post.v);
+            (-(stat.n() as f64)).mul_add(HALF_LN_2PI, lnz_n) - cache
+        })
     }
 
     #[inline]
@@ -76,8 +69,8 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
         &self,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> Self::LnPpCache {
-        let stat = extract_stat(&x, || GaussianSuffStat::new());
-        let post_n = posterior_from_stat(&self, &stat);
+        let stat = extract_stat(x, GaussianSuffStat::new);
+        let post_n = posterior_from_stat(self, &stat);
         let lnz_n = ln_z(post_n.r, post_n.s, post_n.v);
         (stat, lnz_n)
     }
@@ -87,7 +80,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
         let lnz_n = cache.1;
 
         stat.observe(y);
-        let post_m = posterior_from_stat(&self, &stat);
+        let post_m = posterior_from_stat(self, &stat);
 
         let lnz_m = ln_z(post_m.r(), post_m.s(), post_m.v());
 
@@ -115,9 +108,9 @@ mod tests {
                 let mut tester = GewekeTester::new(pr.clone(), 20);
                 tester.run_chains(5_000, 20, &mut rng);
                 if tester.eval(0.025).is_ok() {
-                    1u8
+                    1_u8
                 } else {
-                    0u8
+                    0_u8
                 }
             })
             .sum::<u8>();
@@ -127,13 +120,13 @@ mod tests {
     #[test]
     fn ln_z_all_ones() {
         let z = ln_z(1.0, 1.0, 1.0);
-        assert::close(z, 1.83787706640935, TOL);
+        assert::close(z, 1.837_877_066_409_35, TOL);
     }
 
     #[test]
     fn ln_z_not_all_ones() {
         let z = ln_z(1.2, 0.4, 5.2);
-        assert::close(z, 5.36972819068534, TOL);
+        assert::close(z, 5.369_728_190_685_34, TOL);
     }
 
     #[test]
@@ -142,7 +135,7 @@ mod tests {
         let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
         let x = GaussianData::<f64>::Data(&data);
         let m = ng.ln_m(&x);
-        assert::close(m, -7.69707018344038, TOL);
+        assert::close(m, -7.697_070_183_440_38, TOL);
     }
 
     #[test]
@@ -155,7 +148,7 @@ mod tests {
         stat.observe(&4.0);
         let x = GaussianData::<f64>::SuffStat(&stat);
         let m = ng.ln_m(&x);
-        assert::close(m, -7.69707018344038, TOL);
+        assert::close(m, -7.697_070_183_440_38, TOL);
     }
 
     #[test]
@@ -170,7 +163,7 @@ mod tests {
         stat.forget(&5.0);
         let x = GaussianData::<f64>::SuffStat(&stat);
         let m = ng.ln_m(&x);
-        assert::close(m, -7.69707018344038, TOL);
+        assert::close(m, -7.697_070_183_440_38, TOL);
     }
 
     #[test]
@@ -179,7 +172,7 @@ mod tests {
         let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
         let x = GaussianData::<f64>::Data(&data);
         let pp = ng.ln_pp(&3.0, &x);
-        assert::close(pp, -1.28438638499611, TOL);
+        assert::close(pp, -1.284_386_384_996_11, TOL);
     }
 
     #[test]
@@ -188,14 +181,14 @@ mod tests {
         let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
         let x = GaussianData::<f64>::Data(&data);
         let pp = ng.ln_pp(&-3.0, &x);
-        assert::close(pp, -6.1637698862186, TOL);
+        assert::close(pp, -6.163_769_886_218_6, TOL);
     }
 
     #[test]
     fn ln_m_vs_monte_carlo() {
         use crate::misc::logsumexp;
 
-        let n_samples = 1_000_000;
+        let n_samples = 2_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
 
         let (m, r, s, v) = (0.0, 1.2, 2.3, 3.4);

@@ -75,7 +75,8 @@ impl Kernel for SEardKernel {
                 let a = x1.row(i);
                 let b = x2.row(j);
                 for k in 0..c {
-                    s += ((a[k] - b[k]) / self.length_scale[k]).powi(2);
+                    let term = (a[k] - b[k]) / self.length_scale[k];
+                    s += term * term
                 }
                 dm[(i, j)] = s;
             }

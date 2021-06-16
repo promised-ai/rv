@@ -193,8 +193,10 @@ macro_rules! impl_traits {
         impl Rv<$kind> for Cauchy {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let ln_scale = self.scale.ln();
-                let term = ln_scale
-                    + 2.0 * ((f64::from(*x) - self.loc).abs().ln() - ln_scale);
+                let term = 2.0_f64.mul_add(
+                    ((f64::from(*x) - self.loc).abs().ln() - ln_scale),
+                    ln_scale,
+                );
                 // TODO: make a logaddexp method for two floats
                 -logsumexp(&[ln_scale, term]) - LN_PI
             }
@@ -220,14 +222,16 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for Cauchy {
             fn cdf(&self, x: &$kind) -> f64 {
-                FRAC_1_PI * ((f64::from(*x) - self.loc) / self.scale).atan()
-                    + 0.5
+                FRAC_1_PI.mul_add(
+                    ((f64::from(*x) - self.loc) / self.scale).atan(),
+                    0.5,
+                )
             }
         }
 
         impl InverseCdf<$kind> for Cauchy {
             fn invcdf(&self, p: f64) -> $kind {
-                (self.loc + self.scale * (PI * (p - 0.5)).tan()) as $kind
+                self.scale.mul_add((PI * (p - 0.5)).tan(), self.loc) as $kind
             }
         }
 
@@ -288,7 +292,7 @@ mod tests {
     #[test]
     fn ln_pdf_loc_zero() {
         let c = Cauchy::new(0.0, 1.0).unwrap();
-        assert::close(c.ln_pdf(&0.2), -1.1839505990026815, TOL);
+        assert::close(c.ln_pdf(&0.2), -1.183_950_599_002_681_5, TOL);
     }
 
     #[test]
@@ -328,7 +332,7 @@ mod tests {
         let lower: f64 = c.invcdf(0.4);
         let upper: f64 = c.invcdf(0.6);
         assert::close(lower, 0.095_273_032_808_118_61, TOL);
-        assert::close(upper, 2.3047269671918813, TOL);
+        assert::close(upper, 2.304_726_967_191_881_3, TOL);
     }
 
     #[test]
@@ -363,7 +367,7 @@ mod tests {
     #[test]
     fn entropy() {
         let c = Cauchy::new(1.2, 3.4).unwrap();
-        assert::close(c.entropy(), 3.7547996785914064, TOL);
+        assert::close(c.entropy(), 3.754_799_678_591_406_4, TOL);
     }
 
     #[test]

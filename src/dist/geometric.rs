@@ -124,7 +124,7 @@ impl Geometric {
         R: Rng,
     {
         let u: f64 = Uniform::new(0.0, 1.0).unwrap().draw(rng);
-        X::from_f64(((1.0 - u).ln() / (1.0 - p).ln()).ceil() - 1.0)
+        X::from_f64((1.0 - u).log(1.0 - p).ceil() - 1.0)
             .unwrap_or_else(X::max_value)
     }
 
@@ -172,7 +172,7 @@ where
     fn ln_f(&self, k: &X) -> f64 {
         // TODO: could cache ln(1-p) and ln(p)
         let kf = (*k).to_f64().unwrap();
-        kf * (1.0 - self.p).ln() + self.p.ln()
+        kf.mul_add((1.0 - self.p).ln(), self.p.ln())
     }
 
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
@@ -295,10 +295,10 @@ mod tests {
     #[test]
     fn ln_pdf() {
         let geom = Geometric::new(0.5).unwrap();
-        assert::close(geom.ln_pmf(&0_u32), -0.6931471805599453, TOL);
-        assert::close(geom.ln_pmf(&1_u32), -1.3862943611198906, TOL);
-        assert::close(geom.ln_pmf(&5_u32), -4.1588830833596715, TOL);
-        assert::close(geom.ln_pmf(&11_u32), -8.317766166719343, TOL);
+        assert::close(geom.ln_pmf(&0_u32), -0.693_147_180_559_945_3, TOL);
+        assert::close(geom.ln_pmf(&1_u32), -1.386_294_361_119_890_6, TOL);
+        assert::close(geom.ln_pmf(&5_u32), -4.158_883_083_359_671_5, TOL);
+        assert::close(geom.ln_pmf(&11_u32), -8.317_766_166_719_343, TOL);
     }
 
     #[test]
@@ -307,7 +307,7 @@ mod tests {
         assert::close(geom.cdf(&0_u32), 0.5, TOL);
         assert::close(geom.cdf(&1_u32), 0.75, TOL);
         assert::close(geom.cdf(&3_u32), 0.9375, TOL);
-        assert::close(geom.cdf(&5_u32), 0.984375, TOL);
+        assert::close(geom.cdf(&5_u32), 0.984_375, TOL);
     }
 
     #[test]
@@ -319,7 +319,7 @@ mod tests {
         assert::close(m2, 1.0, TOL);
 
         let m3 = Geometric::new(0.9).unwrap().mean().unwrap();
-        assert::close(m3, 0.111111111111111, TOL);
+        assert::close(m3, 0.111_111_111_111_111, TOL);
     }
 
     #[test]
@@ -331,7 +331,7 @@ mod tests {
         assert::close(v2, 2.0, TOL);
 
         let v3 = Geometric::new(0.9).unwrap().variance().unwrap();
-        assert::close(v3, 0.12345679012345676, TOL);
+        assert::close(v3, 0.123_456_790_123_456_76, TOL);
     }
 
     #[test]

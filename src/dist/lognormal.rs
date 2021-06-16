@@ -235,14 +235,17 @@ macro_rules! impl_traits {
         impl Cdf<$kind> for LogNormal {
             fn cdf(&self, x: &$kind) -> f64 {
                 let xk = f64::from(*x);
-                0.5 + 0.5
-                    * ((xk.ln() - self.mu) / (SQRT_2 * self.sigma)).error()
+                0.5_f64.mul_add(
+                    ((xk.ln() - self.mu) / (SQRT_2 * self.sigma)).error(),
+                    0.5,
+                )
             }
         }
 
         impl InverseCdf<$kind> for LogNormal {
             fn invcdf(&self, p: f64) -> $kind {
-                (self.mu + SQRT_2 * self.sigma * (2.0 * p - 1.0).inv_error())
+                SQRT_2
+                    .mul_add(self.sigma * (2.0 * p - 1.0).inv_error(), self.mu)
                     .exp() as $kind
             }
         }
@@ -270,8 +273,8 @@ macro_rules! impl_traits {
 impl Variance<f64> for LogNormal {
     fn variance(&self) -> Option<f64> {
         Some(
-            ((self.sigma * self.sigma).exp() - 1.0)
-                * (2.0 * self.mu + self.sigma * self.sigma).exp(),
+            (self.sigma * self.sigma).exp_m1()
+                * self.sigma.mul_add(self.sigma, 2.0 * self.mu).exp(),
         )
     }
 }
@@ -293,8 +296,10 @@ impl Kurtosis for LogNormal {
     fn kurtosis(&self) -> Option<f64> {
         let s2 = self.sigma * self.sigma;
         Some(
-            (4.0 * s2).exp() + 2.0 * (3.0 * s2).exp() + 3.0 * (2.0 * s2).exp()
-                - 6.0,
+            3.0_f64.mul_add(
+                (2.0 * s2).exp(),
+                (3.0 * s2).exp().mul_add(2.0, (4.0 * s2).exp()),
+            ) - 6.0,
         )
     }
 }
@@ -362,12 +367,12 @@ mod tests {
         let lognorm_2 = LogNormal::new(1.0, 3.0).unwrap();
         assert::close(
             lognorm_1.variance().unwrap(),
-            (1.0_f64.exp() - 1.0) * 7.8_f64.exp(),
+            1.0_f64.exp_m1() * 7.8_f64.exp(),
             TOL,
         );
         assert::close(
             lognorm_2.variance().unwrap(),
-            (9.0_f64.exp() - 1.0) * 11.0_f64.exp(),
+            9.0_f64.exp_m1() * 11.0_f64.exp(),
             TOL,
         );
     }
@@ -401,7 +406,7 @@ mod tests {
         let lognorm = LogNormal::standard();
         assert::close(
             lognorm.ln_pdf(&f64::consts::E),
-            -2.4189385332046727,
+            -2.418_938_533_204_672_7,
             TOL,
         );
     }
@@ -442,7 +447,7 @@ mod tests {
     #[test]
     fn kurtosis() {
         let lognorm = LogNormal::new(-1.2, 1.0).unwrap();
-        assert::close(lognorm.kurtosis().unwrap(), 110.93639217631153, TOL);
+        assert::close(lognorm.kurtosis().unwrap(), 110.936_392_176_311_53, TOL);
     }
 
     #[test]
@@ -473,12 +478,12 @@ mod tests {
     #[test]
     fn entropy() {
         let lognorm = LogNormal::new(1.2, 3.4).unwrap();
-        assert::close(lognorm.entropy(), 3.8427139648267885, TOL);
+        assert::close(lognorm.entropy(), 3.842_713_964_826_788_5, TOL);
     }
 
     #[test]
     fn entropy_standard() {
         let lognorm = LogNormal::standard();
-        assert::close(lognorm.entropy(), 1.4189385332046727, TOL);
+        assert::close(lognorm.entropy(), 1.418_938_533_204_672_7, TOL);
     }
 }

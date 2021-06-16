@@ -281,8 +281,10 @@ impl<X: Booleable> HasSuffStat<X> for Bernoulli {
 
 impl KlDivergence for Bernoulli {
     fn kl(&self, other: &Self) -> f64 {
-        self.p * (other.p.ln() - self.p.ln())
-            + self.q() * (other.q().ln() - self.q().ln())
+        self.p.mul_add(
+            other.p.ln() - self.p.ln(),
+            self.q() * (other.q().ln() - self.q().ln()),
+        )
     }
 }
 
@@ -638,14 +640,14 @@ mod tests {
     fn entropy() {
         let b1 = Bernoulli::new(0.1).unwrap();
         let b2 = Bernoulli::new(0.9).unwrap();
-        assert::close(b1.entropy(), 0.3250829733914482, TOL);
-        assert::close(b2.entropy(), 0.3250829733914482, TOL);
+        assert::close(b1.entropy(), 0.325_082_973_391_448_2, TOL);
+        assert::close(b2.entropy(), 0.325_082_973_391_448_2, TOL);
     }
 
     #[test]
     fn unifrom_entropy() {
         let b = Bernoulli::uniform();
-        assert::close(b.entropy(), 0.6931471805599453, TOL);
+        assert::close(b.entropy(), 0.693_147_180_559_945_3, TOL);
     }
 
     #[test]
@@ -657,7 +659,7 @@ mod tests {
     #[test]
     fn skewness() {
         let b = Bernoulli::new(0.3).unwrap();
-        assert::close(b.skewness().unwrap(), 0.8728715609439696, TOL);
+        assert::close(b.skewness().unwrap(), 0.872_871_560_943_969_6, TOL);
     }
 
     #[test]
