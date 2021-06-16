@@ -12,8 +12,11 @@ fn ln_z(k: f64, df: usize, scale: &DMatrix<f64>) -> f64 {
     let d = scale.nrows();
     let p = d as f64;
     let v2 = (df as f64) / 2.0;
-    (v2 * p) * LN_2 + lnmv_gamma(d, v2) + (p / 2.0) * (2.0 * PI / k).ln()
-        - v2 * scale.clone().determinant().ln()
+    (v2 * p).mul_add(LN_2, lnmv_gamma(d, v2))
+        + (p / 2.0).mul_add(
+            (2.0 * PI / k).ln(),
+            -v2 * scale.clone().determinant().ln(),
+        )
 }
 
 impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
@@ -57,7 +60,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
 
     fn ln_m_with_cache(&self, cache: &Self::LnMCache, x: &MvgData) -> f64 {
         let z0 = cache;
-        let post = self.posterior(&x);
+        let post = self.posterior(x);
         let zn = ln_z(post.k(), post.df(), post.scale());
         let nd: f64 = (self.ndims() as f64) * (x.n() as f64);
 
@@ -66,7 +69,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
 
     #[inline]
     fn ln_pp_cache(&self, x: &MvgData) -> Self::LnPpCache {
-        let post = self.posterior(&x);
+        let post = self.posterior(x);
         let zn = ln_z(post.k(), post.df(), post.scale());
         (post, zn)
     }
@@ -80,7 +83,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         let zn = cache.1;
 
         let mut y_stat = MvGaussianSuffStat::new(self.ndims());
-        y_stat.observe(&y);
+        y_stat.observe(y);
         let y_packed = DataOrSuffStat::SuffStat(&y_stat);
 
         let pred = post.posterior(&y_packed);
@@ -100,10 +103,10 @@ mod tests {
     const TOL: f64 = 1E-12;
 
     fn obs_fxtr() -> MvGaussianSuffStat {
-        let x0v = vec![3.57839693972576, 0.725404224946106];
-        let x1v = vec![2.76943702988488, -0.0630548731896562];
-        let x2v = vec![-1.34988694015652, 0.714742903826096];
-        let x3v = vec![3.03492346633185, -0.204966058299775];
+        let x0v = vec![3.578_396_939_725_76, 0.725_404_224_946_106];
+        let x1v = vec![2.769_437_029_884_88, -0.063_054_873_189_656_2];
+        let x2v = vec![-1.349_886_940_156_52, 0.714_742_903_826_096];
+        let x3v = vec![3.034_923_466_331_85, -0.204_966_058_299_775];
 
         let x0 = DVector::<f64>::from_column_slice(&x0v);
         let x1 = DVector::<f64>::from_column_slice(&x1v);
@@ -140,6 +143,6 @@ mod tests {
 
         let pp = niw.ln_m(&data);
 
-        assert::close(pp, -16.3923777220275, TOL);
+        assert::close(pp, -16.392_377_722_027_5, TOL);
     }
 }

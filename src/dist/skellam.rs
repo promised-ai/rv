@@ -228,8 +228,7 @@ macro_rules! impl_traits {
                     });
 
                 -(self.mu_1 + self.mu_2)
-                    + (kf / 2.0) * (self.mu_1 / self.mu_2).ln()
-                    + bf
+                    + (kf / 2.0).mul_add((self.mu_1 / self.mu_2).ln(), bf)
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -358,15 +357,15 @@ mod tests {
     #[test]
     fn ln_pdf() {
         let skel = Skellam::new(5.3, 6.5).unwrap();
-        assert::close(skel.ln_pmf(&1_i32), -2.347033152058002, TOL);
-        assert::close(skel.ln_pmf(&5_i32), -3.8056891572335125, TOL);
-        assert::close(skel.ln_pmf(&11_i32), -8.339462666191974, TOL);
+        assert::close(skel.ln_pmf(&1_i32), -2.347_033_152_058_002, TOL);
+        assert::close(skel.ln_pmf(&5_i32), -3.805_689_157_233_512_5, TOL);
+        assert::close(skel.ln_pmf(&11_i32), -8.339_462_666_191_974, TOL);
 
-        assert::close(skel.ln_pmf(&0_i32), -2.200416098697956, TOL);
+        assert::close(skel.ln_pmf(&0_i32), -2.200_416_098_697_956, TOL);
 
-        assert::close(skel.ln_pmf(&-1_i32), -2.1429377957144866, TOL);
-        assert::close(skel.ln_pmf(&-5_i32), -2.7852123755159357, TOL);
-        assert::close(skel.ln_pmf(&-11_i32), -6.094413746413306, TOL);
+        assert::close(skel.ln_pmf(&-1_i32), -2.142_937_795_714_486_6, TOL);
+        assert::close(skel.ln_pmf(&-5_i32), -2.785_212_375_515_935_7, TOL);
+        assert::close(skel.ln_pmf(&-11_i32), -6.094_413_746_413_306, TOL);
     }
 
     #[test]
@@ -390,13 +389,13 @@ mod tests {
     #[test]
     fn skewness() {
         let s = Skellam::new(5.3, 4.5).unwrap().skewness().unwrap();
-        assert::close(s, 0.026076594489793457, TOL);
+        assert::close(s, 0.026_076_594_489_793_457, TOL);
     }
 
     #[test]
     fn kurtosis() {
         let k = Skellam::new(5.3, 4.5).unwrap().kurtosis().unwrap();
-        assert::close(k, 3.1020408163265305, TOL);
+        assert::close(k, 3.102_040_816_326_530_5, TOL);
     }
 
     #[test]

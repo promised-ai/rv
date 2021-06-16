@@ -68,7 +68,7 @@ where
     }
 }
 
-#[allow(clippy::too_many_arguments, clippy::clippy::many_single_char_names)]
+#[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
 pub(crate) fn quadp<F>(f: &F, a: f64, b: f64, config: QuadConfig) -> f64
 where
     F: Fn(f64) -> f64,
@@ -123,7 +123,7 @@ where
     let c = (a + b) / 2.0;
     let h3 = (b - a).abs() / 6.0;
     let fc = func(c);
-    (c, fc, h3 * (fa + 4.0 * fc + fb))
+    (c, fc, h3 * (4.0_f64.mul_add(fc, fa) + fb))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -212,7 +212,7 @@ where
     let c = (a + b) / 2.0;
     let fc = func(c)?;
     let h3 = (b - a).abs() / 6.0;
-    Ok((c, fc, h3 * (fa + 4.0 * fc + fb)))
+    Ok((c, fc, h3 * (4.0_f64.mul_add(fc, fa) + fb)))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -331,7 +331,7 @@ mod tests {
 
     #[test]
     fn quad_of_x2() {
-        let func = |x: f64| x.powi(2);
+        let func = |x: f64| x * x;
         let q = quad(func, 0.0, 1.0);
         assert::close(q, 1.0 / 3.0, QUAD_EPS);
     }
@@ -345,7 +345,7 @@ mod tests {
 
     #[test]
     fn quadp_of_x2() {
-        let func = |x: f64| x.powi(2);
+        let func = |x: f64| x * x;
         let q = quadp(&func, 0.0, 1.0, QuadConfig::default());
         assert::close(q, 1.0 / 3.0, QUAD_EPS);
     }
@@ -360,7 +360,7 @@ mod tests {
     #[test]
     fn try_quad_of_x2() {
         fn func(x: f64) -> Result<f64, u8> {
-            Ok(x.powi(2))
+            Ok(x * x)
         }
         let q = try_quad(func, 0.0, 1.0).unwrap();
         assert::close(q, 1.0 / 3.0, QUAD_EPS);

@@ -162,6 +162,7 @@ macro_rules! impl_traits {
             }
         }
 
+        #[allow(clippy::cmp_owned)]
         impl Support<$kind> for Uniform {
             fn supports(&self, x: &$kind) -> bool {
                 x.is_finite()
@@ -188,7 +189,8 @@ macro_rules! impl_traits {
 
         impl Variance<$kind> for Uniform {
             fn variance(&self) -> Option<$kind> {
-                let v = (self.b - self.a).powi(2) / 12.0;
+                let diff = self.b - self.a;
+                let v = diff * diff / 12.0;
                 Some(v as $kind)
             }
         }
@@ -208,7 +210,7 @@ macro_rules! impl_traits {
 
         impl InverseCdf<$kind> for Uniform {
             fn invcdf(&self, p: f64) -> $kind {
-                let x = p * (self.b - self.a) + self.a;
+                let x = p.mul_add(self.b - self.a, self.a);
                 x as $kind
             }
         }

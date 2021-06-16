@@ -182,7 +182,7 @@ mod test {
             let csd = SymmetricDirichlet::new(alpha, k).unwrap();
             let m = csd.ln_m(&data);
 
-            assert::close(-11.3285217419719, m, TOL);
+            assert::close(-11.328_521_741_971_9, m, TOL);
         }
 
         #[test]
@@ -201,7 +201,7 @@ mod test {
             let csd = SymmetricDirichlet::new(alpha, k).unwrap();
             let m = csd.ln_m(&data);
 
-            assert::close(-22.4377193008552, m, TOL);
+            assert::close(-22.437_719_300_855_2, m, TOL);
         }
 
         #[test]
@@ -220,7 +220,7 @@ mod test {
             let csd = SymmetricDirichlet::new(alpha, k).unwrap();
             let m = csd.ln_m(&data);
 
-            assert::close(-22.4203863897293, m, TOL);
+            assert::close(-22.420_386_389_729_3, m, TOL);
         }
 
         #[test]
@@ -291,7 +291,7 @@ mod test {
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
             let lp = csd.ln_pp(&0, &data);
-            assert::close(lp, -1.87180217690159, TOL);
+            assert::close(lp, -1.871_802_176_901_59, TOL);
         }
 
         #[test]
@@ -302,7 +302,7 @@ mod test {
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
             let lp = csd.ln_pp(&1, &data);
-            assert::close(lp, -0.95551144502744, TOL);
+            assert::close(lp, -0.955_511_445_027_44, TOL);
         }
 
         #[test]
@@ -312,7 +312,7 @@ mod test {
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
             let lp = csd.ln_pp(&0, &data);
-            assert::close(lp, -1.6094379124341, TOL);
+            assert::close(lp, -1.609_437_912_434_1, TOL);
         }
 
         #[test]
@@ -325,7 +325,7 @@ mod test {
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
             let lp = csd.ln_pp(&0, &data);
-            assert::close(lp, -2.31363492918062, TOL);
+            assert::close(lp, -2.313_634_929_180_62, TOL);
         }
 
         #[test]

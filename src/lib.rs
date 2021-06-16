@@ -64,6 +64,16 @@
 //! // (true) given the observed flips (posterior predictive)?
 //! let p_heads = prior.pp(&true, &obs);
 //! ```
+#![warn(
+    clippy::all,
+    clippy::imprecise_flops,
+    clippy::suboptimal_flops,
+    clippy::unseparated_literal_suffix,
+    clippy::unreadable_literal,
+    clippy::option_option,
+    clippy::implicit_clone
+)]
+
 #[cfg(feature = "serde1")]
 extern crate serde;
 

@@ -89,6 +89,15 @@ where
     X: Booleable,
 {
     fn from(xs: &'a Vec<X>) -> Self {
+        DataOrSuffStat::Data(xs.as_slice())
+    }
+}
+
+impl<'a, X> From<&'a [X]> for DataOrSuffStat<'a, X, Bernoulli>
+where
+    X: Booleable,
+{
+    fn from(xs: &'a [X]) -> Self {
         DataOrSuffStat::Data(xs)
     }
 }

@@ -122,7 +122,8 @@ macro_rules! impl_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(pi*v) and ln_gamma(v/2)
                 let vp1 = (self.v + 1.0) / 2.0;
-                let xterm = -vp1 * (1.0 + f64::from(*x).powi(2) / self.v).ln();
+                let xf = f64::from(*x);
+                let xterm = -vp1 * (xf * xf / self.v).ln_1p();
                 let zterm = vp1.ln_gamma().0
                     - (self.v / 2.0).ln_gamma().0
                     - 0.5 * (self.v * PI).ln();
@@ -254,16 +255,16 @@ mod tests {
     #[test]
     fn ln_pdf() {
         let t = StudentsT::new(2.3).unwrap();
-        assert::close(t.ln_pdf(&0.0_f64), -1.0247440238937566, TOL);
+        assert::close(t.ln_pdf(&0.0_f64), -1.024_744_023_893_756_6, TOL);
         assert::close(t.ln_pdf(&1.0_f64), -1.620_416_044_030_352, TOL);
-        assert::close(t.ln_pdf(&2.5_f64), -3.191230587916138, TOL);
-        assert::close(t.ln_pdf(&-2.5_f64), -3.191230587916138, TOL);
+        assert::close(t.ln_pdf(&2.5_f64), -3.191_230_587_916_138, TOL);
+        assert::close(t.ln_pdf(&-2.5_f64), -3.191_230_587_916_138, TOL);
     }
 
     #[test]
     fn variance() {
         let v: f64 = StudentsT::new(2.3).unwrap().variance().unwrap();
-        assert::close(v, 7.6666666666666705, TOL);
+        assert::close(v, 7.666_666_666_666_670_5, TOL);
     }
 
     #[test]

@@ -23,7 +23,8 @@ pub fn x2_test(f_obs: &[u32], ps: &[f64]) -> (f64, f64) {
     let nf = f64::from(f_obs.iter().sum::<u32>());
     let x2 = nf
         * f_obs.iter().zip(ps.iter()).fold(0.0, |acc, (&o, &p)| {
-            acc + (f64::from(o) / nf - p).powi(2) / p
+            let err_term = f64::from(o) / nf - p;
+            acc + err_term * err_term / p
         });
 
     let df = (k - 1) as f64;

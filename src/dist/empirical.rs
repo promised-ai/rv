@@ -173,8 +173,9 @@ impl Mean<f64> for Empirical {
 impl Variance<f64> for Empirical {
     fn variance(&self) -> Option<f64> {
         let n = self.xs.len() as f64;
-        self.mean()
-            .map(|m| self.xs.iter().map(|&x| (x - m).powi(2)).sum::<f64>() / n)
+        self.mean().map(|m| {
+            self.xs.iter().map(|&x| (x - m) * (x - m)).sum::<f64>() / n
+        })
     }
 }
 

@@ -61,7 +61,7 @@ where
 
     /// Log posterior predictive, *f(y|obs)*
     pub fn ln_pp(&self, y: &X) -> f64 {
-        self.prior.ln_pp(&y, &self.obs())
+        self.prior.ln_pp(y, &self.obs())
     }
 
     /// Return the posterior distribution
@@ -104,11 +104,11 @@ where
     }
 
     fn observe(&mut self, x: &X) {
-        self.suffstat.observe(&x);
+        self.suffstat.observe(x);
     }
 
     fn forget(&mut self, x: &X) {
-        self.suffstat.forget(&x);
+        self.suffstat.forget(x);
     }
 }
 
@@ -118,7 +118,7 @@ where
     Pr: ConjugatePrior<X, Fx>,
 {
     fn ln_f(&self, x: &X) -> f64 {
-        self.prior.ln_pp(&x, &self.obs())
+        self.prior.ln_pp(x, &self.obs())
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {

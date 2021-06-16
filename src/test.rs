@@ -75,8 +75,8 @@ where
 
 pub trait GewekeTestable<Fx, X> {
     fn prior_draw<R: rand::Rng>(&self, rng: &mut R) -> Fx;
-    fn update_params<R: rand::Rng>(&self, data: &Vec<X>, rng: &mut R) -> Fx;
-    fn geweke_stats(&self, fx: &Fx, xs: &Vec<X>) -> BTreeMap<String, f64>;
+    fn update_params<R: rand::Rng>(&self, data: &[X], rng: &mut R) -> Fx;
+    fn geweke_stats(&self, fx: &Fx, xs: &[X]) -> BTreeMap<String, f64>;
 }
 
 pub struct GewekeTester<Pr, Fx, X>
@@ -207,7 +207,7 @@ macro_rules! gaussian_prior_geweke_testable {
 
             fn update_params<R: rand::Rng>(
                 &self,
-                data: &Vec<f64>,
+                data: &[f64],
                 rng: &mut R,
             ) -> Gaussian {
                 let post = <$prior as ConjugatePrior<f64, $fx>>::posterior(
@@ -220,7 +220,7 @@ macro_rules! gaussian_prior_geweke_testable {
             fn geweke_stats(
                 &self,
                 fx: &Gaussian,
-                xs: &Vec<f64>,
+                xs: &[f64],
             ) -> BTreeMap<String, f64> {
                 let mut stats: BTreeMap<String, f64> = BTreeMap::new();
 
@@ -228,7 +228,13 @@ macro_rules! gaussian_prior_geweke_testable {
                 stats.insert(String::from("sigma"), fx.sigma());
 
                 let mean = xs.iter().map(|&x| x).sum::<f64>() / xs.len() as f64;
-                let mse = xs.iter().map(|&x| (x - mean).powi(2)).sum::<f64>()
+                let mse = xs
+                    .iter()
+                    .map(|&x| {
+                        let err = (x - mean);
+                        err * err
+                    })
+                    .sum::<f64>()
                     / xs.len() as f64;
 
                 stats.insert(String::from("x_mean"), mean);

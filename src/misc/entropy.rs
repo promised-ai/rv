@@ -54,6 +54,6 @@ mod tests {
     fn count_entropy_value() {
         let pois = Poisson::new(1.2).unwrap();
         let h = count_entropy(&pois, 2);
-        assert::close(h, 1.4100058897431968, 1e-9);
+        assert::close(h, 1.410_005_889_743_196_8, 1e-9);
     }
 }

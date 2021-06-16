@@ -300,9 +300,10 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Beta {
             fn ln_f(&self, x: &$kind) -> f64 {
-                (self.alpha - 1.0) * f64::from(*x).ln()
-                    + (self.beta - 1.0) * (1.0 - f64::from(*x)).ln()
-                    - self.ln_beta_ab()
+                (self.alpha - 1.0).mul_add(
+                    f64::from(*x).ln(),
+                    (self.beta - 1.0) * (1.0 - f64::from(*x)).ln(),
+                ) - self.ln_beta_ab()
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -374,10 +375,12 @@ impl Variance<f64> for Beta {
 impl Entropy for Beta {
     fn entropy(&self) -> f64 {
         let apb = self.alpha + self.beta;
-        self.ln_beta_ab()
-            - (self.alpha - 1.0) * self.alpha.digamma()
-            - (self.beta - 1.0) * self.beta.digamma()
-            + (apb - 2.0) * apb.digamma()
+        (apb - 2.0).mul_add(
+            apb.digamma(),
+            self.ln_beta_ab()
+                - (self.alpha - 1.0) * self.alpha.digamma()
+                - (self.beta - 1.0) * self.beta.digamma(),
+        )
     }
 }
 
@@ -462,7 +465,7 @@ mod tests {
     #[test]
     fn ln_pdf_center_value() {
         let beta = Beta::new(1.5, 2.0).unwrap();
-        assert::close(beta.ln_pdf(&0.5), 0.28203506914240184, TOL);
+        assert::close(beta.ln_pdf(&0.5), 0.282_035_069_142_401_84, TOL);
     }
 
     #[test]
@@ -474,7 +477,7 @@ mod tests {
     #[test]
     fn ln_pdf_high_value() {
         let beta = Beta::new(1.5, 2.0).unwrap();
-        assert::close(beta.ln_pdf(&0.99), -3.2884395139325218, TOL);
+        assert::close(beta.ln_pdf(&0.99), -3.288_439_513_932_521_8, TOL);
     }
 
     #[test]
@@ -524,15 +527,15 @@ mod tests {
         let beta = Beta::new(1.5, 2.0).unwrap();
         let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
         let true_cdfs = vec![
-            0.07431352501395692,
-            0.19677398201998159,
-            0.3368493728656773,
-            0.48066620434559376,
-            0.6187184335382292,
-            0.7436128024718239,
-            0.8492099269320867,
-            0.9302042786399125,
-            0.9818872134822818,
+            0.074_313_525_013_956_92,
+            0.196_773_982_019_981_59,
+            0.336_849_372_865_677_3,
+            0.480_666_204_345_593_76,
+            0.618_718_433_538_229_2,
+            0.743_612_802_471_823_9,
+            0.849_209_926_932_086_7,
+            0.930_204_278_639_912_5,
+            0.981_887_213_482_281_8,
         ];
         let cdfs: Vec<f64> = xs.iter().map(|x| beta.cdf(x)).collect();
 
@@ -544,15 +547,15 @@ mod tests {
         let beta = Beta::new(0.5, 0.7).unwrap();
         let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
         let true_cdfs = vec![
-            0.25502526668462605,
-            0.36470920861186545,
-            0.45212784899417957,
-            0.529074597952903,
-            0.6003642321330015,
-            0.6688324654577239,
-            0.7367590200551991,
-            0.8067813209919937,
-            0.8837889567707921,
+            0.255_025_266_684_626_05,
+            0.364_709_208_611_865_45,
+            0.452_127_848_994_179_57,
+            0.529_074_597_952_903,
+            0.600_364_232_133_001_5,
+            0.668_832_465_457_723_9,
+            0.736_759_020_055_199_1,
+            0.806_781_320_991_993_7,
+            0.883_788_956_770_792_1,
         ];
         let cdfs: Vec<f64> = xs.iter().map(|x| beta.cdf(x)).collect();
 
@@ -640,7 +643,7 @@ mod tests {
     #[test]
     fn entropy() {
         let beta = Beta::new(1.5, 2.0).unwrap();
-        assert::close(beta.entropy(), -0.10805020110232236, TOL);
+        assert::close(beta.entropy(), -0.108_050_201_102_322_36, TOL);
     }
 
     #[test]
@@ -656,13 +659,13 @@ mod tests {
     #[test]
     fn skewness() {
         let beta = Beta::new(1.5, 2.0).unwrap();
-        assert::close(beta.skewness().unwrap(), 0.22268088570756162, TOL);
+        assert::close(beta.skewness().unwrap(), 0.222_680_885_707_561_62, TOL);
     }
 
     #[test]
     fn kurtosis() {
         let beta = Beta::new(1.5, 2.0).unwrap();
-        assert::close(beta.kurtosis().unwrap(), -0.8601398601398601, TOL);
+        assert::close(beta.kurtosis().unwrap(), -0.860_139_860_139_860_1, TOL);
     }
 
     #[test]

@@ -26,6 +26,7 @@ pub trait CategoricalDatum: Sized + Sync + Copy {
     fn from_usize(n: usize) -> Self;
 }
 
+#[allow(clippy::wrong_self_convention)]
 impl CategoricalDatum for usize {
     fn into_usize(self) -> usize {
         self
@@ -38,10 +39,10 @@ impl CategoricalDatum for usize {
 
 impl CategoricalDatum for bool {
     fn into_usize(self) -> usize {
-        if !self {
-            0
-        } else {
+        if self {
             1
+        } else {
+            0
         }
     }
 
@@ -82,6 +83,7 @@ pub trait Booleable: Sized + Sync + Copy {
     fn try_into_bool(self) -> Option<bool>;
 }
 
+#[allow(clippy::wrong_self_convention)]
 impl Booleable for bool {
     fn into_bool(self) -> bool {
         self
@@ -140,7 +142,7 @@ where
     Fx: 'a + HasSuffStat<X>,
 {
     /// A `Vec` of raw data
-    Data(&'a Vec<X>),
+    Data(&'a [X]),
     /// A sufficient statistic
     SuffStat(&'a Fx::Stat),
     /// No data
@@ -247,7 +249,7 @@ where
     Ctor: Fn() -> Fx::Stat,
 {
     match x {
-        DataOrSuffStat::SuffStat(ref s) => (*s).clone(),
+        DataOrSuffStat::SuffStat(s) => (*s).clone(),
         DataOrSuffStat::Data(xs) => {
             let mut stat = stat_ctor();
             xs.iter().for_each(|y| stat.observe(y));
@@ -283,14 +285,14 @@ mod tests {
 
         #[test]
         fn impl_usize_into_usize() {
-            let x = 8usize;
+            let x = 8_usize;
             assert_eq!(x.into_usize(), 8);
         }
 
         #[test]
         fn impl_usize_from_usize() {
-            let x: usize = CategoricalDatum::from_usize(8usize);
-            assert_eq!(x, 8usize);
+            let x: usize = CategoricalDatum::from_usize(8_usize);
+            assert_eq!(x, 8_usize);
         }
 
         #[test]
@@ -301,13 +303,13 @@ mod tests {
 
         #[test]
         fn impl_bool_from_usize() {
-            let x: bool = CategoricalDatum::from_usize(0usize);
+            let x: bool = CategoricalDatum::from_usize(0_usize);
             assert_eq!(x, false);
 
-            let y: bool = CategoricalDatum::from_usize(1usize);
+            let y: bool = CategoricalDatum::from_usize(1_usize);
             assert_eq!(y, true);
 
-            let z: bool = CategoricalDatum::from_usize(122usize);
+            let z: bool = CategoricalDatum::from_usize(122_usize);
             assert_eq!(z, true);
         }
 
@@ -323,7 +325,7 @@ mod tests {
                 #[test]
                 fn $into_test() {
                     let x: $type = 123;
-                    assert_eq!(x.into_usize(), 123usize);
+                    assert_eq!(x.into_usize(), 123_usize);
                 }
             };
         }

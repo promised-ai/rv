@@ -252,7 +252,8 @@ macro_rules! impl_traits {
                 let (mu, lambda) = self.params();
                 let xf = f64::from(*x);
                 let z = self.ln_lambda() - xf.ln().mul_add(3.0, LN_2PI);
-                let term = lambda * (xf - mu).powi(2) / (2.0 * mu * mu * xf);
+                let err = xf - mu;
+                let term = lambda * err * err / (2.0 * mu * mu * xf);
                 z.mul_add(0.5, -term)
             }
 
@@ -263,11 +264,14 @@ macro_rules! impl_traits {
                 let v: f64 = rng.sample(g);
                 let y = v * v;
                 let mu2 = mu * mu;
-                let x = mu
-                    + 0.5
-                        * (mu2 * y / lambda
-                            - mu / lambda
-                                * (4.0 * mu * lambda * y + mu2 * y * y).sqrt());
+                let x = 0.5_f64.mul_add(
+                    (mu2 * y / lambda
+                        - mu / lambda
+                            * (4.0 * mu * lambda)
+                                .mul_add(y, mu2 * y * y)
+                                .sqrt()),
+                    mu,
+                );
                 let z: f64 = rng.gen();
 
                 if z <= mu / (mu + x) {
@@ -294,7 +298,9 @@ macro_rules! impl_traits {
                 let z = (lambda / xf).sqrt();
                 let a = z * (xf / mu - 1.0);
                 let b = -z * (xf / mu + 1.0);
-                gauss.cdf(&a) + (2.0 * lambda / mu).exp() * gauss.cdf(&b)
+                (2.0 * lambda / mu)
+                    .exp()
+                    .mul_add(gauss.cdf(&b), gauss.cdf(&a))
             }
         }
         impl Mean<$kind> for InvGaussian {
@@ -306,7 +312,7 @@ macro_rules! impl_traits {
         impl Mode<$kind> for InvGaussian {
             fn mode(&self) -> Option<$kind> {
                 let (mu, lambda) = self.params();
-                let a = (1.0 + 0.25 * 9.0 * mu.powi(2) / lambda.powi(2)).sqrt();
+                let a = (1.0 + 0.25 * 9.0 * mu * mu / (lambda * lambda)).sqrt();
                 let b = 0.5 * 3.0 * mu / lambda;
                 let mode = mu * (a - b);
                 Some(mode as $kind)

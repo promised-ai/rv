@@ -313,7 +313,7 @@ impl_display!(NormalInvChiSquared);
 impl Rv<Gaussian> for NormalInvChiSquared {
     fn ln_f(&self, x: &Gaussian) -> f64 {
         let lnf_sigma = ScaledInvChiSquared::new_unchecked(self.v, self.s2)
-            .ln_f(&x.sigma().powi(2));
+            .ln_f(&(x.sigma() * x.sigma()));
         let prior_sigma = x.sigma() / self.k.sqrt();
         let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&x.mu());
         lnf_sigma + lnf_mu

@@ -178,7 +178,7 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
         let ln_gamma_sum = (self.alpha * kf).ln_gamma().0;
 
         let am1 = self.alpha - 1.0;
-        let term = x.iter().fold(0.0, |acc, &xi| acc + am1 * xi.ln());
+        let term = x.iter().fold(0.0, |acc, &xi| am1.mul_add(xi.ln(), acc));
 
         term - (sum_ln_gamma - ln_gamma_sum)
     }
@@ -369,7 +369,9 @@ impl Rv<Vec<f64>> for Dirichlet {
         let term = x
             .iter()
             .zip(self.alphas.iter())
-            .fold(0.0, |acc, (&xi, &alpha)| acc + (alpha - 1.0) * xi.ln());
+            .fold(0.0, |acc, (&xi, &alpha)| {
+                (alpha - 1.0).mul_add(xi.ln(), acc)
+            });
 
         term - (sum_ln_gamma - ln_gamma_sum)
     }
@@ -498,7 +500,7 @@ mod tests {
             let dir = Dirichlet::new(vec![1.0, 2.0, 3.0]).unwrap();
             assert::close(
                 dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
-                1.5040773967762737,
+                1.504_077_396_776_273_7,
                 TOL,
             );
         }

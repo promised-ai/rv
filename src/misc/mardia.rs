@@ -32,7 +32,7 @@ pub fn mardia(xs: &[DVector<f64>]) -> (f64, f64) {
     let bsum = xs.iter().fold(0.0, |acc, x| {
         let diff = x - &xbar;
         let y = &diff.transpose() * &inv_cov * &diff;
-        acc + y[0].powi(2)
+        y[0].mul_add(y[0], acc)
     });
 
     let k = dims as f64;
