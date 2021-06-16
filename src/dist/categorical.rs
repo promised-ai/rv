@@ -224,7 +224,7 @@ impl<X: CategoricalDatum> Cdf<X> for Categorical {
 
 impl<X: CategoricalDatum> Mode<X> for Categorical {
     fn mode(&self) -> Option<X> {
-        // FIXME: Return None if more than one max value
+        // Return None if more than one max value
         let max_ixs = argmax(&self.ln_weights);
         if max_ixs.len() > 1 {
             None

@@ -194,7 +194,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Poisson {
             fn ln_f(&self, x: &$kind) -> f64 {
-                let kf = f64::from(*x);
+                let kf = *x as f64;
                 kf * self.ln_rate() - self.rate - ln_fact(*x as usize)
             }
 
@@ -226,7 +226,7 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for Poisson {
             fn cdf(&self, x: &$kind) -> f64 {
-                let kf = f64::from(*x);
+                let kf = *x as f64;
                 1.0 - (self.rate).inc_gamma(kf + 1.0)
             }
         }
@@ -307,6 +307,7 @@ impl Entropy for Poisson {
 impl_traits!(u8);
 impl_traits!(u16);
 impl_traits!(u32);
+impl_traits!(usize);
 
 impl std::error::Error for PoissonError {}
 

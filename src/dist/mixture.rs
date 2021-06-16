@@ -1195,9 +1195,7 @@ mod tests {
             let mu_prior = Gaussian::new(0.0, 5.0).unwrap();
             let sigma_prior = InvGamma::new(2.0, 3.0).unwrap();
             let bad_bounds = (0..100).find(|_| {
-                // TODO: should probably implement Rv<usize> for Poisson...
-                let n: usize =
-                    <Poisson as Rv<u32>>::draw(&pois, &mut rng) as usize;
+                let n: usize = pois.draw(&mut rng);
 
                 let components: Vec<Gaussian> = (0..=n)
                     .map(|_| {
