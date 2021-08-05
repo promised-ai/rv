@@ -47,6 +47,74 @@ macro_rules! test_basic_impls {
     };
 }
 
+#[macro_export]
+macro_rules! verify_cache_resets {
+    ([unchecked],
+     $fn_name: ident,
+     $set_fn: ident,
+     $start_dist: expr,
+     $x: expr,
+     $start_value: expr,
+     $change_value: expr
+     ) => {
+        #[test]
+        fn $fn_name() {
+            let mut dist = $start_dist;
+            let x = $x;
+
+            // cache should initialize during this call
+            let ln_f_0 = dist.ln_f(&x);
+            // this call should use the cache
+            let ln_f_1 = dist.ln_f(&x);
+
+            assert!((ln_f_0 - ln_f_1).abs() < 1e-10);
+
+            // set the cache to the wrong thing
+            dist.$set_fn($change_value);
+            let _ = dist.ln_f(&x);
+
+            // reset alpha and empty cache
+            dist.$set_fn($start_value);
+
+            // this call should use the cache
+            let ln_f_2 = dist.ln_f(&x);
+            assert!((ln_f_2 - ln_f_1).abs() < 1e-10);
+        }
+    };
+    ([checked],
+     $fn_name: ident,
+     $set_fn: ident,
+     $start_dist: expr,
+     $x: expr,
+     $start_value: expr,
+     $change_value: expr
+     ) => {
+        #[test]
+        fn $fn_name() {
+            let mut dist = $start_dist;
+            let x = $x;
+
+            // cache should initialize during this call
+            let ln_f_0 = dist.ln_f(&x);
+            // this call should use the cache
+            let ln_f_1 = dist.ln_f(&x);
+
+            assert!((ln_f_0 - ln_f_1).abs() < 1e-10);
+
+            // set the cache to the wrong thing
+            dist.$set_fn($change_value).unwrap();
+            let _ = dist.ln_f(&x);
+
+            // reset alpha and empty cache
+            dist.$set_fn($start_value).unwrap();
+
+            // this call should use the cache
+            let ln_f_2 = dist.ln_f(&x);
+            assert!((ln_f_1 - ln_f_2).abs() < 1e-10);
+        }
+    };
+}
+
 #[cfg(test)]
 #[allow(dead_code)]
 /// Assert Relative Eq for sequences

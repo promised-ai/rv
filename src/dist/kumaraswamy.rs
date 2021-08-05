@@ -3,8 +3,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::consts::EULER_MASCERONI;
+use crate::impl_display;
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Gamma as _;
@@ -42,7 +42,7 @@ use std::fmt;
 ///     assert::close(kuma.f(x), beta.f(x), 1E-10);
 /// }
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Kumaraswamy {
     a: f64,
@@ -50,16 +50,6 @@ pub struct Kumaraswamy {
     #[cfg_attr(feature = "serde1", serde(skip))]
     /// Cached log(a*b)
     ab_ln: OnceCell<f64>,
-}
-
-impl Clone for Kumaraswamy {
-    fn clone(&self) -> Self {
-        Self {
-            a: self.a,
-            b: self.b,
-            ab_ln: clone_cache_f64!(self, ab_ln),
-        }
-    }
 }
 
 impl PartialEq for Kumaraswamy {

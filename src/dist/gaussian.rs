@@ -11,8 +11,8 @@ use std::fmt;
 
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
+use crate::impl_display;
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.
@@ -36,7 +36,7 @@ use crate::{clone_cache_f64, impl_display};
 /// let kl_sym = gauss_1.kl_sym(&gauss_2);
 /// assert!((kl_sym - (kl_12 + kl_21)).abs() < 1E-12);
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Gaussian {
     /// Mean
@@ -46,16 +46,6 @@ pub struct Gaussian {
     /// Cached log(sigma)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_sigma: OnceCell<f64>,
-}
-
-impl Clone for Gaussian {
-    fn clone(&self) -> Self {
-        Self {
-            mu: self.mu,
-            sigma: self.sigma,
-            ln_sigma: clone_cache_f64!(self, ln_sigma),
-        }
-    }
 }
 
 impl PartialEq for Gaussian {

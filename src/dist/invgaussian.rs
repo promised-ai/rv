@@ -9,12 +9,12 @@ use std::fmt;
 
 use crate::consts::*;
 use crate::data::InvGaussianSuffStat;
+use crate::impl_display;
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 
 /// [Inverse Gaussian distribution](https://en.wikipedia.org/wiki/Inverse_Gaussian_distribution),
 /// N<sup>-1</sup>(μ, λ) over real values.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct InvGaussian {
     /// Mean
@@ -24,16 +24,6 @@ pub struct InvGaussian {
     /// Cached log(lambda)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_lambda: OnceCell<f64>,
-}
-
-impl Clone for InvGaussian {
-    fn clone(&self) -> Self {
-        Self {
-            mu: self.mu,
-            lambda: self.lambda,
-            ln_lambda: clone_cache_f64!(self, ln_lambda),
-        }
-    }
 }
 
 impl PartialEq for InvGaussian {
@@ -406,7 +396,7 @@ mod tests {
             let x: f64 = ig.draw(&mut rng);
             let res = quad_eps(pdf, 1e-16, x, Some(1e-10));
             let cdf = ig.cdf(&x);
-            assert::close(res, cdf, 1e-9);
+            assert!((res - cdf).abs() < 1e-9);
         }
     }
 

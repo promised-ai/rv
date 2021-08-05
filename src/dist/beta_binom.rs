@@ -8,9 +8,9 @@ use special::Beta as _;
 use std::f64;
 use std::fmt;
 
+use crate::impl_display;
 use crate::misc::{ln_binom, ln_pflip};
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// over k in {0, ..., n}
@@ -50,7 +50,7 @@ use crate::{clone_cache_f64, impl_display};
 /// beta_binom.pmf(&21_u32); // panics
 /// ```
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct BetaBinomial {
     /// Total number of trials
@@ -62,17 +62,6 @@ pub struct BetaBinomial {
     // ln_beta(alpha, beta)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_beta_ab: OnceCell<f64>,
-}
-
-impl Clone for BetaBinomial {
-    fn clone(&self) -> Self {
-        Self {
-            n: self.n,
-            alpha: self.alpha,
-            beta: self.beta,
-            ln_beta_ab: clone_cache_f64!(self, ln_beta_ab),
-        }
-    }
 }
 
 impl PartialEq for BetaBinomial {

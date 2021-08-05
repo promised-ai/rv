@@ -1,4 +1,3 @@
-use crate::clone_cache_f64;
 use crate::dist::Poisson;
 use crate::misc::ln_binom;
 use crate::traits::*;
@@ -33,7 +32,7 @@ pub enum NegBinomialError {
 /// # Parameters
 /// - r: The number of successes before the trials are stopped
 /// - p: The success probability
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct NegBinomial {
     r: f64,
@@ -44,17 +43,6 @@ pub struct NegBinomial {
     // r*ln(p)
     #[cfg_attr(feature = "serde1", serde(skip))]
     r_ln_p: OnceCell<f64>,
-}
-
-impl Clone for NegBinomial {
-    fn clone(&self) -> Self {
-        Self {
-            r: self.r,
-            p: self.p,
-            ln_1mp: clone_cache_f64!(self, ln_1mp),
-            r_ln_p: clone_cache_f64!(self, r_ln_p),
-        }
-    }
 }
 
 impl PartialEq for NegBinomial {

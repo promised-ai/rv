@@ -17,7 +17,7 @@ use rand::Rng;
 ///
 /// Given `x ~ N(μ, σ)`, the Normal Inverse Gamma prior implies that
 /// `μ ~ N(m, sqrt(v)σ)` and `ρ ~ InvGamma(a, b)`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct NormalInvChiSquared {
     m: f64,
@@ -27,6 +27,15 @@ pub struct NormalInvChiSquared {
     /// Cached scaled inv X^2
     #[cfg_attr(feature = "serde1", serde(skip))]
     scaled_inv_x2: OnceCell<ScaledInvChiSquared>,
+}
+
+impl PartialEq for NormalInvChiSquared {
+    fn eq(&self, other: &Self) -> bool {
+        self.m == other.m
+            && self.k == other.k
+            && self.v == other.v
+            && self.s2 == other.s2
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -363,4 +372,55 @@ impl Rv<Gaussian> for NormalInvChiSquared {
 
         Gaussian::new(mu, var.sqrt()).expect("Invalid params")
     }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{test_basic_impls, verify_cache_resets};
+
+    test_basic_impls!(
+        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
+        Gaussian::new(-1.2, 0.4).unwrap()
+    );
+
+    verify_cache_resets!(
+        [unchecked],
+        ln_f_is_same_after_reset_unchecked_v_identically,
+        set_v_unchecked,
+        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
+        Gaussian::new(-1.2, 0.4).unwrap(),
+        2.3,
+        3.14
+    );
+
+    verify_cache_resets!(
+        [checked],
+        ln_f_is_same_after_reset_checked_v_identically,
+        set_v,
+        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
+        Gaussian::new(-1.2, 0.4).unwrap(),
+        2.3,
+        3.14
+    );
+
+    verify_cache_resets!(
+        [unchecked],
+        ln_f_is_same_after_reset_unchecked_s2_identically,
+        set_s2_unchecked,
+        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
+        Gaussian::new(-1.2, 0.4).unwrap(),
+        3.4,
+        0.8
+    );
+
+    verify_cache_resets!(
+        [checked],
+        ln_f_is_same_after_reset_checked_s2_identically,
+        set_s2,
+        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
+        Gaussian::new(-1.2, 0.4).unwrap(),
+        3.4,
+        0.8
+    );
 }

@@ -2,8 +2,8 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::impl_display;
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Beta as _;
@@ -40,7 +40,7 @@ pub mod bernoulli_prior;
 /// let p_pred_heads = beta.pp(&true, &DataOrSuffStat::Data(&flips)); // 9/15
 /// assert!((p_pred_heads - 3.0/5.0).abs() < 1E-12);
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Beta {
     alpha: f64,
@@ -48,16 +48,6 @@ pub struct Beta {
     #[cfg_attr(feature = "serde1", serde(skip))]
     /// Cached ln(Beta(a, b))
     ln_beta_ab: OnceCell<f64>,
-}
-
-impl Clone for Beta {
-    fn clone(&self) -> Self {
-        Self {
-            alpha: self.alpha,
-            beta: self.beta,
-            ln_beta_ab: clone_cache_f64!(self, ln_beta_ab),
-        }
-    }
 }
 
 impl PartialEq for Beta {
