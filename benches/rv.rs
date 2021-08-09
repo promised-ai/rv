@@ -80,6 +80,7 @@ benchrv! {
     (ChiSquared, ChiSquared::new(1.0).unwrap(), chi_squared, "rv chi_squared", f64);
     (Crp, Crp::new(1.0, 10).unwrap(), crp, "rv crp", Partition);
     (Dirichlet, Dirichlet::jeffreys(4).unwrap(), dirichlet, "rv dirichlet", Vec<f64>);
+    (SymmetricDirichlet, SymmetricDirichlet::jeffreys(4).unwrap(), symdir, "rv symdir", Vec<f64>);
     (
         DiscreteUniform<u32>,
         DiscreteUniform::new(0u32, 10u32).unwrap(),
@@ -117,6 +118,8 @@ benchrv! {
         MvGaussian
     );
     (NormalGamma, NormalGamma::new(0.0, 1.0, 1.0, 1.0).unwrap(), ng, "rv ng", Gaussian);
+    (NormalInvGamma, NormalInvGamma::new(0.0, 1.0, 1.0, 1.0).unwrap(), nig, "rv nig", Gaussian);
+    (NormalInvChiSquared, NormalInvChiSquared::new(0.0, 1.0, 1.0, 1.0).unwrap(), nix, "rv nix", Gaussian);
     (Pareto, Pareto::new(1.0, 1.0).unwrap(), pareto, "rv pareto", f64);
     (Skellam, Skellam::new(2.0, 3.2).unwrap(), skellam, "rv skellam", i32);
     (StudentsT, StudentsT::default(), students, "rv students", f64);
