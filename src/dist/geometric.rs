@@ -6,6 +6,7 @@ use crate::dist::Uniform;
 use crate::impl_display;
 use crate::traits::*;
 use num::{Bounded, FromPrimitive, Integer, Saturating, ToPrimitive, Unsigned};
+use once_cell::sync::OnceCell;
 use rand::Rng;
 use std::fmt;
 
@@ -25,10 +26,14 @@ use std::fmt;
 /// let xs: Vec<u32> = geom.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Geometric {
     p: f64,
+    // ln_(p)
+    ln_p: OnceCell<f64>,
+    // ln_(1-p)
+    ln_1mp: OnceCell<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -42,6 +47,12 @@ pub enum GeometricError {
     PGreaterThanOne { p: f64 },
 }
 
+impl PartialEq for Geometric {
+    fn eq(&self, other: &Self) -> bool {
+        self.p == other.p
+    }
+}
+
 impl Geometric {
     /// Create a new geometric distribution
     #[inline]
@@ -53,7 +64,11 @@ impl Geometric {
         } else if p > 1.0 {
             Err(GeometricError::PGreaterThanOne { p })
         } else {
-            Ok(Geometric { p })
+            Ok(Geometric {
+                p,
+                ln_p: OnceCell::new(),
+                ln_1mp: OnceCell::new(),
+            })
         }
     }
 
@@ -61,7 +76,11 @@ impl Geometric {
     /// valid.
     #[inline]
     pub fn new_unchecked(p: f64) -> Self {
-        Geometric { p }
+        Geometric {
+            p,
+            ln_p: OnceCell::new(),
+            ln_1mp: OnceCell::new(),
+        }
     }
 
     /// Get the p parameter
@@ -113,7 +132,19 @@ impl Geometric {
     /// Set p without input validation
     #[inline]
     pub fn set_p_unchecked(&mut self, p: f64) {
+        self.ln_p = OnceCell::new();
+        self.ln_1mp = OnceCell::new();
         self.p = p;
+    }
+
+    #[inline]
+    fn ln_p(&self) -> f64 {
+        *self.ln_p.get_or_init(|| self.p.ln())
+    }
+
+    #[inline]
+    fn ln_1mp(&self) -> f64 {
+        *self.ln_1mp.get_or_init(|| (1.0 - self.p).ln())
     }
 
     // Use the inversion method to select the corresponding integer.
@@ -153,7 +184,11 @@ impl Geometric {
 
 impl Default for Geometric {
     fn default() -> Self {
-        Geometric { p: 0.5 }
+        Geometric {
+            p: 0.5,
+            ln_p: OnceCell::new(),
+            ln_1mp: OnceCell::new(),
+        }
     }
 }
 
@@ -170,9 +205,9 @@ where
     X: Unsigned + Integer + FromPrimitive + ToPrimitive + Saturating + Bounded,
 {
     fn ln_f(&self, k: &X) -> f64 {
-        // TODO: could cache ln(1-p) and ln(p)
         let kf = (*k).to_f64().unwrap();
-        kf.mul_add((1.0 - self.p).ln(), self.p.ln())
+        kf.mul_add(self.ln_1mp(), self.ln_p())
+        // kf.mul_add((1.0 - self.p).ln(), self.p.ln())
     }
 
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
@@ -262,7 +297,7 @@ impl fmt::Display for GeometricError {
 mod tests {
     use super::*;
     use crate::misc::x2_test;
-    use crate::test_basic_impls;
+    use crate::{test_basic_impls, verify_cache_resets};
     use std::f64;
 
     const TOL: f64 = 1E-12;
@@ -381,4 +416,24 @@ mod tests {
     fn draw_test_02() {
         test_draw_generic(0.2)
     }
+
+    verify_cache_resets!(
+        [unchecked],
+        ln_f_is_same_after_reset_unchecked_p_identically,
+        set_p_unchecked,
+        Geometric::new(0.57).unwrap(),
+        3u16,
+        0.57,
+        0.12
+    );
+
+    verify_cache_resets!(
+        [checked],
+        ln_f_is_same_after_reset_checked_p_identically,
+        set_p,
+        Geometric::new(0.57).unwrap(),
+        3u16,
+        0.57,
+        0.12
+    );
 }
