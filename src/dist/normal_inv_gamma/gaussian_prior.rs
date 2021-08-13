@@ -20,7 +20,7 @@ fn ln_z(v: f64, a: f64, b: f64) -> f64 {
 
 // XXX: Check out section 6.3 from Kevin Murphy's paper
 // https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf
-#[allow(clippy::clippy::many_single_char_names)]
+#[allow(clippy::many_single_char_names)]
 fn posterior_from_stat(
     nig: &NormalInvGamma,
     stat: &GaussianSuffStat,
@@ -51,11 +51,9 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
     // type LnPpCache = NormalInvGamma;
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        extract_stat_then(
-            x,
-            || GaussianSuffStat::new(),
-            |stat: GaussianSuffStat| posterior_from_stat(&self, &stat),
-        )
+        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
+            posterior_from_stat(self, &stat)
+        })
     }
 
     #[inline]
@@ -68,17 +66,13 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
         cache: &Self::LnMCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
-        extract_stat_then(
-            x,
-            || GaussianSuffStat::new(),
-            |stat: GaussianSuffStat| {
-                let post = posterior_from_stat(&self, &stat);
-                let n = stat.n() as f64;
-                let lnz_n = ln_z(post.v, post.a, post.b);
-                lnz_n - cache - n * HALF_LN_2PI
-                // lnz_n - cache - n * HALF_LN_PI - n*LN_2
-            },
-        )
+        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
+            let post = posterior_from_stat(self, &stat);
+            let n = stat.n() as f64;
+            let lnz_n = ln_z(post.v, post.a, post.b);
+            lnz_n - cache - n * HALF_LN_2PI
+            // lnz_n - cache - n * HALF_LN_PI - n*LN_2
+        })
     }
 
     #[inline]
@@ -86,8 +80,8 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
         &self,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> Self::LnPpCache {
-        let stat = extract_stat(&x, || GaussianSuffStat::new());
-        let post_n = posterior_from_stat(&self, &stat);
+        let stat = extract_stat(x, GaussianSuffStat::new);
+        let post_n = posterior_from_stat(self, &stat);
         let lnz_n = ln_z(post_n.v, post_n.a, post_n.b);
         (stat, lnz_n)
     }
@@ -97,7 +91,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
         let lnz_n = cache.1;
 
         stat.observe(y);
-        let post_m = posterior_from_stat(&self, &stat);
+        let post_m = posterior_from_stat(self, &stat);
 
         let lnz_m = ln_z(post_m.v, post_m.a, post_m.b);
 
@@ -125,9 +119,9 @@ mod test {
                 let mut tester = GewekeTester::new(pr.clone(), 20);
                 tester.run_chains(5_000, 20, &mut rng);
                 if tester.eval(0.025).is_ok() {
-                    1u8
+                    1_u8
                 } else {
-                    0u8
+                    0_u8
                 }
             })
             .sum::<u8>();
@@ -146,7 +140,7 @@ mod test {
             - 0.5 * sig2.ln()
             - (a + 1.) * sig2.ln()
             - b / sig2
-            - 0.5 / (sig2 * v) * (mu - m).powi(2)
+            - 0.5 / (sig2 * v) * (mu - m) * (mu - m)
     }
 
     fn post_params(
@@ -163,11 +157,10 @@ mod test {
         let v_inv = v.recip();
         let vn_inv = v_inv + n;
         let vn = vn_inv.recip();
-        let mn = (v_inv * m + sum_x) * vn;
+        let mn = v_inv.mul_add(m, sum_x) * vn;
         let an = a + n / 2.0;
-        let bn = b + 0.5 * (m * m * v_inv + sum_x_sq - mn * mn * vn_inv);
-        // let bn = 0.5*(sum_x_sq - n.recip()*sum_x*sum_x);
-        // let bn = (1.0 + n/(2.0 * a)) * (a*b + sum_x_sq - n.recip()*sum_x + (n/v)/(v_inv + n)*(m - sum_x/n).powi(2));
+        let bn = 0.5_f64
+            .mul_add((m * m).mul_add(v_inv, sum_x_sq) - mn * mn * vn_inv, b);
 
         (mn, vn, an, bn)
     }
@@ -188,9 +181,11 @@ mod test {
         let n = xs.len() as f64;
         let (_, vn, an, bn) = post_params(xs, m, v, a, b);
 
-        let numer = 0.5 * vn.ln() + a * b.ln() + an.ln_gamma().0;
-        let denom =
-            0.5 * v.ln() + an * bn.ln() + a.ln_gamma().0 + (n / 2.0) * LN_2PI;
+        let numer = 0.5_f64.mul_add(vn.ln(), a * b.ln()) + an.ln_gamma().0;
+        let denom = (n / 2.0).mul_add(
+            LN_2PI,
+            0.5_f64.mul_add(v.ln(), an * bn.ln()) + a.ln_gamma().0,
+        );
 
         numer - denom
     }

@@ -224,7 +224,7 @@ impl<X: CategoricalDatum> Cdf<X> for Categorical {
 
 impl<X: CategoricalDatum> Mode<X> for Categorical {
     fn mode(&self) -> Option<X> {
-        // FIXME: Return None if more than one max value
+        // Return None if more than one max value
         let max_ixs = argmax(&self.ln_weights);
         if max_ixs.len() > 1 {
             None
@@ -254,7 +254,7 @@ impl KlDivergence for Categorical {
         self.ln_weights
             .iter()
             .zip(other.ln_weights.iter())
-            .fold(0.0, |acc, (&ws, &wo)| acc + ws.exp() * (ws - wo))
+            .fold(0.0, |acc, (&ws, &wo)| ws.exp().mul_add(ws - wo, acc))
     }
 }
 
@@ -317,21 +317,21 @@ mod tests {
     #[test]
     fn ln_f_should_be_ln_weight() {
         let cat = Categorical::new(&[2.0, 1.0, 2.0, 4.0, 3.0]).unwrap();
-        assert::close(cat.ln_f(&0_u8), -1.791759469228055, TOL);
-        assert::close(cat.ln_f(&1_u8), -2.4849066497880004, TOL);
-        assert::close(cat.ln_f(&2_u8), -1.791759469228055, TOL);
-        assert::close(cat.ln_f(&3_u8), -1.0986122886681098, TOL);
-        assert::close(cat.ln_f(&4_u8), -1.3862943611198906, TOL);
+        assert::close(cat.ln_f(&0_u8), -1.791_759_469_228_055, TOL);
+        assert::close(cat.ln_f(&1_u8), -2.484_906_649_788_000_4, TOL);
+        assert::close(cat.ln_f(&2_u8), -1.791_759_469_228_055, TOL);
+        assert::close(cat.ln_f(&3_u8), -1.098_612_288_668_109_8, TOL);
+        assert::close(cat.ln_f(&4_u8), -1.386_294_361_119_890_6, TOL);
     }
 
     #[test]
     fn ln_pmf_should_be_ln_weight() {
         let cat = Categorical::new(&[2.0, 1.0, 2.0, 4.0, 3.0]).unwrap();
-        assert::close(cat.ln_pmf(&0_u16), -1.791759469228055, TOL);
-        assert::close(cat.ln_pmf(&1_u16), -2.4849066497880004, TOL);
-        assert::close(cat.ln_pmf(&2_u16), -1.791759469228055, TOL);
-        assert::close(cat.ln_pmf(&3_u16), -1.0986122886681098, TOL);
-        assert::close(cat.ln_pmf(&4_u16), -1.3862943611198906, TOL);
+        assert::close(cat.ln_pmf(&0_u16), -1.791_759_469_228_055, TOL);
+        assert::close(cat.ln_pmf(&1_u16), -2.484_906_649_788_000_4, TOL);
+        assert::close(cat.ln_pmf(&2_u16), -1.791_759_469_228_055, TOL);
+        assert::close(cat.ln_pmf(&3_u16), -1.098_612_288_668_109_8, TOL);
+        assert::close(cat.ln_pmf(&4_u16), -1.386_294_361_119_890_6, TOL);
     }
 
     #[test]
@@ -403,17 +403,25 @@ mod tests {
     #[test]
     fn kl() {
         let cat1 = Categorical::new(&[
-            0.2280317, 0.1506706, 0.33620052, 0.13911904, 0.14597815,
+            0.228_031_7,
+            0.150_670_6,
+            0.336_200_52,
+            0.139_119_04,
+            0.145_978_15,
         ])
         .unwrap();
         let cat2 = Categorical::new(&[
-            0.30050657, 0.04237857, 0.20973238, 0.32858568, 0.1187968,
+            0.300_506_57,
+            0.042_378_57,
+            0.209_732_38,
+            0.328_585_68,
+            0.118_796_8,
         ])
         .unwrap();
 
         // Allow extra error for the normalization
-        assert::close(cat1.kl(&cat2), 0.1973394327976612, 1E-7);
-        assert::close(cat2.kl(&cat1), 0.18814408198625582, 1E-7);
+        assert::close(cat1.kl(&cat2), 0.197_339_432_797_661_2, 1E-7);
+        assert::close(cat2.kl(&cat1), 0.188_144_081_986_255_82, 1E-7);
     }
 
     #[test]

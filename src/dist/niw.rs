@@ -243,7 +243,7 @@ impl_display!(NormalInvWishart);
 impl Rv<MvGaussian> for NormalInvWishart {
     fn ln_f(&self, x: &MvGaussian) -> f64 {
         let m = self.mu.clone();
-        let sigma = x.cov().to_owned() / self.k;
+        let sigma = x.cov().clone() / self.k;
         // TODO: cache mvg and iw instead of cloning
         let mvg = MvGaussian::new_unchecked(m, sigma);
         let iw = InvWishart::new_unchecked(self.scale.clone(), self.df);
@@ -265,7 +265,7 @@ impl Rv<MvGaussian> for NormalInvWishart {
 impl Support<MvGaussian> for NormalInvWishart {
     fn supports(&self, x: &MvGaussian) -> bool {
         let p = self.mu.len();
-        x.mu().len() == p && x.cov().to_owned().cholesky().is_some()
+        x.mu().len() == p && x.cov().clone().cholesky().is_some()
     }
 }
 
@@ -300,4 +300,80 @@ impl fmt::Display for NormalInvWishartError {
         }
     }
 }
-// TODO: Tests!
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn disallow_zero_k() {
+        let mu = DVector::zeros(2);
+        let scale = DMatrix::identity(2, 2);
+        let res = NormalInvWishart::new(mu, 0.0, 2, scale);
+        if let Err(NormalInvWishartError::KTooLow { .. }) = res {
+            ()
+        } else {
+            panic!("wrong error");
+        }
+    }
+
+    #[test]
+    fn disallow_negative_k() {
+        let mu = DVector::zeros(2);
+        let scale = DMatrix::identity(2, 2);
+        let res = NormalInvWishart::new(mu, -1.0, 2, scale);
+        if let Err(NormalInvWishartError::KTooLow { .. }) = res {
+            ()
+        } else {
+            panic!("wrong error");
+        }
+    }
+
+    #[test]
+    fn disallow_df_less_than_n_dims() {
+        let mu = DVector::zeros(2);
+        let scale = DMatrix::identity(2, 2);
+        let res = NormalInvWishart::new(mu, 1.0, 1, scale);
+        if let Err(NormalInvWishartError::DfLessThanDimensions {
+            df: 1,
+            ndims: 2,
+        }) = res
+        {
+            ()
+        } else {
+            panic!("wrong error");
+        }
+    }
+
+    #[test]
+    fn disallow_mu_and_sigma_different_dims() {
+        let mu = DVector::zeros(2);
+        let scale = DMatrix::identity(3, 3);
+        let res = NormalInvWishart::new(mu, 1.0, 4, scale);
+        if let Err(NormalInvWishartError::MuScaleDimensionMismatch {
+            n_mu: 2,
+            n_scale: 3,
+        }) = res
+        {
+            ()
+        } else {
+            panic!("wrong error");
+        }
+    }
+
+    #[test]
+    fn disallow_non_scale_square() {
+        let mu = DVector::zeros(2);
+        let scale = DMatrix::identity(2, 3);
+        let res = NormalInvWishart::new(mu, 1.0, 3, scale);
+        if let Err(NormalInvWishartError::ScaleMatrixNotSquare {
+            nrows: 2,
+            ncols: 3,
+        }) = res
+        {
+            ()
+        } else {
+            panic!("wrong error");
+        }
+    }
+}

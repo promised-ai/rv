@@ -173,7 +173,9 @@ where
     T: DuParam + SampleUniform + Into<f64>,
 {
     fn variance(&self) -> Option<f64> {
-        let v = (self.b - self.a + T::one()).into().powi(2) / 12.0;
+        let v = (self.b - self.a + T::one()).into()
+            * (self.b - self.a + T::one()).into()
+            / 12.0;
         Some(v)
     }
 }
@@ -283,27 +285,27 @@ mod tests {
     #[test]
     fn entropy() {
         let h: f64 = DiscreteUniform::new(2, 4).unwrap().entropy();
-        assert::close(h, 0.6931471805599, TOL);
+        assert::close(h, 0.693_147_180_559_9, TOL);
     }
 
     #[test]
     fn ln_pmf() {
         let u = DiscreteUniform::new(0, 10).unwrap();
-        assert::close(u.ln_pmf(&2u8), 0.0, TOL);
+        assert::close(u.ln_pmf(&2_u8), 0.0, TOL);
     }
     #[test]
     fn cdf() {
-        let u = DiscreteUniform::new(0u32, 10u32).unwrap();
-        assert::close(u.cdf(&0u32), 1.0 / 11.0, TOL);
-        assert::close(u.cdf(&5u32), 6.0 / 11.0, TOL);
-        assert::close(u.cdf(&10u32), 1.0, TOL);
+        let u = DiscreteUniform::new(0_u32, 10_u32).unwrap();
+        assert::close(u.cdf(&0_u32), 1.0 / 11.0, TOL);
+        assert::close(u.cdf(&5_u32), 6.0 / 11.0, TOL);
+        assert::close(u.cdf(&10_u32), 1.0, TOL);
     }
 
     #[test]
     fn cdf_inv_cdf_ident() {
         let mut rng = rand::thread_rng();
-        let ru = rand::distributions::Uniform::new_inclusive(0u32, 100u32);
-        let u = DiscreteUniform::new(0u32, 100u32).unwrap();
+        let ru = rand::distributions::Uniform::new_inclusive(0_u32, 100_u32);
+        let u = DiscreteUniform::new(0_u32, 100_u32).unwrap();
         for _ in 0..100 {
             let x: u32 = rng.sample(ru);
             let cdf = u.cdf(&x);

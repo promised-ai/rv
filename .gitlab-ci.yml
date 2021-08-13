@@ -6,18 +6,34 @@ before_script:
   - rustup component add rustfmt-preview
 
 stages:
-  - format
+  - pedantry
+  - clippy
   - test
   - bench
 
-format:
-  stage: format
-  image: "rust:1.46"
+rustfmt:
+  stage: pedantry
+  image: "rustlang/rust:nightly"
   script:
     # there should be no println in src
     - '[[ `grep -E -r -e "(\s+|^)println" src/*` == "" ]]'
     - rustup component add rustfmt
     - cargo fmt -- --check
+
+cargo-deny:
+  stage: pedantry
+  image: "rust:1.52.1"
+  script:
+    - cargo install --locked cargo-deny
+    - cargo deny check
+
+clippy:
+  stage: pedantry
+  image: "rust:1.52.1"
+  script:
+    - rustup component add clippy
+    - sed -i 's/\!\[warn/\!\[deny/' src/lib.rs  # deny lints
+    - cargo clippy 
 
 # # Temporarily disabling due to strange breakages
 # test:coverage-nightly:
@@ -30,7 +46,7 @@ format:
 
 test:cargo-stable:
   stage: test
-  image: "rust:1.47"
+  image: "rust:1.52.1"
   script:
     - rustc --version && cargo --version
     - cargo test --all --all-features
@@ -40,6 +56,6 @@ bench:cargo-stable:
   stage: bench
   only:
     - master
-  image: "rust:1.47"
+  image: "rust:1.52.1"
   script:
     - cargo bench --no-run

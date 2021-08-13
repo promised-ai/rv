@@ -2,8 +2,8 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::impl_display;
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Gamma as _;
@@ -20,7 +20,7 @@ use std::fmt;
 ///
 /// let ix2 = InvChiSquared::new(2.0).unwrap();
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct InvChiSquared {
     /// Degrees of freedom in (0, ∞)
@@ -28,15 +28,6 @@ pub struct InvChiSquared {
     // ln( 2^{-v/2} / gamma(v/2))
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_f_const: OnceCell<f64>,
-}
-
-impl Clone for InvChiSquared {
-    fn clone(&self) -> Self {
-        InvChiSquared {
-            v: self.v,
-            ln_f_const: clone_cache_f64!(self, ln_f_const),
-        }
-    }
 }
 
 impl PartialEq for InvChiSquared {
@@ -162,7 +153,7 @@ macro_rules! impl_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let x64 = f64::from(*x);
                 let z = self.ln_f_const();
-                z + (-self.v / 2.0 - 1.0) * x64.ln() - (2.0 * x64).recip()
+                (-self.v / 2.0 - 1.0).mul_add(x64.ln(), z) - (2.0 * x64).recip()
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -199,7 +190,8 @@ macro_rules! impl_traits {
         impl Variance<$kind> for InvChiSquared {
             fn variance(&self) -> Option<$kind> {
                 if self.v > 4.0 {
-                    let denom = (self.v - 2.0).powi(2) * (self.v - 4.0);
+                    let denom =
+                        (self.v - 2.0) * (self.v - 2.0) * (self.v - 4.0);
                     Some((2.0 / denom) as $kind)
                 } else {
                     None
@@ -301,7 +293,7 @@ mod test {
             assert!(m.is_none());
         }
         {
-            let m: Option<f64> = InvChiSquared::new_unchecked(2.000001).mean();
+            let m: Option<f64> = InvChiSquared::new_unchecked(2.000_001).mean();
             assert!(m.is_some());
         }
     }
@@ -330,7 +322,7 @@ mod test {
         }
         {
             let m: Option<f64> =
-                InvChiSquared::new_unchecked(4.000001).variance();
+                InvChiSquared::new_unchecked(4.000_001).variance();
             assert!(m.is_some());
         }
     }

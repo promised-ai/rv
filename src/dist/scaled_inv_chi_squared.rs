@@ -2,8 +2,8 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::impl_display;
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Gamma as _;
@@ -19,7 +19,7 @@ use std::fmt;
 ///
 /// let ix2 = ScaledInvChiSquared::new(2.0, 1.0).unwrap();
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct ScaledInvChiSquared {
     /// Degrees of freedom in (0, ∞)
@@ -31,17 +31,6 @@ pub struct ScaledInvChiSquared {
     // ln (t2*v/2)^(v/2)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_f_const: OnceCell<f64>,
-}
-
-impl Clone for ScaledInvChiSquared {
-    fn clone(&self) -> Self {
-        ScaledInvChiSquared {
-            v: self.v,
-            t2: self.t2,
-            ln_gamma_v_2: clone_cache_f64!(self, ln_gamma_v_2),
-            ln_f_const: clone_cache_f64!(self, ln_f_const),
-        }
-    }
 }
 
 impl PartialEq for ScaledInvChiSquared {
@@ -245,7 +234,7 @@ macro_rules! impl_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let x64 = f64::from(*x);
                 let term_1 = -self.v * self.t2 / (2.0 * x64);
-                let term_2 = (1.0 + 0.5 * self.v) * x64.ln();
+                let term_2 = self.v.mul_add(0.5, 1.0) * x64.ln();
                 self.ln_f_const() - self.ln_gamma_v_2() + term_1 - term_2
             }
 
@@ -286,7 +275,8 @@ macro_rules! impl_traits {
             fn variance(&self) -> Option<$kind> {
                 if self.v > 4.0 {
                     let numer = 2.0 * self.v * self.v * self.t2 * self.t2;
-                    let denom = (self.v - 2.0).powi(2) * (self.v - 4.0);
+                    let v_minus_2 = self.v - 2.0;
+                    let denom = v_minus_2 * v_minus_2 * (self.v - 4.0);
                     Some((numer / denom) as $kind)
                 } else {
                     None
@@ -351,7 +341,7 @@ mod test {
 
     use crate::dist::{Gamma, InvGamma};
     use crate::misc::ks_test;
-    use crate::test_basic_impls;
+    use crate::{test_basic_impls, verify_cache_resets};
     use std::f64;
 
     const TOL: f64 = 1E-12;
@@ -396,7 +386,7 @@ mod test {
         }
         {
             let m: Option<f64> =
-                ScaledInvChiSquared::new_unchecked(2.000001, 1.2).mean();
+                ScaledInvChiSquared::new_unchecked(2.000_001, 1.2).mean();
             assert!(m.is_some());
         }
     }
@@ -429,7 +419,7 @@ mod test {
         }
         {
             let m: Option<f64> =
-                ScaledInvChiSquared::new_unchecked(4.000001, 1.0).variance();
+                ScaledInvChiSquared::new_unchecked(4.000_001, 1.0).variance();
             assert!(m.is_some());
         }
     }
@@ -526,4 +516,44 @@ mod test {
 
         assert!(passes > 0);
     }
+
+    verify_cache_resets!(
+        [unchecked],
+        ln_f_is_same_after_reset_unchecked_v_identically,
+        set_v_unchecked,
+        ScaledInvChiSquared::new(1.2, 3.4).unwrap(),
+        4.5,
+        1.2,
+        3.14
+    );
+
+    verify_cache_resets!(
+        [checked],
+        ln_f_is_same_after_reset_checked_v_identically,
+        set_v,
+        ScaledInvChiSquared::new(1.2, 3.4).unwrap(),
+        4.5,
+        1.2,
+        3.14
+    );
+
+    verify_cache_resets!(
+        [unchecked],
+        ln_f_is_same_after_reset_unchecked_t2_identically,
+        set_t2_unchecked,
+        ScaledInvChiSquared::new(1.2, 3.4).unwrap(),
+        4.5,
+        3.4,
+        0.2
+    );
+
+    verify_cache_resets!(
+        [checked],
+        ln_f_is_same_after_reset_checked_t2_identically,
+        set_t2,
+        ScaledInvChiSquared::new(1.2, 3.4).unwrap(),
+        4.5,
+        3.4,
+        0.2
+    );
 }

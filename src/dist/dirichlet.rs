@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::misc::vec_to_string;
 use crate::traits::*;
+use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Gamma as RGamma;
 use special::Gamma as _;
@@ -18,11 +19,20 @@ mod categorical_prior;
 /// `SymmetricDirichlet { alpha, k }` is mathematicall equivalent to
 /// `Dirichlet { alphas: vec![alpha; k] }`. This version has some extra
 /// optimizations to seep up computing the PDF and drawing random vectors.
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct SymmetricDirichlet {
     alpha: f64,
     k: usize,
+    /// Cached ln_gamma(alpha)
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    ln_gamma_alpha: OnceCell<f64>,
+}
+
+impl PartialEq for SymmetricDirichlet {
+    fn eq(&self, other: &Self) -> bool {
+        self.alpha == other.alpha && self.k == other.k
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -51,7 +61,11 @@ impl SymmetricDirichlet {
         } else if !alpha.is_finite() {
             Err(SymmetricDirichletError::AlphaNotFinite { alpha })
         } else {
-            Ok(SymmetricDirichlet { alpha, k })
+            Ok(Self {
+                alpha,
+                k,
+                ln_gamma_alpha: OnceCell::new(),
+            })
         }
     }
 
@@ -59,7 +73,11 @@ impl SymmetricDirichlet {
     /// are valid.
     #[inline]
     pub fn new_unchecked(alpha: f64, k: usize) -> Self {
-        SymmetricDirichlet { alpha, k }
+        Self {
+            alpha,
+            k,
+            ln_gamma_alpha: OnceCell::new(),
+        }
     }
 
     /// The Jeffrey's Dirichlet prior for Categorical distributions
@@ -76,7 +94,11 @@ impl SymmetricDirichlet {
         if k == 0 {
             Err(SymmetricDirichletError::KIsZero)
         } else {
-            Ok(SymmetricDirichlet { alpha: 0.5, k })
+            Ok(Self {
+                alpha: 0.5,
+                k,
+                ln_gamma_alpha: OnceCell::new(),
+            })
         }
     }
 
@@ -129,6 +151,7 @@ impl SymmetricDirichlet {
             Err(SymmetricDirichletError::AlphaNotFinite { alpha })
         } else {
             self.set_alpha_unchecked(alpha);
+            self.ln_gamma_alpha = OnceCell::new();
             Ok(())
         }
     }
@@ -137,6 +160,7 @@ impl SymmetricDirichlet {
     #[inline]
     pub fn set_alpha_unchecked(&mut self, alpha: f64) {
         self.alpha = alpha;
+        self.ln_gamma_alpha = OnceCell::new();
     }
 
     /// Get the number of weights, k
@@ -151,6 +175,11 @@ impl SymmetricDirichlet {
     #[inline]
     pub fn k(&self) -> usize {
         self.k
+    }
+
+    #[inline]
+    fn ln_gamma_alpha(&self) -> f64 {
+        *self.ln_gamma_alpha.get_or_init(|| self.alpha.ln_gamma().0)
     }
 }
 
@@ -172,13 +201,12 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
     }
 
     fn ln_f(&self, x: &Vec<f64>) -> f64 {
-        // TODO: could cache ln_gamma(alpha)
         let kf = self.k as f64;
-        let sum_ln_gamma = self.alpha.ln_gamma().0 * kf;
+        let sum_ln_gamma = self.ln_gamma_alpha() * kf;
         let ln_gamma_sum = (self.alpha * kf).ln_gamma().0;
 
         let am1 = self.alpha - 1.0;
-        let term = x.iter().fold(0.0, |acc, &xi| acc + am1 * xi.ln());
+        let term = x.iter().fold(0.0, |acc, &xi| am1.mul_add(xi.ln(), acc));
 
         term - (sum_ln_gamma - ln_gamma_sum)
     }
@@ -369,7 +397,9 @@ impl Rv<Vec<f64>> for Dirichlet {
         let term = x
             .iter()
             .zip(self.alphas.iter())
-            .fold(0.0, |acc, (&xi, &alpha)| acc + (alpha - 1.0) * xi.ln());
+            .fold(0.0, |acc, (&xi, &alpha)| {
+                (alpha - 1.0).mul_add(xi.ln(), acc)
+            });
 
         term - (sum_ln_gamma - ln_gamma_sum)
     }
@@ -423,7 +453,7 @@ impl fmt::Display for DirichletError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_basic_impls;
+    use crate::{test_basic_impls, verify_cache_resets};
 
     const TOL: f64 = 1E-12;
 
@@ -498,7 +528,7 @@ mod tests {
             let dir = Dirichlet::new(vec![1.0, 2.0, 3.0]).unwrap();
             assert::close(
                 dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
-                1.5040773967762737,
+                1.504_077_396_776_273_7,
                 TOL,
             );
         }
@@ -548,5 +578,25 @@ mod tests {
                 assert!(symdir.supports(&x));
             }
         }
+
+        verify_cache_resets!(
+            [unchecked],
+            ln_f_is_same_after_reset_unchecked_alpha_identically,
+            set_alpha_unchecked,
+            SymmetricDirichlet::new(1.2, 2).unwrap(),
+            vec![0.1_f64, 0.9_f64],
+            1.2,
+            3.14
+        );
+
+        verify_cache_resets!(
+            [checked],
+            ln_f_is_same_after_reset_checked_alpha_identically,
+            set_alpha,
+            SymmetricDirichlet::new(1.2, 2).unwrap(),
+            vec![0.1_f64, 0.9_f64],
+            1.2,
+            3.14
+        );
     }
 }

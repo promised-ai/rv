@@ -158,7 +158,7 @@ macro_rules! impl_traits {
 
         impl Mode<$kind> for ChiSquared {
             fn mode(&self) -> Option<$kind> {
-                Some(0.0f64.max(self.k - 2.0) as $kind)
+                Some(0.0_f64.max(self.k - 2.0) as $kind)
             }
         }
 
@@ -241,8 +241,8 @@ mod tests {
     #[test]
     fn ln_pdf() {
         let x2 = ChiSquared::new(2.5).unwrap();
-        assert::close(x2.ln_pdf(&1.2_f64), -1.32258175007963, TOL);
-        assert::close(x2.ln_pdf(&3.4_f64), -2.1622182813725894, TOL);
+        assert::close(x2.ln_pdf(&1.2_f64), -1.322_581_750_079_63, TOL);
+        assert::close(x2.ln_pdf(&3.4_f64), -2.162_218_281_372_589_4, TOL);
     }
 
     #[test]
@@ -273,7 +273,7 @@ mod tests {
     #[test]
     fn skewness() {
         let s = ChiSquared::new(2.5).unwrap().skewness().unwrap();
-        assert::close(s, 1.7888543819998317, TOL);
+        assert::close(s, 1.788_854_381_999_831_7, TOL);
     }
 
     #[test]

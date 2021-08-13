@@ -82,13 +82,19 @@ macro_rules! impl_poisson_suffstat {
             }
         }
 
+        impl<'a> From<&'a [$kind]> for DataOrSuffStat<'a, $kind, Poisson> {
+            fn from(xs: &'a [$kind]) -> Self {
+                DataOrSuffStat::Data(xs)
+            }
+        }
+
         impl SuffStat<$kind> for PoissonSuffStat {
             fn n(&self) -> usize {
                 self.n
             }
 
             fn observe(&mut self, x: &$kind) {
-                let xf = f64::from(*x);
+                let xf = *x as f64;
                 self.n += 1;
                 self.sum += xf;
                 self.sum_ln_fact += ln_fact(*x as usize);
@@ -96,7 +102,7 @@ macro_rules! impl_poisson_suffstat {
 
             fn forget(&mut self, x: &$kind) {
                 if self.n > 1 {
-                    let xf = f64::from(*x);
+                    let xf = *x as f64;
                     self.n -= 1;
                     self.sum -= xf;
                     self.sum_ln_fact -= ln_fact(*x as usize);
@@ -113,3 +119,4 @@ macro_rules! impl_poisson_suffstat {
 impl_poisson_suffstat!(u8);
 impl_poisson_suffstat!(u16);
 impl_poisson_suffstat!(u32);
+impl_poisson_suffstat!(usize);

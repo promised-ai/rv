@@ -114,7 +114,7 @@ where
             .chain(random_params.into_iter())
         {
             let solver = Self::generate_solver();
-            // TODO: This is waseful, we don't need to copy
+            // TODO: This is wasteful, we don't need to copy
             let op = RandomProcessMleOp::new(self.clone());
             let maybe_res = Executor::new(op, solver, params.into())
                 .max_iters(max_iters)

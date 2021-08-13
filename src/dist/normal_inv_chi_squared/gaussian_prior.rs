@@ -45,8 +45,9 @@ fn posterior_from_stat(
 
     let kn = k + n;
     let vn = v + n;
-    let mn = (k * m + sum_x) / kn;
-    let s2n = (v * s2 + mid + (n * k / kn) * (m - xbar).powi(2)) / vn;
+    let mn = k.mul_add(m, sum_x) / kn;
+    let s2n =
+        ((n * k / kn) * (m - xbar)).mul_add(m - xbar, v.mul_add(s2, mid)) / vn;
 
     NormalInvChiSquared::new(mn, kn, vn, s2n)
         .expect("Invalid posterior params.")
@@ -58,11 +59,9 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     type LnPpCache = (GaussianSuffStat, f64);
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        extract_stat_then(
-            x,
-            || GaussianSuffStat::new(),
-            |stat: GaussianSuffStat| posterior_from_stat(&self, &stat),
-        )
+        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
+            posterior_from_stat(self, &stat)
+        })
     }
 
     #[inline]
@@ -75,16 +74,12 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
         cache: &Self::LnMCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
-        extract_stat_then(
-            x,
-            || GaussianSuffStat::new(),
-            |stat: GaussianSuffStat| {
-                let n = stat.n() as f64;
-                let post = posterior_from_stat(&self, &stat);
-                let lnz_n = ln_z(post.k, post.v, post.s2);
-                lnz_n - cache - n * HALF_LN_PI
-            },
-        )
+        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
+            let n = stat.n() as f64;
+            let post = posterior_from_stat(self, &stat);
+            let lnz_n = ln_z(post.k, post.v, post.s2);
+            lnz_n - cache - n * HALF_LN_PI
+        })
     }
 
     #[inline]
@@ -92,8 +87,8 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
         &self,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> Self::LnPpCache {
-        let stat = extract_stat(&x, || GaussianSuffStat::new());
-        let post_n = posterior_from_stat(&self, &stat);
+        let stat = extract_stat(x, GaussianSuffStat::new);
+        let post_n = posterior_from_stat(self, &stat);
         let lnz_n = ln_z(post_n.k, post_n.v, post_n.s2);
         (stat, lnz_n)
         // post_n
@@ -104,7 +99,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
         let lnz_n = cache.1;
 
         stat.observe(y);
-        let post_m = posterior_from_stat(&self, &stat);
+        let post_m = posterior_from_stat(self, &stat);
 
         let lnz_m = ln_z(post_m.k, post_m.v, post_m.s2);
 
@@ -131,9 +126,9 @@ mod test {
                 let mut tester = GewekeTester::new(pr.clone(), 20);
                 tester.run_chains(5_000, 20, &mut rng);
                 if tester.eval(0.025).is_ok() {
-                    1u8
+                    1_u8
                 } else {
-                    0u8
+                    0_u8
                 }
             })
             .sum::<u8>();
@@ -150,12 +145,14 @@ mod test {
         let n = xs.len() as f64;
         let sum_x: f64 = xs.iter().sum();
         let mean = sum_x / n;
-        let sse: f64 = xs.iter().map(|&x| (x - mean).powi(2)).sum();
+        let sse: f64 = xs.iter().map(|&x| (x - mean) * (x - mean)).sum();
 
         let kn = k + n;
         let vn = v + n;
-        let mn = (k * m + sum_x) / kn;
-        let s2n = (v * s2 + sse + (n * k / kn) * (m - mean).powi(2)) / vn;
+        let mn = k.mul_add(m, sum_x) / kn;
+        let s2n = ((n * k / kn) * (m - mean))
+            .mul_add(m - mean, v.mul_add(s2, sse))
+            / vn;
 
         (mn, kn, vn, s2n)
     }
@@ -176,11 +173,14 @@ mod test {
         let n = xs.len() as f64;
         let (_, kn, vn, s2n) = post_params(xs, m, k, v, s2);
 
-        (vn / 2.).ln_gamma().0 - (v / 2.).ln_gamma().0
-            + 0.5 * (k / kn).ln()
-            + (0.5 * v) * (v * s2).ln()
-            - (0.5 * vn) * (vn * s2n).ln()
-            - n / 2. * 1.1447298858493991
+        (0.5 * v).mul_add(
+            (v * s2).ln(),
+            0.5_f64.mul_add(
+                (k / kn).ln(),
+                (vn / 2.).ln_gamma().0 - (v / 2.).ln_gamma().0,
+            ),
+        ) - (0.5 * vn) * (vn * s2n).ln()
+            - n / 2. * 1.144_729_885_849_399
     }
 
     #[test]

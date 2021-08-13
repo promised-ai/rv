@@ -3,8 +3,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::consts::EULER_MASCERONI;
+use crate::impl_display;
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Gamma as _;
@@ -42,7 +42,7 @@ use std::fmt;
 ///     assert::close(kuma.f(x), beta.f(x), 1E-10);
 /// }
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Kumaraswamy {
     a: f64,
@@ -50,16 +50,6 @@ pub struct Kumaraswamy {
     #[cfg_attr(feature = "serde1", serde(skip))]
     /// Cached log(a*b)
     ab_ln: OnceCell<f64>,
-}
-
-impl Clone for Kumaraswamy {
-    fn clone(&self) -> Self {
-        Self {
-            a: self.a,
-            b: self.b,
-            ab_ln: clone_cache_f64!(self, ab_ln),
-        }
-    }
 }
 
 impl PartialEq for Kumaraswamy {
@@ -204,7 +194,7 @@ impl Kumaraswamy {
         } else if !a.is_finite() {
             Err(KumaraswamyError::ANotFinite { a })
         } else {
-            let b = 0.5_f64.ln() / (1.0 - 0.5_f64.powf(a)).ln();
+            let b = 0.5_f64.log(1.0 - 0.5_f64.powf(a));
             Ok(Kumaraswamy {
                 a,
                 b,
@@ -344,9 +334,10 @@ macro_rules! impl_kumaraswamy {
                 let xf = *x as f64;
                 let a = self.a;
                 let b = self.b;
-                self.ab_ln()
-                    + (a - 1.0) * xf.ln()
-                    + (b - 1.0) * (1.0 - xf.powf(a)).ln()
+                (b - 1.0).mul_add(
+                    (1.0 - xf.powf(a)).ln(),
+                    (a - 1.0).mul_add(xf.ln(), self.ab_ln()),
+                )
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -387,7 +378,7 @@ macro_rules! impl_kumaraswamy {
         impl Median<$kind> for Kumaraswamy {
             fn median(&self) -> Option<$kind> {
                 let median =
-                    (1.0 - 2_f64.powf(-self.b.recip())).powf(self.a.recip());
+                    (1.0 - (-self.b.recip()).exp2()).powf(self.a.recip());
                 Some(median as $kind)
             }
         }
@@ -418,7 +409,7 @@ impl Entropy for Kumaraswamy {
         // Harmonic function for reals see:
         // https://en.wikipedia.org/wiki/Harmonic_number#Harmonic_numbers_for_real_and_complex_values
         let hb = self.b.digamma() + EULER_MASCERONI;
-        (1.0 - self.b.recip()) + (1.0 - self.a.recip()) * hb - self.ab_ln()
+        (1.0 - self.a.recip()).mul_add(hb, 1.0 - self.b.recip()) - self.ab_ln()
     }
 }
 

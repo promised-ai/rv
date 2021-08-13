@@ -192,7 +192,8 @@ macro_rules! impl_traits {
 
         impl Variance<$kind> for Exponential {
             fn variance(&self) -> Option<$kind> {
-                Some(self.rate.recip().powi(2) as $kind)
+                let std = self.rate.recip();
+                Some((std * std) as $kind)
             }
         }
     };
@@ -276,8 +277,8 @@ mod tests {
     #[test]
     fn ln_f() {
         let expon = Exponential::new_unchecked(1.5);
-        assert::close(expon.ln_f(&1.2_f64), -1.3945348918918357, TOL);
-        assert::close(expon.ln_f(&0.2_f64), 0.1054651081081644, TOL);
+        assert::close(expon.ln_f(&1.2_f64), -1.394_534_891_891_835_7, TOL);
+        assert::close(expon.ln_f(&0.2_f64), 0.105_465_108_108_164_4, TOL);
         assert::close(expon.ln_f(&4.4_f64), -6.194_534_891_891_836, TOL);
         assert_eq!(expon.ln_f(&-1.0_f64), f64::NEG_INFINITY);
     }
@@ -285,8 +286,8 @@ mod tests {
     #[test]
     fn ln_pdf() {
         let expon = Exponential::new(1.5).unwrap();
-        assert::close(expon.ln_pdf(&1.2_f64), -1.3945348918918357, TOL);
-        assert::close(expon.ln_pdf(&0.2_f64), 0.1054651081081644, TOL);
+        assert::close(expon.ln_pdf(&1.2_f64), -1.394_534_891_891_835_7, TOL);
+        assert::close(expon.ln_pdf(&0.2_f64), 0.105_465_108_108_164_4, TOL);
         assert::close(expon.ln_pdf(&4.4_f64), -6.194_534_891_891_836, TOL);
     }
 
@@ -307,7 +308,7 @@ mod tests {
     #[test]
     fn median() {
         let m: f64 = Exponential::new(1.5).unwrap().median().unwrap();
-        assert::close(m, 0.46209812037329684, TOL);
+        assert::close(m, 0.462_098_120_373_296_84, TOL);
     }
 
     #[test]
@@ -337,7 +338,7 @@ mod tests {
     #[test]
     fn entropy() {
         let h = Exponential::new(1.5).unwrap().entropy();
-        assert::close(h, 0.5945348918918356, TOL);
+        assert::close(h, 0.594_534_891_891_835_6, TOL);
     }
 
     #[test]
@@ -345,7 +346,7 @@ mod tests {
         let expon = Exponential::new(1.5).unwrap();
         let q25: f64 = expon.quantile(0.25);
         let q75: f64 = expon.quantile(0.75);
-        assert::close(q25, 0.19178804830118726, TOL);
+        assert::close(q25, 0.191_788_048_301_187_26, TOL);
         assert::close(q75, 0.924_196_240_746_593_7, TOL);
     }
 

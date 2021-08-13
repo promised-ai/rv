@@ -170,15 +170,39 @@ pub fn i1(x: f64) -> f64 {
 #[derive(Clone, Debug, PartialEq)]
 pub enum BesselIvError {
     /// The order, v, must be an integer if z is negative.
-    OrderMustIntegerError,
+    OrderNotIntegerForNegativeZ,
     /// Arguments would lead to an overflow
-    OverflowError,
+    Overflow,
     /// Failed to converge
-    FailedToConvergeError,
+    FailedToConverge,
     /// Precision Error
-    PrecisionLossError,
-    /// Domain Error
-    DomainError,
+    PrecisionLoss,
+    /// Input parameters are outside the domain
+    Domain,
+}
+
+impl std::error::Error for BesselIvError {}
+
+impl std::fmt::Display for BesselIvError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::OrderNotIntegerForNegativeZ => {
+                write!(f, "If z is negative, the order, v, must be an integer.")
+            }
+            Self::Overflow => {
+                write!(f, "Arguments would cause an overflow.")
+            }
+            Self::FailedToConverge => {
+                write!(f, "Failed to converge.")
+            }
+            Self::PrecisionLoss => {
+                write!(f, "Precision loss.")
+            }
+            Self::Domain => {
+                write!(f, "Parameters are outside domain.")
+            }
+        }
+    }
 }
 
 /// Modified Bessel function of the first kind of real order
@@ -198,7 +222,7 @@ pub fn bessel_iv(v: f64, z: f64) -> Result<f64, BesselIvError> {
     let sign: f64 = if z < 0.0 {
         // Return error if v is not an integer if x < 0
         if (t - v).abs() > EPSILON {
-            return Err(BesselIvError::OrderMustIntegerError);
+            return Err(BesselIvError::OrderNotIntegerForNegativeZ);
         }
 
         if (v - 2.0 * (v / 2.0).floor()) > EPSILON {
@@ -214,7 +238,7 @@ pub fn bessel_iv(v: f64, z: f64) -> Result<f64, BesselIvError> {
         if v == 0.0 {
             return Ok(1.0);
         } else if v < 0.0 {
-            return Err(BesselIvError::OverflowError);
+            return Err(BesselIvError::Overflow);
         } else {
             return Ok(0.0);
         }
@@ -268,7 +292,7 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         0.0,
         0.0,
-        -0.20833333333333334,
+        -0.208_333_333_333_333_34,
         0.0,
         0.125,
         0.0,
@@ -298,11 +322,11 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         0.0,
         0.0,
-        0.3342013888888889,
+        0.334_201_388_888_888_9,
         0.0,
         -0.401_041_666_666_666_7,
         0.0,
-        0.0703125,
+        0.070_312_5,
         0.0,
         0.0,
     ],
@@ -328,13 +352,13 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         0.0,
         0.0,
-        -1.0258125964506173,
+        -1.025_812_596_450_617_3,
         0.0,
-        1.8464626736111112,
+        1.846_462_673_611_111_2,
         0.0,
         -0.891_210_937_5,
         0.0,
-        0.0732421875,
+        0.073_242_187_5,
         0.0,
         0.0,
         0.0,
@@ -360,13 +384,13 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         4.669_584_423_426_247,
         0.0,
-        -11.207002616222995,
+        -11.207_002_616_222_995,
         0.0,
-        8.78912353515625,
+        8.789_123_535_156_25,
         0.0,
         -2.364_086_914_062_5,
         0.0,
-        0.112152099609375,
+        0.112_152_099_609_375,
         0.0,
         0.0,
         0.0,
@@ -388,7 +412,7 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         0.0,
         0.0,
-        -28.212072558200244,
+        -28.212_072_558_200_244,
         0.0,
         84.636_217_674_600_74,
         0.0,
@@ -398,7 +422,7 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         -7.368_794_359_479_631,
         0.0,
-        0.22710800170898438,
+        0.227_108_001_708_984_38,
         0.0,
         0.0,
         0.0,
@@ -418,17 +442,17 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         0.0,
         0.0,
-        212.5701300392171,
+        212.570_130_039_217_1,
         0.0,
         -765.252_468_141_181_6,
         0.0,
-        1059.9904525279999,
+        1_059.990_452_527_999_9,
         0.0,
         -699.579_627_376_132_7,
         0.0,
         218.190_511_744_211_6,
         0.0,
-        -26.491430486951554,
+        -26.491_430_486_951_554,
         0.0,
         0.572_501_420_974_731_4,
         0.0,
@@ -448,21 +472,21 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         0.0,
         0.0,
-        -1919.4576623184068,
+        -1_919.457_662_318_406_8,
         0.0,
         8_061.722_181_737_308,
         0.0,
-        -13586.550006434136,
+        -13_586.550_006_434_136,
         0.0,
-        11655.393336864536,
+        11_655.393_336_864_536,
         0.0,
         -5_305.646_978_613_405,
         0.0,
-        1200.9029132163525,
+        1_200.902_913_216_352_5,
         0.0,
-        -108.09091978839464,
+        -108.090_919_788_394_64,
         0.0,
-        1.7277275025844574,
+        1.727_727_502_584_457_4,
         0.0,
         0.0,
         0.0,
@@ -482,19 +506,19 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         -96_980.598_388_637_5,
         0.0,
-        192547.0012325315,
+        192_547.001_232_531_5,
         0.0,
-        -203400.17728041555,
+        -203_400.177_280_415_55,
         0.0,
-        122200.46498301747,
+        122_200.464_983_017_47,
         0.0,
         -41_192.654_968_897_56,
         0.0,
         7_109.514_302_489_364,
         0.0,
-        -493.915304773088,
+        -493.915_304_773_088,
         0.0,
-        6.074042001273483,
+        6.074_042_001_273_483,
         0.0,
         0.0,
         0.0,
@@ -508,7 +532,7 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         0.0,
         0.0,
-        -242919.18790055133,
+        -242_919.187_900_551_33,
         0.0,
         1_311_763.614_662_977,
         0.0,
@@ -518,7 +542,7 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         -2_813_563.226_586_534,
         0.0,
-        1268365.2733216248,
+        1_268_365.273_321_624_8,
         0.0,
         -331_645.172_484_563_6,
         0.0,
@@ -526,7 +550,7 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         -2_499.830_481_811_209,
         0.0,
-        24.380529699556064,
+        24.380_529_699_556_064,
         0.0,
         0.0,
         0.0,
@@ -538,9 +562,9 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
     ],
     [
-        3284469.8530720375,
+        3_284_469.853_072_037_5,
         0.0,
-        -19706819.11843222,
+        -19_706_819.118_432_22,
         0.0,
         50_952_602.492_664_63,
         0.0,
@@ -554,11 +578,11 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
         0.0,
         -2_785_618.128_086_455,
         0.0,
-        308186.40461266245,
+        308_186.404_612_662_45,
         0.0,
-        -13886.089753717039,
+        -13_886.089_753_717_039,
         0.0,
-        110.01714026924674,
+        110.017_140_269_246_74,
         0.0,
         0.0,
         0.0,
@@ -584,9 +608,9 @@ fn bessel_ikv_asymptotic_uniform(
     let (v, sign) = (v.abs(), v.signum());
 
     let z = x / v;
-    let t = (1.0 + z * z).sqrt().recip();
+    let t = z.mul_add(z, 1.0).sqrt().recip();
     let t2 = t * t;
-    let eta = (1.0 + z * z).sqrt() + (z / (1.0 + t.recip())).ln();
+    let eta = z.mul_add(z, 1.0).sqrt() + (z / (1.0 + t.recip())).ln();
 
     let i_prefactor = (t / (2.0 * PI * v)).sqrt() * (v * eta).exp();
     let mut i_sum = 1.0;
@@ -629,16 +653,18 @@ fn bessel_ikv_asymptotic_uniform(
 
     // check convergence
     if term.abs() > 1E-3 * i_sum.abs() {
-        Err(BesselIvError::FailedToConvergeError)
+        Err(BesselIvError::FailedToConverge)
     } else if term.abs() > EPSILON * i_sum.abs() {
-        Err(BesselIvError::PrecisionLossError)
+        Err(BesselIvError::PrecisionLoss)
     } else {
         let k_value = k_prefactor * k_sum;
         let i_value = if sign > 0.0 {
             i_prefactor * i_sum
         } else {
-            i_prefactor * i_sum
-                + (2.0 / PI) * (PI * v).sin() * k_prefactor * k_sum
+            i_prefactor.mul_add(
+                i_sum,
+                (2.0 / PI) * (PI * v).sin() * k_prefactor * k_sum,
+            )
         };
         Ok((i_value, k_value))
     }
@@ -648,7 +674,7 @@ fn bessel_ikv_asymptotic_uniform(
 /// Temme, Journal of Computational Physics, vol 19, 324 (1975)
 /// Heavily inspired by
 /// https://github.com/scipy/scipy/blob/1984f97749a355a6767cea55cad5d1dc6977ad5f/scipy/special/cephes/scipy_iv.c#L532
-#[allow(clippy::clippy::many_single_char_names)]
+#[allow(clippy::many_single_char_names)]
 fn bessel_ikv_temme(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
     use std::f64::consts::PI;
     let (v, reflect) = if v < 0.0 { (-v, true) } else { (v, false) };
@@ -658,9 +684,9 @@ fn bessel_ikv_temme(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
     let n = n as isize;
 
     if x < 0.0 {
-        return Err(BesselIvError::DomainError);
+        return Err(BesselIvError::Domain);
     } else if x == 0.0 {
-        return Err(BesselIvError::OverflowError);
+        return Err(BesselIvError::Overflow);
     }
 
     let w = x.recip();
@@ -682,18 +708,18 @@ fn bessel_ikv_temme(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
     let kv = prev;
     let kv1 = current;
 
-    let lim = ((4.0 * v * v + 10.0) / (8.0 * x)).powi(3) / 24.0;
+    let lim = (4.0_f64.mul_add(v * v, 10.0) / (8.0 * x)).powi(3) / 24.0;
 
     let iv = if lim < 10.0 * EPSILON && x > 100.0 {
         bessel_iv_asymptotic(v, x)?
     } else {
         let fv = cf1_ik(v, x)?;
-        w / (kv * fv + kv1)
+        w / kv.mul_add(fv, kv1)
     };
 
     if reflect {
         let z = (u as f64) + ((n % 2) as f64);
-        Ok((iv + (2.0 / PI) * (PI * z).sin() * kv, kv))
+        Ok(((2.0 / PI).mul_add((PI * z).sin() * kv, iv), kv))
     } else {
         Ok((iv, kv))
     }
@@ -703,7 +729,7 @@ fn bessel_ikv_temme(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
 ///
 /// Calculate K(v, x) and K(v+1, x) by method analogous to
 /// Temme, Journal of Computational Physics, vol 21, 343 (1976)
-#[allow(clippy::clippy::many_single_char_names)]
+#[allow(clippy::many_single_char_names)]
 fn temme_ik_series(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
     use crate::consts::EULER_MASCERONI;
     use special::Gamma;
@@ -740,7 +766,7 @@ fn temme_ik_series(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
 
     let mut p = (gp + 1.0) / (2.0 * b);
     let mut q = (gm + 1.0) * b / 2.0;
-    let mut f = (sigma.cosh() * gamma1 + d * -a * gamma2) / c;
+    let mut f = d.mul_add(-a * gamma2, sigma.cosh() * gamma1) / c;
     let mut h = p;
     let mut coef = 1.0;
     let mut sum = coef * f;
@@ -748,7 +774,7 @@ fn temme_ik_series(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
 
     for k in 1..MAX_ITER {
         let kf = k as f64;
-        f = (kf * f + p + q) / (kf * kf - v * v);
+        f = kf.mul_add(f, p + q) / (kf * kf - v * v);
         p /= kf - v;
         q /= kf + v;
         h = p - kf * f;
@@ -761,13 +787,13 @@ fn temme_ik_series(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
         }
     }
 
-    Err(BesselIvError::FailedToConvergeError)
+    Err(BesselIvError::FailedToConverge)
 }
 
 /// Calculate K(v, x) and K(v+1, x) by evaluating continued fraction
 /// z1 / z0 = U(v+1.5, 2v+1, 2x) / U(v+0.5, 2v+1, 2x), see
 /// Thompson and Barnett, Computer Physics Communications, vol 47, 245 (1987)
-#[allow(clippy::clippy::many_single_char_names)]
+#[allow(clippy::many_single_char_names)]
 fn cf2_ik(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
     use std::f64::consts::PI;
     /*
@@ -786,14 +812,14 @@ fn cf2_ik(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
     let mut cur = 1.0;
     let mut q = -a;
     let mut c = -a;
-    let mut s = 1.0 + q * delta;
+    let mut s = q.mul_add(delta, 1.0);
 
     for k in 2..MAX_ITER {
         let kf = k as f64;
         a -= 2.0 * (kf - 1.0);
         b += 2.0;
-        d = (b + a * d).recip();
-        delta *= b * d - 1.0;
+        d = a.mul_add(d, b).recip();
+        delta *= b.mul_add(d, -1.0);
         f += delta;
 
         let t = (prev - (b - 2.0) * cur) / a;
@@ -805,16 +831,16 @@ fn cf2_ik(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
 
         if (q * delta).abs() < s.abs() * EPSILON / 2.0 {
             let kv = (PI / (2.0 * x)).sqrt() * (-x).exp() / s;
-            let kv1 = kv * (0.5 + v + x + (v * v - 0.25) * f) / x;
+            let kv1 = kv * (v * v - 0.25).mul_add(f, 0.5 + v + x) / x;
             return Ok((kv, kv1));
         }
     }
-    Err(BesselIvError::FailedToConvergeError)
+    Err(BesselIvError::FailedToConverge)
 }
 
 /// Evaluate continued fraction fv = I_(v+1) / I_v, derived from
 /// Abramowitz and Stegun, Handbook of Mathematical Functions, 1972, 9.1.73 */
-#[allow(clippy::clippy::many_single_char_names)]
+#[allow(clippy::many_single_char_names)]
 fn cf1_ik(v: f64, x: f64) -> Result<f64, BesselIvError> {
     /*
      * |x| <= |v|, CF1_ik converges rapidly
@@ -837,7 +863,7 @@ fn cf1_ik(v: f64, x: f64) -> Result<f64, BesselIvError> {
         let a = 1.0;
         let b = 2.0 * (v + kf) / x;
         c = b + a / c;
-        d = b + a * d;
+        d = a.mul_add(d, b);
         if c == 0.0 {
             c = tiny;
         }
@@ -853,7 +879,7 @@ fn cf1_ik(v: f64, x: f64) -> Result<f64, BesselIvError> {
         }
     }
 
-    Err(BesselIvError::FailedToConvergeError)
+    Err(BesselIvError::FailedToConverge)
 }
 
 /// Compute I_v from (AMS5 9.7.1), asymptotic expansion for large |z|
@@ -876,7 +902,7 @@ fn bessel_iv_asymptotic(v: f64, x: f64) -> Result<f64, BesselIvError> {
             let factor =
                 (mu - (2.0 * kf - 1.0) * (2.0 * kf - 1.0)) / (8.0 * x) / kf;
             if k > 100 {
-                return Err(BesselIvError::FailedToConvergeError);
+                return Err(BesselIvError::FailedToConverge);
             }
             term *= -factor;
             sum += term;
@@ -905,27 +931,27 @@ mod tests {
     fn bessi0_small() {
         assert::close(i0(3.74), 9.041_496_849_012_773, TOL);
         assert::close(i0(-3.74), 9.041_496_849_012_773, TOL);
-        assert::close(i0(8.0), 427.56411572180474, TOL);
+        assert::close(i0(8.0), 427.564_115_721_804_74, TOL);
     }
 
     #[test]
     fn bessi0_large() {
-        assert::close(i0(8.1), 469.5006067101214, TOL);
-        assert::close(i0(10.0), 2815.716628466254, TOL);
+        assert::close(i0(8.1), 469.500_606_710_121_4, TOL);
+        assert::close(i0(10.0), 2_815.716_628_466_254, TOL);
     }
 
     #[test]
     fn bessi1_small() {
-        assert::close(i1(3.74), 7.709894215253694, TOL);
-        assert::close(i1(-3.74), -7.709894215253694, TOL);
-        assert::close(i1(0.0024), 0.0012000008640002072, TOL);
-        assert::close(i1(8.0), 399.8731367825599, TOL);
+        assert::close(i1(3.74), 7.709_894_215_253_694, TOL);
+        assert::close(i1(-3.74), -7.709_894_215_253_694, TOL);
+        assert::close(i1(0.0024), 0.001_200_000_864_000_207_2, TOL);
+        assert::close(i1(8.0), 399.873_136_782_559_9, TOL);
     }
 
     #[test]
     fn bessi1_large() {
-        assert::close(i1(8.1), 439.48430891035844, TOL);
-        assert::close(i1(10.0), 2670.988303701255, TOL);
+        assert::close(i1(8.1), 439.484_308_910_358_44, TOL);
+        assert::close(i1(10.0), 2_670.988_303_701_255, TOL);
     }
 
     #[test]
@@ -936,27 +962,51 @@ mod tests {
 
     #[test]
     fn bessel_iv_high_order() {
-        assert::close(bessel_iv(60.0, 40.0).unwrap(), 0.07185641968452632, TOL);
+        assert::close(
+            bessel_iv(60.0, 40.0).unwrap(),
+            0.071_856_419_684_526_32,
+            TOL,
+        );
     }
 
     #[test]
     fn bessel_iv_low_order() {
-        assert::close(bessel_iv(0.0, 1.0).unwrap(), 1.2660658777520084, TOL);
-        assert::close(bessel_iv(0.0, 10.0).unwrap(), 2815.7166284662544, TOL);
+        assert::close(
+            bessel_iv(0.0, 1.0).unwrap(),
+            1.266_065_877_752_008_4,
+            TOL,
+        );
+        assert::close(
+            bessel_iv(0.0, 10.0).unwrap(),
+            2_815.716_628_466_254_4,
+            TOL,
+        );
 
-        assert::close(bessel_iv(1.0, 10.0).unwrap(), 2670.988303701254, TOL);
+        assert::close(
+            bessel_iv(1.0, 10.0).unwrap(),
+            2_670.988_303_701_254,
+            TOL,
+        );
         assert::close(
             bessel_iv(20.0, 10.0).unwrap(),
-            0.00012507997356449478,
+            0.000_125_079_973_564_494_78,
             TOL,
         );
     }
 
     #[test]
     fn cf1_ik_checks() {
-        assert::close(cf1_ik(0.0, 10.0).unwrap(), 0.9485998259548458, TOL);
-        assert::close(cf1_ik(10.0, 10.0).unwrap(), 0.38991388392838294, TOL);
-        assert::close(cf1_ik(60.0, 5.0).unwrap(), 0.04091609790883304, TOL);
+        assert::close(cf1_ik(0.0, 10.0).unwrap(), 0.948_599_825_954_845_8, TOL);
+        assert::close(
+            cf1_ik(10.0, 10.0).unwrap(),
+            0.389_913_883_928_382_94,
+            TOL,
+        );
+        assert::close(
+            cf1_ik(60.0, 5.0).unwrap(),
+            0.040_916_097_908_833_04,
+            TOL,
+        );
     }
 
     #[test]
@@ -987,24 +1037,24 @@ mod tests {
     #[test]
     fn bessel_ikv_temme_checks() {
         let (i, k) = bessel_ikv_temme(0.0, 1.0).unwrap();
-        assert::close(i, 1.2660658777520084, TOL);
-        assert::close(k, 0.42102443824070834, TOL);
+        assert::close(i, 1.266_065_877_752_008_4, TOL);
+        assert::close(k, 0.421_024_438_240_708_34, TOL);
 
         let (i, k) = bessel_ikv_temme(5.0, 2.0).unwrap();
-        assert::close(i, 0.009825679323131702, TOL);
-        assert::close(k, 9.431049100596468, TOL);
+        assert::close(i, 0.009_825_679_323_131_702, TOL);
+        assert::close(k, 9.431_049_100_596_468, TOL);
 
         let (i, k) = bessel_ikv_temme(20.0, 2.0).unwrap();
-        assert::close(i, 4.310560576109548E-19, TOL);
-        assert::close(k, 5.7708568527002424E16, TOL);
+        assert::close(i, 4.310_560_576_109_548E-19, TOL);
+        assert::close(k, 5.770_856_852_700_242_4E16, TOL);
 
         let (i, k) = bessel_ikv_temme(20.0, 2.0).unwrap();
-        assert::close(i, 4.310560576109548E-19, TOL);
-        assert::close(k, 5.7708568527002424E16, TOL);
+        assert::close(i, 4.310_560_576_109_548E-19, TOL);
+        assert::close(k, 5.770_856_852_700_242_4E16, TOL);
 
         let (i, k) = bessel_ikv_temme(1.0, 10.0).unwrap();
-        assert::close(i, 2670.988303701254, TOL);
-        assert::close(k, 1.8648773453825585E-5, TOL);
+        assert::close(i, 2_670.988_303_701_254, TOL);
+        assert::close(k, 1.864_877_345_382_558_5E-5, TOL);
     }
 
     #[test]

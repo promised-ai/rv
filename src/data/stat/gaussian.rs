@@ -59,7 +59,7 @@ impl GaussianSuffStat {
     #[inline]
     pub fn sum_x_sq(&self) -> f64 {
         let nf = self.n as f64;
-        self.mean().powi(2).mul_add(nf, self.sx)
+        (self.mean() * self.mean()).mul_add(nf, self.sx)
     }
 }
 
@@ -85,8 +85,22 @@ macro_rules! impl_gaussian_suffstat {
             }
         }
 
+        impl<'a> From<&'a [$kind]> for DataOrSuffStat<'a, $kind, Gaussian> {
+            fn from(xs: &'a [$kind]) -> Self {
+                DataOrSuffStat::Data(xs)
+            }
+        }
+
         impl From<&Vec<$kind>> for GaussianSuffStat {
             fn from(xs: &Vec<$kind>) -> Self {
+                let mut stat = GaussianSuffStat::new();
+                stat.observe_many(xs);
+                stat
+            }
+        }
+
+        impl From<&[$kind]> for GaussianSuffStat {
+            fn from(xs: &[$kind]) -> Self {
                 let mut stat = GaussianSuffStat::new();
                 stat.observe_many(xs);
                 stat
@@ -158,7 +172,7 @@ mod tests {
         assert_eq!(suffstat.n(), 4);
         assert::close(suffstat.mean(), 2.025, 1e-14);
         assert::close(suffstat.sum_x(), 8.1, 1e-14);
-        assert::close(suffstat.sum_x_sq(), 27.889999999999993, 1e-14);
+        assert::close(suffstat.sum_x_sq(), 27.889_999_999_999_993, 1e-14);
     }
 
     #[test]
@@ -176,6 +190,6 @@ mod tests {
         assert_eq!(suffstat.n(), 4);
         assert::close(suffstat.mean(), 2.025, 1e-14);
         assert::close(suffstat.sum_x(), 8.1, 1e-14);
-        assert::close(suffstat.sum_x_sq(), 27.889999999999993, 1e-13);
+        assert::close(suffstat.sum_x_sq(), 27.889_999_999_999_993, 1e-13);
     }
 }

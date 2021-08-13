@@ -47,6 +47,74 @@ macro_rules! test_basic_impls {
     };
 }
 
+#[macro_export]
+macro_rules! verify_cache_resets {
+    ([unchecked],
+     $fn_name: ident,
+     $set_fn: ident,
+     $start_dist: expr,
+     $x: expr,
+     $start_value: expr,
+     $change_value: expr
+     ) => {
+        #[test]
+        fn $fn_name() {
+            let mut dist = $start_dist;
+            let x = $x;
+
+            // cache should initialize during this call
+            let ln_f_0 = dist.ln_f(&x);
+            // this call should use the cache
+            let ln_f_1 = dist.ln_f(&x);
+
+            assert!((ln_f_0 - ln_f_1).abs() < 1e-10);
+
+            // set the cache to the wrong thing
+            dist.$set_fn($change_value);
+            let _ = dist.ln_f(&x);
+
+            // reset alpha and empty cache
+            dist.$set_fn($start_value);
+
+            // this call should use the cache
+            let ln_f_2 = dist.ln_f(&x);
+            assert!((ln_f_2 - ln_f_1).abs() < 1e-10);
+        }
+    };
+    ([checked],
+     $fn_name: ident,
+     $set_fn: ident,
+     $start_dist: expr,
+     $x: expr,
+     $start_value: expr,
+     $change_value: expr
+     ) => {
+        #[test]
+        fn $fn_name() {
+            let mut dist = $start_dist;
+            let x = $x;
+
+            // cache should initialize during this call
+            let ln_f_0 = dist.ln_f(&x);
+            // this call should use the cache
+            let ln_f_1 = dist.ln_f(&x);
+
+            assert!((ln_f_0 - ln_f_1).abs() < 1e-10);
+
+            // set the cache to the wrong thing
+            dist.$set_fn($change_value).unwrap();
+            let _ = dist.ln_f(&x);
+
+            // reset alpha and empty cache
+            dist.$set_fn($start_value).unwrap();
+
+            // this call should use the cache
+            let ln_f_2 = dist.ln_f(&x);
+            assert!((ln_f_1 - ln_f_2).abs() < 1e-10);
+        }
+    };
+}
+
 #[cfg(test)]
 #[allow(dead_code)]
 /// Assert Relative Eq for sequences
@@ -75,8 +143,8 @@ where
 
 pub trait GewekeTestable<Fx, X> {
     fn prior_draw<R: rand::Rng>(&self, rng: &mut R) -> Fx;
-    fn update_params<R: rand::Rng>(&self, data: &Vec<X>, rng: &mut R) -> Fx;
-    fn geweke_stats(&self, fx: &Fx, xs: &Vec<X>) -> BTreeMap<String, f64>;
+    fn update_params<R: rand::Rng>(&self, data: &[X], rng: &mut R) -> Fx;
+    fn geweke_stats(&self, fx: &Fx, xs: &[X]) -> BTreeMap<String, f64>;
 }
 
 pub struct GewekeTester<Pr, Fx, X>
@@ -207,7 +275,7 @@ macro_rules! gaussian_prior_geweke_testable {
 
             fn update_params<R: rand::Rng>(
                 &self,
-                data: &Vec<f64>,
+                data: &[f64],
                 rng: &mut R,
             ) -> Gaussian {
                 let post = <$prior as ConjugatePrior<f64, $fx>>::posterior(
@@ -220,7 +288,7 @@ macro_rules! gaussian_prior_geweke_testable {
             fn geweke_stats(
                 &self,
                 fx: &Gaussian,
-                xs: &Vec<f64>,
+                xs: &[f64],
             ) -> BTreeMap<String, f64> {
                 let mut stats: BTreeMap<String, f64> = BTreeMap::new();
 
@@ -228,7 +296,13 @@ macro_rules! gaussian_prior_geweke_testable {
                 stats.insert(String::from("sigma"), fx.sigma());
 
                 let mean = xs.iter().map(|&x| x).sum::<f64>() / xs.len() as f64;
-                let mse = xs.iter().map(|&x| (x - mean).powi(2)).sum::<f64>()
+                let mse = xs
+                    .iter()
+                    .map(|&x| {
+                        let err = (x - mean);
+                        err * err
+                    })
+                    .sum::<f64>()
                     / xs.len() as f64;
 
                 stats.insert(String::from("x_mean"), mean);

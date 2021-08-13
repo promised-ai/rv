@@ -11,8 +11,8 @@ use std::fmt;
 
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
+use crate::impl_display;
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.
@@ -36,7 +36,7 @@ use crate::{clone_cache_f64, impl_display};
 /// let kl_sym = gauss_1.kl_sym(&gauss_2);
 /// assert!((kl_sym - (kl_12 + kl_21)).abs() < 1E-12);
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Gaussian {
     /// Mean
@@ -46,16 +46,6 @@ pub struct Gaussian {
     /// Cached log(sigma)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_sigma: OnceCell<f64>,
-}
-
-impl Clone for Gaussian {
-    fn clone(&self) -> Self {
-        Self {
-            mu: self.mu,
-            sigma: self.sigma,
-            ln_sigma: clone_cache_f64!(self, ln_sigma),
-        }
-    }
 }
 
 impl PartialEq for Gaussian {
@@ -301,8 +291,8 @@ macro_rules! impl_traits {
                 if (p <= 0.0) || (1.0 <= p) {
                     panic!("P out of range");
                 }
-                let x =
-                    self.mu + self.sigma * SQRT_2 * (2.0 * p - 1.0).inv_error();
+                let x = (self.sigma * SQRT_2)
+                    .mul_add((2.0 * p - 1.0).inv_error(), self.mu);
                 x as $kind
             }
         }
@@ -359,7 +349,7 @@ impl Kurtosis for Gaussian {
 }
 
 impl KlDivergence for Gaussian {
-    #[allow(clippy::clippy::suspicious_operation_groupings)]
+    #[allow(clippy::suspicious_operation_groupings)]
     fn kl(&self, other: &Self) -> f64 {
         let m1 = self.mu;
         let m2 = other.mu;
@@ -368,7 +358,7 @@ impl KlDivergence for Gaussian {
         let s2 = other.sigma;
 
         let term1 = s2.ln() - s1.ln();
-        let term2 = (s1 * s1 + (m1 - m2) * (m1 - m2)) / (2.0 * s2 * s2);
+        let term2 = s1.mul_add(s1, (m1 - m2) * (m1 - m2)) / (2.0 * s2 * s2);
 
         term1 + term2 - 0.5
     }
@@ -376,7 +366,7 @@ impl KlDivergence for Gaussian {
 
 impl QuadBounds for Gaussian {
     fn quad_bounds(&self) -> (f64, f64) {
-        self.interval(0.99999999999)
+        self.interval(0.999_999_999_99)
     }
 }
 
@@ -489,13 +479,13 @@ mod tests {
     #[test]
     fn standard_ln_pdf_off_zero() {
         let gauss = Gaussian::standard();
-        assert::close(gauss.ln_pdf(&2.1_f64), -3.1239385332046727, TOL);
+        assert::close(gauss.ln_pdf(&2.1_f64), -3.123_938_533_204_672_7, TOL);
     }
 
     #[test]
     fn nonstandard_ln_pdf_on_mean() {
         let gauss = Gaussian::new(-1.2, 0.33).unwrap();
-        assert::close(gauss.ln_pdf(&-1.2_f64), 0.18972409131693846, TOL);
+        assert::close(gauss.ln_pdf(&-1.2_f64), 0.189_724_091_316_938_46, TOL);
     }
 
     #[test]
@@ -557,7 +547,7 @@ mod tests {
     #[test]
     fn cdf_value_at_neg_two() {
         let gauss = Gaussian::standard();
-        assert::close(gauss.cdf(&-2.0_f64), 0.022750131948179195, TOL);
+        assert::close(gauss.cdf(&-2.0_f64), 0.022_750_131_948_179_195, TOL);
     }
 
     #[test]
@@ -598,13 +588,13 @@ mod tests {
     #[test]
     fn standard_gaussian_entropy() {
         let gauss = Gaussian::standard();
-        assert::close(gauss.entropy(), 1.4189385332046727, TOL);
+        assert::close(gauss.entropy(), 1.418_938_533_204_672_7, TOL);
     }
 
     #[test]
     fn entropy() {
         let gauss = Gaussian::new(3.0, 12.3).unwrap();
-        assert::close(gauss.entropy(), 3.9285377955830447, TOL);
+        assert::close(gauss.entropy(), 3.928_537_795_583_044_7, TOL);
     }
 
     #[test]
@@ -635,7 +625,7 @@ mod tests {
         let mut gauss = Gaussian::new(-1.2, 5.0).unwrap();
 
         gauss.set_sigma(0.33).unwrap();
-        assert::close(gauss.ln_pdf(&-1.2_f64), 0.18972409131693846, TOL);
+        assert::close(gauss.ln_pdf(&-1.2_f64), 0.189_724_091_316_938_46, TOL);
         assert::close(gauss.ln_pdf(&0.0_f32), -6.421_846_156_616_945, TOL);
     }
 }

@@ -3,9 +3,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::consts::LN_2PI_E;
 use crate::data::PoissonSuffStat;
+use crate::impl_display;
 use crate::misc::ln_fact;
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Poisson as RPossion;
@@ -63,22 +63,13 @@ use std::fmt;
 ///
 /// assert_eq!(mode, 2)
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Poisson {
     rate: f64,
     /// Cached ln(rate)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_rate: OnceCell<f64>,
-}
-
-impl Clone for Poisson {
-    fn clone(&self) -> Self {
-        Poisson {
-            rate: self.rate,
-            ln_rate: clone_cache_f64!(self, ln_rate),
-        }
-    }
 }
 
 impl PartialEq for Poisson {
@@ -194,7 +185,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Poisson {
             fn ln_f(&self, x: &$kind) -> f64 {
-                let kf = f64::from(*x);
+                let kf = *x as f64;
                 kf * self.ln_rate() - self.rate - ln_fact(*x as usize)
             }
 
@@ -226,7 +217,7 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for Poisson {
             fn cdf(&self, x: &$kind) -> f64 {
-                let kf = f64::from(*x);
+                let kf = *x as f64;
                 1.0 - (self.rate).inc_gamma(kf + 1.0)
             }
         }
@@ -280,7 +271,8 @@ impl Kurtosis for Poisson {
 
 impl KlDivergence for Poisson {
     fn kl(&self, other: &Poisson) -> f64 {
-        self.rate() * (self.ln_rate() - other.ln_rate()) + other.rate()
+        self.rate()
+            .mul_add(self.ln_rate() - other.ln_rate(), other.rate())
             - self.rate()
     }
 }
@@ -297,7 +289,7 @@ impl Entropy for Poisson {
             // https://en.wikipedia.org/wiki/Poisson_distribution
             (0.5) * (LN_2PI_E + self.ln_rate())
                 - (12.0 * self.rate()).recip()
-                - (24.0 * self.rate().powi(2)).recip()
+                - (24.0 * self.rate() * self.rate()).recip()
                 - 19.0 * (360.0 * self.rate().powi(3)).recip()
         }
     }
@@ -306,6 +298,7 @@ impl Entropy for Poisson {
 impl_traits!(u8);
 impl_traits!(u16);
 impl_traits!(u32);
+impl_traits!(usize);
 
 impl std::error::Error for PoissonError {}
 
@@ -368,8 +361,8 @@ mod tests {
     #[test]
     fn ln_pmf() {
         let pois = Poisson::new(5.3).unwrap();
-        assert::close(pois.ln_pmf(&1_u32), -3.6322931794419238, TOL);
-        assert::close(pois.ln_pmf(&5_u32), -1.7489576399916658, TOL);
+        assert::close(pois.ln_pmf(&1_u32), -3.632_293_179_441_923_8, TOL);
+        assert::close(pois.ln_pmf(&5_u32), -1.748_957_639_991_665_8, TOL);
         assert::close(pois.ln_pmf(&11_u32), -4.457_532_819_735_049, TOL);
     }
 
@@ -395,7 +388,7 @@ mod tests {
     #[test]
     fn cdf_low() {
         let pois = Poisson::new(5.3).unwrap();
-        assert::close(pois.cdf(&1_u32), 0.031447041613534364, TOL);
+        assert::close(pois.cdf(&1_u32), 0.031_447_041_613_534_364, TOL);
     }
 
     #[test]
@@ -432,13 +425,13 @@ mod tests {
     #[test]
     fn skewness() {
         let s = Poisson::new(5.3).unwrap().skewness().unwrap();
-        assert::close(s, 0.4343722427630694, TOL);
+        assert::close(s, 0.434_372_242_763_069_4, TOL);
     }
 
     #[test]
     fn kurtosis() {
         let k = Poisson::new(5.3).unwrap().kurtosis().unwrap();
-        assert::close(k, 0.18867924528301888, TOL);
+        assert::close(k, 0.188_679_245_283_018_88, TOL);
     }
 
     #[test]
@@ -489,13 +482,13 @@ mod tests {
         // from scipy, which I think uses an approximation via simulation. Not
         // 100% sure.
         let hs = vec![
-            0.3336769965012327,
-            0.9276374674957975,
-            1.3048422422562516,
-            1.758957749331246,
-            1.9995315141091008,
-            2.571495552115918,
-            3.857424953514813,
+            0.333_676_996_501_232_7,
+            0.927_637_467_495_797_5,
+            1.304_842_242_256_251_6,
+            1.758_957_749_331_246,
+            1.999_531_514_109_100_8,
+            2.571_495_552_115_918,
+            3.857_424_953_514_813,
         ];
         rates.iter().zip(hs.iter()).for_each(|(rate, h)| {
             let pois = Poisson::new(*rate).unwrap();

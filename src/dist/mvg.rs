@@ -395,18 +395,18 @@ impl_display!(MvGaussian);
 impl Rv<DVector<f64>> for MvGaussian {
     fn ln_f(&self, x: &DVector<f64>) -> f64 {
         let diff = x - &self.mu;
-        let det: f64 = self
+        let det_sqrt: f64 = self
             .cache()
             .cov_chol
             .l_dirty()
             .diagonal()
             .row_iter()
-            .fold(1.0, |acc, y| acc * y[0])
-            .powi(2);
+            .fold(1.0, |acc, y| acc * y[0]);
 
+        let det = det_sqrt * det_sqrt;
         let inv = &(self.cache().cov_inv);
         let term: f64 = (diff.transpose() * inv * &diff)[0];
-        -0.5 * (det.ln() + term + (diff.nrows() as f64) * LN_2PI)
+        -0.5 * (det.ln() + (diff.nrows() as f64).mul_add(LN_2PI, term))
     }
 
     fn draw<R: Rng>(&self, rng: &mut R) -> DVector<f64> {
@@ -455,15 +455,16 @@ impl Variance<DMatrix<f64>> for MvGaussian {
 
 impl Entropy for MvGaussian {
     fn entropy(&self) -> f64 {
-        let det: f64 = self
+        let det_sqrt: f64 = self
             .cache()
             .cov_chol
             .l_dirty()
             .diagonal()
             .row_iter()
-            .fold(1.0, |acc, x| acc * x[0])
-            .powi(2);
-        0.5 * det.ln() + HALF_LN_2PI_E * (self.cov.nrows() as f64)
+            .fold(1.0, |acc, x| acc * x[0]);
+        let det = det_sqrt * det_sqrt;
+        det.ln()
+            .mul_add(0.5, HALF_LN_2PI_E * (self.cov.nrows() as f64))
     }
 }
 impl HasSuffStat<DVector<f64>> for MvGaussian {
@@ -556,7 +557,7 @@ mod tests {
     fn ln_f_standard_x_zeros() {
         let mvg = MvGaussian::standard(3).unwrap();
         let x = DVector::<f64>::zeros(3);
-        assert::close(mvg.ln_f(&x), -2.756815599614018, TOL);
+        assert::close(mvg.ln_f(&x), -2.756_815_599_614_018, TOL);
     }
 
     #[test]
@@ -569,15 +570,15 @@ mod tests {
     #[test]
     fn ln_f_nonstandard_zeros() {
         let cov_vals = vec![
-            1.01742788,
-            0.36586652,
-            -0.65620486,
-            0.36586652,
-            1.00564553,
-            -0.42597261,
-            -0.65620486,
-            -0.42597261,
-            1.27247972,
+            1.017_427_88,
+            0.365_866_52,
+            -0.656_204_86,
+            0.365_866_52,
+            1.005_645_53,
+            -0.425_972_61,
+            -0.656_204_86,
+            -0.425_972_61,
+            1.272_479_72,
         ];
         let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
         let mu = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
@@ -589,35 +590,35 @@ mod tests {
     #[test]
     fn ln_f_nonstandard_nonzeros() {
         let cov_vals = vec![
-            1.01742788,
-            0.36586652,
-            -0.65620486,
-            0.36586652,
-            1.00564553,
-            -0.42597261,
-            -0.65620486,
-            -0.42597261,
-            1.27247972,
+            1.017_427_88,
+            0.365_866_52,
+            -0.656_204_86,
+            0.365_866_52,
+            1.005_645_53,
+            -0.425_972_61,
+            -0.656_204_86,
+            -0.425_972_61,
+            1.272_479_72,
         ];
         let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
         let mu = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
         let mvg = MvGaussian::new(mu, cov).unwrap();
         let x = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
-        assert::close(mvg.ln_f(&x), -2.5915350538112296, TOL);
+        assert::close(mvg.ln_f(&x), -2.591_535_053_811_229_6, TOL);
     }
 
     #[test]
     fn sample_returns_proper_number_of_draws() {
         let cov_vals = vec![
-            1.01742788,
-            0.36586652,
-            -0.65620486,
-            0.36586652,
-            1.00564553,
-            -0.42597261,
-            -0.65620486,
-            -0.42597261,
-            1.27247972,
+            1.017_427_88,
+            0.365_866_52,
+            -0.656_204_86,
+            0.365_866_52,
+            1.005_645_53,
+            -0.425_972_61,
+            -0.656_204_86,
+            -0.425_972_61,
+            1.272_479_72,
         ];
         let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
         let mu = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
@@ -633,26 +634,26 @@ mod tests {
     #[test]
     fn standard_entropy() {
         let mvg = MvGaussian::standard(3).unwrap();
-        assert::close(mvg.entropy(), 4.2568155996140185, TOL);
+        assert::close(mvg.entropy(), 4.256_815_599_614_018_5, TOL);
     }
 
     #[test]
     fn nonstandard_entropy() {
         let cov_vals = vec![
-            1.01742788,
-            0.36586652,
-            -0.65620486,
-            0.36586652,
-            1.00564553,
-            -0.42597261,
-            -0.65620486,
-            -0.42597261,
-            1.27247972,
+            1.017_427_88,
+            0.365_866_52,
+            -0.656_204_86,
+            0.365_866_52,
+            1.005_645_53,
+            -0.425_972_61,
+            -0.656_204_86,
+            -0.425_972_61,
+            1.272_479_72,
         ];
         let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
         let mu = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
         let mvg = MvGaussian::new(mu, cov).unwrap();
-        assert::close(mvg.entropy(), 4.0915350538112305, TOL);
+        assert::close(mvg.entropy(), 4.091_535_053_811_230_5, TOL);
     }
 
     #[test]
@@ -702,15 +703,15 @@ mod tests {
     fn nonstandard_draw_mardia() {
         let mut rng = rand::thread_rng();
         let cov_vals = vec![
-            1.01742788,
-            0.36586652,
-            -0.65620486,
-            0.36586652,
-            1.00564553,
-            -0.42597261,
-            -0.65620486,
-            -0.42597261,
-            1.27247972,
+            1.017_427_88,
+            0.365_866_52,
+            -0.656_204_86,
+            0.365_866_52,
+            1.005_645_53,
+            -0.425_972_61,
+            -0.656_204_86,
+            -0.425_972_61,
+            1.272_479_72,
         ];
         let cov: DMatrix<f64> = DMatrix::from_row_slice(3, 3, &cov_vals);
         let mu = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);

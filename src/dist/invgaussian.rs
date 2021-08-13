@@ -9,12 +9,12 @@ use std::fmt;
 
 use crate::consts::*;
 use crate::data::InvGaussianSuffStat;
+use crate::impl_display;
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 
 /// [Inverse Gaussian distribution](https://en.wikipedia.org/wiki/Inverse_Gaussian_distribution),
 /// N<sup>-1</sup>(μ, λ) over real values.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct InvGaussian {
     /// Mean
@@ -24,16 +24,6 @@ pub struct InvGaussian {
     /// Cached log(lambda)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_lambda: OnceCell<f64>,
-}
-
-impl Clone for InvGaussian {
-    fn clone(&self) -> Self {
-        Self {
-            mu: self.mu,
-            lambda: self.lambda,
-            ln_lambda: clone_cache_f64!(self, ln_lambda),
-        }
-    }
 }
 
 impl PartialEq for InvGaussian {
@@ -252,7 +242,8 @@ macro_rules! impl_traits {
                 let (mu, lambda) = self.params();
                 let xf = f64::from(*x);
                 let z = self.ln_lambda() - xf.ln().mul_add(3.0, LN_2PI);
-                let term = lambda * (xf - mu).powi(2) / (2.0 * mu * mu * xf);
+                let err = xf - mu;
+                let term = lambda * err * err / (2.0 * mu * mu * xf);
                 z.mul_add(0.5, -term)
             }
 
@@ -263,11 +254,14 @@ macro_rules! impl_traits {
                 let v: f64 = rng.sample(g);
                 let y = v * v;
                 let mu2 = mu * mu;
-                let x = mu
-                    + 0.5
-                        * (mu2 * y / lambda
-                            - mu / lambda
-                                * (4.0 * mu * lambda * y + mu2 * y * y).sqrt());
+                let x = 0.5_f64.mul_add(
+                    (mu2 * y / lambda
+                        - mu / lambda
+                            * (4.0 * mu * lambda)
+                                .mul_add(y, mu2 * y * y)
+                                .sqrt()),
+                    mu,
+                );
                 let z: f64 = rng.gen();
 
                 if z <= mu / (mu + x) {
@@ -294,7 +288,9 @@ macro_rules! impl_traits {
                 let z = (lambda / xf).sqrt();
                 let a = z * (xf / mu - 1.0);
                 let b = -z * (xf / mu + 1.0);
-                gauss.cdf(&a) + (2.0 * lambda / mu).exp() * gauss.cdf(&b)
+                (2.0 * lambda / mu)
+                    .exp()
+                    .mul_add(gauss.cdf(&b), gauss.cdf(&a))
             }
         }
         impl Mean<$kind> for InvGaussian {
@@ -306,7 +302,7 @@ macro_rules! impl_traits {
         impl Mode<$kind> for InvGaussian {
             fn mode(&self) -> Option<$kind> {
                 let (mu, lambda) = self.params();
-                let a = (1.0 + 0.25 * 9.0 * mu.powi(2) / lambda.powi(2)).sqrt();
+                let a = (1.0 + 0.25 * 9.0 * mu * mu / (lambda * lambda)).sqrt();
                 let b = 0.5 * 3.0 * mu / lambda;
                 let mode = mu * (a - b);
                 Some(mode as $kind)
@@ -400,7 +396,7 @@ mod tests {
             let x: f64 = ig.draw(&mut rng);
             let res = quad_eps(pdf, 1e-16, x, Some(1e-10));
             let cdf = ig.cdf(&x);
-            assert::close(res, cdf, 1e-9);
+            assert!((res - cdf).abs() < 1e-9);
         }
     }
 

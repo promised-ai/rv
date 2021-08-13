@@ -32,12 +32,12 @@ impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
     #[allow(clippy::many_single_char_names)]
     fn posterior(&self, x: &DataOrSuffStat<X, Bernoulli>) -> Self {
         let (n, k) = match x {
-            DataOrSuffStat::Data(ref xs) => {
+            DataOrSuffStat::Data(xs) => {
                 let mut stat = BernoulliSuffStat::new();
                 xs.iter().for_each(|x| stat.observe(x));
                 (stat.n(), stat.k())
             }
-            DataOrSuffStat::SuffStat(ref stat) => (stat.n(), stat.k()),
+            DataOrSuffStat::SuffStat(stat) => (stat.n(), stat.k()),
             DataOrSuffStat::None => (0, 0),
         };
 

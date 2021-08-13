@@ -312,7 +312,7 @@ impl_display!(NormalGamma);
 impl Rv<Gaussian> for NormalGamma {
     fn ln_f(&self, x: &Gaussian) -> f64 {
         // TODO: could cache the gamma and Gaussian distributions
-        let rho = x.sigma().powi(2).recip();
+        let rho = (x.sigma() * x.sigma()).recip();
         let lnf_rho =
             Gamma::new_unchecked(self.v / 2.0, self.s / 2.0).ln_f(&rho);
         let prior_sigma = (self.r * rho).recip().sqrt();

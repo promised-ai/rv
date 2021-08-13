@@ -246,7 +246,10 @@ macro_rules! impl_int_traits {
                 let nf = self.n as f64;
                 let kf = *k as f64;
                 // TODO: could cache ln(p) and ln(q)
-                ln_binom(nf, kf) + self.p.ln() * kf + self.q().ln() * (nf - kf)
+                self.q().ln().mul_add(
+                    (nf - kf),
+                    self.p.ln().mul_add(kf, ln_binom(nf, kf)),
+                )
             }
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let b = rand_distr::Binomial::new(self.n, self.p).unwrap();
@@ -368,17 +371,17 @@ mod tests {
         let binom = Binomial::new(10, 0.6).unwrap();
         let xs: Vec<u32> = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         let known_values = vec![
-            -9.16290731874155,
-            -6.454857117639339,
-            -4.545314612754902,
-            -3.1590202516350105,
-            -2.1939393555914233,
-            -1.6061526906893038,
-            -1.383009139375095,
-            -1.5371598192023535,
-            -2.1125239641059164,
-            -3.2111362527740246,
-            -5.108256237659907,
+            -9.162_907_318_741_55,
+            -6.454_857_117_639_339,
+            -4.545_314_612_754_902,
+            -3.159_020_251_635_010_5,
+            -2.193_939_355_591_423_3,
+            -1.606_152_690_689_303_8,
+            -1.383_009_139_375_095,
+            -1.537_159_819_202_353_5,
+            -2.112_523_964_105_916_4,
+            -3.211_136_252_774_024_6,
+            -5.108_256_237_659_907,
         ];
         let generated_values: Vec<f64> =
             xs.iter().map(|x| binom.ln_pmf(x)).collect();
@@ -390,16 +393,16 @@ mod tests {
         let binom = Binomial::new(10, 0.6).unwrap();
         let xs: Vec<u32> = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         let known_values = vec![
-            0.00010485760000000006,
-            0.0016777216000000005,
-            0.012294553600000008,
-            0.05476188160000002,
-            0.1662386176,
-            0.36689674240000003,
-            0.6177193983999999,
-            0.8327102464,
-            0.9536425984,
-            0.9939533824,
+            0.000_104_857_600_000_000_06,
+            0.001_677_721_600_000_000_5,
+            0.012_294_553_600_000_008,
+            0.054_761_881_600_000_02,
+            0.166_238_617_6,
+            0.366_896_742_400_000_03,
+            0.617_719_398_399_999_9,
+            0.832_710_246_4,
+            0.953_642_598_4,
+            0.993_953_382_4,
             1.0,
         ];
         let generated_values: Vec<f64> =
@@ -419,16 +422,16 @@ mod tests {
     fn kurtosis() {
         let k1 = Binomial::new(10, 0.6).unwrap().kurtosis().unwrap();
         let k2 = Binomial::new(21, 0.21).unwrap().kurtosis().unwrap();
-        assert::close(k1, -0.1833333333333333, TOL);
-        assert::close(k2, 0.0013203593673756242, TOL);
+        assert::close(k1, -0.183_333_333_333_333_3, TOL);
+        assert::close(k2, 0.001_320_359_367_375_624_2, TOL);
     }
 
     #[test]
     fn skewness() {
         let s1 = Binomial::new(10, 0.6).unwrap().skewness().unwrap();
         let s2 = Binomial::new(21, 0.21).unwrap().skewness().unwrap();
-        assert::close(s1, -0.12909944487358052, TOL);
-        assert::close(s2, 0.3107385631129019, TOL);
+        assert::close(s1, -0.129_099_444_873_580_52, TOL);
+        assert::close(s2, 0.310_738_563_112_901_9, TOL);
     }
 
     #[test]
@@ -443,7 +446,7 @@ mod tests {
     fn variance() {
         let v1 = Binomial::new(10, 0.6).unwrap().variance().unwrap();
         let v2 = Binomial::new(21, 0.21).unwrap().variance().unwrap();
-        assert::close(v1, 2.4000000000000004, TOL);
+        assert::close(v1, 2.400_000_000_000_000_4, TOL);
         assert::close(v2, 3.4839, TOL);
     }
 
@@ -452,11 +455,11 @@ mod tests {
         let mut rng = rand::thread_rng();
         let binom = Binomial::new(5, 0.6).unwrap();
         let ps: Vec<f64> = vec![
-            0.010240000000000008,
-            0.07680000000000001,
+            0.010_240_000_000_000_008,
+            0.076_800_000_000_000_01,
             0.2304,
-            0.3455999999999999,
-            0.2591999999999999,
+            0.345_599_999_999_999_9,
+            0.259_199_999_999_999_9,
             0.07776,
         ];
 
@@ -479,11 +482,11 @@ mod tests {
         let mut rng = rand::thread_rng();
         let binom = Binomial::new(5, 0.6).unwrap();
         let ps: Vec<f64> = vec![
-            0.010240000000000008,
-            0.07680000000000001,
+            0.010_240_000_000_000_008,
+            0.076_800_000_000_000_01,
             0.2304,
-            0.3455999999999999,
-            0.2591999999999999,
+            0.345_599_999_999_999_9,
+            0.259_199_999_999_999_9,
             0.07776,
         ];
 

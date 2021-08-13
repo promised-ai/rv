@@ -310,7 +310,7 @@ where
             .weights
             .iter()
             .zip(self.components.iter())
-            .map(|(&w, cpnt)| w.ln() + cpnt.ln_f(&x))
+            .map(|(&w, cpnt)| w.ln() + cpnt.ln_f(x))
             .collect();
 
         logsumexp(&lfs)
@@ -320,7 +320,7 @@ where
         self.weights
             .iter()
             .zip(self.components.iter())
-            .fold(0.0, |acc, (&w, cpnt)| acc + w * cpnt.f(&x))
+            .fold(0.0, |acc, (&w, cpnt)| cpnt.f(x).mul_add(w, acc))
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
@@ -343,7 +343,7 @@ where
     Fx: Rv<X> + Support<X>,
 {
     fn supports(&self, x: &X) -> bool {
-        self.components.iter().any(|cpnt| cpnt.supports(&x))
+        self.components.iter().any(|cpnt| cpnt.supports(x))
     }
 }
 
@@ -355,7 +355,7 @@ where
         self.weights
             .iter()
             .zip(self.components.iter())
-            .fold(0.0_f64, |acc, (&w, cpnt)| acc + w * cpnt.cdf(&x))
+            .fold(0.0_f64, |acc, (&w, cpnt)| cpnt.cdf(x).mul_add(w, acc))
     }
 }
 
@@ -367,8 +367,8 @@ where
         self.weights.iter().zip(self.components.iter()).fold(
             0.0,
             |acc, (&w, cpnt)| {
-                if cpnt.supports(&x) {
-                    acc + w * cpnt.f(&x)
+                if cpnt.supports(x) {
+                    w.mul_add(cpnt.f(x), acc)
                 } else {
                     acc
                 }
@@ -377,7 +377,7 @@ where
     }
 
     fn ln_pdf(&self, x: &X) -> f64 {
-        self.pdf(&x).ln()
+        self.pdf(x).ln()
     }
 }
 
@@ -389,8 +389,8 @@ where
         self.weights.iter().zip(self.components.iter()).fold(
             0.0,
             |acc, (&w, cpnt)| {
-                if cpnt.supports(&x) {
-                    acc + w * cpnt.f(&x)
+                if cpnt.supports(x) {
+                    w.mul_add(cpnt.f(x), acc)
                 } else {
                     acc
                 }
@@ -399,7 +399,7 @@ where
     }
 
     fn ln_pmf(&self, x: &X) -> f64 {
-        self.pmf(&x).ln()
+        self.pmf(x).ln()
     }
 }
 
@@ -414,7 +414,8 @@ macro_rules! continuous_uv_mean_and_var {
                     .iter()
                     .zip(self.components.iter())
                     .try_fold(0_f64, |grand_mean, (&w, cpnt)| {
-                        cpnt.mean().map(|mean| grand_mean + w * (mean as f64))
+                        cpnt.mean()
+                            .map(|mean| w.mul_add(mean as f64, grand_mean))
                     })
                     .map(|mean| mean as $kind)
             }
@@ -433,8 +434,9 @@ macro_rules! continuous_uv_mean_and_var {
                 {
                     match cpnt.mean() {
                         Some(m) => {
-                            p1 += w * (m as f64).powi(2);
-                            p3 += w * (m as f64);
+                            let mf = m as f64;
+                            p1 += w * mf * mf;
+                            p3 += w * mf;
                         }
                         None => return None,
                     }
@@ -443,7 +445,7 @@ macro_rules! continuous_uv_mean_and_var {
                         None => return None,
                     }
                 }
-                let out: f64 = p1 + p2 - p3.powi(2);
+                let out: f64 = p1 + p2 - p3 * p3;
                 Some(out as $kind)
             }
         }
@@ -912,48 +914,48 @@ mod tests {
     fn continuous_pdf() {
         let xs: Vec<f64> = vec![
             -2.0,
-            -1.7105263157894737,
-            -1.4210526315789473,
-            -1.131578947368421,
-            -0.8421052631578947,
-            -0.5526315789473684,
-            -0.26315789473684204,
-            0.02631578947368407,
-            0.3157894736842106,
-            0.6052631578947372,
-            0.8947368421052633,
-            1.1842105263157894,
-            1.473684210526316,
-            1.7631578947368425,
-            2.052631578947368,
-            2.3421052631578947,
-            2.6315789473684212,
-            2.921052631578948,
-            3.2105263157894743,
+            -1.710_526_315_789_473_7,
+            -1.421_052_631_578_947_3,
+            -1.131_578_947_368_421,
+            -0.842_105_263_157_894_7,
+            -0.552_631_578_947_368_4,
+            -0.263_157_894_736_842_04,
+            0.026_315_789_473_684_07,
+            0.315_789_473_684_210_6,
+            0.605_263_157_894_737_2,
+            0.894_736_842_105_263_3,
+            1.184_210_526_315_789_4,
+            1.473_684_210_526_316,
+            1.763_157_894_736_842_5,
+            2.052_631_578_947_368,
+            2.342_105_263_157_894_7,
+            2.631_578_947_368_421_2,
+            2.921_052_631_578_948,
+            3.210_526_315_789_474_3,
             3.5,
         ];
 
         let target: Vec<f64> = vec![
-            0.06473380602589335,
-            0.08497882889790014,
-            0.11217654708252275,
-            0.14501073352074248,
-            0.1797629425978142,
-            0.21067644115271195,
-            0.23139135335682923,
-            0.23702954614998323,
-            0.2260163812419922,
-            0.2007791966709858,
-            0.167275199122399,
-            0.13454608202641027,
-            0.11515152871602127,
-            0.12213065296617545,
-            0.1549752516467795,
-            0.18610946002808507,
-            0.17957278989941344,
-            0.1317193335426053,
-            0.07419043357505534,
-            0.03498448751938728,
+            0.064_733_806_025_893_35,
+            0.084_978_828_897_900_14,
+            0.112_176_547_082_522_75,
+            0.145_010_733_520_742_48,
+            0.179_762_942_597_814_2,
+            0.210_676_441_152_711_95,
+            0.231_391_353_356_829_23,
+            0.237_029_546_149_983_23,
+            0.226_016_381_241_992_2,
+            0.200_779_196_670_985_8,
+            0.167_275_199_122_399,
+            0.134_546_082_026_410_27,
+            0.115_151_528_716_021_27,
+            0.122_130_652_966_175_45,
+            0.154_975_251_646_779_5,
+            0.186_109_460_028_085_07,
+            0.179_572_789_899_413_44,
+            0.131_719_333_542_605_3,
+            0.074_190_433_575_055_34,
+            0.034_984_487_519_387_28,
         ];
 
         let components = vec![
@@ -975,26 +977,26 @@ mod tests {
         let xs: Vec<u32> = (0..20).map(|i| i as u32).collect();
 
         let target: Vec<f64> = vec![
-            0.18944349223829393,
-            0.20600928711172717,
-            0.13638139292344745,
-            0.09077999553365237,
-            0.07005752694856147,
-            0.05598752152045468,
-            0.04412525380494339,
-            0.035914449903067774,
-            0.0314554228183013,
-            0.02899187154010165,
-            0.02660980083600876,
-            0.023324644922075175,
-            0.01914852009968446,
-            0.014640805796680027,
-            0.010432339897673344,
-            0.006948125661306361,
-            0.004340886637601523,
-            0.002553064633728986,
-            0.0014182807755675772,
-            0.0007464449417949772,
+            0.189_443_492_238_293_93,
+            0.206_009_287_111_727_17,
+            0.136_381_392_923_447_45,
+            0.090_779_995_533_652_37,
+            0.070_057_526_948_561_47,
+            0.055_987_521_520_454_68,
+            0.044_125_253_804_943_39,
+            0.035_914_449_903_067_774,
+            0.031_455_422_818_301_3,
+            0.028_991_871_540_101_65,
+            0.026_609_800_836_008_76,
+            0.023_324_644_922_075_175,
+            0.019_148_520_099_684_46,
+            0.014_640_805_796_680_027,
+            0.010_432_339_897_673_344,
+            0.006_948_125_661_306_361,
+            0.004_340_886_637_601_523,
+            0.002_553_064_633_728_986,
+            0.001_418_280_775_567_577_2,
+            0.000_746_444_941_794_977_2,
         ];
 
         let components = vec![
@@ -1121,7 +1123,7 @@ mod tests {
             let mm = Mixture::new(weights, components).unwrap();
 
             let h: f64 = mm.entropy();
-            assert::close(h, 1.4189385332046727, TOL);
+            assert::close(h, 1.418_938_533_204_672_7, TOL);
         }
 
         #[test]
@@ -1139,7 +1141,7 @@ mod tests {
             let weights = vec![0.5, 0.5];
             let mm = Mixture::new(weights, components).unwrap();
             let h: f64 = mm.entropy();
-            assert::close(h, 1.2798542258336676, TOL);
+            assert::close(h, 1.279_854_225_833_667_6, TOL);
         }
 
         #[test]
@@ -1193,9 +1195,7 @@ mod tests {
             let mu_prior = Gaussian::new(0.0, 5.0).unwrap();
             let sigma_prior = InvGamma::new(2.0, 3.0).unwrap();
             let bad_bounds = (0..100).find(|_| {
-                // TODO: should probably implement Rv<usize> for Poisson...
-                let n: usize =
-                    <Poisson as Rv<u32>>::draw(&pois, &mut rng) as usize;
+                let n: usize = pois.draw(&mut rng);
 
                 let components: Vec<Gaussian> = (0..=n)
                     .map(|_| {
@@ -1241,7 +1241,7 @@ mod tests {
 
             let h: f64 = mm.entropy();
             // Answer from numerical integration in python
-            assert::close(h, 2.051658739391058, 1E-7);
+            assert::close(h, 2.051_658_739_391_058, 1E-7);
         }
 
         #[cfg(feature = "serde1")]

@@ -2,8 +2,8 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::impl_display;
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use std::f64;
@@ -27,7 +27,7 @@ use std::fmt;
 /// assert!((u.cdf(&3.0_f64) - y(3.0)).abs() < 1E-12);
 /// assert!((u.cdf(&3.2_f64) - y(3.2)).abs() < 1E-12);
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Uniform {
     a: f64,
@@ -35,16 +35,6 @@ pub struct Uniform {
     /// Cached value of the ln(PDF)
     #[cfg_attr(feature = "serde1", serde(skip))]
     lnf: OnceCell<f64>,
-}
-
-impl Clone for Uniform {
-    fn clone(&self) -> Self {
-        Self {
-            a: self.a,
-            b: self.b,
-            lnf: clone_cache_f64!(self, lnf),
-        }
-    }
 }
 
 impl PartialEq for Uniform {
@@ -162,6 +152,7 @@ macro_rules! impl_traits {
             }
         }
 
+        #[allow(clippy::cmp_owned)]
         impl Support<$kind> for Uniform {
             fn supports(&self, x: &$kind) -> bool {
                 x.is_finite()
@@ -188,7 +179,8 @@ macro_rules! impl_traits {
 
         impl Variance<$kind> for Uniform {
             fn variance(&self) -> Option<$kind> {
-                let v = (self.b - self.a).powi(2) / 12.0;
+                let diff = self.b - self.a;
+                let v = diff * diff / 12.0;
                 Some(v as $kind)
             }
         }
@@ -208,7 +200,7 @@ macro_rules! impl_traits {
 
         impl InverseCdf<$kind> for Uniform {
             fn invcdf(&self, p: f64) -> $kind {
-                let x = p * (self.b - self.a) + self.a;
+                let x = p.mul_add(self.b - self.a, self.a);
                 x as $kind
             }
         }

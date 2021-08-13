@@ -8,9 +8,9 @@ use special::Beta as _;
 use std::f64;
 use std::fmt;
 
+use crate::impl_display;
 use crate::misc::{ln_binom, ln_pflip};
 use crate::traits::*;
-use crate::{clone_cache_f64, impl_display};
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// over k in {0, ..., n}
@@ -50,7 +50,7 @@ use crate::{clone_cache_f64, impl_display};
 /// beta_binom.pmf(&21_u32); // panics
 /// ```
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct BetaBinomial {
     /// Total number of trials
@@ -62,17 +62,6 @@ pub struct BetaBinomial {
     // ln_beta(alpha, beta)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_beta_ab: OnceCell<f64>,
-}
-
-impl Clone for BetaBinomial {
-    fn clone(&self) -> Self {
-        Self {
-            n: self.n,
-            alpha: self.alpha,
-            beta: self.beta,
-            ln_beta_ab: clone_cache_f64!(self, ln_beta_ab),
-        }
-    }
 }
 
 impl PartialEq for BetaBinomial {
@@ -342,8 +331,9 @@ macro_rules! impl_int_traits {
             }
 
             fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<$kind> {
-                // TODO: Could speed this up if we didn't compute the
-                // k-independent terms in ln_f
+                // NOTE: Could speed this up if we didn't compute the
+                // k-independent terms in ln_f. But if we're caching well w/in
+                // the distribution objects, this is negligible.
                 let ln_weights: Vec<f64> =
                     (0..=self.n).map(|x| self.ln_f(&x)).collect();
 
@@ -365,9 +355,9 @@ macro_rules! impl_int_traits {
 
         impl Cdf<$kind> for BetaBinomial {
             fn cdf(&self, k: &$kind) -> f64 {
-                // XXX: Slow and awful.
-                // TODO: could make this faster with hypergeometric function,
-                // but the `special` crate doesn't implement it
+                // XXX: Slow and awful. Could make this faster with
+                // hypergeometric function, but the `special` crate doesn't
+                // implement it
                 (0..=*k).fold(0.0, |acc, x| acc + self.pmf(&x))
             }
         }
@@ -448,8 +438,17 @@ mod tests {
         let beta_binom = BetaBinomial::new(10, 0.5, 2.0).unwrap();
         // Values from wolfram alpha
         let target = vec![
-            0.387765, 0.176257, 0.118973, 0.0881283, 0.0674732, 0.0520508,
-            0.039761, 0.0295368, 0.020768, 0.0130762, 0.00621118,
+            0.387_765,
+            0.176_257,
+            0.118_973,
+            0.088_128_3,
+            0.067_473_2,
+            0.052_050_8,
+            0.039_761,
+            0.029_536_8,
+            0.020_768,
+            0.013_076_2,
+            0.006_211_18,
         ];
         let pmfs: Vec<f64> = (0..=10).map(|k| beta_binom.pmf(&k)).collect();
         assert::close(pmfs, target, 1E-6);

@@ -10,19 +10,32 @@ mod gaussian_prior;
 use crate::dist::{Gaussian, ScaledInvChiSquared};
 use crate::impl_display;
 use crate::traits::Rv;
+use once_cell::sync::OnceCell;
 use rand::Rng;
 
 /// Prior for Gaussian
 ///
 /// Given `x ~ N(μ, σ)`, the Normal Inverse Gamma prior implies that
 /// `μ ~ N(m, sqrt(v)σ)` and `ρ ~ InvGamma(a, b)`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct NormalInvChiSquared {
     m: f64,
     k: f64,
     v: f64,
     s2: f64,
+    /// Cached scaled inv X^2
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    scaled_inv_x2: OnceCell<ScaledInvChiSquared>,
+}
+
+impl PartialEq for NormalInvChiSquared {
+    fn eq(&self, other: &Self) -> bool {
+        self.m == other.m
+            && self.k == other.k
+            && self.v == other.v
+            && self.s2 == other.s2
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -73,25 +86,37 @@ impl NormalInvChiSquared {
         } else if s2 <= 0.0 {
             Err(NormalInvChiSquaredError::S2TooLow { s2 })
         } else {
-            Ok(NormalInvChiSquared { m, k, v, s2 })
+            Ok(NormalInvChiSquared {
+                m,
+                k,
+                v,
+                s2,
+                scaled_inv_x2: OnceCell::new(),
+            })
         }
     }
 
     /// Creates a new NormalInvChiSquared without checking whether the parameters are
     /// valid.
-    #[inline(always)]
+    #[inline]
     pub fn new_unchecked(m: f64, k: f64, v: f64, s2: f64) -> Self {
-        NormalInvChiSquared { m, k, v, s2 }
+        NormalInvChiSquared {
+            m,
+            k,
+            v,
+            s2,
+            scaled_inv_x2: OnceCell::new(),
+        }
     }
 
     /// Returns (m, k, v, s2)
-    #[inline(always)]
+    #[inline]
     pub fn params(&self) -> (f64, f64, f64, f64) {
         (self.m, self.k, self.v, self.s2)
     }
 
     /// Get the m parameter
-    #[inline(always)]
+    #[inline]
     pub fn m(&self) -> f64 {
         self.m
     }
@@ -131,7 +156,7 @@ impl NormalInvChiSquared {
     }
 
     /// Set the value of m without input validation
-    #[inline(always)]
+    #[inline]
     pub fn set_m_unchecked(&mut self, m: f64) {
         self.m = m;
     }
@@ -234,6 +259,7 @@ impl NormalInvChiSquared {
             Err(NormalInvChiSquaredError::VTooLow { v })
         } else {
             self.set_v_unchecked(v);
+            self.scaled_inv_x2 = OnceCell::new();
             Ok(())
         }
     }
@@ -242,6 +268,7 @@ impl NormalInvChiSquared {
     #[inline]
     pub fn set_v_unchecked(&mut self, v: f64) {
         self.v = v;
+        self.scaled_inv_x2 = OnceCell::new();
     }
 
     /// Get the s2 parameter
@@ -288,14 +315,22 @@ impl NormalInvChiSquared {
             Err(NormalInvChiSquaredError::S2TooLow { s2 })
         } else {
             self.set_s2_unchecked(s2);
+            self.scaled_inv_x2 = OnceCell::new();
             Ok(())
         }
     }
 
     /// Set the value of s2 without input validation
-    #[inline(always)]
+    #[inline]
     pub fn set_s2_unchecked(&mut self, s2: f64) {
         self.s2 = s2;
+        self.scaled_inv_x2 = OnceCell::new();
+    }
+
+    #[inline]
+    pub fn scaled_inv_x2(&self) -> &ScaledInvChiSquared {
+        self.scaled_inv_x2
+            .get_or_init(|| ScaledInvChiSquared::new_unchecked(self.v, self.s2))
     }
 }
 
@@ -312,22 +347,14 @@ impl_display!(NormalInvChiSquared);
 
 impl Rv<Gaussian> for NormalInvChiSquared {
     fn ln_f(&self, x: &Gaussian) -> f64 {
-        let lnf_sigma = ScaledInvChiSquared::new_unchecked(self.v, self.s2)
-            .ln_f(&x.sigma().powi(2));
+        let lnf_sigma = self.scaled_inv_x2().ln_f(&(x.sigma() * x.sigma()));
         let prior_sigma = x.sigma() / self.k.sqrt();
         let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&x.mu());
         lnf_sigma + lnf_mu
     }
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
-        // NOTE: The parameter errors in this fn shouldn't happen if the prior
-        // parameters are valid.
-        let var: f64 = ScaledInvChiSquared::new(self.v, self.s2)
-            .map_err(|err| {
-                panic!("Invalid σ² params when drawing Gaussian: {}", err)
-            })
-            .unwrap()
-            .draw(&mut rng);
+        let var: f64 = self.scaled_inv_x2().draw(&mut rng);
 
         let sigma = if var <= 0.0 {
             std::f64::EPSILON
@@ -345,4 +372,55 @@ impl Rv<Gaussian> for NormalInvChiSquared {
 
         Gaussian::new(mu, var.sqrt()).expect("Invalid params")
     }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{test_basic_impls, verify_cache_resets};
+
+    test_basic_impls!(
+        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
+        Gaussian::new(-1.2, 0.4).unwrap()
+    );
+
+    verify_cache_resets!(
+        [unchecked],
+        ln_f_is_same_after_reset_unchecked_v_identically,
+        set_v_unchecked,
+        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
+        Gaussian::new(-1.2, 0.4).unwrap(),
+        2.3,
+        3.14
+    );
+
+    verify_cache_resets!(
+        [checked],
+        ln_f_is_same_after_reset_checked_v_identically,
+        set_v,
+        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
+        Gaussian::new(-1.2, 0.4).unwrap(),
+        2.3,
+        3.14
+    );
+
+    verify_cache_resets!(
+        [unchecked],
+        ln_f_is_same_after_reset_unchecked_s2_identically,
+        set_s2_unchecked,
+        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
+        Gaussian::new(-1.2, 0.4).unwrap(),
+        3.4,
+        0.8
+    );
+
+    verify_cache_resets!(
+        [checked],
+        ln_f_is_same_after_reset_checked_s2_identically,
+        set_s2,
+        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
+        Gaussian::new(-1.2, 0.4).unwrap(),
+        3.4,
+        0.8
+    );
 }

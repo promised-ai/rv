@@ -64,6 +64,16 @@
 //! // (true) given the observed flips (posterior predictive)?
 //! let p_heads = prior.pp(&true, &obs);
 //! ```
+#![warn(
+    clippy::all,
+    clippy::imprecise_flops,
+    clippy::suboptimal_flops,
+    clippy::unseparated_literal_suffix,
+    clippy::unreadable_literal,
+    clippy::option_option,
+    clippy::implicit_clone
+)]
+
 #[cfg(feature = "serde1")]
 extern crate serde;
 
@@ -93,17 +103,6 @@ macro_rules! impl_display {
             }
         }
     };
-}
-
-#[macro_export]
-macro_rules! clone_cache_f64 {
-    ($this:ident, $($field:tt)+) => {
-        if let Some(&val) = $this.$($field)+.get() {
-            OnceCell::from(val)
-        } else {
-            OnceCell::new()
-        }
-    }
 }
 
 #[macro_export]
