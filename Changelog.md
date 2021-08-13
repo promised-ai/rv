@@ -6,6 +6,7 @@
 - Use `&[T]` instead of `&Vec<T>` in `GewekeTester`
 - Renamed `BesselIvError` variants
 - Implement `Rv<usize>` for `Poisson`
+- Additional caching of expensive computations
 
 ## 0.12.0
 - Added Inverse X^2 distribution
