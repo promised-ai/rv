@@ -31,8 +31,10 @@ use std::fmt;
 pub struct Geometric {
     p: f64,
     // ln_(p)
+    #[cfg_attr(feature = "serde1", serde(skip))]
     ln_p: OnceCell<f64>,
     // ln_(1-p)
+    #[cfg_attr(feature = "serde1", serde(skip))]
     ln_1mp: OnceCell<f64>,
 }
 
