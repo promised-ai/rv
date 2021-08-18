@@ -9,6 +9,7 @@ use crate::dist::{Categorical, Gaussian, Poisson};
 use crate::misc::{logsumexp, pflip};
 use crate::traits::*;
 use rand::Rng;
+use std::convert::TryFrom;
 use std::fmt;
 
 /// [Mixture distribution](https://en.wikipedia.org/wiki/Mixture_model)
@@ -298,6 +299,31 @@ impl<Fx> Mixture<Fx> {
     #[inline]
     pub fn set_components_unchecked(&mut self, components: Vec<Fx>) {
         self.components = components;
+    }
+}
+
+impl<Fx> TryFrom<Vec<(f64, Fx)>> for Mixture<Fx> {
+    type Error = MixtureError;
+
+    fn try_from(
+        mut weighted_components: Vec<(f64, Fx)>,
+    ) -> Result<Self, Self::Error> {
+        let k = weighted_components.len();
+        let mut components = Vec::with_capacity(k);
+        let mut weights = Vec::with_capacity(k);
+
+        weighted_components.drain(..).for_each(|(w, cpnt)| {
+            weights.push(w);
+            components.push(cpnt);
+        });
+
+        Mixture::new(weights, components)
+    }
+}
+
+impl<Fx> From<Mixture<Fx>> for Vec<(f64, Fx)> {
+    fn from(mut mm: Mixture<Fx>) -> Self {
+        mm.weights.drain(..).zip(mm.components.drain(..)).collect()
     }
 }
 
@@ -687,32 +713,83 @@ macro_rules! dual_step_quad_bounds {
     };
 }
 
-fn gauss_quad_points<G>(components: &[G]) -> Vec<f64>
+fn sort_mixture_by_mode<Fx>(mm: Mixture<Fx>) -> Mixture<Fx>
 where
-    G: std::borrow::Borrow<Gaussian>,
+    Fx: Mode<f64>,
 {
-    let params: Vec<(f64, f64)> = {
-        let mut params: Vec<(f64, f64)> = components
-            .iter()
-            .map(|cpnt| (cpnt.borrow().mu(), cpnt.borrow().sigma()))
-            .collect();
-        params.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-        params
+    let mut components: Vec<(f64, Fx)> = mm.into();
+    components.sort_by(|a, b| {
+        a.1.mode()
+            .partial_cmp(&b.1.mode())
+            .unwrap_or(std::cmp::Ordering::Less)
+    });
+    Mixture::<Fx>::try_from(components).unwrap()
+}
+
+fn continuous_mixture_quad_points<Fx>(mm: &Mixture<Fx>) -> Vec<f64>
+where
+    Fx: Mode<f64> + Variance<f64>,
+{
+    use std::f64::INFINITY;
+
+    mm.components()
+        .iter()
+        .scan((None, None), |state, cpnt| {
+            let mode = cpnt.mode();
+            let std = cpnt.variance().map(|v| v.sqrt());
+            match (&state, (mode, std)) {
+                ((Some(m1), s1), (Some(m2), s2)) => {
+                    if (m2 - *m1)
+                        > s1.unwrap_or(INFINITY).min(s2.unwrap_or(INFINITY))
+                    {
+                        *state = (mode, std);
+                        Some(m2)
+                    } else {
+                        None
+                    }
+                }
+                ((None, _), (Some(m2), _)) => {
+                    *state = (mode, std);
+                    Some(m2)
+                }
+                _ => None,
+            }
+        })
+        .collect()
+}
+
+/// Computes an integral over a continuous mixture
+pub fn cm_quad<F, Fx>(f: &F, mm: &Mixture<Fx>) -> f64
+where
+    F: Fn(f64) -> f64,
+    Fx: Mode<f64> + Variance<f64>,
+    Mixture<Fx>: Clone + QuadBounds,
+{
+    use peroxide::numerical::integral::gauss_legendre_quadrature;
+
+    let (lower, upper) = mm.quad_bounds();
+
+    let points = {
+        let tmp_mm = sort_mixture_by_mode(mm.clone());
+        continuous_mixture_quad_points(&tmp_mm)
     };
 
-    let mut points = vec![params[0].0];
-    points.reserve(params.len().saturating_sub(1));
+    let last_ix = points.len() - 1;
+    let q_a = gauss_legendre_quadrature(f, 30, (lower, points[0]));
+    let q_b = gauss_legendre_quadrature(f, 30, (points[last_ix], upper));
 
-    let mut last_point = (params[0].0, params[0].0 + params[0].1);
+    let mut right = points[0];
+    let q_m = points
+        .iter()
+        .skip(1)
+        .map(|&x| {
+            let q = gauss_legendre_quadrature(f, 30, (right, x));
+            right = x;
+            q
+        })
+        .sum::<f64>();
 
-    for &(mu, sigma) in params.iter().skip(1) {
-        let halfway = (mu + last_point.0) / 2.0;
-        if (mu - sigma) > halfway || last_point.0 < halfway {
-            points.push(mu);
-            last_point = (mu, mu + sigma)
-        }
-    }
-    points
+    q_a + q_m + q_b
 }
 
 // Entropy by quadrature. Should be faster and more accurate than monte carlo
@@ -720,23 +797,12 @@ macro_rules! quadrature_entropy {
     ($kind: ty) => {
         impl Entropy for $kind {
             fn entropy(&self) -> f64 {
-                // use crate::misc::quad_eps;
-                use crate::misc::{quadp, QuadConfig};
-
-                let (lower, upper) = self.quad_bounds();
                 let f = |x| {
                     let ln_f = self.ln_f(&x);
                     ln_f.exp() * ln_f
                 };
 
-                let points = gauss_quad_points(self.components());
-                let config = QuadConfig {
-                    err_tol: 1e-8,
-                    seed_points: Some(&points),
-                    ..Default::default()
-                };
-
-                -quadp(&f, lower, upper, config)
+                -cm_quad(&f, self)
             }
         }
     };
@@ -1123,7 +1189,7 @@ mod tests {
             let mm = Mixture::new(weights, components).unwrap();
 
             let h: f64 = mm.entropy();
-            assert::close(h, 1.418_938_533_204_672_7, TOL);
+            assert::close(h, 1.418_938_533_204_672_7, 1E-10);
         }
 
         #[test]
