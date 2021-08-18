@@ -366,7 +366,7 @@ impl KlDivergence for Gaussian {
 
 impl QuadBounds for Gaussian {
     fn quad_bounds(&self) -> (f64, f64) {
-        self.interval(0.999_999_999_99)
+        self.interval(0.999_999_999_999)
     }
 }
 

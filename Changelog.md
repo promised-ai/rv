@@ -7,6 +7,8 @@
 - Renamed `BesselIvError` variants
 - Implement `Rv<usize>` for `Poisson`
 - Additional caching of expensive computations
+- Estimate Gaussian mixture entropy with Gauss–Legendre quadrature for a 10x
+    speedup.
 
 ## 0.12.0
 - Added Inverse X^2 distribution
