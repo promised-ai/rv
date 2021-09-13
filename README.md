@@ -49,6 +49,7 @@ assert!(post_mean_fixed > post_mean_fair);
 
 - `serde1`: enables serialization and de-serialization of structs via [serde](https://crates.io/crates/serde)
 - `process`: Gives you access to Gaussian processes.
+- `arraydist`: Enables distributions and statistical tests that require the [nalgebra](https://crates.io/crates/nalgebra) crate.
 
 ## Design
 

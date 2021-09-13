@@ -12,7 +12,7 @@ edition = "2018"
 include = ["README.md", "src/**/*", "benches/*", "Cargo.toml"]
 
 [badges]
-gitlab = { repository = "baxe/rv", tag = "v0.13.0-rc.2" }
+gitlab = { repository = "baxe/rv", tag = "v0.13.0" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
