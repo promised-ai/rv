@@ -101,31 +101,29 @@ where
         random_reinits: usize,
         rng: &mut R,
     ) -> Result<Self, argmin::core::Error> {
+        use std::iter::once;
+
         let mut best_params = self.parameters();
-        let random_params: Vec<Self::Param> = (0..random_reinits)
-            .map(|_| self.random_params(rng))
-            .collect();
+        let random_params =
+            (0..random_reinits).map(|_| self.random_params(rng));
 
         let mut best_cost = std::f64::INFINITY;
         let mut successes = 0;
         let mut last_err = None;
 
-        for params in std::iter::once(best_params.clone())
-            .chain(random_params.into_iter())
-        {
+        for params in once(best_params.clone()).chain(random_params) {
             let solver = Self::generate_solver();
             // TODO: This is wasteful, we don't need to copy
             let op = RandomProcessMleOp::new(self.clone());
-            let maybe_res = Executor::new(op, solver, params.into())
-                .max_iters(max_iters)
-                .run();
+            let maybe_res =
+                Executor::new(op, solver, params).max_iters(max_iters).run();
 
             match maybe_res {
                 Ok(res) => {
                     successes += 1;
                     if best_cost > res.state.best_cost {
                         best_cost = res.state.best_cost;
-                        best_params = res.state.best_param.into();
+                        best_params = res.state.best_param;
                     }
                 }
                 Err(e) => {
@@ -179,7 +177,7 @@ where
     type Float = f64;
 
     fn apply(&self, param: &Self::Param) -> Result<Self::Output, ArgminError> {
-        self.process.ln_m_with_params(param.clone().into())
+        self.process.ln_m_with_params(param.clone())
             .map(|x| -x.0)
             .map_err(|_| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
     }
@@ -189,7 +187,7 @@ where
         param: &Self::Param,
     ) -> Result<Self::Param, ArgminError> {
         self.process
-            .ln_m_with_params(param.clone().into())
+            .ln_m_with_params(param.clone())
             .map(|x| Self::Param::from_iter(x.1.into_iter().map(|y| -y)))
             .map_err(|_| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
     }

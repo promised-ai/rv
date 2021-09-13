@@ -114,7 +114,7 @@ where
         params: &'p [f64],
     ) -> Result<(Self, &'p [f64]), KernelError> {
         let (a, b_params) = self.a.consume_parameters(params)?;
-        let (b, left) = self.b.consume_parameters(&b_params)?;
+        let (b, left) = self.b.consume_parameters(b_params)?;
         Ok((Self::new(a, b), left))
     }
 
@@ -243,7 +243,7 @@ where
         param_vec: &'p [f64],
     ) -> Result<(Self, &'p [f64]), KernelError> {
         let (a, b_params) = self.a.consume_parameters(param_vec)?;
-        let (b, left) = self.b.consume_parameters(&b_params)?;
+        let (b, left) = self.b.consume_parameters(b_params)?;
         Ok((Self::new(a, b), left))
     }
 

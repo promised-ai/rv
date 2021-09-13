@@ -589,7 +589,7 @@ where
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["weights", "components"];
+        const FIELDS: &[&str] = &["weights", "components"];
         deserializer.deserialize_struct(
             "Mixture",
             FIELDS,

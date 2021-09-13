@@ -33,18 +33,30 @@ clippy:
   script:
     - rustup component add clippy
     - sed -i 's/\!\[warn/\!\[deny/' src/lib.rs  # deny lints
-    - cargo clippy 
+    - cargo clippy --all-features
 
-# # Temporarily disabling due to strange breakages
-# test:coverage-nightly:
-#   stage: test
-#   image: "rustlang/rust:nightly"
-#   script:
-#     - rustc --version && cargo --version
-#     - cargo install cargo-tarpaulin -f
-#     - cargo tarpaulin -v -t 240 --features serde1 --run-types Tests Doctests
+test:no-features:
+  stage: test
+  image: "rust:1.52.1"
+  script:
+    - rustc --version && cargo --version
+    - cargo test --all
 
-test:cargo-stable:
+test:feature-arraydist:
+  stage: test
+  image: "rust:1.52.1"
+  script:
+    - rustc --version && cargo --version
+    - cargo test --all --features rray-dist
+
+test:feature-process:
+  stage: test
+  image: "rust:1.52.1"
+  script:
+    - rustc --version && cargo --version
+    - cargo test --all --features process
+
+test:feature-all:
   stage: test
   image: "rust:1.52.1"
   script:
