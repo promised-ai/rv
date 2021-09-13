@@ -47,7 +47,7 @@ test:feature-arraydist:
   image: "rust:1.55"
   script:
     - rustc --version && cargo --version
-    - cargo test --all --features rray-dist
+    - cargo test --all --features arraydist
 
 test:feature-process:
   stage: test

@@ -18,7 +18,6 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 argmin = { version = "0.4.5", optional = true }
 doc-comment = "0.3"
-log = "0.4"
 lru = "0.6"
 nalgebra = { version = "0.27", optional = true }
 num = "0.3"
@@ -39,8 +38,8 @@ rand_xoshiro = "0.6"
 
 [features]
 serde1 = ["serde", "nalgebra/serde-serialize"]
-process = ["serde", "nalgebra/serde-serialize", "argmin"]
 arraydist = ["nalgebra"]
+process = ["serde", "nalgebra/serde-serialize", "argmin", "arraydist"]
 
 
 # Benchmarks
