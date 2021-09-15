@@ -135,9 +135,10 @@ impl Kernel for RationalQuadratic {
                 cov[(j, i)] = k;
 
                 let dk_dl = d2 * k / (self.scale.powi(2) * base);
-                let dk_da = k
-                    * (-self.mixture * base.ln()
-                        + d2 / (2.0 * self.scale.powi(2) * base));
+                let dk_da = k * base.ln().mul_add(
+                    -self.mixture,
+                    d2 / (2.0 * self.scale.powi(2) * base),
+                );
 
                 grad[(i, j, 0)] = dk_dl;
                 grad[(j, i, 0)] = dk_dl;

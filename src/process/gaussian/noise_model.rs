@@ -32,7 +32,7 @@ impl NoiseModel {
             }
             NoiseModel::PerPoint(sigma) => {
                 if cov.nrows() == sigma.nrows() {
-                    Ok(cov + &DMatrix::from_diagonal(&sigma))
+                    Ok(cov + &DMatrix::from_diagonal(sigma))
                 } else {
                     Err(format!("Per point noise must be the same size a y_train (expected: {}, got: {})", cov.nrows(), sigma.nrows()))
                 }

@@ -9,6 +9,9 @@
 - Additional caching of expensive computations
 - Estimate Gaussian mixture entropy with Gauss–Legendre quadrature for a 10x
     speedup.
+- Place `ndarray` dependent distributions behind `arraydist` flag.
+- Fix bug the caused weights to be computed incorrectly when using
+    `Mixture::combine` where one or more of the inputs was an empty mixture
 
 ## 0.12.0
 - Added Inverse X^2 distribution
