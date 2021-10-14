@@ -149,8 +149,21 @@ impl<Fx> Mixture<Fx> {
     ///
     /// Assumes mixtures are valid.
     pub fn combine(mut mixtures: Vec<Mixture<Fx>>) -> Self {
+        // The total number of components
         let k_total: usize = mixtures.iter().fold(0, |acc, mm| acc + mm.k());
-        let nf = mixtures.len() as f64;
+
+        // The number of non-empty mixtures
+        let n: u32 = mixtures
+            .iter()
+            .map(|mm| if mm.k() == 0 { 0 } else { 1 })
+            .sum();
+
+        if n == 0 {
+            // everything is empty, return empty
+            return Mixture::new_unchecked(vec![], vec![]);
+        }
+
+        let nf = f64::from(n);
 
         let mut weights: Vec<f64> = Vec::with_capacity(k_total);
         let mut components: Vec<Fx> = Vec::with_capacity(k_total);
@@ -589,7 +602,7 @@ where
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["weights", "components"];
+        const FIELDS: &[&str] = &["weights", "components"];
         deserializer.deserialize_struct(
             "Mixture",
             FIELDS,
@@ -918,6 +931,38 @@ mod tests {
         assert::close(mmc.components[1].mu(), 1.0, TOL);
         assert::close(mmc.components[2].mu(), 2.0, TOL);
         assert::close(mmc.components[3].mu(), 3.0, TOL);
+    }
+
+    #[test]
+    fn combine_with_some_empty() {
+        let mm1 = {
+            let components = vec![
+                Gaussian::new(0.0, 1.0).unwrap(),
+                Gaussian::new(1.0, 1.0).unwrap(),
+            ];
+            Mixture::new(vec![0.2, 0.8], components).unwrap()
+        };
+
+        // Force an empty mixture
+        let mm2 = Mixture::<Gaussian>::new_unchecked(vec![], vec![]);
+
+        let mmc = Mixture::combine(vec![mm1, mm2]);
+
+        assert::close(mmc.weights, vec![0.2, 0.8], TOL);
+        assert::close(mmc.components[0].mu(), 0.0, TOL);
+        assert::close(mmc.components[1].mu(), 1.0, TOL);
+    }
+
+    #[test]
+    fn combine_with_all_empty() {
+        // Force an empty mixture
+        let mm1 = Mixture::<Gaussian>::new_unchecked(vec![], vec![]);
+        let mm2 = Mixture::<Gaussian>::new_unchecked(vec![], vec![]);
+
+        let mmc = Mixture::combine(vec![mm1, mm2]);
+
+        assert!(mmc.weights.is_empty());
+        assert!(mmc.components.is_empty());
     }
 
     #[test]

@@ -1,6 +1,6 @@
 [package]
 name = "rv"
-version = "0.13.0-rc.2"
+version = "0.13.1"
 authors = ["Baxter Eaves", "Michael Schmidt"]
 description = "Random variables"
 repository = "https://gitlab.com/baxe/rv"
@@ -11,20 +11,15 @@ categories = ["science"]
 edition = "2018"
 include = ["README.md", "src/**/*", "benches/*", "Cargo.toml"]
 
-[features]
-serde1 = ["serde", "nalgebra/serde-serialize"]
-process = ["serde", "nalgebra/serde-serialize", "argmin"]
-
 [badges]
-gitlab = { repository = "baxe/rv", tag = "v0.13.0-rc.2" }
+gitlab = { repository = "baxe/rv", tag = "v0.13.1" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
 argmin = { version = "0.4.5", optional = true }
 doc-comment = "0.3"
-log = "0.4"
 lru = "0.6"
-nalgebra = "0.27"
+nalgebra = { version = "0.27", optional = true }
 num = "0.3"
 once_cell = "1"
 rand = { version = "0.8", features = ["small_rng"] }
@@ -41,6 +36,10 @@ serde_yaml = "0.8"
 approx = "0.5"
 rand_xoshiro = "0.6"
 
+[features]
+serde1 = ["serde", "nalgebra/serde-serialize"]
+arraydist = ["nalgebra"]
+process = ["serde", "nalgebra/serde-serialize", "argmin", "arraydist"]
 
 
 # Benchmarks

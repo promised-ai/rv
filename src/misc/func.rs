@@ -126,9 +126,8 @@ fn catflip(cws: &[f64], r: f64) -> Option<usize> {
 
 /// Draw `n` indices in proportion to their `weights`
 pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
-    if weights.is_empty() {
-        panic!("Empty container");
-    }
+    assert!(!weights.is_empty(), "Empty container");
+
     let cws: Vec<f64> = cumsum(weights);
     let scale: f64 = *cws.last().unwrap();
     let u = rand::distributions::Uniform::new(0.0, 1.0);

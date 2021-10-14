@@ -33,7 +33,7 @@ impl SEardKernel {
                 name: "length_scale".to_string(),
                 given: *length_scale
                     .iter()
-                    .min_by(|a, b| a.partial_cmp(&b).unwrap())
+                    .min_by(|a, b| a.partial_cmp(b).unwrap())
                     .unwrap(),
                 bounds: (0.0, std::f64::INFINITY),
             })
@@ -46,6 +46,7 @@ impl SEardKernel {
     }
 }
 
+#[allow(clippy::many_single_char_names)]
 impl Kernel for SEardKernel {
     fn covariance<R1, R2, C1, C2, S1, S2>(
         &self,
@@ -116,17 +117,18 @@ impl Kernel for SEardKernel {
     }
 
     fn from_parameters(&self, params: &[f64]) -> Result<Self, KernelError> {
-        if params.len() == self.length_scale.nrows() {
-            let exped: Vec<f64> = params.iter().map(|x| x.exp()).collect();
-            Ok(Self::new(DVector::from_row_slice(&exped)).unwrap())
-        } else if params.len() > self.length_scale.nrows() {
-            Err(KernelError::ExtraniousParameters(
+        use std::cmp::Ordering;
+        match params.len().cmp(&self.length_scale.nrows()) {
+            Ordering::Equal => {
+                let exped: Vec<f64> = params.iter().map(|x| x.exp()).collect();
+                Ok(Self::new(DVector::from_row_slice(&exped)).unwrap())
+            }
+            Ordering::Greater => Err(KernelError::ExtraniousParameters(
                 params.len() - self.length_scale.nrows(),
-            ))
-        } else {
-            Err(KernelError::MissingParameters(
+            )),
+            Ordering::Less => Err(KernelError::MissingParameters(
                 self.length_scale.nrows() - params.len(),
-            ))
+            )),
         }
     }
 
@@ -153,7 +155,7 @@ impl Kernel for SEardKernel {
                     let b = x.row(j);
                     d2 += a.zip_fold(&b, 0.0_f64, |acc, c, d| {
                         let diff = (c - d) / self.length_scale[k];
-                        acc + diff.powi(2)
+                        diff.mul_add(diff, acc)
                     });
                 }
                 let cov_ij = (-d2 / 2.0_f64).exp();

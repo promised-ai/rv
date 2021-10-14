@@ -14,7 +14,7 @@ pub struct CovGrad {
 
 impl fmt::Display for CovGrad {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.slices.iter().map(|s| write!(f, "{}", s)).collect()
+        self.slices.iter().try_for_each(|s| write!(f, "{}", s))
     }
 }
 

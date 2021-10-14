@@ -1,7 +1,6 @@
 //! Gaussian Processes
 
 use argmin::solver::{linesearch::MoreThuenteLineSearch, quasinewton::LBFGS};
-use log::warn;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dynamic};
 use once_cell::sync::OnceCell;
@@ -199,7 +198,7 @@ where
         let maybe_k_chol = Cholesky::new(k.clone());
 
         if maybe_k_chol.is_none() {
-            warn!(
+            eprintln!(
                 "failed to find chol of k = {}, with parameters = {:?}",
                 k, parameter
             );

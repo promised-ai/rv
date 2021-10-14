@@ -1,16 +1,4 @@
 /// Using an enum as a categorical variable.
-///
-/// In a future where proc_macro is stable, we can offload all of this to a
-/// custom derive to have code that looks like this:
-///
-/// ```
-/// #[derive(CategoricalEnum)]
-/// enum Color {
-///     Red = 0,
-///     Blue = 1,
-///     Green = 2,
-/// }
-/// ```
 use rv::data::CategoricalDatum;
 use rv::prelude::*;
 
