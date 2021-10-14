@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.1
+- When using `dist::Gamma` to draw a `dist::Poisson`, the Poisson rate
+    parameter is shifted to `f64::EPSILON` in the event of underflow.
+
 ## 0.13.0
 - Clippy lints
 - Use `&'a [T]` instead of `&'a Vec<T>` in `DataOrSuffStat`
