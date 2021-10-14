@@ -79,9 +79,9 @@ pub trait Rv<X> {
     ///
     /// let gauss = Gaussian::standard();
     /// let mut rng = rand::thread_rng();
-    /// let xs: Vec<f64> = gauss.sample(100_000, &mut rng);
+    /// let xs: Vec<f64> = gauss.sample(10_000, &mut rng);
     ///
-    /// assert::close(xs.iter().sum::<f64>()/100_000.0, 0.0, 1e-2);
+    /// assert::close(xs.iter().sum::<f64>()/10_000.0, 0.0, 1e-2);
     /// ```
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<X> {
         (0..n).map(|_| self.draw(&mut rng)).collect()
@@ -227,9 +227,7 @@ pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
     /// assert!((lnf_low - lnf_high).abs() < 1E-12);
     /// ```
     fn ln_pdf(&self, x: &X) -> f64 {
-        if !self.supports(x) {
-            panic!("x not in support");
-        }
+        assert!(self.supports(x), "x not in support");
         self.ln_f(x)
     }
 }
@@ -392,9 +390,7 @@ pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
     /// assert!( (b.ln_pmf(&true) - 0.5_f64.ln()).abs() < 1E-12);
     /// ```
     fn ln_pmf(&self, x: &X) -> f64 {
-        if !self.supports(x) {
-            panic!("x not in support");
-        }
+        assert!(self.supports(x), "x not in support");
         self.ln_f(x)
     }
 }

@@ -7,6 +7,7 @@ pub use stat::BernoulliSuffStat;
 pub use stat::CategoricalSuffStat;
 pub use stat::GaussianSuffStat;
 pub use stat::InvGaussianSuffStat;
+#[cfg(feature = "arraydist")]
 pub use stat::MvGaussianSuffStat;
 pub use stat::PoissonSuffStat;
 

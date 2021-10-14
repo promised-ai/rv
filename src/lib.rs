@@ -8,6 +8,14 @@
 //! The [`prelude`] module provides all the distributions, all the traits, and
 //! creates a few useful type aliases.
 //!
+//! # Features
+//!
+//! - `serde1`: enables serialization and de-serialization of structs via
+//!   [serde](https://crates.io/crates/serde)
+//! - `process`: Gives you access to Gaussian processes.
+//! - `arraydist`: Enables distributions and statistical tests that require the
+//!   [nalgebra](https://crates.io/crates/nalgebra) crate.
+//!
 //! # Design
 //!
 //! Random variables are designed to be flexible. For example, we don't just

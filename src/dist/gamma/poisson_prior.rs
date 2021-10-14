@@ -1,6 +1,9 @@
+use std::f64::EPSILON;
+
 use rand::Rng;
 
 use crate::data::{DataOrSuffStat, PoissonSuffStat};
+use crate::dist::poisson::PoissonError;
 use crate::dist::{Gamma, Poisson};
 use crate::misc::ln_binom;
 use crate::traits::*;
@@ -15,7 +18,13 @@ impl Rv<Poisson> for Gamma {
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Poisson {
         let mean: f64 = self.draw(&mut rng);
-        Poisson::new(mean).expect("Failed to draw a valid mean")
+        match Poisson::new(mean) {
+            Ok(pois) => pois,
+            Err(PoissonError::RateTooLow { .. }) => {
+                Poisson::new_unchecked(EPSILON)
+            }
+            Err(err) => panic!("Failed to draw Possion: {}", err),
+        }
     }
 }
 
@@ -210,5 +219,13 @@ mod tests {
         for (i, e) in inputs.iter().zip(expected.iter()) {
             assert::close(dist.ln_pp(i, &doss), *e, TOL);
         }
+    }
+
+    #[test]
+    fn cannot_draw_zero_rate() {
+        let mut rng = rand::thread_rng();
+        let dist = Gamma::new(1.0, 1e-10).unwrap();
+        let stream = <Gamma as Rv<Poisson>>::sample_stream(&dist, &mut rng);
+        assert!(stream.take(10_000).all(|pois| pois.rate() > 0.0));
     }
 }

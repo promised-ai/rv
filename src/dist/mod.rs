@@ -31,8 +31,10 @@ mod kumaraswamy;
 mod laplace;
 mod lognormal;
 mod mixture;
+#[cfg(feature = "arraydist")]
 mod mvg;
 mod neg_binom;
+#[cfg(feature = "arraydist")]
 mod niw;
 mod normal_gamma;
 mod normal_inv_chi_squared;
@@ -44,6 +46,7 @@ mod skellam;
 mod students_t;
 mod uniform;
 mod vonmises;
+#[cfg(feature = "arraydist")]
 mod wishart;
 
 pub use bernoulli::{Bernoulli, BernoulliError};
@@ -70,8 +73,10 @@ pub use kumaraswamy::{Kumaraswamy, KumaraswamyError};
 pub use laplace::{Laplace, LaplaceError};
 pub use lognormal::{LogNormal, LogNormalError};
 pub use mixture::{Mixture, MixtureError};
+#[cfg(feature = "arraydist")]
 pub use mvg::{MvGaussian, MvGaussianError};
 pub use neg_binom::{NegBinomial, NegBinomialError};
+#[cfg(feature = "arraydist")]
 pub use niw::{NormalInvWishart, NormalInvWishartError};
 pub use normal_gamma::{NormalGamma, NormalGammaError};
 pub use normal_inv_chi_squared::{
@@ -87,4 +92,5 @@ pub use skellam::{Skellam, SkellamError};
 pub use students_t::{StudentsT, StudentsTError};
 pub use uniform::{Uniform, UniformError};
 pub use vonmises::{VonMises, VonMisesError};
+#[cfg(feature = "arraydist")]
 pub use wishart::{InvWishart, InvWishartError};

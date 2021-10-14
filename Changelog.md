@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.1
+- When using `dist::Gamma` to draw a `dist::Poisson`, the Poisson rate
+    parameter is shifted to `f64::EPSILON` in the event of underflow.
+
 ## 0.13.0
 - Clippy lints
 - Use `&'a [T]` instead of `&'a Vec<T>` in `DataOrSuffStat`
@@ -9,6 +13,9 @@
 - Additional caching of expensive computations
 - Estimate Gaussian mixture entropy with Gauss–Legendre quadrature for a 10x
     speedup.
+- Place `ndarray` dependent distributions behind `arraydist` flag.
+- Fix bug the caused weights to be computed incorrectly when using
+    `Mixture::combine` where one or more of the inputs was an empty mixture
 
 ## 0.12.0
 - Added Inverse X^2 distribution
