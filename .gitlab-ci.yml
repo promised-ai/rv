@@ -70,4 +70,4 @@ bench:cargo-stable:
     - master
   image: "rust:1.57"
   script:
-    - cargo bench --no-run
+    - cargo bench --no-run --features arraydist
