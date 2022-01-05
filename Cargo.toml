@@ -12,13 +12,13 @@ edition = "2018"
 include = ["README.md", "src/**/*", "benches/*", "Cargo.toml"]
 
 [badges]
-gitlab = { repository = "baxe/rv", tag = "v0.13.1" }
+gitlab = { repository = "baxe/rv", tag = "v0.14.0" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
 argmin = { version = "0.4.5", optional = true }
 doc-comment = "0.3"
-lru = "0.6"
+lru = "0.7.2"
 nalgebra = { version = "0.27", optional = true }
 num = "0.3"
 once_cell = "1"

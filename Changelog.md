@@ -3,6 +3,7 @@
 ## 0.14.0
 - Fix typo: `CategoricalError::EmptyWights` to `CategoricalError::EmptyWeights`
 - Allow `Categorical::from_ln_weights` to accept zero (-Inf) weights
+- Update `lru` crate to 0.7 due to security vulnerability in 0.6.6
 
 ## 0.13.1
 - When using `dist::Gamma` to draw a `dist::Poisson`, the Poisson rate
