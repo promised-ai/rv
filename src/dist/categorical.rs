@@ -28,7 +28,7 @@ pub enum CategoricalError {
     /// The weights do not sum to 1
     WeightsDoNotSumToOne { ln: bool, sum: f64 },
     /// Weights has not entries
-    EmptyWights,
+    EmptyWeights,
 }
 
 impl Categorical {
@@ -55,7 +55,7 @@ impl Categorical {
     /// ```
     pub fn new(weights: &[f64]) -> Result<Self, CategoricalError> {
         if weights.is_empty() {
-            return Err(CategoricalError::EmptyWights);
+            return Err(CategoricalError::EmptyWeights);
         }
 
         weights.iter().enumerate().try_for_each(|(ix, &weight)| {
@@ -108,7 +108,7 @@ impl Categorical {
         ln_weights: Vec<f64>,
     ) -> Result<Self, CategoricalError> {
         if ln_weights.is_empty() {
-            return Err(CategoricalError::EmptyWights);
+            return Err(CategoricalError::EmptyWeights);
         }
 
         ln_weights
@@ -117,7 +117,11 @@ impl Categorical {
             .try_for_each(|(ix, &weight)| {
                 if weight.is_finite() {
                     Ok(())
+                } else if weight == std::f64::NEG_INFINITY {
+                    // -Inf corresponds to a weight of zero
+                    Ok(())
                 } else {
+                    // Catch Inf and NaN
                     Err(CategoricalError::NonFiniteWeight {
                         ix,
                         ln: false,
@@ -276,7 +280,7 @@ impl fmt::Display for CategoricalError {
             Self::WeightsDoNotSumToOne { sum, .. } => {
                 write!(f, "weights sum to {}, should sum to one", sum)
             }
-            Self::EmptyWights => write!(f, "empty weights vector"),
+            Self::EmptyWeights => write!(f, "empty weights vector"),
         }
     }
 }
@@ -288,12 +292,21 @@ mod tests {
     use super::*;
     use crate::misc::x2_test;
     use crate::test_basic_impls;
+    use std::f64::consts::LN_2;
+    use std::f64::NEG_INFINITY;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
     test_basic_impls!([categorical] Categorical::uniform(3));
+
+    #[test]
+    fn from_ln_weights_with_zero_weight_should_work() {
+        let ln_weights: Vec<f64> = vec![-LN_2, NEG_INFINITY, -LN_2];
+        let res = Categorical::from_ln_weights(ln_weights);
+        assert!(res.is_ok());
+    }
 
     #[test]
     fn ln_weights_should_logsumexp_to_1() {

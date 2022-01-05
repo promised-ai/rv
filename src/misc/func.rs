@@ -165,6 +165,26 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 /// assert!(xs.iter().all(|&x| x <= 3));
 /// assert!(!xs.iter().any(|&x| x > 3));
 /// ```
+///
+/// Can handle -Inf ln weights
+///
+/// ```rust
+/// # use rv::misc::ln_pflip;
+/// use std::f64::NEG_INFINITY;
+/// use std::f64::consts::LN_2;
+///
+/// let ln_weights: Vec<f64> = vec![-LN_2, NEG_INFINITY, -LN_2];
+///
+/// let xs = ln_pflip(&ln_weights, 100, true, &mut rand::thread_rng());
+///
+/// let zero_count = xs.iter().filter(|&&x| x == 0).count();
+/// let one_count = xs.iter().filter(|&&x| x == 1).count();
+/// let two_count = xs.iter().filter(|&&x| x == 2).count();
+///
+/// assert!(zero_count > 30);
+/// assert_eq!(one_count, 0);
+/// assert!(two_count > 30);
+/// ```
 pub fn ln_pflip<R: Rng>(
     ln_weights: &[f64],
     n: usize,
@@ -631,5 +651,23 @@ mod tests {
             let f2 = ln_fact(x);
             assert::close(f1, f2, 1e-9);
         }
+    }
+
+    #[test]
+    fn ln_pflip_works_with_zero_weights() {
+        use std::f64::consts::LN_2;
+        use std::f64::NEG_INFINITY;
+
+        let ln_weights: Vec<f64> = vec![-LN_2, NEG_INFINITY, -LN_2];
+
+        let xs = ln_pflip(&ln_weights, 100, true, &mut rand::thread_rng());
+
+        let zero_count = xs.iter().filter(|&&x| x == 0).count();
+        let one_count = xs.iter().filter(|&&x| x == 1).count();
+        let two_count = xs.iter().filter(|&&x| x == 2).count();
+
+        assert!(zero_count > 30);
+        assert_eq!(one_count, 0);
+        assert!(two_count > 30);
     }
 }

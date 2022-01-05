@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.0
+- Fix typo: `CategoricalError::EmptyWights` to `CategoricalError::EmptyWeights`
+- Allow `Categorical::from_ln_weights` to accept zero (-Inf) weights
+
 ## 0.13.1
 - When using `dist::Gamma` to draw a `dist::Poisson`, the Poisson rate
     parameter is shifted to `f64::EPSILON` in the event of underflow.
