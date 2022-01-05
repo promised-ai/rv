@@ -115,10 +115,8 @@ impl Categorical {
             .iter()
             .enumerate()
             .try_for_each(|(ix, &weight)| {
-                if weight.is_finite() {
-                    Ok(())
-                } else if weight == std::f64::NEG_INFINITY {
-                    // -Inf corresponds to a weight of zero
+                // Manually check for -Inf
+                if weight.is_finite() || weight == std::f64::NEG_INFINITY {
                     Ok(())
                 } else {
                     // Catch Inf and NaN
