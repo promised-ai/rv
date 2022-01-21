@@ -744,9 +744,11 @@ where
 {
     use std::f64::INFINITY;
 
+    let mut state = (None, None);
+
     mm.components()
         .iter()
-        .scan((None, None), |state, cpnt| {
+        .filter_map(|cpnt| {
             let mode = cpnt.mode();
             let std = cpnt.variance().map(|v| v.sqrt());
             match (&state, (mode, std)) {
@@ -754,14 +756,14 @@ where
                     if (m2 - *m1)
                         > s1.unwrap_or(INFINITY).min(s2.unwrap_or(INFINITY))
                     {
-                        *state = (mode, std);
+                        state = (mode, std);
                         Some(m2)
                     } else {
                         None
                     }
                 }
                 ((None, _), (Some(m2), _)) => {
-                    *state = (mode, std);
+                    state = (mode, std);
                     Some(m2)
                 }
                 _ => None,
@@ -1380,6 +1382,26 @@ mod tests {
             let entropy =
                 -(0_u32..10_000).map(|x| mm.ln_f(&x) * mm.f(&x)).sum::<f64>();
             assert::close(entropy, mm.entropy(), 1e-3);
+        }
+
+        #[cfg(feature = "serde1")]
+        #[test]
+        fn super_messy_jsd_should_be_positive() {
+            // recreates bug in dependent crate where JSD was negative
+            let mm_str =
+                std::fs::read_to_string("resources/satellites-mixture.json")
+                    .unwrap();
+            let mm: Mixture<Gaussian> = serde_json::from_str(&mm_str).unwrap();
+            let sum_h = mm
+                .weights()
+                .iter()
+                .zip(mm.components().iter())
+                .map(|(&w, cpnt)| w * cpnt.entropy())
+                .sum::<f64>();
+
+            let mm_entropy = mm.entropy();
+            let jsd = mm_entropy - sum_h;
+            assert!(0.0 < jsd);
         }
     }
 }
