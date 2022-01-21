@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.14.1
+- Fix bug in computation of entropies for continuous mixture models 
+
 ## 0.14.0
 - Fix typo: `CategoricalError::EmptyWights` to `CategoricalError::EmptyWeights`
 - Allow `Categorical::from_ln_weights` to accept zero (-Inf) weights
