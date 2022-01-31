@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.2
+- Fix some incorrect documentation
+- Pass `--all-features` to docs.rs builds
+
 ## 0.14.1
 - Fix bug in computation of entropies for continuous mixture models 
 
