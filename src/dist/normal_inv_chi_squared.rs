@@ -15,8 +15,8 @@ use rand::Rng;
 
 /// Prior for Gaussian
 ///
-/// Given `x ~ N(μ, σ)`, the Normal Inverse Gamma prior implies that
-/// `μ ~ N(m, sqrt(v)σ)` and `ρ ~ InvGamma(a, b)`.
+/// Given `x ~ N(μ, σ)`, the Normal Inverse Chi Squared prior implies that
+/// `μ ~ N(m, σ/√k)` and `σ² ~ ScaledInvChiSquared(v, s2)`.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct NormalInvChiSquared {
@@ -62,9 +62,11 @@ impl NormalInvChiSquared {
     ///
     /// # Arguments
     /// - m: The prior mean
-    /// - v: Relative variance of μ versus data
-    /// - a: The mean of variance is b / (a - 1)
-    /// - b: Degrees of freedom of the variance
+    /// - k: How strongly we believe the prior mean (in prior
+    ///      pseudo-observations)
+    /// - v: How strongly we believe the prior variance (in prior
+    ///      pseudo-observations)
+    /// - s2: The prior variance
     pub fn new(
         m: f64,
         k: f64,
@@ -96,8 +98,8 @@ impl NormalInvChiSquared {
         }
     }
 
-    /// Creates a new NormalInvChiSquared without checking whether the parameters are
-    /// valid.
+    /// Creates a new NormalInvChiSquared without checking whether the
+    /// parameters are valid.
     #[inline]
     pub fn new_unchecked(m: f64, k: f64, v: f64, s2: f64) -> Self {
         NormalInvChiSquared {
