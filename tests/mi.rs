@@ -1,0 +1,76 @@
+use rv::traits::{Rv, Entropy};
+use rv::dist::{Mixture, Gaussian};
+use std::f64::consts::LN_2;
+use rand::Rng;
+
+#[test]
+fn bivariate_mixture_mi() {
+    let n_samples = 10_000;
+    let n_f = n_samples as f64;
+
+    let mut rng = rand::thread_rng();
+
+    let mx = Mixture::uniform(vec![
+        Gaussian::new_unchecked(-2.0, 1.0),
+        Gaussian::new_unchecked(0.0, 1.0),
+        Gaussian::new_unchecked(2.0, 1.0),
+    ]).unwrap();
+
+    let my = Mixture::uniform(vec![
+        Gaussian::new_unchecked(-2.0, 0.5),
+        Gaussian::new_unchecked(0.0, 0.5),
+        Gaussian::new_unchecked(2.0, 1.0),
+    ]).unwrap();
+
+    let k = my.k();
+
+    let hx = mx.entropy();
+    let hy = my.entropy();
+
+    let hx_est = -mx.sample_stream(&mut rng)
+        .take(n_samples)
+        .map(|x: f64| mx.ln_f(&x))
+        .sum::<f64>() / n_f;
+
+    let hy_est = -my.sample_stream(&mut rng)
+        .take(n_samples)
+        .map(|y: f64| my.ln_f(&y))
+        .sum::<f64>() / n_f;
+
+    let (mi_est, hxy_est) = {
+        let (mi_sum, hxy_sum) = (0..n_samples).fold((0.0, 0.0), |(mi, hxy), _| {
+            let cpnt_ix = rng.gen_range(0..3_usize);
+
+            let x: f64 = mx.components()[cpnt_ix].draw(&mut rng);
+            let y: f64 = my.components()[cpnt_ix].draw(&mut rng);
+
+            let logpx = mx.ln_f(&x);
+            let logpy = my.ln_f(&y);
+
+            let logpxy = {
+                let ps: Vec<f64> = (0..k).map(|ix| {
+                    let px = my.components()[ix].ln_f(&x);
+                    let py = my.components()[ix].ln_f(&y);
+                    px + py - LN_2
+                }).collect();
+
+                rv::misc::logsumexp(&ps)
+            };
+
+            (mi + logpxy - logpx - logpy, hxy - logpxy)
+        });
+        (mi_sum / n_f, hxy_sum / n_f)
+    };
+
+    let mi_est_1 = hx_est + hy_est - hxy_est;
+    let mi_est_2 = hx + hy - hxy_est;
+
+    let target = 0.5722305748503224; // estimate from 10 million samples
+
+    println!("mi_est: {mi_est}");
+    println!("hx_est: {hx_est}, hy_est: {hy_est}, hxy_est: {hxy_est}, mi_est: {mi_est_1}");
+    println!("hx: {hx}, hy: {hy}, mi_est: {mi_est_2}");
+
+    approx::assert_relative_eq!(mi_est, mi_est_1, epsilon = 0.05);
+    approx::assert_relative_eq!(mi_est, mi_est_2, epsilon = 0.05);
+}
