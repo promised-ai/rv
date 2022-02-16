@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.14.3
+- Remove dependency on peroxide
+
 ## 0.14.2
 - Fix some incorrect documentation
 - Pass `--all-features` to docs.rs builds

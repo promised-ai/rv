@@ -73,6 +73,10 @@ where
 ///
 /// assert!((q - 1.0/3.0).abs() < 1E-10);
 /// ```
+#[deprecated(
+    since = "0.14.3",
+    note = "please use `gauss_legendre_quadrature` instead"
+)]
 pub fn quad_eps<F>(func: F, a: f64, b: f64, eps_opt: Option<f64>) -> f64
 where
     F: Fn(f64) -> f64,
@@ -98,6 +102,10 @@ where
 ///
 /// assert!((q - 1.0/3.0).abs() < 1E-8);
 /// ```
+#[deprecated(
+    since = "0.14.3",
+    note = "please use `gauss_legendre_quadrature` instead"
+)]
 pub fn quad<F>(func: F, a: f64, b: f64) -> f64
 where
     F: Fn(f64) -> f64,
@@ -172,6 +180,10 @@ where
 ///
 /// assert!((q - 1.0/3.0).abs() < 1E-10);
 /// ```
+#[deprecated(
+    since = "0.14.3",
+    note = "please use `gauss_legendre_quadrature` instead"
+)]
 pub fn try_quad_eps<F, E>(
     func: F,
     a: f64,
@@ -225,6 +237,10 @@ where
 ///
 /// assert!(q.is_err());
 /// ```
+#[deprecated(
+    since = "0.14.3",
+    note = "please use `gauss_legendre_quadrature` instead"
+)]
 pub fn try_quad<F, E>(func: F, a: f64, b: f64) -> Result<f64, E>
 where
     F: Fn(f64) -> Result<f64, E>,

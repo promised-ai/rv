@@ -330,9 +330,8 @@ mod test {
 
         let ln_pp = {
             let nig = NormalInvGamma::new(m, v, a, b).unwrap();
-            let ln_pp =
-                nig.ln_pp(&y, &DataOrSuffStat::<f64, Gaussian>::from(&xs));
-            ln_pp
+
+            nig.ln_pp(&y, &DataOrSuffStat::<f64, Gaussian>::from(&xs))
         };
         assert::close(ln_f_t, ln_pp, TOL);
     }

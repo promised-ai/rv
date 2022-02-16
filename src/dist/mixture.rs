@@ -792,15 +792,30 @@ where
     };
 
     let last_ix = points.len() - 1;
-    let q_a = gauss_legendre_quadrature_cached(f, (lower, points[0]), &weights, &roots);
-    let q_b = gauss_legendre_quadrature_cached(f, (points[last_ix], upper), &weights, &roots);
+    let q_a = gauss_legendre_quadrature_cached(
+        f,
+        (lower, points[0]),
+        &weights,
+        &roots,
+    );
+    let q_b = gauss_legendre_quadrature_cached(
+        f,
+        (points[last_ix], upper),
+        &weights,
+        &roots,
+    );
 
     let mut right = points[0];
     let q_m = points
         .iter()
         .skip(1)
         .map(|&x| {
-            let q = gauss_legendre_quadrature_cached(f, (right, x), &weights, &roots);
+            let q = gauss_legendre_quadrature_cached(
+                f,
+                (right, x),
+                &weights,
+                &roots,
+            );
             right = x;
             q
         })

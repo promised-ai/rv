@@ -424,7 +424,7 @@ mod tests {
         ln_f_is_same_after_reset_unchecked_p_identically,
         set_p_unchecked,
         Geometric::new(0.57).unwrap(),
-        3u16,
+        3_u16,
         0.57,
         0.12
     );
@@ -434,7 +434,7 @@ mod tests {
         ln_f_is_same_after_reset_checked_p_identically,
         set_p,
         Geometric::new(0.57).unwrap(),
-        3u16,
+        3_u16,
         0.57,
         0.12
     );
