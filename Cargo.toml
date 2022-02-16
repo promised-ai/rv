@@ -26,7 +26,6 @@ rand = { version = "0.8", features = ["small_rng"] }
 rand_distr = "0.4"
 serde = {version = "1", features = ["derive"], optional = true}
 special = "0.8"
-peroxide = "0.30"
 
 [dev-dependencies]
 assert = "0.7"

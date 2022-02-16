@@ -8,6 +8,7 @@ mod mardia;
 mod quad;
 mod seq;
 mod x2;
+mod legendre;
 
 pub use func::*;
 pub use ks::*;
@@ -16,3 +17,5 @@ pub use mardia::mardia;
 pub use quad::*;
 pub use seq::*;
 pub use x2::x2_test;
+pub use quad::*;
+pub use legendre::*;

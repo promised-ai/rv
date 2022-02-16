@@ -1,11 +1,11 @@
 use rv::traits::{Rv, Entropy};
 use rv::dist::{Mixture, Gaussian};
-use std::f64::consts::LN_2;
 use rand::Rng;
+
 
 #[test]
 fn bivariate_mixture_mi() {
-    let n_samples = 10_000;
+    let n_samples = 10_000_000;
     let n_f = n_samples as f64;
 
     let mut rng = rand::thread_rng();
@@ -37,9 +37,11 @@ fn bivariate_mixture_mi() {
         .map(|y: f64| my.ln_f(&y))
         .sum::<f64>() / n_f;
 
+    let lnk = (k as f64).ln();
+
     let (mi_est, hxy_est) = {
         let (mi_sum, hxy_sum) = (0..n_samples).fold((0.0, 0.0), |(mi, hxy), _| {
-            let cpnt_ix = rng.gen_range(0..3_usize);
+            let cpnt_ix = rng.gen_range(0..k);
 
             let x: f64 = mx.components()[cpnt_ix].draw(&mut rng);
             let y: f64 = my.components()[cpnt_ix].draw(&mut rng);
@@ -49,9 +51,9 @@ fn bivariate_mixture_mi() {
 
             let logpxy = {
                 let ps: Vec<f64> = (0..k).map(|ix| {
-                    let px = my.components()[ix].ln_f(&x);
+                    let px = mx.components()[ix].ln_f(&x);
                     let py = my.components()[ix].ln_f(&y);
-                    px + py - LN_2
+                    px + py - lnk
                 }).collect();
 
                 rv::misc::logsumexp(&ps)
