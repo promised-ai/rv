@@ -779,7 +779,10 @@ where
     Fx: Mode<f64> + Variance<f64>,
     Mixture<Fx>: Clone + QuadBounds,
 {
-    use peroxide::numerical::integral::gauss_legendre_quadrature;
+    use crate::misc::{gauss_legendre_quadrature_cached, gauss_legendre_table};
+
+    let quad_level = 16;
+    let (weights, roots) = gauss_legendre_table(quad_level);
 
     let (lower, upper) = mm.quad_bounds();
 
@@ -789,15 +792,30 @@ where
     };
 
     let last_ix = points.len() - 1;
-    let q_a = gauss_legendre_quadrature(f, 30, (lower, points[0]));
-    let q_b = gauss_legendre_quadrature(f, 30, (points[last_ix], upper));
+    let q_a = gauss_legendre_quadrature_cached(
+        f,
+        (lower, points[0]),
+        &weights,
+        &roots,
+    );
+    let q_b = gauss_legendre_quadrature_cached(
+        f,
+        (points[last_ix], upper),
+        &weights,
+        &roots,
+    );
 
     let mut right = points[0];
     let q_m = points
         .iter()
         .skip(1)
         .map(|&x| {
-            let q = gauss_legendre_quadrature(f, 30, (right, x));
+            let q = gauss_legendre_quadrature_cached(
+                f,
+                (right, x),
+                &weights,
+                &roots,
+            );
             right = x;
             q
         })
