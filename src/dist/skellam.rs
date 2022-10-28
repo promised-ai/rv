@@ -40,7 +40,9 @@ pub struct Skellam {
 }
 
 fn cache_default() -> RefCell<LruCache<i32, f64>> {
-    RefCell::new(LruCache::new(100))
+    // Won't (shouldn't) fail because 100 > 0
+    let cap = std::num::NonZeroUsize::new(100).unwrap();
+    RefCell::new(LruCache::new(cap))
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -197,8 +199,12 @@ impl Skellam {
     }
 
     /// Set the cache size on the internal LRU for Bessel Iv calls.
+    ///
+    /// # Panics
+    /// If cap is 0;
     #[inline]
     pub fn set_cache_cap(&self, cap: usize) {
+        let cap = std::num::NonZeroUsize::new(cap).unwrap();
         self.bessel_iv_cache.borrow_mut().resize(cap);
     }
 }
@@ -301,7 +307,9 @@ impl PartialEq for Skellam {
 impl Clone for Skellam {
     fn clone(&self) -> Self {
         let old_cache = self.bessel_iv_cache.borrow();
-        let mut cache = LruCache::new(old_cache.len());
+        // If the old_cache is empty its length is 0.
+        let cap = std::num::NonZeroUsize::new(old_cache.len().max(1)).unwrap();
+        let mut cache = LruCache::new(cap);
         for (key, value) in old_cache.iter() {
             cache.put(*key, *value);
         }

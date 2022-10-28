@@ -167,7 +167,7 @@ pub fn i1(x: f64) -> f64 {
 }
 
 /// An encounterable error when computing Bessel's I function
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BesselIvError {
     /// The order, v, must be an integer if z is negative.
     OrderNotIntegerForNegativeZ,
