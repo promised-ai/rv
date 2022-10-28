@@ -87,23 +87,11 @@ where
 }
 
 #[inline]
-fn binary_search(cws: &[f64], r: f64) -> usize {
-    let mut left: usize = 0;
-    let mut right: usize = cws.len();
-    while left < right {
-        let mid = (left + right) / 2;
-        if cws[mid] < r {
-            left = mid + 1;
-        } else {
-            right = mid;
-        }
-    }
-    left
-}
-
-#[inline]
 fn catflip_bisection(cws: &[f64], r: f64) -> Option<usize> {
-    let ix = binary_search(cws, r);
+    let ix = cws
+        .binary_search_by(|a| a.partial_cmp(&r).unwrap())
+        .unwrap_or_else(|ix| ix);
+
     if ix < cws.len() {
         Some(ix)
     } else {
@@ -173,12 +161,14 @@ pub fn ln_pflip<R: Rng>(
 ) -> Vec<usize> {
     let z = if normed { 0.0 } else { logsumexp(ln_weights) };
 
-    let mut cws: Vec<f64> = ln_weights.iter().map(|w| (w - z).exp()).collect();
-
-    // doing this instead of calling pflip shaves about 30% off the runtime.
-    for i in 1..cws.len() {
-        cws[i] += cws[i - 1];
-    }
+    let mut cumsum: f64 = 0.0;
+    let cws: Vec<f64> = ln_weights
+        .iter()
+        .map(|w| {
+            cumsum += (w - z).exp();
+            cumsum
+        })
+        .collect();
 
     (0..n)
         .map(|_| {
@@ -631,5 +621,95 @@ mod tests {
             let f2 = ln_fact(x);
             assert::close(f1, f2, 1e-9);
         }
+    }
+
+    #[test]
+    fn ln_pflip_normed_error() {
+        let props: Vec<f64> = vec![0.1, 0.5, 0.4];
+        let ln_weights: Vec<f64> = props.iter().map(|&w| w.ln()).collect();
+
+        let mut rng = rand::thread_rng();
+
+        let n: usize = 1_000_000;
+        let nf = n as f64;
+
+        let draws: Vec<usize> = ln_pflip(&ln_weights, n, true, &mut rng);
+
+        let mut counts = vec![0.0, 0.0, 0.0];
+        draws.iter().for_each(|&x| {
+            counts[x] += 1.0;
+        });
+
+        counts[0] /= nf;
+        counts[1] /= nf;
+        counts[2] /= nf;
+
+        assert::close(counts[0], props[0], 1e-2);
+        assert::close(counts[1], props[1], 1e-2);
+        assert::close(counts[2], props[2], 1e-2);
+    }
+
+    #[test]
+    fn ln_pflip_unnormed_error() {
+        let props: Vec<f64> = vec![0.1, 0.5, 0.4];
+        let weights: Vec<f64> = vec![1.0, 5.0, 4.0];
+        let ln_weights: Vec<f64> = weights.iter().map(|&w| w.ln()).collect();
+
+        let mut rng = rand::thread_rng();
+
+        let n: usize = 1_000_000;
+        let nf = n as f64;
+
+        let draws: Vec<usize> = ln_pflip(&ln_weights, n, false, &mut rng);
+
+        let mut counts = vec![0.0, 0.0, 0.0];
+        draws.iter().for_each(|&x| {
+            counts[x] += 1.0;
+        });
+
+        counts[0] /= nf;
+        counts[1] /= nf;
+        counts[2] /= nf;
+
+        assert::close(counts[0], props[0], 1e-2);
+        assert::close(counts[1], props[1], 1e-2);
+        assert::close(counts[2], props[2], 1e-2);
+    }
+
+    #[test]
+    fn ln_pflip_long_unnormed_error() {
+        use rand::seq::SliceRandom;
+
+        let mut rng = rand::thread_rng();
+
+        let k: usize = 20;
+        let mut weights: Vec<f64> = (1..k + 1).map(|w| w as f64).collect();
+        weights.shuffle(&mut rng);
+
+        let sum = weights.iter().sum::<f64>();
+        let props: Vec<f64> = weights.iter().map(|w| w / sum).collect();
+
+        let ln_weights: Vec<f64> = props.iter().map(|&w| w.ln()).collect();
+
+        let mut rng = rand::thread_rng();
+
+        let n: usize = 1_000_000;
+        let incr = (n as f64).recip();
+
+        let draws: Vec<usize> = ln_pflip(&ln_weights, n, true, &mut rng);
+
+        let mut counts = vec![0.0; k];
+        draws.iter().for_each(|&x| {
+            counts[x] += incr;
+        });
+
+        let err: f64 = counts
+            .iter()
+            .zip(props.iter())
+            .map(|(c, p)| (c - p).abs())
+            .sum::<f64>()
+            / 20_f64;
+
+        assert!(err < 0.001);
     }
 }
