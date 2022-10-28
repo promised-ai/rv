@@ -156,7 +156,7 @@ where
         let indicies: DMatrix<f64> = DMatrix::from_iterator(
             n,
             m,
-            indicies.iter().map(|i| i.iter().cloned()).flatten(),
+            indicies.iter().flat_map(|i| i.iter().cloned()),
         );
         let k_trans = self.kernel.covariance(&indicies, &self.x_train);
         let y_mean = &k_trans * &self.alpha;
@@ -184,7 +184,7 @@ where
     ) -> Result<(f64, Self::Param), GaussianProcessError> {
         let kernel = self
             .kernel
-            .from_parameters(&parameter)
+            .reparameterize(&parameter)
             .map_err(GaussianProcessError::KernelError)?;
 
         // GPML Equation 2.30

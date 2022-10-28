@@ -112,7 +112,7 @@ impl PartialEq for MvGaussian {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum MvGaussianError {
     /// The mu and cov parameters have incompatible dimensions

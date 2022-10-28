@@ -1,5 +1,7 @@
 const QUAD_EPS: f64 = 1E-8;
 
+// TODO: remove this in v0.14.0
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub(crate) struct QuadConfig<'a> {
     pub max_depth: u32,

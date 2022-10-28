@@ -266,7 +266,6 @@ impl<Fx> Mixture<Fx> {
         self.weights = weights;
     }
 
-    #[inline]
     /// Set the mixture components
     ///
     /// # Example

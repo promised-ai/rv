@@ -104,7 +104,7 @@ impl Kernel for RBFKernel {
             Err(KernelError::MissingParameters(1))
         } else {
             let (cur, next) = params.split_at(1);
-            let ck = Self::from_parameters(self, cur)?;
+            let ck = Self::reparameterize(self, cur)?;
             Ok((ck, next))
         }
     }
@@ -212,7 +212,7 @@ mod tests {
         assert_eq!(
             kernel,
             kernel
-                .from_parameters(&[0.0])
+                .reparameterize(&[0.0])
                 .expect("Should create kernel from params")
         );
         assert!(kernel.is_stationary());

@@ -64,7 +64,22 @@ pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
 
     /// Create a new kernel of the given type from the provided parameters.
     /// The parameters here are in a log-scale
-    fn from_parameters(&self, param: &[f64]) -> Result<Self, KernelError>;
+    ///
+    /// # Warning
+    /// This method will be removed in v0.14.0
+    #[allow(clippy::wrong_self_convention)]
+    #[deprecated(
+        since = "0.13.2",
+        note = "please use `reparameterize` instead"
+    )]
+    fn from_parameters(&self, params: &[f64]) -> Result<Self, KernelError>;
+
+    /// Create a new kernel of the given type from the provided parameters.
+    /// The parameters here are in a log-scale
+    fn reparameterize(&self, params: &[f64]) -> Result<Self, KernelError> {
+        #[allow(deprecated)]
+        self.from_parameters(params)
+    }
 
     /// Takes a sequence of parameters and consumes only the ones it needs
     /// to create itself.
