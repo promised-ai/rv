@@ -111,7 +111,7 @@ impl Kernel for SEardKernel {
             Err(KernelError::MissingParameters(nrows))
         } else {
             let (cur, next) = params.split_at(nrows);
-            let ck = self.from_parameters(cur)?;
+            let ck = self.reparameterize(cur)?;
             Ok((ck, next))
         }
     }

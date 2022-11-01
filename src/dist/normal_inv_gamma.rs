@@ -11,6 +11,7 @@ use crate::dist::{Gaussian, InvGamma};
 use crate::impl_display;
 use crate::traits::Rv;
 use rand::Rng;
+use std::fmt;
 
 /// Prior for Gaussian
 ///
@@ -347,5 +348,27 @@ impl Rv<Gaussian> for NormalInvGamma {
             .draw(&mut rng);
 
         Gaussian::new(mu, sigma).expect("Invalid params")
+    }
+}
+
+impl std::error::Error for NormalInvGammaError {}
+
+impl fmt::Display for NormalInvGammaError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MNotFinite { m } => write!(f, "non-finite m: {}", m),
+            Self::VNotFinite { v } => write!(f, "non-finite v: {}", v),
+            Self::ANotFinite { a } => write!(f, "non-finite a: {}", a),
+            Self::BNotFinite { b } => write!(f, "non-finite b: {}", b),
+            Self::VTooLow { v } => {
+                write!(f, "v ({}) must be greater than zero", v)
+            }
+            Self::ATooLow { a } => {
+                write!(f, "a ({}) must be greater than zero", a)
+            }
+            Self::BTooLow { b } => {
+                write!(f, "b ({}) must be greater than zero", b)
+            }
+        }
     }
 }

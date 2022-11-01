@@ -8,7 +8,7 @@ use std::f64;
 use serde::{Deserialize, Serialize};
 
 /// Kernel representing the sum of two other kernels
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct AddKernel<A, B>
 where
@@ -105,7 +105,7 @@ where
 
     fn from_parameters(&self, params: &[f64]) -> Result<Self, KernelError> {
         let (a, b_params) = self.a.consume_parameters(params)?;
-        let b = self.b.from_parameters(b_params)?;
+        let b = self.b.reparameterize(b_params)?;
         Ok(Self::new(a, b))
     }
 
@@ -234,7 +234,7 @@ where
 
     fn from_parameters(&self, param_vec: &[f64]) -> Result<Self, KernelError> {
         let (a, b_params) = self.a.consume_parameters(param_vec)?;
-        let b = self.b.from_parameters(b_params)?;
+        let b = self.b.reparameterize(b_params)?;
         Ok(Self::new(a, b))
     }
 

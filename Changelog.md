@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.4
+- re-export nalgebra (flag `arraydist`)
+- add `reparameterize` method to `process::gaussian::Kernel`, which will
+    replace `from_parmeters` in 0.15.0
+- Implement `Error` for `NormalInvGammaError` and `NormalInvChiSquaredError`
+
 ## 0.14.3
 - Remove dependency on peroxide
 

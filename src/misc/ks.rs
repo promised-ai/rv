@@ -157,11 +157,11 @@ where
     let mut cdf_y = Vec::new();
 
     for x in [&xs[..], &ys[..]].concat() {
-        match (&xs).binary_search_by(|b| b.partial_cmp(&x).unwrap()) {
+        match xs.binary_search_by(|b| b.partial_cmp(&x).unwrap()) {
             Ok(z) => cdf_x.push((z as f64) / n_x_f),
             Err(z) => cdf_x.push((z as f64) / n_x_f),
         }
-        match (&ys).binary_search_by(|b| b.partial_cmp(&x).unwrap()) {
+        match ys.binary_search_by(|b| b.partial_cmp(&x).unwrap()) {
             Ok(z) => cdf_y.push((z as f64) / n_y_f),
             Err(z) => cdf_y.push((z as f64) / n_y_f),
         }

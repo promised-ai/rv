@@ -104,7 +104,7 @@ impl Kernel for RBFKernel {
             Err(KernelError::MissingParameters(1))
         } else {
             let (cur, next) = params.split_at(1);
-            let ck = Self::from_parameters(self, cur)?;
+            let ck = Self::reparameterize(self, cur)?;
             Ok((ck, next))
         }
     }

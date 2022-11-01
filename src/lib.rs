@@ -102,6 +102,10 @@ pub mod traits;
 
 pub use crate::model::ConjugateModel;
 
+// re-export
+#[cfg(feature = "arraydist")]
+pub use nalgebra;
+
 #[macro_export]
 macro_rules! impl_display {
     ($kind: ty) => {
