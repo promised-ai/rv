@@ -125,7 +125,7 @@ impl Kernel for ExpSineSquaredKernel {
             Err(KernelError::MissingParameters(2))
         } else {
             let (cur, next) = params.split_at(2);
-            let ck = Self::from_parameters(self, cur)?;
+            let ck = Self::reparameterize(self, cur)?;
             Ok((ck, next))
         }
     }

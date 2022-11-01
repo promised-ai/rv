@@ -36,7 +36,7 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
 /// const EXPECTED: f64 = 0.26999967167735456;
 /// assert!((sf - EXPECTED).abs() < 1E-15);
 /// ```
-#[derive(Debug, Copy, Clone, PartialEq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct KsTwoAsymptotic {}
 

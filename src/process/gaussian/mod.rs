@@ -156,7 +156,7 @@ where
         let indicies: DMatrix<f64> = DMatrix::from_iterator(
             n,
             m,
-            indicies.iter().map(|i| i.iter().cloned()).flatten(),
+            indicies.iter().flat_map(|i| i.iter().cloned()),
         );
         let k_trans = self.kernel.covariance(&indicies, &self.x_train);
         let y_mean = &k_trans * &self.alpha;
@@ -184,7 +184,7 @@ where
     ) -> Result<(f64, Self::Param), GaussianProcessError> {
         let kernel = self
             .kernel
-            .from_parameters(&parameter)
+            .reparameterize(&parameter)
             .map_err(GaussianProcessError::KernelError)?;
 
         // GPML Equation 2.30
@@ -674,7 +674,7 @@ mod tests {
         let kernel: ProductKernel<ConstantKernel, RBFKernel> =
             (ConstantKernel::new_unchecked(1.0)
                 * RBFKernel::new_unchecked(1.0))
-            .from_parameters(&[3.09975267, 0.51633823])?;
+            .reparameterize(&[3.09975267, 0.51633823])?;
         let gp =
             GaussianProcess::train(kernel, xs, ys, NoiseModel::Uniform(0.0))
                 .expect("Should produce GP");
@@ -740,7 +740,7 @@ mod tests {
         let kernel: ProductKernel<ConstantKernel, RBFKernel> =
             (ConstantKernel::new_unchecked(1.0)
                 * RBFKernel::new_unchecked(1.0))
-            .from_parameters(&[2.88672093, -0.03332773])?;
+            .reparameterize(&[2.88672093, -0.03332773])?;
         let gp = GaussianProcess::train(
             kernel,
             xs,

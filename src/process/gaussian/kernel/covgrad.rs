@@ -205,7 +205,7 @@ impl IndexMut<(usize, usize, usize)> for CovGrad {
 }
 
 /// Error from constructing a CovGrad
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum CovGradError {
     /// The shapes of the slices do not match
