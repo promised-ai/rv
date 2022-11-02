@@ -70,7 +70,7 @@ impl Kernel for WhiteKernel {
         vec![self.noise_level.ln()]
     }
 
-    fn from_parameters(&self, param_vec: &[f64]) -> Result<Self, KernelError> {
+    fn reparameterize(&self, param_vec: &[f64]) -> Result<Self, KernelError> {
         match param_vec {
             [] => Err(KernelError::MissingParameters(1)),
             [value] => Self::new(value.exp()),

@@ -434,8 +434,8 @@ impl fmt::Display for KumaraswamyError {
 mod tests {
     use super::*;
     use crate::dist::{Beta, Gamma, LogNormal};
+    use crate::misc::gauss_legendre_quadrature;
     use crate::misc::ks_test;
-    use crate::misc::quad;
     use crate::test_basic_impls;
 
     const KS_PVAL: f64 = 0.2;
@@ -496,8 +496,10 @@ mod tests {
     fn pdf_quad_and_cdf_agree() {
         // create a Kumaraswamy distr with median at 0.5
         let kuma = Kumaraswamy::centered(2.0).unwrap();
-        let intergral = quad(|x| kuma.f(&x), 0.0, 0.5);
-        assert::close(intergral, 0.5, 1E-6);
+        // let integral = quad(|x| kuma.f(&x), 0.0, 0.5);
+        let integral =
+            gauss_legendre_quadrature(|x| kuma.f(&x), 16, (0.0, 0.5));
+        assert::close(integral, 0.5, 1E-6);
     }
 
     #[test]

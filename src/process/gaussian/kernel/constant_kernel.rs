@@ -82,7 +82,7 @@ impl Kernel for ConstantKernel {
         vec![self.scale.ln()]
     }
 
-    fn from_parameters(&self, param_vec: &[f64]) -> Result<Self, KernelError> {
+    fn reparameterize(&self, param_vec: &[f64]) -> Result<Self, KernelError> {
         match param_vec {
             [] => Err(KernelError::MissingParameters(1)),
             [value] => Self::new(value.exp()),

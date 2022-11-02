@@ -116,7 +116,7 @@ impl Kernel for SEardKernel {
         }
     }
 
-    fn from_parameters(&self, params: &[f64]) -> Result<Self, KernelError> {
+    fn reparameterize(&self, params: &[f64]) -> Result<Self, KernelError> {
         use std::cmp::Ordering;
         match params.len().cmp(&self.length_scale.nrows()) {
             Ordering::Equal => {
