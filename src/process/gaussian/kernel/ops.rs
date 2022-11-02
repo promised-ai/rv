@@ -138,7 +138,7 @@ where
 }
 
 /// Kernel representing the product of two other kernels
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct ProductKernel<A, B>
 where
