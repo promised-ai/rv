@@ -87,7 +87,7 @@ impl Kernel for RationalQuadratic {
         vec![self.scale.ln(), self.mixture.ln()]
     }
 
-    fn from_parameters(&self, params: &[f64]) -> Result<Self, KernelError> {
+    fn reparameterize(&self, params: &[f64]) -> Result<Self, KernelError> {
         match params {
             [] => Err(KernelError::MissingParameters(2)),
             [_] => Err(KernelError::MissingParameters(1)),

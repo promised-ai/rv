@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::consts::LN_2PI;
 use crate::impl_display;
-use crate::misc::{bessel, quad};
+use crate::misc::bessel;
 use crate::traits::*;
 use rand::Rng;
 use std::f64::consts::PI;
@@ -263,8 +263,19 @@ macro_rules! impl_traits {
         // TODO: XXX:This is going to be SLOW, because it uses quadrature.
         impl Cdf<$kind> for VonMises {
             fn cdf(&self, x: &$kind) -> f64 {
+                use crate::misc::{
+                    gauss_legendre_quadrature_cached, gauss_legendre_table,
+                };
+
                 let func = |y: f64| self.f(&y);
-                quad(func, 0.0, f64::from(*x))
+
+                let (weights, roots) = gauss_legendre_table(16);
+                gauss_legendre_quadrature_cached(
+                    func,
+                    (0.0, *x as f64),
+                    &weights,
+                    &roots,
+                )
             }
         }
 

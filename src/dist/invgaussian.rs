@@ -387,16 +387,22 @@ mod tests {
 
     #[test]
     fn quad_on_pdf_agrees_with_cdf_x() {
-        use crate::misc::quad_eps;
+        use peroxide::numerical::integral::{
+            gauss_kronrod_quadrature, Integral,
+        };
         let ig = InvGaussian::new(1.1, 2.5).unwrap();
         // use pdf to hit `supports(x)` first
         let pdf = |x: f64| ig.pdf(&x);
         let mut rng = rand::thread_rng();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
-            let res = quad_eps(pdf, 1e-16, x, Some(1e-10));
+            let res = gauss_kronrod_quadrature(
+                pdf,
+                (1e-16, x),
+                Integral::G7K15(1e-10),
+            );
             let cdf = ig.cdf(&x);
-            assert!((res - cdf).abs() < 1e-9);
+            assert::close(res, cdf, 1e-7);
         }
     }
 

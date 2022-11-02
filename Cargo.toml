@@ -1,6 +1,6 @@
 [package]
 name = "rv"
-version = "0.14.4"
+version = "0.15.0"
 authors = ["Baxter Eaves", "Michael Schmidt"]
 description = "Random variables"
 repository = "https://gitlab.com/baxe/rv"
@@ -19,13 +19,13 @@ maintenance = { status = "actively-developed" }
 argmin = { version = "0.4.5", optional = true }
 doc-comment = "0.3"
 lru = "0.7.2"
-nalgebra = { version = "0.27", optional = true }
-num = "0.3"
+nalgebra = { version = "0.31.3", optional = true }
+num = "0.4"
 once_cell = "1"
-rand = { version = "0.8", features = ["small_rng"] }
-rand_distr = "0.4"
+rand = { version = "0.8.5", features = ["small_rng"] }
+rand_distr = "0.4.3"
 serde = {version = "1", features = ["derive"], optional = true}
-special = "0.8"
+special = "0.9"
 
 [dev-dependencies]
 assert = "0.7"
@@ -35,6 +35,7 @@ serde_yaml = "0.8"
 serde_json = "1"
 approx = "0.5"
 rand_xoshiro = "0.6"
+peroxide = "0.31.8"
 
 [features]
 serde1 = ["serde", "nalgebra/serde-serialize"]
@@ -64,10 +65,6 @@ harness = false
 
 [[bench]]
 name = "beta"
-harness = false
-
-[[bench]]
-name = "quad"
 harness = false
 
 [[bench]]

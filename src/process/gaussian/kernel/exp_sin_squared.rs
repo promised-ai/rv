@@ -103,7 +103,7 @@ impl Kernel for ExpSineSquaredKernel {
 
     /// Create a new kernel of the given type from the provided parameters.
     /// The parameters here are in a log-scale
-    fn from_parameters(&self, params: &[f64]) -> Result<Self, KernelError> {
+    fn reparameterize(&self, params: &[f64]) -> Result<Self, KernelError> {
         match params {
             [] => Err(KernelError::MissingParameters(2)),
             [_] => Err(KernelError::MissingParameters(1)),
