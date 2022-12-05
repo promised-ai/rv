@@ -1,7 +1,7 @@
 use super::{CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::{
     base::constraint::{SameNumberOfColumns, ShapeConstraint},
-    EuclideanNorm,
+    dvector, EuclideanNorm,
 };
 use nalgebra::{base::storage::Storage, Norm};
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
@@ -56,6 +56,10 @@ impl ExpSineSquaredKernel {
 }
 
 impl Kernel for ExpSineSquaredKernel {
+    fn n_parameters(&self) -> usize {
+        2
+    }
+
     fn covariance<R1, R2, C1, C2, S1, S2>(
         &self,
         x1: &Matrix<f64, R1, C1, S1>,
@@ -97,8 +101,8 @@ impl Kernel for ExpSineSquaredKernel {
 
     /// Return the corresponding parameter vector
     /// The parameters here are in a log-scale
-    fn parameters(&self) -> Vec<f64> {
-        vec![self.length_scale.ln(), self.periodicity.ln()]
+    fn parameters(&self) -> DVector<f64> {
+        dvector![self.length_scale.ln(), self.periodicity.ln()]
     }
 
     /// Create a new kernel of the given type from the provided parameters.
@@ -111,22 +115,6 @@ impl Kernel for ExpSineSquaredKernel {
                 Self::new(length_scale.exp(), periodicity.exp())
             }
             _ => Err(KernelError::ExtraniousParameters(params.len() - 1)),
-        }
-    }
-
-    /// Takes a sequence of parameters and consumes only the ones it needs
-    /// to create itself.
-    /// The parameters here are in a log-scale
-    fn consume_parameters<'p>(
-        &self,
-        params: &'p [f64],
-    ) -> Result<(Self, &'p [f64]), KernelError> {
-        if params.len() < 2 {
-            Err(KernelError::MissingParameters(2))
-        } else {
-            let (cur, next) = params.split_at(2);
-            let ck = Self::reparameterize(self, cur)?;
-            Ok((ck, next))
         }
     }
 

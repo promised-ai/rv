@@ -141,8 +141,7 @@ impl<K> RandomProcess<f64> for GaussianProcess<K>
 where
     K: Kernel,
 {
-    type Index = Vec<f64>;
-    type Param = Vec<f64>;
+    type Index = DVector<f64>;
     type SampleFunction = GaussianProcessPrediction<K>;
     type Error = GaussianProcessError;
 
@@ -180,11 +179,11 @@ where
 
     fn ln_m_with_params(
         &self,
-        parameter: Self::Param,
-    ) -> Result<(f64, Self::Param), GaussianProcessError> {
+        parameter: &DVector<f64>,
+    ) -> Result<(f64, DVector<f64>), GaussianProcessError> {
         let kernel = self
             .kernel
-            .reparameterize(&parameter)
+            .reparameterize(&parameter.iter().copied().collect::<Vec<f64>>())
             .map_err(GaussianProcessError::KernelError)?;
 
         // GPML Equation 2.30
@@ -224,21 +223,25 @@ where
                 0.5 * sum
             })
             .collect();
+        let grad_ln_m = DVector::from(grad_ln_m);
+
         Ok((ln_m, grad_ln_m))
     }
 
-    fn parameters(&self) -> Self::Param {
-        self.kernel().parameters()
+    fn parameters(&self) -> DVector<f64> {
+        let kernel = self.kernel();
+        DVector::from(kernel.parameters())
     }
 
     fn set_parameters(
         self,
-        parameters: Self::Param,
+        parameters: &DVector<f64>,
     ) -> Result<Self, GaussianProcessError> {
         let (kernel, leftovers) = self
             .kernel
-            .consume_parameters(&parameters)
+            .consume_parameters(parameters.iter().copied())
             .map_err(GaussianProcessError::KernelError)?;
+        let leftovers: Vec<f64> = leftovers.collect();
         if !leftovers.is_empty() {
             return Err(GaussianProcessError::KernelError(
                 KernelError::ExtraniousParameters(leftovers.len()),
@@ -253,17 +256,21 @@ impl<K> RandomProcessMle<f64> for GaussianProcess<K>
 where
     K: Kernel,
 {
-    type Solver =
-        LBFGS<MoreThuenteLineSearch<Self::Param, f64>, Self::Param, f64>;
+    type Solver = LBFGS<
+        MoreThuenteLineSearch<DVector<f64>, DVector<f64>, f64>,
+        DVector<f64>,
+        DVector<f64>,
+        f64,
+    >;
 
     fn generate_solver() -> Self::Solver {
         let linesearch = MoreThuenteLineSearch::new();
         LBFGS::new(linesearch, 10)
     }
 
-    fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Param {
+    fn random_params<R: Rng>(&self, rng: &mut R) -> DVector<f64> {
         let n = self.parameters().len();
-        (0..n).map(|_| rng.gen_range(-5.0..5.0)).collect()
+        DVector::from_iterator(n, (0..n).map(|_| rng.gen_range(-5.0..5.0)))
     }
 }
 
@@ -383,6 +390,7 @@ mod tests {
     use self::kernel::{ConstantKernel, ProductKernel, RBFKernel};
     use super::*;
     use crate::test::relative_eq;
+    use nalgebra::dvector;
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
 
@@ -406,11 +414,11 @@ mod tests {
         )
         .unwrap();
 
-        let xs: Vec<Vec<f64>> = arange(-5.0, 5.0, 1.0)
+        let xs: Vec<DVector<f64>> = arange(-5.0, 5.0, 1.0)
             .into_iter()
-            .map(|x| vec![x])
+            .map(|x| dvector![x])
             .collect();
-        let pred = gp.sample_function(&xs);
+        let pred = gp.sample_function(xs.as_slice());
 
         let expected_mean: DMatrix<f64> = DMatrix::from_column_slice(
             10,
@@ -551,10 +559,10 @@ mod tests {
 
         let kernel = RBFKernel::default() * ConstantKernel::default();
         let parameters = kernel.parameters();
-        assert!(relative_eq(&parameters, &vec![0.0, 0.0], 1E-9, 1E-9));
+        assert!(&parameters.relative_eq(&dvector![0.0, 0.0], 1E-9, 1E-9));
 
         let expected_ln_m = -5.029140040847684;
-        let expected_grad = vec![2.06828541, -1.19111032];
+        let expected_grad = dvector![2.06828541, -1.19111032];
 
         let gp = GaussianProcess::train(
             kernel,
@@ -567,9 +575,9 @@ mod tests {
         assert::close(gp.ln_m(), expected_ln_m, 1E-7);
 
         // With Gradient
-        let (ln_m, grad_ln_m) = gp.ln_m_with_params(parameters).unwrap();
+        let (ln_m, grad_ln_m) = gp.ln_m_with_params(&parameters).unwrap();
         assert::close(ln_m, expected_ln_m, 1E-7);
-        assert!(relative_eq(grad_ln_m, expected_grad, 1E-7, 1E-7));
+        assert!(grad_ln_m.relative_eq(&expected_grad, 1E-7, 1E-7));
     }
 
     #[test]
@@ -583,13 +591,13 @@ mod tests {
         let parameters = kernel.parameters();
         assert!(relative_eq(
             &parameters,
-            &vec![0.69058965, 0.19980403],
+            &dvector![0.69058965, 0.19980403],
             1E-7,
             1E-7
         ));
 
         let expected_ln_m = -3.414870095916796;
-        let expected_grad = vec![0.0, 0.0];
+        let expected_grad = dvector![0.0, 0.0];
 
         let gp = GaussianProcess::train(
             kernel,
@@ -603,9 +611,9 @@ mod tests {
         assert::close(ln_m, expected_ln_m, 1E-7);
 
         // With Gradient
-        let (ln_m, grad_ln_m) = gp.ln_m_with_params(parameters).unwrap();
+        let (ln_m, grad_ln_m) = gp.ln_m_with_params(&parameters).unwrap();
         assert::close(ln_m, expected_ln_m, 1E-7);
-        assert!(relative_eq(grad_ln_m, expected_grad, 1E-6, 1E-6));
+        assert!(grad_ln_m.relative_eq(&expected_grad, 1E-6, 1E-6));
         Ok(())
     }
 
@@ -625,11 +633,11 @@ mod tests {
         let gp = gp.optimize(100, 10, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
 
-        assert!(relative_eq(opt_params, vec![0.65785421], 1E-5, 1E-5));
+        assert!(opt_params.relative_eq(&dvector![0.65785421], 1E-5, 1E-5));
         assert::close(gp.ln_m(), -3.444937833462115, 1E-7);
         assert::close(
             gp.ln_m(),
-            gp.ln_m_with_params(gp.kernel().parameters()).unwrap().0,
+            gp.ln_m_with_params(&gp.kernel().parameters()).unwrap().0,
             1E-7,
         );
     }
@@ -650,9 +658,8 @@ mod tests {
         let gp = gp.optimize(200, 30, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
 
-        assert!(relative_eq(
-            opt_params,
-            vec![0.19980403, 0.69058965],
+        assert!(opt_params.relative_eq(
+            &dvector![0.19980403, 0.69058965],
             1E-5,
             1E-5
         ));
@@ -660,7 +667,7 @@ mod tests {
         assert::close(gp.ln_m(), -3.414870095916796, 1E-7);
         assert::close(
             gp.ln_m(),
-            gp.ln_m_with_params(gp.kernel().parameters()).unwrap().0,
+            gp.ln_m_with_params(&gp.kernel().parameters()).unwrap().0,
             1E-7,
         );
     }
