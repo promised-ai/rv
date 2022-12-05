@@ -508,7 +508,7 @@ mod tests {
             let dir = Dirichlet::symmetric(1.0, 3).unwrap();
             assert::close(
                 dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
-                0.693_147_180_559_945_3,
+                std::f64::consts::LN_2,
                 TOL,
             );
         }
@@ -535,6 +535,8 @@ mod tests {
     }
 
     mod symdir {
+        use std::f64::consts::PI;
+
         use super::*;
 
         test_basic_impls!(
@@ -586,7 +588,7 @@ mod tests {
             SymmetricDirichlet::new(1.2, 2).unwrap(),
             vec![0.1_f64, 0.9_f64],
             1.2,
-            3.14
+            PI
         );
 
         verify_cache_resets!(
@@ -596,7 +598,7 @@ mod tests {
             SymmetricDirichlet::new(1.2, 2).unwrap(),
             vec![0.1_f64, 0.9_f64],
             1.2,
-            3.14
+            PI
         );
     }
 }

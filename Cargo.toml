@@ -51,6 +51,7 @@ all-features = true
 [[bench]]
 name = "mvg"
 harness = false
+required-features = ["arraydist"]
 
 [[bench]]
 name = "gev"
@@ -59,6 +60,7 @@ harness = false
 [[bench]]
 name = "wishart"
 harness = false
+required-features = ["arraydist"]
 
 [[bench]]
 name = "categorical"
@@ -71,6 +73,7 @@ harness = false
 [[bench]]
 name = "rv"
 harness = false
+required-features = ["arraydist"]
 
 [[bench]]
 name = "mixture_entropy"
