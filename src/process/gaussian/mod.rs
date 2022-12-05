@@ -230,7 +230,7 @@ where
 
     fn parameters(&self) -> DVector<f64> {
         let kernel = self.kernel();
-        DVector::from(kernel.parameters())
+        kernel.parameters()
     }
 
     fn set_parameters(
