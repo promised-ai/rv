@@ -9,6 +9,8 @@ use rand::Rng;
 use std::f64::consts::PI;
 use std::fmt;
 
+use crate::data::VonMisesSuffStat;
+
 /// [VonMises distirbution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
 /// on the circular interval (0, 2π]
 ///
@@ -300,6 +302,13 @@ macro_rules! impl_traits {
             fn variance(&self) -> Option<$kind> {
                 let v: f64 = 1.0 - bessel::i1(self.k) / self.i0_k;
                 Some(v as $kind)
+            }
+        }
+
+        impl HasSuffStat<$kind> for VonMises {
+            type Stat = VonMisesSuffStat;
+            fn empty_suffstat(&self) -> Self::Stat {
+                VonMisesSuffStat::new()
             }
         }
     };
