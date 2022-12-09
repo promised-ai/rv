@@ -10,8 +10,9 @@ pub use stat::InvGaussianSuffStat;
 #[cfg(feature = "arraydist")]
 pub use stat::MvGaussianSuffStat;
 pub use stat::PoissonSuffStat;
+pub use stat::VonMisesSuffStat;
 
-use crate::dist::{Bernoulli, Categorical, Gaussian, InvGaussian, Poisson};
+use crate::dist::{Bernoulli, Categorical, Gaussian, InvGaussian, Poisson, VonMises};
 use crate::traits::{HasSuffStat, SuffStat};
 
 pub type BernoulliData<'a, X> = DataOrSuffStat<'a, X, Bernoulli>;
@@ -19,6 +20,7 @@ pub type CategoricalData<'a, X> = DataOrSuffStat<'a, X, Categorical>;
 pub type GaussianData<'a, X> = DataOrSuffStat<'a, X, Gaussian>;
 pub type InvGaussianData<'a, X> = DataOrSuffStat<'a, X, InvGaussian>;
 pub type PoissonData<'a, X> = DataOrSuffStat<'a, X, Poisson>;
+pub type VonmisesData<'a, X> = DataOrSuffStat<'a, X, VonMises>;
 
 /// The trait that data must implemented by all data used with the
 /// `Categorical` distribution
