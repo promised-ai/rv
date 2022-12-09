@@ -30,6 +30,8 @@ mod exp_sin_squared;
 pub use self::exp_sin_squared::*;
 mod seard;
 pub use self::seard::*;
+mod matern;
+pub use self::matern::*;
 
 /// Kernel Function
 pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
@@ -184,3 +186,4 @@ impl_mul_add!(SEardKernel);
 impl_mul_add!(ExpSineSquaredKernel);
 impl_mul_add!(RationalQuadratic);
 impl_mul_add!(WhiteKernel);
+impl_mul_add!(MaternKernel);

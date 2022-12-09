@@ -675,7 +675,10 @@ fn bessel_ikv_asymptotic_uniform(
 /// Heavily inspired by
 /// https://github.com/scipy/scipy/blob/1984f97749a355a6767cea55cad5d1dc6977ad5f/scipy/special/cephes/scipy_iv.c#L532
 #[allow(clippy::many_single_char_names)]
-fn bessel_ikv_temme(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
+pub(crate) fn bessel_ikv_temme(
+    v: f64,
+    x: f64,
+) -> Result<(f64, f64), BesselIvError> {
     use std::f64::consts::PI;
     let (v, reflect) = if v < 0.0 { (-v, true) } else { (v, false) };
 
