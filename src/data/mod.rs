@@ -40,11 +40,7 @@ impl CategoricalDatum for usize {
 
 impl CategoricalDatum for bool {
     fn into_usize(self) -> usize {
-        if self {
-            1
-        } else {
-            0
-        }
+        usize::from(self)
     }
 
     fn from_usize(n: usize) -> Self {
@@ -305,13 +301,13 @@ mod tests {
         #[test]
         fn impl_bool_from_usize() {
             let x: bool = CategoricalDatum::from_usize(0_usize);
-            assert_eq!(x, false);
+            assert!(!x);
 
             let y: bool = CategoricalDatum::from_usize(1_usize);
-            assert_eq!(y, true);
+            assert!(y);
 
             let z: bool = CategoricalDatum::from_usize(122_usize);
-            assert_eq!(z, true);
+            assert!(z);
         }
 
         macro_rules! catdatum_test {

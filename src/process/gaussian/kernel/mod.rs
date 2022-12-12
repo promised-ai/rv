@@ -33,7 +33,10 @@ pub use self::seard::*;
 
 /// Kernel Function
 pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
-    // Returns the covariance matrix for two equal sized vectors
+    /// Return the number of parameters used in this `Kernel`.
+    fn n_parameters(&self) -> usize;
+
+    /// Returns the covariance matrix for two equal sized vectors
     fn covariance<R1, R2, C1, C2, S1, S2>(
         &self,
         x1: &Matrix<f64, R1, C1, S1>,
@@ -51,7 +54,7 @@ pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
     /// Reports if the given kernel function is stationary.
     fn is_stationary(&self) -> bool;
 
-    /// Returns the diagnal of the kernel(x, x)
+    /// Returns the diagonal of the kernel(x, x)
     fn diag<R, C, S>(&self, x: &Matrix<f64, R, C, S>) -> DVector<f64>
     where
         R: Dim,
@@ -60,7 +63,7 @@ pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
 
     /// Return the corresponding parameter vector
     /// The parameters here are in a log-scale
-    fn parameters(&self) -> Vec<f64>;
+    fn parameters(&self) -> DVector<f64>;
 
     /// Create a new kernel of the given type from the provided parameters.
     /// The parameters here are in a log-scale
@@ -69,10 +72,23 @@ pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
     /// Takes a sequence of parameters and consumes only the ones it needs
     /// to create itself.
     /// The parameters here are in a log-scale
-    fn consume_parameters<'p>(
+    fn consume_parameters<I: IntoIterator<Item = f64>>(
         &self,
-        params: &'p [f64],
-    ) -> Result<(Self, &'p [f64]), KernelError>;
+        params: I,
+    ) -> Result<(Self, I::IntoIter), KernelError> {
+        let mut iter = params.into_iter();
+        let n = self.n_parameters();
+        let mut parameters: Vec<f64> = Vec::with_capacity(n);
+
+        // TODO: Clean this up if/when `iter_next_chunk` is stabilized
+        for i in 0..n {
+            parameters.push(
+                iter.next().ok_or(KernelError::MissingParameters(n - i))?,
+            );
+        }
+
+        Ok((self.reparameterize(&parameters)?, iter))
+    }
 
     /// Covariance and Gradient with the log-scaled hyper-parameters
     fn covariance_with_gradient<R, C, S>(

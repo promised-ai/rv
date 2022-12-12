@@ -647,7 +647,7 @@ mod tests {
     #[test]
     fn unifrom_entropy() {
         let b = Bernoulli::uniform();
-        assert::close(b.entropy(), 0.693_147_180_559_945_3, TOL);
+        assert::close(b.entropy(), f64::consts::LN_2, TOL);
     }
 
     #[test]

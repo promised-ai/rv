@@ -98,22 +98,11 @@ impl Kernel for SEardKernel {
         DVector::repeat(x.nrows(), 1.0)
     }
 
-    fn parameters(&self) -> Vec<f64> {
-        self.length_scale.iter().map(|x| x.ln()).collect()
-    }
-
-    fn consume_parameters<'p>(
-        &self,
-        params: &'p [f64],
-    ) -> Result<(Self, &'p [f64]), KernelError> {
-        let nrows = self.length_scale.nrows();
-        if params.len() < self.length_scale.nrows() {
-            Err(KernelError::MissingParameters(nrows))
-        } else {
-            let (cur, next) = params.split_at(nrows);
-            let ck = self.reparameterize(cur)?;
-            Ok((ck, next))
-        }
+    fn parameters(&self) -> DVector<f64> {
+        DVector::from_iterator(
+            self.n_parameters(),
+            self.length_scale.iter().map(|x| x.ln()),
+        )
     }
 
     fn reparameterize(&self, params: &[f64]) -> Result<Self, KernelError> {
@@ -174,5 +163,9 @@ impl Kernel for SEardKernel {
             }
         }
         Ok((cov, grad))
+    }
+
+    fn n_parameters(&self) -> usize {
+        self.length_scale.nrows()
     }
 }

@@ -1,7 +1,7 @@
 use super::{CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
-use nalgebra::{DMatrix, DVector, Dim, Matrix};
+use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
 use std::f64;
 
 #[cfg(feature = "serde1")]
@@ -66,8 +66,8 @@ impl Kernel for WhiteKernel {
         DVector::from_element(n, self.noise_level)
     }
 
-    fn parameters(&self) -> Vec<f64> {
-        vec![self.noise_level.ln()]
+    fn parameters(&self) -> DVector<f64> {
+        dvector![self.noise_level.ln()]
     }
 
     fn reparameterize(&self, param_vec: &[f64]) -> Result<Self, KernelError> {
@@ -75,19 +75,6 @@ impl Kernel for WhiteKernel {
             [] => Err(KernelError::MissingParameters(1)),
             [value] => Self::new(value.exp()),
             _ => Err(KernelError::ExtraniousParameters(param_vec.len() - 1)),
-        }
-    }
-
-    fn consume_parameters<'p>(
-        &self,
-        params: &'p [f64],
-    ) -> Result<(Self, &'p [f64]), KernelError> {
-        if params.is_empty() {
-            Err(KernelError::MissingParameters(1))
-        } else {
-            let (cur, next) = params.split_at(1);
-            let ck = Self::reparameterize(self, cur)?;
-            Ok((ck, next))
         }
     }
 
@@ -109,12 +96,15 @@ impl Kernel for WhiteKernel {
         )]);
         Ok((cov, grad))
     }
+
+    fn n_parameters(&self) -> usize {
+        1
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test::relative_eq;
 
     #[test]
     fn white_kernel() -> Result<(), KernelError> {
@@ -123,7 +113,11 @@ mod tests {
 
         assert::close(kernel.parameters()[0], PI.ln(), 1E-10);
 
-        assert!(relative_eq(kernel.parameters(), vec![PI.ln()], 1E-8, 1E-8,));
+        assert!(kernel.parameters().relative_eq(
+            &dvector![PI.ln()],
+            1E-8,
+            1E-8,
+        ));
 
         let x = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0]);
         let y = DMatrix::from_row_slice(2, 2, &[5.0, 7.0, 6.0, 8.0]);
