@@ -343,6 +343,7 @@ mod test {
     use crate::misc::ks_test;
     use crate::{test_basic_impls, verify_cache_resets};
     use std::f64;
+    use std::f64::consts::PI;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
@@ -524,7 +525,7 @@ mod test {
         ScaledInvChiSquared::new(1.2, 3.4).unwrap(),
         4.5,
         1.2,
-        3.14
+        PI
     );
 
     verify_cache_resets!(
@@ -534,7 +535,7 @@ mod test {
         ScaledInvChiSquared::new(1.2, 3.4).unwrap(),
         4.5,
         1.2,
-        3.14
+        PI
     );
 
     verify_cache_resets!(

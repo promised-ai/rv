@@ -1,7 +1,7 @@
 use super::{e2_norm, CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
-use nalgebra::{DMatrix, DVector, Dim, Matrix};
+use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
 use std::f64;
 
 #[cfg(feature = "serde1")]
@@ -50,6 +50,10 @@ impl Default for RBFKernel {
 }
 
 impl Kernel for RBFKernel {
+    fn n_parameters(&self) -> usize {
+        1
+    }
+
     fn covariance<R1, R2, C1, C2, S1, S2>(
         &self,
         x1: &Matrix<f64, R1, C1, S1>,
@@ -92,21 +96,8 @@ impl Kernel for RBFKernel {
         DVector::repeat(x.nrows(), 1.0)
     }
 
-    fn parameters(&self) -> Vec<f64> {
-        vec![self.length_scale.ln()]
-    }
-
-    fn consume_parameters<'p>(
-        &self,
-        params: &'p [f64],
-    ) -> Result<(Self, &'p [f64]), KernelError> {
-        if params.is_empty() {
-            Err(KernelError::MissingParameters(1))
-        } else {
-            let (cur, next) = params.split_at(1);
-            let ck = Self::reparameterize(self, cur)?;
-            Ok((ck, next))
-        }
+    fn parameters(&self) -> DVector<f64> {
+        dvector![self.length_scale.ln()]
     }
 
     fn reparameterize(&self, params: &[f64]) -> Result<Self, KernelError> {
