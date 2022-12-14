@@ -637,6 +637,24 @@ impl fmt::Display for MixtureError {
     }
 }
 
+macro_rules! bernmix_entropy {
+    ($type:ty) => {
+        impl Entropy for Mixture<$type> {
+            fn entropy(&self) -> f64 {
+                let ln_f_true = self.ln_f(&true);
+                let ln_f_false = self.ln_f(&false);
+
+                ln_f_true
+                    .exp()
+                    .mul_add(ln_f_true, ln_f_false.exp() * ln_f_false)
+            }
+        }
+    };
+}
+
+bernmix_entropy!(crate::dist::Bernoulli);
+bernmix_entropy!(&crate::dist::Bernoulli);
+
 macro_rules! catmix_entropy {
     ($type:ty) => {
         // Exact computation for categorical
