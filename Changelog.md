@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.15.0
+- WRITEME
+
 ## 0.14.4
 - re-export nalgebra (flag `arraydist`)
 - add `reparameterize` method to `process::gaussian::Kernel`, which will
