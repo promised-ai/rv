@@ -44,8 +44,8 @@ pub fn main() -> std::io::Result<()> {
     let (mut xs, mut ys): (Vec<f64>, Vec<f64>) = (Vec::new(), Vec::new());
     for line in reader.lines() {
         let line = line?;
-        if !line.starts_with("#") {
-            let cols: Vec<&str> = line.split(" ").take(2).collect();
+        if !line.starts_with('#') {
+            let cols: Vec<&str> = line.split(' ').take(2).collect();
             xs.push(cols[0].parse().unwrap());
             ys.push(cols[1].parse().unwrap());
         }

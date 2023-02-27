@@ -72,7 +72,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         let zn = ln_z(post.k(), post.df(), post.scale());
         let nd: f64 = (self.ndims() as f64) * (x.n() as f64);
 
-        zn - z0 - nd / 2.0 * LN_2PI
+        (nd / 2.0).mul_add(-LN_2PI, zn - z0)
     }
 
     #[inline]
@@ -100,7 +100,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
 
         let d: f64 = self.ndims() as f64;
 
-        zm - zn - d / 2.0 * LN_2PI
+        (d / 2.0).mul_add(-LN_2PI, zm - zn)
     }
 }
 
@@ -175,7 +175,7 @@ mod tests {
 
         let data: Vec<_> = (0..10)
             .map(|i| i as f64)
-            .map(|i| dvector![i * 2.0, i * 2.0 + 1.0])
+            .map(|i| dvector![i * 2.0, i.mul_add(2.0, 1.0)])
             .collect();
 
         let mut suff_stat = MvGaussianSuffStat::new(2);
@@ -183,7 +183,7 @@ mod tests {
 
         let posterior = niw.posterior(&MvgData::SuffStat(&suff_stat));
         assert!(posterior.mu.relative_eq(
-            &dvector![8.950249, 9.955224],
+            &dvector![8.950_249, 9.955_224],
             1e-6,
             1e-6
         ));

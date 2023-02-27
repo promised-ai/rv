@@ -483,7 +483,7 @@ macro_rules! continuous_uv_mean_and_var {
                         None => return None,
                     }
                 }
-                let out: f64 = p1 + p2 - p3 * p3;
+                let out: f64 = p3.mul_add(-p3, p1 + p2);
                 Some(out as $kind)
             }
         }
@@ -662,7 +662,7 @@ macro_rules! catmix_entropy {
             fn entropy(&self) -> f64 {
                 (0..self.components()[0].k()).fold(0.0, |acc, x| {
                     let ln_f = self.ln_f(&x);
-                    acc - ln_f.exp() * ln_f
+                    ln_f.exp().mul_add(-ln_f, acc)
                 })
             }
         }
@@ -1253,7 +1253,7 @@ mod tests {
 
         let s1 = serde_yaml::to_string(&mm1).unwrap();
         let mm2: Mixture<Gaussian> =
-            serde_yaml::from_slice(&s1.as_bytes()).unwrap();
+            serde_yaml::from_slice(s1.as_bytes()).unwrap();
         let s2 = serde_yaml::to_string(&mm2).unwrap();
 
         assert_eq!(s1, s2);

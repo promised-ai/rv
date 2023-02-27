@@ -228,7 +228,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for Gamma {
             fn ln_f(&self, x: &$kind) -> f64 {
-                self.shape * self.ln_rate() - self.ln_gamma_shape()
+                self.shape.mul_add(self.ln_rate(), -self.ln_gamma_shape())
                     + (self.shape - 1.0).mul_add(
                         f64::from(*x).ln(),
                         -(self.rate * f64::from(*x)),

@@ -203,10 +203,11 @@ macro_rules! impl_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(scale) and ln_gamma(shape)
                 let xf = f64::from(*x);
-                self.shape * self.scale.ln()
-                    - self.shape.ln_gamma().0
-                    - (self.shape + 1.0) * xf.ln()
-                    - (self.scale / xf)
+                (self.shape + 1.0).mul_add(
+                    -xf.ln(),
+                    self.shape
+                        .mul_add(self.scale.ln(), -self.shape.ln_gamma().0),
+                ) - (self.scale / xf)
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -269,8 +270,10 @@ impl Variance<f64> for InvGamma {
 
 impl Entropy for InvGamma {
     fn entropy(&self) -> f64 {
-        self.shape + self.scale.ln() + self.shape.ln_gamma().0
-            - (1.0 + self.shape) * self.shape.digamma()
+        (1.0 + self.shape).mul_add(
+            -self.shape.digamma(),
+            self.shape + self.scale.ln() + self.shape.ln_gamma().0,
+        )
     }
 }
 
@@ -287,7 +290,7 @@ impl Skewness for InvGamma {
 impl Kurtosis for InvGamma {
     fn kurtosis(&self) -> Option<f64> {
         if self.shape > 4.0 {
-            let krt = (30.0 * self.shape - 66.0)
+            let krt = 30.0_f64.mul_add(self.shape, -66.0)
                 / ((self.shape - 3.0) * (self.shape - 4.0));
             Some(krt)
         } else {

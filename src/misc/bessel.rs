@@ -225,7 +225,7 @@ pub fn bessel_iv(v: f64, z: f64) -> Result<f64, BesselIvError> {
             return Err(BesselIvError::OrderNotIntegerForNegativeZ);
         }
 
-        if (v - 2.0 * (v / 2.0).floor()) > EPSILON {
+        if 2.0_f64.mul_add(-(v / 2.0).floor(), v) > EPSILON {
             -1.0
         } else {
             1.0
@@ -721,7 +721,7 @@ pub(crate) fn bessel_ikv_temme(
     };
 
     if reflect {
-        let z = (u as f64) + ((n % 2) as f64);
+        let z = u + ((n % 2) as f64);
         Ok(((2.0 / PI).mul_add((PI * z).sin() * kv, iv), kv))
     } else {
         Ok((iv, kv))
@@ -777,10 +777,10 @@ fn temme_ik_series(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
 
     for k in 1..MAX_ITER {
         let kf = k as f64;
-        f = kf.mul_add(f, p + q) / (kf * kf - v * v);
+        f = kf.mul_add(f, p + q) / kf.mul_add(kf, -v * v);
         p /= kf - v;
         q /= kf + v;
-        h = p - kf * f;
+        h = kf.mul_add(-f, p);
         coef *= x * x / (4.0 * kf);
         sum += coef * f;
         sum1 += coef * h;
@@ -805,7 +805,7 @@ fn cf2_ik(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
      */
     debug_assert!(x.abs() > 1.0);
 
-    let mut a = v * v - 0.25;
+    let mut a = v.mul_add(v, -0.25);
     let mut b = 2.0 * (x + 1.0);
     let mut d = b.recip();
 
@@ -825,7 +825,7 @@ fn cf2_ik(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
         delta *= b.mul_add(d, -1.0);
         f += delta;
 
-        let t = (prev - (b - 2.0) * cur) / a;
+        let t = (b - 2.0).mul_add(-cur, prev) / a;
         prev = cur;
         cur = t;
         c *= -a / kf;
@@ -834,7 +834,7 @@ fn cf2_ik(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
 
         if (q * delta).abs() < s.abs() * EPSILON / 2.0 {
             let kv = (PI / (2.0 * x)).sqrt() * (-x).exp() / s;
-            let kv1 = kv * (v * v - 0.25).mul_add(f, 0.5 + v + x) / x;
+            let kv1 = kv * v.mul_add(v, -0.25).mul_add(f, 0.5 + v + x) / x;
             return Ok((kv, kv1));
         }
     }
@@ -902,8 +902,11 @@ fn bessel_iv_asymptotic(v: f64, x: f64) -> Result<f64, BesselIvError> {
 
         while term.abs() > std::f64::EPSILON * sum.abs() {
             let kf = k as f64;
-            let factor =
-                (mu - (2.0 * kf - 1.0) * (2.0 * kf - 1.0)) / (8.0 * x) / kf;
+            let factor = 2.0_f64
+                .mul_add(kf, -1.0)
+                .mul_add(-(2.0_f64.mul_add(kf, -1.0)), mu)
+                / (8.0 * x)
+                / kf;
             if k > 100 {
                 return Err(BesselIvError::FailedToConverge);
             }

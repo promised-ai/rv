@@ -415,7 +415,7 @@ mod test {
         NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
         Gaussian::new(-1.2, 0.4).unwrap(),
         2.3,
-        3.14
+        std::f64::consts::PI
     );
 
     verify_cache_resets!(
@@ -425,7 +425,7 @@ mod test {
         NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
         Gaussian::new(-1.2, 0.4).unwrap(),
         2.3,
-        3.14
+        std::f64::consts::PI
     );
 
     verify_cache_resets!(

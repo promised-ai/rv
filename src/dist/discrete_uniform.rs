@@ -285,7 +285,7 @@ mod tests {
     #[test]
     fn entropy() {
         let h: f64 = DiscreteUniform::new(2, 4).unwrap().entropy();
-        assert::close(h, 0.693_147_180_559_9, TOL);
+        assert::close(h, f64::consts::LN_2, TOL);
     }
 
     #[test]

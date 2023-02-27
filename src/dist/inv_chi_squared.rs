@@ -134,7 +134,7 @@ impl InvChiSquared {
     fn ln_f_const(&self) -> f64 {
         *self.ln_f_const.get_or_init(|| {
             let v2 = self.v / 2.0;
-            -v2 * LN_2 - v2.ln_gamma().0
+            (-v2).mul_add(LN_2, -v2.ln_gamma().0)
         })
     }
 }
@@ -223,7 +223,7 @@ impl Kurtosis for InvChiSquared {
     fn kurtosis(&self) -> Option<f64> {
         if self.v > 8.0 {
             let v = self.v;
-            Some(12.0 * (5.0 * v - 22.0) / ((v - 6.0) * (v - 8.0)))
+            Some(12.0 * 5.0_f64.mul_add(v, -22.0) / ((v - 6.0) * (v - 8.0)))
         } else {
             None
         }

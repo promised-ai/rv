@@ -308,7 +308,7 @@ impl Kurtosis for ScaledInvChiSquared {
     fn kurtosis(&self) -> Option<f64> {
         if self.v > 8.0 {
             let v = self.v;
-            Some(12.0 * (5.0 * v - 22.0) / ((v - 6.0) * (v - 8.0)))
+            Some(12.0 * 5.0_f64.mul_add(v, -22.0) / ((v - 6.0) * (v - 8.0)))
         } else {
             None
         }

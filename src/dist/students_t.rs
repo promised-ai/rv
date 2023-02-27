@@ -124,9 +124,10 @@ macro_rules! impl_traits {
                 let vp1 = (self.v + 1.0) / 2.0;
                 let xf = f64::from(*x);
                 let xterm = -vp1 * (xf * xf / self.v).ln_1p();
-                let zterm = vp1.ln_gamma().0
-                    - (self.v / 2.0).ln_gamma().0
-                    - 0.5 * (self.v * PI).ln();
+                let zterm = 0.5_f64.mul_add(
+                    -(self.v * PI).ln(),
+                    vp1.ln_gamma().0 - (self.v / 2.0).ln_gamma().0,
+                );
                 zterm + xterm
             }
 

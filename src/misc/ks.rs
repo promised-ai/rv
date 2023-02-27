@@ -58,26 +58,22 @@ where
 const KS_AUTO_CUTOVER: usize = 10_000;
 
 /// Mode in which to run the KS Test
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum KsMode {
     /// Compute the exact statistic
     Exact,
     /// Compute the statistic in the large N limit
     Asymptotic,
     /// Determine appropiate method automatically.
+    #[default]
     Auto,
 }
 
-impl Default for KsMode {
-    fn default() -> KsMode {
-        KsMode::Auto
-    }
-}
-
 /// Hypothesis Alternative for ks_two_sample test
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum KsAlternative {
     /// Alternative where the emperical CDFs could lie on either side on one another.
+    #[default]
     TwoSided,
     /// Alternative where the emperical CDF of the first sequence is strictly less than the
     /// emperical cdf of the second sequence.
@@ -85,12 +81,6 @@ pub enum KsAlternative {
     /// Alternative where the emperical CDF of the first sequence is strictly greater than the
     /// emperical cdf of the second sequence.
     Greater,
-}
-
-impl Default for KsAlternative {
-    fn default() -> KsAlternative {
-        KsAlternative::TwoSided
-    }
 }
 
 /// Errors when calculating ks_two_sample
@@ -255,10 +245,12 @@ where
                     let n = n_x.min(n_y) as f64;
 
                     let z = (m * n / (m + n)).sqrt() * stat;
-                    let expt = -2.0 * z * z
-                        - 2.0 * z * 2.0_f64.mul_add(n, m)
+                    let expt = (-2.0 * z).mul_add(
+                        z,
+                        -2.0 * z * 2.0_f64.mul_add(n, m)
                             / (m * n * (m + n)).sqrt()
-                            / 3.0;
+                            / 3.0,
+                    );
                     let p = expt.exp();
                     Ok((stat, p))
                 }
@@ -318,7 +310,8 @@ fn paths_outside_proportion(n: usize, h: f64) -> f64 {
         for j in 0..(h as usize) {
             let j_f = j as f64;
             let k_f = k as f64;
-            p1 = (n_f - k_f * h - j_f) * p1 / (k_f.mul_add(h, n_f) + j_f + 1.0);
+            p1 = (k_f.mul_add(-h, n_f) - j_f) * p1
+                / (k_f.mul_add(h, n_f) + j_f + 1.0);
         }
         p = p1 * (1.0 - p);
     }
@@ -349,7 +342,8 @@ fn paths_inside_proportion(m: usize, n: usize, g: usize, h: f64) -> f64 {
         let last_min_j = min_j;
         let last_len = cur_len;
 
-        min_j = (((ng_f * i_f - h) / mg_f).floor() + 1.0).max(0.0) as usize;
+        min_j =
+            ((ng_f.mul_add(i_f, -h) / mg_f).floor() + 1.0).max(0.0) as usize;
         min_j = min_j.min(n);
 
         max_j =
@@ -422,11 +416,14 @@ fn ks_cdf(n: usize, d: f64) -> f64 {
     let nf = n as f64;
     let s: f64 = d * d * nf;
     if s > 7.24 || (s > 3.76 && n > 99) {
-        1.0 - 2.0 * (-(2.000_071 + 0.331 / nf.sqrt() + 1.409 / nf) * s).exp()
+        2.0_f64.mul_add(
+            -(-(2.000_071 + 0.331 / nf.sqrt() + 1.409 / nf) * s).exp(),
+            1.0,
+        )
     } else {
         let k: usize = ((nf * d) as usize) + 1;
         let m: usize = 2 * k - 1;
-        let h: f64 = (k as f64) - nf * d;
+        let h: f64 = nf.mul_add(-d, k as f64);
 
         let mut hs = vec![vec![0.0; m]; m];
         for i in 0..m {
@@ -442,8 +439,8 @@ fn ks_cdf(n: usize, d: f64) -> f64 {
             hs[m - 1][i] -= h.powi((m as i32) - (i as i32))
         }
 
-        hs[m - 1][0] += if 2.0 * h - 1.0 > 0.0 {
-            (2.0 * h - 1.0).powi(m as i32)
+        hs[m - 1][0] += if 2.0_f64.mul_add(h, -1.0) > 0.0 {
+            2.0_f64.mul_add(h, -1.0).powi(m as i32)
         } else {
             0.0
         };

@@ -256,7 +256,7 @@ macro_rules! impl_traits {
         impl Rv<$kind> for Gaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k = (f64::from(*x) - self.mu) / self.sigma;
-                -self.ln_sigma() - 0.5 * k * k - HALF_LN_2PI
+                (0.5 * k).mul_add(-k, -self.ln_sigma()) - HALF_LN_2PI
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -291,7 +291,7 @@ macro_rules! impl_traits {
                 assert!(!((p <= 0.0) || (1.0 <= p)), "P out of range");
 
                 let x = (self.sigma * SQRT_2)
-                    .mul_add((2.0 * p - 1.0).inv_error(), self.mu);
+                    .mul_add(2.0_f64.mul_add(p, -1.0).inv_error(), self.mu);
                 x as $kind
             }
         }

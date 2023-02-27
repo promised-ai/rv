@@ -291,20 +291,20 @@ impl KlDivergence for Bernoulli {
 impl Entropy for Bernoulli {
     fn entropy(&self) -> f64 {
         let q = self.q();
-        -q * q.ln() - self.p * self.p.ln()
+        (-q).mul_add(q.ln(), -self.p * self.p.ln())
     }
 }
 
 impl Skewness for Bernoulli {
     fn skewness(&self) -> Option<f64> {
-        Some((1.0 - 2.0 * self.p) / (self.p * self.q()).sqrt())
+        Some(2.0_f64.mul_add(-self.p, 1.0) / (self.p * self.q()).sqrt())
     }
 }
 
 impl Kurtosis for Bernoulli {
     fn kurtosis(&self) -> Option<f64> {
         let q = self.q();
-        Some((1.0 - 6.0 * self.p * q) / (self.p * q))
+        Some((6.0 * self.p).mul_add(-q, 1.0) / (self.p * q))
     }
 }
 

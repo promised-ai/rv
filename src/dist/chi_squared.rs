@@ -128,7 +128,8 @@ macro_rules! impl_traits {
                 let k2 = self.k / 2.0;
                 let xf = f64::from(*x);
                 // TODO: cache (k2 - LN_2 - k2.ln_gamma().0)
-                (k2 - 1.0) * xf.ln() - xf / 2.0 - k2 * LN_2 - k2.ln_gamma().0
+                k2.mul_add(-LN_2, (k2 - 1.0).mul_add(xf.ln(), -xf / 2.0))
+                    - k2.ln_gamma().0
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {

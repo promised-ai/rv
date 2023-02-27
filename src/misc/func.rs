@@ -290,7 +290,8 @@ pub fn ln_fact(n: usize) -> f64 {
         LN_FACT[n]
     } else {
         let y: f64 = (n as f64) + 1.0;
-        (y - 0.5) * y.ln() - y + 0.5_f64.mul_add(LN_2PI, (12.0 * y).recip())
+        (y - 0.5).mul_add(y.ln(), -y)
+            + 0.5_f64.mul_add(LN_2PI, (12.0 * y).recip())
     }
 }
 

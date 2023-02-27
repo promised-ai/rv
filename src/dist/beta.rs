@@ -367,9 +367,11 @@ impl Entropy for Beta {
         let apb = self.alpha + self.beta;
         (apb - 2.0).mul_add(
             apb.digamma(),
-            self.ln_beta_ab()
-                - (self.alpha - 1.0) * self.alpha.digamma()
-                - (self.beta - 1.0) * self.beta.digamma(),
+            (self.beta - 1.0).mul_add(
+                -self.beta.digamma(),
+                (self.alpha - 1.0)
+                    .mul_add(-self.alpha.digamma(), self.ln_beta_ab()),
+            ),
         )
     }
 }
@@ -388,7 +390,7 @@ impl Kurtosis for Beta {
         let apb = self.alpha + self.beta;
         let amb = self.alpha - self.beta;
         let atb = self.alpha * self.beta;
-        let numer = 6.0 * (amb * amb * (apb + 1.0) - atb * (apb + 2.0));
+        let numer = 6.0 * (amb * amb).mul_add(apb + 1.0, -atb * (apb + 2.0));
         let denom = atb * (apb + 2.0) * (apb + 3.0);
         Some(numer / denom)
     }

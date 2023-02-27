@@ -274,7 +274,8 @@ impl Kurtosis for Geometric {
 
 impl Entropy for Geometric {
     fn entropy(&self) -> f64 {
-        (-(1.0 - self.p) * (1.0 - self.p).log2() - self.p * self.p.log2())
+        (-(1.0 - self.p))
+            .mul_add((1.0 - self.p).log2(), -self.p * self.p.log2())
             / self.p
     }
 }

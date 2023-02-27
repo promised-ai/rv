@@ -151,7 +151,7 @@ impl Rv<f64> for Empirical {
     fn draw<R: Rng>(&self, rng: &mut R) -> f64 {
         let n = self.xs.len() as f64;
         let u: f64 = rng.gen();
-        let uix = (u as f64 * n).ceil() as usize;
+        let uix = (u * n).ceil() as usize;
         self.xs[uix]
     }
 }

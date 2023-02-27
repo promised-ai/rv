@@ -311,7 +311,6 @@ mod tests {
         let scale = DMatrix::identity(2, 2);
         let res = NormalInvWishart::new(mu, 0.0, 2, scale);
         if let Err(NormalInvWishartError::KTooLow { .. }) = res {
-            ()
         } else {
             panic!("wrong error");
         }
@@ -323,7 +322,6 @@ mod tests {
         let scale = DMatrix::identity(2, 2);
         let res = NormalInvWishart::new(mu, -1.0, 2, scale);
         if let Err(NormalInvWishartError::KTooLow { .. }) = res {
-            ()
         } else {
             panic!("wrong error");
         }
@@ -339,7 +337,6 @@ mod tests {
             ndims: 2,
         }) = res
         {
-            ()
         } else {
             panic!("wrong error");
         }
@@ -355,7 +352,6 @@ mod tests {
             n_scale: 3,
         }) = res
         {
-            ()
         } else {
             panic!("wrong error");
         }
@@ -371,7 +367,6 @@ mod tests {
             ncols: 3,
         }) = res
         {
-            ()
         } else {
             panic!("wrong error");
         }

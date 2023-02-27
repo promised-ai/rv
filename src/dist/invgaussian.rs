@@ -255,11 +255,10 @@ macro_rules! impl_traits {
                 let y = v * v;
                 let mu2 = mu * mu;
                 let x = 0.5_f64.mul_add(
-                    (mu2 * y / lambda
-                        - mu / lambda
-                            * (4.0 * mu * lambda)
-                                .mul_add(y, mu2 * y * y)
-                                .sqrt()),
+                    (mu / lambda).mul_add(
+                        -(4.0 * mu * lambda).mul_add(y, mu2 * y * y).sqrt(),
+                        mu2 * y / lambda,
+                    ),
                     mu,
                 );
                 let z: f64 = rng.gen();

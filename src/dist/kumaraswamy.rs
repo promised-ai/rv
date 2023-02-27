@@ -392,7 +392,7 @@ macro_rules! impl_kumaraswamy {
                 {
                     None
                 } else {
-                    let mode = ((self.a - 1.0) / (self.a * self.b - 1.0))
+                    let mode = ((self.a - 1.0) / self.a.mul_add(self.b, -1.0))
                         .powf(self.a.recip());
                     Some(mode as $kind)
                 }
@@ -643,7 +643,7 @@ mod tests {
             "
         );
 
-        let kuma_1: Kumaraswamy = serde_yaml::from_str(&yaml).unwrap();
+        let kuma_1: Kumaraswamy = serde_yaml::from_str(yaml).unwrap();
         let kuma_2 = Kumaraswamy::new(2.0, 3.0).unwrap();
 
         assert::close(kuma_1.f(&0.5_f64), kuma_2.f(&0.5_f64), 1E-12);

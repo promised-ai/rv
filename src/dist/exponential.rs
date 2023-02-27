@@ -136,7 +136,7 @@ macro_rules! impl_traits {
                 if x < &0.0 {
                     f64::NEG_INFINITY
                 } else {
-                    self.rate.ln() - self.rate * f64::from(*x)
+                    self.rate.mul_add(-f64::from(*x), self.rate.ln())
                 }
             }
 

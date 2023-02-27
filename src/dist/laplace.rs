@@ -190,7 +190,7 @@ impl_display!(Laplace);
 #[inline]
 fn laplace_partial_draw(u: f64) -> f64 {
     let r = u - 0.5;
-    r.signum() * (1.0 - 2.0 * r.abs()).ln()
+    r.signum() * 2.0_f64.mul_add(-r.abs(), 1.0).ln()
 }
 
 macro_rules! impl_traits {
@@ -203,7 +203,7 @@ macro_rules! impl_traits {
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let u = rng.sample(rand_distr::OpenClosed01);
-                (self.mu - self.b * laplace_partial_draw(u)) as $kind
+                self.b.mul_add(-laplace_partial_draw(u), self.mu) as $kind
             }
         }
 
@@ -221,7 +221,7 @@ macro_rules! impl_traits {
                 if xf < self.mu {
                     0.5 * ((xf - self.mu) / self.b).exp()
                 } else {
-                    1.0 - 0.5 * (-(xf - self.mu) / self.b).exp()
+                    0.5_f64.mul_add(-(-(xf - self.mu) / self.b).exp(), 1.0)
                 }
             }
         }

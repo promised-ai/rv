@@ -7,7 +7,7 @@ use crate::data::MvGaussianSuffStat;
 use crate::impl_display;
 use crate::traits::*;
 use nalgebra::linalg::Cholesky;
-use nalgebra::{DMatrix, DVector, Dynamic};
+use nalgebra::{DMatrix, DVector, Dyn};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use std::fmt;
@@ -16,7 +16,7 @@ use std::fmt;
 #[derive(Clone, Debug)]
 struct MvgCache {
     /// Covariant Matrix Cholesky Decomposition
-    pub cov_chol: Cholesky<f64, Dynamic>,
+    pub cov_chol: Cholesky<f64, Dyn>,
     /// Inverse of Covariance Matrix
     pub cov_inv: DMatrix<f64>,
 }
@@ -33,7 +33,7 @@ impl MvgCache {
     }
 
     #[inline]
-    pub fn from_chol(cov_chol: Cholesky<f64, Dynamic>) -> Self {
+    pub fn from_chol(cov_chol: Cholesky<f64, Dyn>) -> Self {
         let cov_inv = cov_chol.inverse();
         MvgCache { cov_chol, cov_inv }
     }
@@ -188,7 +188,7 @@ impl MvGaussian {
     /// ```
     pub fn new_cholesky(
         mu: DVector<f64>,
-        cov_chol: Cholesky<f64, Dynamic>,
+        cov_chol: Cholesky<f64, Dyn>,
     ) -> Result<Self, MvGaussianError> {
         let l = cov_chol.l();
         let cov = &l * &l.transpose();
@@ -216,7 +216,7 @@ impl MvGaussian {
     #[inline]
     pub fn new_cholesky_unchecked(
         mu: DVector<f64>,
-        cov_chol: Cholesky<f64, Dynamic>,
+        cov_chol: Cholesky<f64, Dyn>,
     ) -> Self {
         let cache = OnceCell::from(MvgCache::from_chol(cov_chol));
         let cov = cache.get().unwrap().cov();
