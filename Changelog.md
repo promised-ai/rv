@@ -1,7 +1,13 @@
 # Changelog
 
 ## 0.15.0
-- WRITEME
+- All structs and enums use `snake_case` naming.
+- Dependency updates (thanks @bsull).
+- Entropy impl for Bernoulli Mixuture.
+- Corrected NormalInverseGamma Posterior.
+- Corrected NormalInverseWishart Posterior.
+- Added `Kernel::reparameterize`.
+- Improve CI.
 
 ## 0.14.4
 - re-export nalgebra (flag `arraydist`)
