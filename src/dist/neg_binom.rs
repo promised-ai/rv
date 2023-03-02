@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 /// Negative Binomial distribution errors
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NegBinomialError {
     /// The probability parameter, p, is not in [0, 1]
     POutOfRange { p: f64 },
@@ -34,6 +35,7 @@ pub enum NegBinomialError {
 /// - p: The success probability
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NegBinomial {
     r: f64,
     p: f64,

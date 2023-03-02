@@ -21,6 +21,7 @@ mod categorical_prior;
 /// optimizations to seep up computing the PDF and drawing random vectors.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct SymmetricDirichlet {
     alpha: f64,
     k: usize,
@@ -37,6 +38,7 @@ impl PartialEq for SymmetricDirichlet {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum SymmetricDirichletError {
     /// k parameter is zero
     KIsZero,
@@ -214,6 +216,7 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum DirichletError {
     /// k parameter is zero
     KIsZero,
@@ -229,6 +232,7 @@ pub enum DirichletError {
 /// over points on the k-simplex.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Dirichlet {
     /// A `Vec` of real numbers in (0, ∞)
     pub(crate) alphas: Vec<f64>,

@@ -25,6 +25,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Laplace {
     /// Location in (-∞, ∞)
     mu: f64,
@@ -34,6 +35,7 @@ pub struct Laplace {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum LaplaceError {
     /// The mu parameter is infinite or NaN
     MuNotFinite { mu: f64 },

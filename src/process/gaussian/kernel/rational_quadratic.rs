@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 /// `mixture` -- Mixture Scale
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct RationalQuadratic {
     scale: f64,
     mixture: f64,

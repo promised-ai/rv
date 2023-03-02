@@ -28,6 +28,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Geometric {
     p: f64,
     // ln_(p)
@@ -40,6 +41,7 @@ pub struct Geometric {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GeometricError {
     /// The p parameter is infinite or NaN
     PNotFinite { p: f64 },

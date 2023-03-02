@@ -30,6 +30,7 @@ use rand::Rng;
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Empirical {
     xs: Vec<f64>,
     range: (f64, f64),

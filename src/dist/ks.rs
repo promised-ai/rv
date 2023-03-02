@@ -38,6 +38,7 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
 /// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct KsTwoAsymptotic {}
 
 struct CdfPdf {

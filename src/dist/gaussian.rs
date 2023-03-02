@@ -38,6 +38,7 @@ use crate::traits::*;
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Gaussian {
     /// Mean
     mu: f64,
@@ -56,6 +57,7 @@ impl PartialEq for Gaussian {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GaussianError {
     /// The mu parameter is infinite or NaN
     MuNotFinite { mu: f64 },

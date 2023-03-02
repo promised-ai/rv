@@ -33,6 +33,7 @@ use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Bernoulli {
     /// Probability of a success (x=1)
     p: f64,
@@ -40,6 +41,7 @@ pub struct Bernoulli {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum BernoulliError {
     /// Bernoulli p is less than zero
     PLessThanZero { p: f64 },

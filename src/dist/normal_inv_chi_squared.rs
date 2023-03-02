@@ -19,6 +19,7 @@ use rand::Rng;
 /// `μ ~ N(m, σ/√k)` and `σ² ~ ScaledInvChiSquared(v, s2)`.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalInvChiSquared {
     m: f64,
     k: f64,
@@ -40,6 +41,7 @@ impl PartialEq for NormalInvChiSquared {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NormalInvChiSquaredError {
     /// The m parameter is infinite or NaN
     MNotFinite { m: f64 },

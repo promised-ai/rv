@@ -13,6 +13,7 @@ use std::fmt;
 /// over unordered values in [0, k).
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Categorical {
     // Use log weights instead to optimize for computation of ln_f
     ln_weights: Vec<f64>,
@@ -20,6 +21,7 @@ pub struct Categorical {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum CategoricalError {
     /// One or more of the weights is infinite or NaN
     NonFiniteWeight { ix: usize, ln: bool, weight: f64 },

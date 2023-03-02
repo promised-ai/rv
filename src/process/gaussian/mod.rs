@@ -28,6 +28,7 @@ fn outer_product_self(col: &DVector<f64>) -> DMatrix<f64> {
 /// Errors from GaussianProcess
 #[derive(Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GaussianProcessError {
     /// The kernel is not returning a positive-definite matrix. Try adding a small, constant noise parameter as y_train_sigma.
     NotPositiveSemiDefinite,
@@ -60,6 +61,7 @@ impl From<KernelError> for GaussianProcessError {
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct GaussianProcess<K>
 where
     K: Kernel,

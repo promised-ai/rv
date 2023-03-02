@@ -114,6 +114,7 @@ pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
 /// Errors from Kernel construction
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum KernelError {
     /// Lower bounds must be lower that upper bounds
     InproperBounds(f64, f64),

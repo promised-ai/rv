@@ -11,6 +11,7 @@ use crate::traits::SuffStat;
 /// Contains the number of trials and the number of successes.
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct BernoulliSuffStat {
     n: usize,
     k: usize,

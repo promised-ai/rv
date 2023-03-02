@@ -24,6 +24,7 @@ mod poisson_prior;
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Gamma {
     shape: f64,
     rate: f64,
@@ -43,6 +44,7 @@ impl PartialEq for Gamma {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GammaError {
     /// Shape parameter is less than or equal to zero
     ShapeTooLow { shape: f64 },

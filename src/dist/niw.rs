@@ -38,6 +38,7 @@ mod mvg_prior;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalInvWishart {
     /// The mean of μ, μ<sub>0</sub>
     mu: DVector<f64>,
@@ -51,6 +52,7 @@ pub struct NormalInvWishart {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NormalInvWishartError {
     /// The k parameter is less than or equal to zero
     KTooLow { k: f64 },

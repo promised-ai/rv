@@ -89,6 +89,7 @@ impl MvgCache {
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct MvGaussian {
     // Mean vector
     mu: DVector<f64>,
@@ -116,6 +117,7 @@ impl PartialEq for MvGaussian {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum MvGaussianError {
     /// The mu and cov parameters have incompatible dimensions
     MuCovDimensionMismatch {

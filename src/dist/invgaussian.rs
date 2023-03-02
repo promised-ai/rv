@@ -16,6 +16,7 @@ use crate::traits::*;
 /// N<sup>-1</sup>(μ, λ) over real values.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct InvGaussian {
     /// Mean
     mu: f64,
@@ -34,6 +35,7 @@ impl PartialEq for InvGaussian {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum InvGaussianError {
     /// The mu parameter is infinite or NaN
     MuNotFinite { mu: f64 },

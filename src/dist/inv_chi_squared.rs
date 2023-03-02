@@ -22,6 +22,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct InvChiSquared {
     /// Degrees of freedom in (0, ∞)
     v: f64,
@@ -38,6 +39,7 @@ impl PartialEq for InvChiSquared {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum InvChiSquaredError {
     /// v parameter is less than or equal to zero
     VTooLow { v: f64 },

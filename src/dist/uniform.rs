@@ -29,6 +29,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Uniform {
     a: f64,
     b: f64,
@@ -45,6 +46,7 @@ impl PartialEq for Uniform {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum UniformError {
     /// A >= B
     InvalidInterval { a: f64, b: f64 },

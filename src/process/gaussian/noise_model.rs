@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 /// Model of noise to use in Gaussian Process
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NoiseModel {
     /// The same noise is applied to all values
     Uniform(f64),

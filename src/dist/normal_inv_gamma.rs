@@ -19,6 +19,7 @@ use std::fmt;
 /// `μ ~ N(m, sqrt(v)σ)` and `ρ ~ InvGamma(a, b)`.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalInvGamma {
     m: f64,
     v: f64,
@@ -28,6 +29,7 @@ pub struct NormalInvGamma {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NormalInvGammaError {
     /// The m parameter is infinite or NaN
     MNotFinite { m: f64 },

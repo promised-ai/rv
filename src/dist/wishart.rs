@@ -13,6 +13,7 @@ use std::fmt;
 /// W<sup>-1</sup>(**Ψ**,ν) over positive definite matrices.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct InvWishart {
     /// p-dimensional inverse scale matrix, **Ψ**
     inv_scale: DMatrix<f64>,
@@ -22,6 +23,7 @@ pub struct InvWishart {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum InvWishartError {
     /// The scale matrix is not square
     ScaleMatrixNotSquare { nrows: usize, ncols: usize },
