@@ -283,7 +283,7 @@ impl Entropy for Poisson {
         if self.rate() < 200.0 {
             // compute expectation until f(x) is close to zero
             let mid = self.rate().floor() as u32;
-            crate::misc::entropy::count_entropy(&self, mid)
+            crate::misc::entropy::count_entropy(self, mid)
         } else {
             // Approximation for large rate. Error is O(1/rate^3)
             // https://en.wikipedia.org/wiki/Poisson_distribution

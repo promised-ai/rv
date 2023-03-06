@@ -252,7 +252,7 @@ impl Rv<MvGaussian> for NormalInvWishart {
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> MvGaussian {
         let iw = InvWishart::new_unchecked(self.scale.clone(), self.df);
-        let sigma = iw.draw(&mut rng);
+        let sigma: DMatrix<f64> = iw.draw(&mut rng);
 
         let mvg =
             MvGaussian::new_unchecked(self.mu.clone(), sigma.clone() / self.k);

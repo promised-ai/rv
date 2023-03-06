@@ -10,39 +10,46 @@ use std::collections::BTreeMap;
 #[macro_export]
 macro_rules! test_basic_impls {
     ([continuous] $fx: expr) => {
-        test_basic_impls!($fx, 0.5_f64);
+        test_basic_impls!($fx, 0.5_f64, impls);
     };
     ([categorical] $fx: expr) => {
-        test_basic_impls!($fx, 0_usize);
+        test_basic_impls!($fx, 0_usize, impls);
     };
     ([count] $fx: expr) => {
-        test_basic_impls!($fx, 3_u32);
+        test_basic_impls!($fx, 3_u32, impls);
     };
     ([binary] $fx: expr) => {
-        test_basic_impls!($fx, true);
+        test_basic_impls!($fx, true, impls);
     };
     ($fx: expr, $x: expr) => {
-        #[test]
-        fn should_impl_debug_clone_and_partialeq() {
-            // make the expression a thing. If we don't do this, calling $fx
-            // reconstructs the distribution which means we don't do caching
-            let fx = $fx;
+        test_basic_impls!($fx, $x, impls);
+    };
+    ($fx: expr, $x: expr, $mod: ident) => {
+        mod $mod {
+            use super::*;
 
-            // clone a copy of fn before any computation of cached values is
-            // done
-            let fx2 = fx.clone();
-            assert_eq!($fx, fx2);
+            #[test]
+            fn should_impl_debug_clone_and_partialeq() {
+                // make the expression a thing. If we don't do this, calling $fx
+                // reconstructs the distribution which means we don't do caching
+                let fx = $fx;
 
-            // Computing ln_f normally initializes all cached values
-            let y1 = fx.ln_f(&$x);
-            let y2 = fx.ln_f(&$x);
-            assert!((y1 - y2).abs() < std::f64::EPSILON);
+                // clone a copy of fn before any computation of cached values is
+                // done
+                let fx2 = fx.clone();
+                assert_eq!($fx, fx2);
 
-            // check the fx == fx2 despite fx having its cached values initalized
-            assert_eq!(fx2, fx);
+                // Computing ln_f normally initializes all cached values
+                let y1 = fx.ln_f(&$x);
+                let y2 = fx.ln_f(&$x);
+                assert!((y1 - y2).abs() < std::f64::EPSILON);
 
-            // Make sure Debug is implemented for fx
-            let _s1 = format!("{:?}", fx);
+                // check the fx == fx2 despite fx having its cached values initalized
+                assert_eq!(fx2, fx);
+
+                // Make sure Debug is implemented for fx
+                let _s1 = format!("{:?}", fx);
+            }
         }
     };
 }

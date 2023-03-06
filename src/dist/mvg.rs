@@ -73,9 +73,11 @@ impl MvgCache {
 /// let xs = mvg.sample(df, &mut rng);
 ///
 /// // 3. Compute the sum Σ xx'
-/// let mat = xs.iter().fold(DMatrix::<f64>::zeros(k, k), |acc, x| {
-///     acc +x*x.transpose()
-/// });
+/// let mat = xs
+///     .iter()
+///     .fold(DMatrix::<f64>::zeros(k, k), |acc, x: &DVector<f64>| {
+///         acc +x*x.transpose()
+///     });
 ///
 /// // Check that the matrix is square and has the right size
 /// assert_eq!(mat.nrows(), k);
@@ -626,7 +628,7 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let xs = mvg.sample(103, &mut rng);
+        let xs: Vec<DVector<f64>> = mvg.sample(103, &mut rng);
 
         assert_eq!(xs.len(), 103);
     }
@@ -669,8 +671,10 @@ mod tests {
                 acc
             } else {
                 let xys = mvg.sample(500, &mut rng);
-                let xs: Vec<f64> = xys.iter().map(|xy| xy[0]).collect();
-                let ys: Vec<f64> = xys.iter().map(|xy| xy[1]).collect();
+                let xs: Vec<f64> =
+                    xys.iter().map(|xy: &DVector<f64>| xy[0]).collect();
+                let ys: Vec<f64> =
+                    xys.iter().map(|xy: &DVector<f64>| xy[1]).collect();
 
                 let (_, px) = ks_test(&xs, cdf);
                 let (_, py) = ks_test(&ys, cdf);

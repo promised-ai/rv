@@ -17,6 +17,8 @@ mod chi_squared;
 mod crp;
 mod dirichlet;
 mod discrete_uniform;
+#[cfg(feature = "datum")]
+mod distribution;
 mod empirical;
 mod exponential;
 mod gamma;
@@ -41,6 +43,8 @@ mod normal_inv_chi_squared;
 mod normal_inv_gamma;
 mod pareto;
 mod poisson;
+#[cfg(feature = "datum")]
+mod product;
 mod scaled_inv_chi_squared;
 mod skellam;
 mod students_t;
@@ -59,6 +63,8 @@ pub use chi_squared::{ChiSquared, ChiSquaredError};
 pub use crp::{Crp, CrpError};
 pub use dirichlet::{Dirichlet, DirichletError, SymmetricDirichlet};
 pub use discrete_uniform::{DiscreteUniform, DiscreteUniformError};
+#[cfg(feature = "datum")]
+pub use distribution::Distribution;
 pub use empirical::Empirical;
 pub use exponential::{Exponential, ExponentialError};
 pub use gamma::{Gamma, GammaError};
@@ -85,6 +91,8 @@ pub use normal_inv_chi_squared::{
 pub use normal_inv_gamma::{NormalInvGamma, NormalInvGammaError};
 pub use pareto::{Pareto, ParetoError};
 pub use poisson::{Poisson, PoissonError};
+#[cfg(feature = "datum")]
+pub use product::ProductDistribution;
 pub use scaled_inv_chi_squared::{
     ScaledInvChiSquared, ScaledInvChiSquaredError,
 };

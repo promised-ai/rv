@@ -184,7 +184,7 @@ mod tests {
     fn ln_m_vs_monte_carlo() {
         use crate::misc::logsumexp;
 
-        let n_samples = 2_000_000;
+        let n_samples = 8_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
 
         let (m, r, s, v) = (0.0, 1.2, 2.3, 3.4);

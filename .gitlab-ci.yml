@@ -15,8 +15,6 @@ rustfmt:
   stage: pedantry
   image: "rustlang/rust:nightly"
   script:
-    # there should be no println in src
-    - '[[ `grep -E -r -e "(\s+|^)println" src/*` == "" ]]'
     - rustup component add rustfmt
     - cargo fmt -- --check
 
@@ -40,8 +38,8 @@ test:features:
   image: rust:1
   script:
     - cargo install cargo-hack --locked
-    - cargo hack --each-feature check
-    - cargo hack --each-feature test
+    - cargo hack --feature-powerset check
+    - cargo test --all-features
 
 # just make sure that the benched didn't get broken
 bench:cargo-stable:
