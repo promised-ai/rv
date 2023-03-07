@@ -1,7 +1,7 @@
 use super::{CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
-use nalgebra::{DMatrix, DVector, Dim, Matrix};
+use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
 use std::f64;
 
 #[cfg(feature = "serde1")]
@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct ConstantKernel {
     scale: f64,
 }
@@ -48,6 +49,10 @@ impl std::convert::TryFrom<f64> for ConstantKernel {
 }
 
 impl Kernel for ConstantKernel {
+    fn n_parameters(&self) -> usize {
+        1
+    }
+
     fn covariance<R1, R2, C1, C2, S1, S2>(
         &self,
         x1: &Matrix<f64, R1, C1, S1>,
@@ -78,28 +83,15 @@ impl Kernel for ConstantKernel {
         DVector::from_element(x.nrows(), self.scale)
     }
 
-    fn parameters(&self) -> Vec<f64> {
-        vec![self.scale.ln()]
+    fn parameters(&self) -> DVector<f64> {
+        dvector![self.scale.ln()]
     }
 
-    fn from_parameters(&self, param_vec: &[f64]) -> Result<Self, KernelError> {
+    fn reparameterize(&self, param_vec: &[f64]) -> Result<Self, KernelError> {
         match param_vec {
             [] => Err(KernelError::MissingParameters(1)),
             [value] => Self::new(value.exp()),
             _ => Err(KernelError::ExtraniousParameters(param_vec.len() - 1)),
-        }
-    }
-
-    fn consume_parameters<'p>(
-        &self,
-        params: &'p [f64],
-    ) -> Result<(Self, &'p [f64]), KernelError> {
-        if params.is_empty() {
-            Err(KernelError::MissingParameters(1))
-        } else {
-            let (cur, next) = params.split_at(1);
-            let ck = Self::from_parameters(self, cur)?;
-            Ok((ck, next))
         }
     }
 
@@ -124,17 +116,14 @@ impl Kernel for ConstantKernel {
 
 #[cfg(test)]
 mod tests {
-    use crate::test::relative_eq;
-
     use super::*;
 
     #[test]
     fn constant_kernel() {
         let kernel = ConstantKernel::new(3.0).unwrap();
         assert::close(kernel.parameters()[0], 3.0_f64.ln(), 1E-10);
-        assert!(relative_eq(
-            kernel.parameters(),
-            vec![3.0_f64.ln()],
+        assert!(kernel.parameters().relative_eq(
+            &dvector![3.0_f64.ln()],
             1E-8,
             1E-8,
         ));

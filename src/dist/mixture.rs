@@ -41,6 +41,7 @@ pub struct Mixture<Fx> {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum MixtureError {
     /// The weights vector is empty
     WeightsEmpty,
@@ -483,7 +484,7 @@ macro_rules! continuous_uv_mean_and_var {
                         None => return None,
                     }
                 }
-                let out: f64 = p1 + p2 - p3 * p3;
+                let out: f64 = p3.mul_add(-p3, p1 + p2);
                 Some(out as $kind)
             }
         }
@@ -637,6 +638,23 @@ impl fmt::Display for MixtureError {
     }
 }
 
+macro_rules! bernmix_entropy {
+    ($type:ty) => {
+        impl Entropy for Mixture<$type> {
+            fn entropy(&self) -> f64 {
+                let ln_f_true = self.ln_f(&true);
+                let ln_f_false = self.ln_f(&false);
+
+                ln_f_true
+                    .exp()
+                    .mul_add(ln_f_true, ln_f_false.exp() * ln_f_false)
+            }
+        }
+    };
+}
+
+bernmix_entropy!(crate::dist::Bernoulli);
+
 macro_rules! catmix_entropy {
     ($type:ty) => {
         // Exact computation for categorical
@@ -644,7 +662,7 @@ macro_rules! catmix_entropy {
             fn entropy(&self) -> f64 {
                 (0..self.components()[0].k()).fold(0.0, |acc, x| {
                     let ln_f = self.ln_f(&x);
-                    acc - ln_f.exp() * ln_f
+                    ln_f.exp().mul_add(-ln_f, acc)
                 })
             }
         }
@@ -652,7 +670,6 @@ macro_rules! catmix_entropy {
 }
 
 catmix_entropy!(Categorical);
-catmix_entropy!(&Categorical);
 
 macro_rules! countmix_entropy {
     ($type:ty) => {
@@ -661,7 +678,7 @@ macro_rules! countmix_entropy {
             fn entropy(&self) -> f64 {
                 if self.k() == 1 {
                     crate::misc::entropy::count_entropy(
-                        &self,
+                        self,
                         self.mean().unwrap() as u32,
                     )
                 } else {
@@ -688,7 +705,7 @@ macro_rules! countmix_entropy {
                         },
                     );
                     crate::misc::entropy::count_entropy_range(
-                        &self,
+                        self,
                         ((lower + upper) / 2.0) as u32,
                         lower as u32,
                         upper as u32,
@@ -700,7 +717,6 @@ macro_rules! countmix_entropy {
 }
 
 countmix_entropy!(Poisson);
-countmix_entropy!(&Poisson);
 
 macro_rules! dual_step_quad_bounds {
     ($kind: ty) => {
@@ -841,10 +857,8 @@ macro_rules! quadrature_entropy {
 }
 
 dual_step_quad_bounds!(Mixture<Gaussian>);
-dual_step_quad_bounds!(Mixture<&Gaussian>);
 
 quadrature_entropy!(Mixture<Gaussian>);
-quadrature_entropy!(Mixture<&Gaussian>);
 
 macro_rules! ds_discrete_quad_bounds {
     ($fxtype:ty, $xtype:ty, $minval:expr, $maxval:expr) => {
@@ -875,7 +889,6 @@ macro_rules! ds_discrete_quad_bounds {
 }
 
 ds_discrete_quad_bounds!(Mixture<Poisson>, u32, 0, u32::max_value());
-ds_discrete_quad_bounds!(Mixture<&Poisson>, u32, 0, u32::max_value());
 
 #[cfg(test)]
 mod tests {
@@ -1235,7 +1248,7 @@ mod tests {
 
         let s1 = serde_yaml::to_string(&mm1).unwrap();
         let mm2: Mixture<Gaussian> =
-            serde_yaml::from_slice(&s1.as_bytes()).unwrap();
+            serde_yaml::from_slice(s1.as_bytes()).unwrap();
         let s2 = serde_yaml::to_string(&mm2).unwrap();
 
         assert_eq!(s1, s2);

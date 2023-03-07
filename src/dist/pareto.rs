@@ -21,6 +21,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Pareto {
     shape: f64,
     scale: f64,
@@ -28,6 +29,7 @@ pub struct Pareto {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum ParetoError {
     /// Shape parameter is less than or equal to zero
     ShapeTooLow { shape: f64 },
@@ -189,8 +191,10 @@ macro_rules! impl_traits {
         impl Rv<$kind> for Pareto {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: cache ln(shape) and ln(scale)
-                self.shape.mul_add(self.scale.ln(), self.shape.ln())
-                    - (self.shape + 1.0) * f64::from(*x).ln()
+                (self.shape + 1.0).mul_add(
+                    -f64::from(*x).ln(),
+                    self.shape.mul_add(self.scale.ln(), self.shape.ln()),
+                )
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -278,7 +282,7 @@ impl Kurtosis for Pareto {
         } else {
             let s2 = s * s;
             Some(
-                6.0 * (s2.mul_add(s, s2) - 6.0 * s - 2.0)
+                6.0 * (6.0_f64.mul_add(-s, s2.mul_add(s, s2)) - 2.0)
                     / (s * (s - 3.0) * (s - 4.0)),
             )
         }

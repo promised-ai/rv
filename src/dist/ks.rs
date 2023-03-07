@@ -36,8 +36,9 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
 /// const EXPECTED: f64 = 0.26999967167735456;
 /// assert!((sf - EXPECTED).abs() < 1E-15);
 /// ```
-#[derive(Debug, Copy, Clone, PartialEq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct KsTwoAsymptotic {}
 
 struct CdfPdf {
@@ -90,7 +91,7 @@ impl KsTwoAsymptotic {
                 p = u_8cub.mul_add(p, 1.0);
                 d = u_8cub.mul_add(d, 1.0);
 
-                d = PI * PI / (4.0 * x * x) * d - p;
+                d = (PI * PI / (4.0 * x * x)).mul_add(d, -p);
                 d *= w * u / x;
                 p *= w * u;
             }
@@ -118,16 +119,16 @@ impl KsTwoAsymptotic {
             let mut vpwr;
 
             vpwr = v3 * v3 * v;
-            p = 1.0 - vpwr * p;
-            d = 3.0 * 3.0 - vpwr * d;
+            p = vpwr.mul_add(-p, 1.0);
+            d = 3.0_f64.mul_add(3.0, -vpwr * d);
 
             vpwr = v3 * vsq;
-            p = 1.0 - vpwr * p;
-            d = 2.0 * 2.0 - vpwr * d;
+            p = vpwr.mul_add(-p, 1.0);
+            d = 2.0_f64.mul_add(2.0, -vpwr * d);
 
             vpwr = v3;
-            p = 1.0 - vpwr * p;
-            d = 1.0 * 1.0 - vpwr * d;
+            p = vpwr.mul_add(-p, 1.0);
+            d = 1.0_f64.mul_add(1.0, -vpwr * d);
 
             p *= 2.0 * v;
             d *= 8.0 * v * x;

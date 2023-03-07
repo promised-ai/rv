@@ -81,6 +81,7 @@
     clippy::option_option,
     clippy::implicit_clone
 )]
+#![deny(clippy::print_stdout)]
 
 #[cfg(feature = "serde1")]
 extern crate serde;
@@ -101,6 +102,10 @@ pub mod test;
 pub mod traits;
 
 pub use crate::model::ConjugateModel;
+
+// re-export
+#[cfg(feature = "arraydist")]
+pub use nalgebra;
 
 #[macro_export]
 macro_rules! impl_display {

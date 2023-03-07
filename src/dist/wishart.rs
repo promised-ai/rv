@@ -13,6 +13,7 @@ use std::fmt;
 /// W<sup>-1</sup>(**Ψ**,ν) over positive definite matrices.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct InvWishart {
     /// p-dimensional inverse scale matrix, **Ψ**
     inv_scale: DMatrix<f64>,
@@ -20,8 +21,9 @@ pub struct InvWishart {
     df: usize,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum InvWishartError {
     /// The scale matrix is not square
     ScaleMatrixNotSquare { nrows: usize, ncols: usize },
@@ -161,10 +163,13 @@ impl Rv<DMatrix<f64>> for InvWishart {
         let scale = self.inv_scale.clone().try_inverse().unwrap();
         let mvg = MvGaussian::new_unchecked(DVector::zeros(p), scale);
         let xs = mvg.sample(self.df, &mut rng);
-        let y = xs.iter().fold(DMatrix::<f64>::zeros(p, p), |acc, x| {
-            // TODO: faster way to do X * X^T?
-            acc + x * x.transpose()
-        });
+        let y = xs.iter().fold(
+            DMatrix::<f64>::zeros(p, p),
+            |acc, x: &DVector<f64>| {
+                // TODO: faster way to do X * X^T?
+                acc + x * x.transpose()
+            },
+        );
         y.try_inverse().unwrap()
     }
 
@@ -175,11 +180,13 @@ impl Rv<DMatrix<f64>> for InvWishart {
         (0..n)
             .map(|_| {
                 let xs = mvg.sample(self.df, &mut rng);
-                let y =
-                    xs.iter().fold(DMatrix::<f64>::zeros(p, p), |acc, x| {
+                let y = xs.iter().fold(
+                    DMatrix::<f64>::zeros(p, p),
+                    |acc, x: &DVector<f64>| {
                         // TODO: faster way to do X * X^T?
                         acc + x * x.transpose()
-                    });
+                    },
+                );
                 y.try_inverse().unwrap()
             })
             .collect()
@@ -324,7 +331,10 @@ mod tests {
         ];
         let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
         let iw = InvWishart::new(inv_scale, 5).unwrap();
-        for x in iw.sample(100, &mut rng) {
+        for x in <InvWishart as crate::traits::Rv<DMatrix<f64>>>::sample::<
+            rand::rngs::ThreadRng,
+        >(&iw, 100, &mut rng)
+        {
             assert!(x.cholesky().is_some());
         }
     }

@@ -19,6 +19,7 @@ use rand::Rng;
 /// `μ ~ N(m, σ/√k)` and `σ² ~ ScaledInvChiSquared(v, s2)`.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalInvChiSquared {
     m: f64,
     k: f64,
@@ -40,6 +41,7 @@ impl PartialEq for NormalInvChiSquared {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NormalInvChiSquaredError {
     /// The m parameter is infinite or NaN
     MNotFinite { m: f64 },
@@ -376,6 +378,28 @@ impl Rv<Gaussian> for NormalInvChiSquared {
     }
 }
 
+impl std::error::Error for NormalInvChiSquaredError {}
+
+impl std::fmt::Display for NormalInvChiSquaredError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::MNotFinite { m } => write!(f, "non-finite m: {}", m),
+            Self::KNotFinite { k } => write!(f, "non-finite k: {}", k),
+            Self::VNotFinite { v } => write!(f, "non-finite v: {}", v),
+            Self::S2NotFinite { s2 } => write!(f, "non-finite s2: {}", s2),
+            Self::KTooLow { k } => {
+                write!(f, "k ({}) must be greater than zero", k)
+            }
+            Self::VTooLow { v } => {
+                write!(f, "v ({}) must be greater than zero", v)
+            }
+            Self::S2TooLow { s2 } => {
+                write!(f, "s2 ({}) must be greater than zero", s2)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -393,7 +417,7 @@ mod test {
         NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
         Gaussian::new(-1.2, 0.4).unwrap(),
         2.3,
-        3.14
+        std::f64::consts::PI
     );
 
     verify_cache_resets!(
@@ -403,7 +427,7 @@ mod test {
         NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
         Gaussian::new(-1.2, 0.4).unwrap(),
         2.3,
-        3.14
+        std::f64::consts::PI
     );
 
     verify_cache_resets!(

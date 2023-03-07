@@ -33,6 +33,7 @@ use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Bernoulli {
     /// Probability of a success (x=1)
     p: f64,
@@ -40,6 +41,7 @@ pub struct Bernoulli {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum BernoulliError {
     /// Bernoulli p is less than zero
     PLessThanZero { p: f64 },
@@ -291,20 +293,20 @@ impl KlDivergence for Bernoulli {
 impl Entropy for Bernoulli {
     fn entropy(&self) -> f64 {
         let q = self.q();
-        -q * q.ln() - self.p * self.p.ln()
+        (-q).mul_add(q.ln(), -self.p * self.p.ln())
     }
 }
 
 impl Skewness for Bernoulli {
     fn skewness(&self) -> Option<f64> {
-        Some((1.0 - 2.0 * self.p) / (self.p * self.q()).sqrt())
+        Some(2.0_f64.mul_add(-self.p, 1.0) / (self.p * self.q()).sqrt())
     }
 }
 
 impl Kurtosis for Bernoulli {
     fn kurtosis(&self) -> Option<f64> {
         let q = self.q();
-        Some((1.0 - 6.0 * self.p * q) / (self.p * q))
+        Some((6.0 * self.p).mul_add(-q, 1.0) / (self.p * q))
     }
 }
 
@@ -647,7 +649,7 @@ mod tests {
     #[test]
     fn unifrom_entropy() {
         let b = Bernoulli::uniform();
-        assert::close(b.entropy(), 0.693_147_180_559_945_3, TOL);
+        assert::close(b.entropy(), f64::consts::LN_2, TOL);
     }
 
     #[test]

@@ -21,6 +21,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct ChiSquared {
     /// Degrees of freedom in (0, ∞)
     k: f64,
@@ -28,6 +29,7 @@ pub struct ChiSquared {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum ChiSquaredError {
     /// k parameter is less than or equal to zero
     KTooLow { k: f64 },
@@ -128,7 +130,8 @@ macro_rules! impl_traits {
                 let k2 = self.k / 2.0;
                 let xf = f64::from(*x);
                 // TODO: cache (k2 - LN_2 - k2.ln_gamma().0)
-                (k2 - 1.0) * xf.ln() - xf / 2.0 - k2 * LN_2 - k2.ln_gamma().0
+                k2.mul_add(-LN_2, (k2 - 1.0).mul_add(xf.ln(), -xf / 2.0))
+                    - k2.ln_gamma().0
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {

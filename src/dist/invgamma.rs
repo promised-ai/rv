@@ -18,6 +18,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct InvGamma {
     // shape parameter, α
     shape: f64,
@@ -27,6 +28,7 @@ pub struct InvGamma {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum InvGammaError {
     /// Shape parameter is less than or equal to zero
     ShapeTooLow { shape: f64 },
@@ -203,10 +205,11 @@ macro_rules! impl_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(scale) and ln_gamma(shape)
                 let xf = f64::from(*x);
-                self.shape * self.scale.ln()
-                    - self.shape.ln_gamma().0
-                    - (self.shape + 1.0) * xf.ln()
-                    - (self.scale / xf)
+                (self.shape + 1.0).mul_add(
+                    -xf.ln(),
+                    self.shape
+                        .mul_add(self.scale.ln(), -self.shape.ln_gamma().0),
+                ) - (self.scale / xf)
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -269,8 +272,10 @@ impl Variance<f64> for InvGamma {
 
 impl Entropy for InvGamma {
     fn entropy(&self) -> f64 {
-        self.shape + self.scale.ln() + self.shape.ln_gamma().0
-            - (1.0 + self.shape) * self.shape.digamma()
+        (1.0 + self.shape).mul_add(
+            -self.shape.digamma(),
+            self.shape + self.scale.ln() + self.shape.ln_gamma().0,
+        )
     }
 }
 
@@ -287,7 +292,7 @@ impl Skewness for InvGamma {
 impl Kurtosis for InvGamma {
     fn kurtosis(&self) -> Option<f64> {
         if self.shape > 4.0 {
-            let krt = (30.0 * self.shape - 66.0)
+            let krt = 30.0_f64.mul_add(self.shape, -66.0)
                 / ((self.shape - 3.0) * (self.shape - 4.0));
             Some(krt)
         } else {
@@ -397,24 +402,36 @@ mod tests {
 
     #[test]
     fn quad_on_pdf_agrees_with_cdf_range() {
-        use crate::misc::quad_eps;
+        use peroxide::numerical::integral::{
+            gauss_kronrod_quadrature, Integral,
+        };
         let ig = InvGamma::new(5.2, 3.3).unwrap();
         let pdf = |x: f64| ig.f(&x);
-        let res = quad_eps(pdf, 1e-16, 1000.0, Some(1e-13));
-        assert::close(res, 1.0, 1e-7);
+        let res = gauss_kronrod_quadrature(
+            pdf,
+            (1e-16, 1000.0),
+            Integral::G7K15(1e-13),
+        );
+        assert::close(res, 1.0, 1e-9);
     }
 
     #[test]
     fn quad_on_pdf_agrees_with_cdf_2() {
-        use crate::misc::quad_eps;
+        use peroxide::numerical::integral::{
+            gauss_kronrod_quadrature, Integral,
+        };
         let ig = InvGamma::new(2.3, 3.1).unwrap();
         let pdf = |x: f64| ig.f(&x);
         let mut rng = rand::thread_rng();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
-            let res = quad_eps(pdf, 1e-16, x, Some(1e-13));
+            let res = gauss_kronrod_quadrature(
+                pdf,
+                (1e-16, x),
+                Integral::G7K15(1e-13),
+            );
             let cdf = ig.cdf(&x);
-            assert::close(res, cdf, 1e-7);
+            assert::close(res, cdf, 1e-9);
         }
     }
 

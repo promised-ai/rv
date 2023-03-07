@@ -38,6 +38,7 @@ use crate::traits::*;
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Gaussian {
     /// Mean
     mu: f64,
@@ -56,6 +57,7 @@ impl PartialEq for Gaussian {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GaussianError {
     /// The mu parameter is infinite or NaN
     MuNotFinite { mu: f64 },
@@ -256,7 +258,7 @@ macro_rules! impl_traits {
         impl Rv<$kind> for Gaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k = (f64::from(*x) - self.mu) / self.sigma;
-                -self.ln_sigma() - 0.5 * k * k - HALF_LN_2PI
+                (0.5 * k).mul_add(-k, -self.ln_sigma()) - HALF_LN_2PI
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -291,7 +293,7 @@ macro_rules! impl_traits {
                 assert!(!((p <= 0.0) || (1.0 <= p)), "P out of range");
 
                 let x = (self.sigma * SQRT_2)
-                    .mul_add((2.0 * p - 1.0).inv_error(), self.mu);
+                    .mul_add(2.0_f64.mul_add(p, -1.0).inv_error(), self.mu);
                 x as $kind
             }
         }
@@ -572,15 +574,21 @@ mod tests {
 
     #[test]
     fn quad_on_pdf_agrees_with_cdf_x() {
-        use crate::misc::quad_eps;
+        use peroxide::numerical::integral::{
+            gauss_kronrod_quadrature, Integral,
+        };
         let ig = Gaussian::new(-2.3, 0.5).unwrap();
         let pdf = |x: f64| ig.f(&x);
         let mut rng = rand::thread_rng();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
-            let res = quad_eps(pdf, -10.0, x, Some(1e-13));
+            let res = gauss_kronrod_quadrature(
+                pdf,
+                (-10.0, x),
+                Integral::G7K15(1e-13),
+            );
             let cdf = ig.cdf(&x);
-            assert::close(res, cdf, 1e-7);
+            assert::close(res, cdf, 1e-9);
         }
     }
 

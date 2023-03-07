@@ -4,7 +4,7 @@ use nalgebra::{
     base::constraint::{SameNumberOfColumns, ShapeConstraint},
     Norm,
 };
-use nalgebra::{DMatrix, DVector, Dim, Matrix};
+use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
 use std::f64;
 
 #[cfg(feature = "serde1")]
@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 /// `mixture` -- Mixture Scale
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct RationalQuadratic {
     scale: f64,
     mixture: f64,
@@ -49,6 +50,9 @@ impl RationalQuadratic {
 }
 
 impl Kernel for RationalQuadratic {
+    fn n_parameters(&self) -> usize {
+        2
+    }
     fn covariance<R1, R2, C1, C2, S1, S2>(
         &self,
         x1: &Matrix<f64, R1, C1, S1>,
@@ -83,11 +87,11 @@ impl Kernel for RationalQuadratic {
         DVector::repeat(x.len(), 1.0)
     }
 
-    fn parameters(&self) -> Vec<f64> {
-        vec![self.scale.ln(), self.mixture.ln()]
+    fn parameters(&self) -> DVector<f64> {
+        dvector![self.scale.ln(), self.mixture.ln()]
     }
 
-    fn from_parameters(&self, params: &[f64]) -> Result<Self, KernelError> {
+    fn reparameterize(&self, params: &[f64]) -> Result<Self, KernelError> {
         match params {
             [] => Err(KernelError::MissingParameters(2)),
             [_] => Err(KernelError::MissingParameters(1)),
@@ -95,19 +99,6 @@ impl Kernel for RationalQuadratic {
                 Self::new(length_scale.exp(), mixture.exp())
             }
             _ => Err(KernelError::ExtraniousParameters(params.len() - 1)),
-        }
-    }
-
-    fn consume_parameters<'p>(
-        &self,
-        params: &'p [f64],
-    ) -> Result<(Self, &'p [f64]), KernelError> {
-        if params.len() < 2 {
-            Err(KernelError::MissingParameters(2))
-        } else {
-            let (cur, next) = params.split_at(2);
-            let ck = Self::from_parameters(self, cur)?;
-            Ok((ck, next))
         }
     }
 
@@ -154,8 +145,6 @@ impl Kernel for RationalQuadratic {
 
 #[cfg(test)]
 mod tests {
-    use crate::test::relative_eq;
-
     use super::*;
 
     #[test]
@@ -163,9 +152,8 @@ mod tests {
         let kernel = RationalQuadratic::new(3.0, 5.0)?;
         assert::close(kernel.parameters()[0], 3.0_f64.ln(), 1E-10);
         assert::close(kernel.parameters()[1], 5.0_f64.ln(), 1E-10);
-        assert!(relative_eq(
-            kernel.parameters(),
-            vec![3.0_f64.ln(), 5.0_f64.ln()],
+        assert!(kernel.parameters().relative_eq(
+            &dvector![3.0_f64.ln(), 5.0_f64.ln()],
             1E-10,
             1E-10
         ));
@@ -193,14 +181,14 @@ mod tests {
             2,
             &[
                 1.0,
-                184528125.0 / 282475249.0,
-                184528125.0 / 282475249.0,
+                184_528_125.0 / 282_475_249.0,
+                184_528_125.0 / 282_475_249.0,
                 1.0,
             ],
         );
 
-        let eg_l = 0.53326868;
-        let eg_a = -0.01151411;
+        let eg_l = 0.533_268_68;
+        let eg_a = -0.011_514_11;
         let expected_grad = CovGrad::from_row_slices(
             2,
             2,

@@ -23,6 +23,7 @@ pub struct LogNormal {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum LogNormalError {
     /// The mu parameter is infinite or NaN
     MuNotFinite { mu: f64 },
@@ -208,7 +209,7 @@ macro_rules! impl_traits {
                 let xk = f64::from(*x);
                 let xk_ln = xk.ln();
                 let d = (xk_ln - self.mu) / self.sigma;
-                -xk_ln - self.sigma.ln() - HALF_LN_2PI - 0.5 * d * d
+                (0.5 * d).mul_add(-d, -xk_ln - self.sigma.ln() - HALF_LN_2PI)
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -245,7 +246,10 @@ macro_rules! impl_traits {
         impl InverseCdf<$kind> for LogNormal {
             fn invcdf(&self, p: f64) -> $kind {
                 SQRT_2
-                    .mul_add(self.sigma * (2.0 * p - 1.0).inv_error(), self.mu)
+                    .mul_add(
+                        self.sigma * 2.0_f64.mul_add(p, -1.0).inv_error(),
+                        self.mu,
+                    )
                     .exp() as $kind
             }
         }
@@ -264,7 +268,7 @@ macro_rules! impl_traits {
 
         impl Mode<$kind> for LogNormal {
             fn mode(&self) -> Option<$kind> {
-                Some((self.mu - self.sigma * self.sigma) as $kind)
+                Some(self.sigma.mul_add(-self.sigma, self.mu) as $kind)
             }
         }
     };

@@ -2,7 +2,7 @@
 
 use argmin::solver::{linesearch::MoreThuenteLineSearch, quasinewton::LBFGS};
 use nalgebra::linalg::Cholesky;
-use nalgebra::{DMatrix, DVector, Dynamic};
+use nalgebra::{DMatrix, DVector, Dyn};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 #[cfg(feature = "serde1")]
@@ -28,6 +28,7 @@ fn outer_product_self(col: &DVector<f64>) -> DMatrix<f64> {
 /// Errors from GaussianProcess
 #[derive(Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GaussianProcessError {
     /// The kernel is not returning a positive-definite matrix. Try adding a small, constant noise parameter as y_train_sigma.
     NotPositiveSemiDefinite,
@@ -60,12 +61,13 @@ impl From<KernelError> for GaussianProcessError {
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct GaussianProcess<K>
 where
     K: Kernel,
 {
     /// Cholesky Decomposition of K
-    k_chol: Cholesky<f64, Dynamic>,
+    k_chol: Cholesky<f64, Dyn>,
     /// Dual coefficients of training data in kernel space.
     alpha: DVector<f64>,
     /// Covariance Kernel
@@ -127,7 +129,7 @@ where
     }
 
     /// Return the Cholesky decomposition of K
-    pub fn k_chol(&self) -> &Cholesky<f64, Dynamic> {
+    pub fn k_chol(&self) -> &Cholesky<f64, Dyn> {
         &(self.k_chol)
     }
 
@@ -141,8 +143,7 @@ impl<K> RandomProcess<f64> for GaussianProcess<K>
 where
     K: Kernel,
 {
-    type Index = Vec<f64>;
-    type Param = Vec<f64>;
+    type Index = DVector<f64>;
     type SampleFunction = GaussianProcessPrediction<K>;
     type Error = GaussianProcessError;
 
@@ -156,7 +157,7 @@ where
         let indicies: DMatrix<f64> = DMatrix::from_iterator(
             n,
             m,
-            indicies.iter().map(|i| i.iter().cloned()).flatten(),
+            indicies.iter().flat_map(|i| i.iter().cloned()),
         );
         let k_trans = self.kernel.covariance(&indicies, &self.x_train);
         let y_mean = &k_trans * &self.alpha;
@@ -175,16 +176,19 @@ where
         let dlog_sum = k_chol.l_dirty().diagonal().map(|x| x.ln()).sum();
         let n: f64 = self.x_train.nrows() as f64;
         let alpha = k_chol.solve(&self.y_train);
-        -0.5 * self.y_train.dot(&alpha) - dlog_sum - n * HALF_LN_2PI
+        n.mul_add(
+            -HALF_LN_2PI,
+            (-0.5_f64).mul_add(self.y_train.dot(&alpha), -dlog_sum),
+        )
     }
 
     fn ln_m_with_params(
         &self,
-        parameter: Self::Param,
-    ) -> Result<(f64, Self::Param), GaussianProcessError> {
+        parameter: &DVector<f64>,
+    ) -> Result<(f64, DVector<f64>), GaussianProcessError> {
         let kernel = self
             .kernel
-            .from_parameters(&parameter)
+            .reparameterize(&parameter.iter().copied().collect::<Vec<f64>>())
             .map_err(GaussianProcessError::KernelError)?;
 
         // GPML Equation 2.30
@@ -210,7 +214,10 @@ where
         let dlog_sum = k_chol.l_dirty().diagonal().map(|x| x.ln()).sum();
         let n: f64 = self.x_train.nrows() as f64;
 
-        let ln_m = -0.5 * self.y_train.dot(&alpha) - dlog_sum - n * HALF_LN_2PI;
+        let ln_m = n.mul_add(
+            -HALF_LN_2PI,
+            (-0.5_f64).mul_add(self.y_train.dot(&alpha), -dlog_sum),
+        );
 
         // GPML Equation 5.9
         let aat_kinv = &outer_product_self(&alpha) - &k_chol.inverse();
@@ -224,21 +231,25 @@ where
                 0.5 * sum
             })
             .collect();
+        let grad_ln_m = DVector::from(grad_ln_m);
+
         Ok((ln_m, grad_ln_m))
     }
 
-    fn parameters(&self) -> Self::Param {
-        self.kernel().parameters()
+    fn parameters(&self) -> DVector<f64> {
+        let kernel = self.kernel();
+        kernel.parameters()
     }
 
     fn set_parameters(
         self,
-        parameters: Self::Param,
+        parameters: &DVector<f64>,
     ) -> Result<Self, GaussianProcessError> {
         let (kernel, leftovers) = self
             .kernel
-            .consume_parameters(&parameters)
+            .consume_parameters(parameters.iter().copied())
             .map_err(GaussianProcessError::KernelError)?;
+        let leftovers: Vec<f64> = leftovers.collect();
         if !leftovers.is_empty() {
             return Err(GaussianProcessError::KernelError(
                 KernelError::ExtraniousParameters(leftovers.len()),
@@ -253,17 +264,21 @@ impl<K> RandomProcessMle<f64> for GaussianProcess<K>
 where
     K: Kernel,
 {
-    type Solver =
-        LBFGS<MoreThuenteLineSearch<Self::Param, f64>, Self::Param, f64>;
+    type Solver = LBFGS<
+        MoreThuenteLineSearch<DVector<f64>, DVector<f64>, f64>,
+        DVector<f64>,
+        DVector<f64>,
+        f64,
+    >;
 
     fn generate_solver() -> Self::Solver {
         let linesearch = MoreThuenteLineSearch::new();
         LBFGS::new(linesearch, 10)
     }
 
-    fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Param {
+    fn random_params<R: Rng>(&self, rng: &mut R) -> DVector<f64> {
         let n = self.parameters().len();
-        (0..n).map(|_| rng.gen_range(-5.0..5.0)).collect()
+        DVector::from_iterator(n, (0..n).map(|_| rng.gen_range(-5.0..5.0)))
     }
 }
 
@@ -383,12 +398,15 @@ mod tests {
     use self::kernel::{ConstantKernel, ProductKernel, RBFKernel};
     use super::*;
     use crate::test::relative_eq;
+    use nalgebra::dvector;
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
 
     fn arange(start: f64, stop: f64, step_size: f64) -> Vec<f64> {
         let size = ((stop - start) / step_size).floor() as usize;
-        (0..size).map(|i| start + (i as f64) * step_size).collect()
+        (0..size)
+            .map(|i| (i as f64).mul_add(step_size, start))
+            .collect()
     }
 
     #[test]
@@ -406,26 +424,26 @@ mod tests {
         )
         .unwrap();
 
-        let xs: Vec<Vec<f64>> = arange(-5.0, 5.0, 1.0)
+        let xs: Vec<DVector<f64>> = arange(-5.0, 5.0, 1.0)
             .into_iter()
-            .map(|x| vec![x])
+            .map(|x| dvector![x])
             .collect();
-        let pred = gp.sample_function(&xs);
+        let pred = gp.sample_function(xs.as_slice());
 
         let expected_mean: DMatrix<f64> = DMatrix::from_column_slice(
             10,
             1,
             &[
-                0.61409752,
-                0.7568025,
-                -0.14112001,
-                -0.90929743,
-                -0.84147098,
-                0.08533365,
-                0.84147098,
-                0.5639856,
-                0.12742202,
-                0.01047683,
+                0.614_097_52,
+                0.756_802_5,
+                -0.141_120_01,
+                -0.909_297_43,
+                -0.841_470_98,
+                0.085_333_65,
+                0.841_470_98,
+                0.563_985_6,
+                0.127_422_02,
+                0.010_476_83,
             ],
         );
 
@@ -436,106 +454,106 @@ mod tests {
             10,
             10,
             &[
-                5.09625632e-01,
-                0.00000000e+00,
-                5.55111512e-17,
-                6.76542156e-17,
-                3.16587034e-17,
-                3.44967276e-02,
-                3.52051377e-19,
-                -7.75055224e-03,
-                -2.00292507e-03,
-                -1.67618574e-04,
-                -1.11022302e-16,
-                9.99999972e-09,
-                1.11022302e-16,
-                1.38777878e-16,
-                6.93889390e-17,
-                1.70761842e-17,
-                -6.92025918e-19,
-                -2.07291131e-18,
-                -5.05982846e-19,
-                -4.19922650e-20,
-                -1.11022302e-16,
-                -1.11022302e-16,
-                9.99999994e-09,
-                0.00000000e+00,
-                -5.55111512e-17,
-                -5.03069808e-17,
-                -1.05709712e-17,
-                7.37765697e-19,
-                3.91795751e-19,
-                3.47275204e-20,
-                -6.76542156e-17,
-                -2.77555756e-17,
-                3.33066907e-16,
-                1.00000004e-08,
-                1.11022302e-16,
-                0.00000000e+00,
-                1.56125113e-17,
-                1.71303943e-17,
-                4.15003793e-18,
-                3.44537269e-19,
-                -1.31730564e-17,
-                1.04083409e-17,
-                0.00000000e+00,
-                -1.11022302e-16,
-                9.99999994e-09,
-                0.00000000e+00,
-                -2.77555756e-17,
-                -2.08166817e-17,
-                -4.98732999e-18,
-                -4.15469661e-19,
-                3.44967276e-02,
-                7.67615138e-17,
-                7.80625564e-17,
-                0.00000000e+00,
-                0.00000000e+00,
-                2.66312702e-01,
-                0.00000000e+00,
-                -1.77597042e-01,
-                -5.69934156e-02,
-                -5.23533037e-03,
-                -2.62952445e-18,
-                -1.96935160e-18,
-                -3.41523684e-18,
-                -3.46944695e-18,
-                0.00000000e+00,
-                0.00000000e+00,
-                9.99999994e-09,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                -7.75055224e-03,
-                -9.40329325e-18,
-                -3.76972013e-18,
-                9.37834879e-18,
-                1.38777878e-17,
-                -1.77597042e-01,
-                1.11022302e-16,
-                6.23591981e-01,
-                5.22272453e-01,
-                1.28415894e-01,
-                -2.00292507e-03,
-                -2.53816432e-18,
-                -2.37371719e-18,
-                4.43845264e-18,
-                -2.43945489e-18,
-                -5.69934156e-02,
-                0.00000000e+00,
-                5.22272453e-01,
-                9.81130576e-01,
-                6.04980983e-01,
-                -1.67618574e-04,
-                -3.01246445e-19,
-                -2.26631991e-19,
-                -6.04801377e-20,
-                -2.02017358e-19,
-                -5.23533037e-03,
-                0.00000000e+00,
-                1.28415894e-01,
-                6.04980983e-01,
-                9.99872740e-01,
+                5.096_256_32e-01,
+                0.000_000_00e+00,
+                5.551_115_12e-17,
+                6.765_421_56e-17,
+                3.165_870_34e-17,
+                3.449_672_76e-02,
+                3.520_513_77e-19,
+                -7.750_552_24e-03,
+                -2.002_925_07e-03,
+                -1.676_185_74e-04,
+                -1.110_223_02e-16,
+                9.999_999_72e-09,
+                1.110_223_02e-16,
+                1.387_778_78e-16,
+                6.938_893_90e-17,
+                1.707_618_42e-17,
+                -6.920_259_18e-19,
+                -2.072_911_31e-18,
+                -5.059_828_46e-19,
+                -4.199_226_50e-20,
+                -1.110_223_02e-16,
+                -1.110_223_02e-16,
+                9.999_999_94e-09,
+                0.000_000_00e+00,
+                -5.551_115_12e-17,
+                -5.030_698_08e-17,
+                -1.057_097_12e-17,
+                7.377_656_97e-19,
+                3.917_957_51e-19,
+                3.472_752_04e-20,
+                -6.765_421_56e-17,
+                -2.775_557_56e-17,
+                3.330_669_07e-16,
+                1.000_000_04e-08,
+                1.110_223_02e-16,
+                0.000_000_00e+00,
+                1.561_251_13e-17,
+                1.713_039_43e-17,
+                4.150_037_93e-18,
+                3.445_372_69e-19,
+                -1.317_305_64e-17,
+                1.040_834_09e-17,
+                0.000_000_00e+00,
+                -1.110_223_02e-16,
+                9.999_999_94e-09,
+                0.000_000_00e+00,
+                -2.775_557_56e-17,
+                -2.081_668_17e-17,
+                -4.987_329_99e-18,
+                -4.154_696_61e-19,
+                3.449_672_76e-02,
+                7.676_151_38e-17,
+                7.806_255_64e-17,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                2.663_127_02e-01,
+                0.000_000_00e+00,
+                -1.775_970_42e-01,
+                -5.699_341_56e-02,
+                -5.235_330_37e-03,
+                -2.629_524_45e-18,
+                -1.969_351_60e-18,
+                -3.415_236_84e-18,
+                -3.469_446_95e-18,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                9.999_999_94e-09,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                -7.750_552_24e-03,
+                -9.403_293_25e-18,
+                -3.769_720_13e-18,
+                9.378_348_79e-18,
+                1.387_778_78e-17,
+                -1.775_970_42e-01,
+                1.110_223_02e-16,
+                6.235_919_81e-01,
+                5.222_724_53e-01,
+                1.284_158_94e-01,
+                -2.002_925_07e-03,
+                -2.538_164_32e-18,
+                -2.373_717_19e-18,
+                4.438_452_64e-18,
+                -2.439_454_89e-18,
+                -5.699_341_56e-02,
+                0.000_000_00e+00,
+                5.222_724_53e-01,
+                9.811_305_76e-01,
+                6.049_809_83e-01,
+                -1.676_185_74e-04,
+                -3.012_464_45e-19,
+                -2.266_319_91e-19,
+                -6.048_013_77e-20,
+                -2.020_173_58e-19,
+                -5.235_330_37e-03,
+                0.000_000_00e+00,
+                1.284_158_94e-01,
+                6.049_809_83e-01,
+                9.998_727_40e-01,
             ],
         );
 
@@ -551,10 +569,10 @@ mod tests {
 
         let kernel = RBFKernel::default() * ConstantKernel::default();
         let parameters = kernel.parameters();
-        assert!(relative_eq(&parameters, &vec![0.0, 0.0], 1E-9, 1E-9));
+        assert!(&parameters.relative_eq(&dvector![0.0, 0.0], 1E-9, 1E-9));
 
-        let expected_ln_m = -5.029140040847684;
-        let expected_grad = vec![2.06828541, -1.19111032];
+        let expected_ln_m = -5.029_140_040_847_684;
+        let expected_grad = dvector![2.068_285_41, -1.191_110_32];
 
         let gp = GaussianProcess::train(
             kernel,
@@ -567,9 +585,9 @@ mod tests {
         assert::close(gp.ln_m(), expected_ln_m, 1E-7);
 
         // With Gradient
-        let (ln_m, grad_ln_m) = gp.ln_m_with_params(parameters).unwrap();
+        let (ln_m, grad_ln_m) = gp.ln_m_with_params(&parameters).unwrap();
         assert::close(ln_m, expected_ln_m, 1E-7);
-        assert!(relative_eq(grad_ln_m, expected_grad, 1E-7, 1E-7));
+        assert!(grad_ln_m.relative_eq(&expected_grad, 1E-7, 1E-7));
     }
 
     #[test]
@@ -578,18 +596,18 @@ mod tests {
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
 
-        let kernel = RBFKernel::new(1.9948914742700008)?
-            * ConstantKernel::new(1.221163421070665)?;
+        let kernel = RBFKernel::new(1.994_891_474_270_000_8)?
+            * ConstantKernel::new(1.221_163_421_070_665)?;
         let parameters = kernel.parameters();
         assert!(relative_eq(
             &parameters,
-            &vec![0.69058965, 0.19980403],
+            &dvector![0.690_589_65, 0.199_804_03],
             1E-7,
             1E-7
         ));
 
-        let expected_ln_m = -3.414870095916796;
-        let expected_grad = vec![0.0, 0.0];
+        let expected_ln_m = -3.414_870_095_916_796;
+        let expected_grad = dvector![0.0, 0.0];
 
         let gp = GaussianProcess::train(
             kernel,
@@ -603,9 +621,9 @@ mod tests {
         assert::close(ln_m, expected_ln_m, 1E-7);
 
         // With Gradient
-        let (ln_m, grad_ln_m) = gp.ln_m_with_params(parameters).unwrap();
+        let (ln_m, grad_ln_m) = gp.ln_m_with_params(&parameters).unwrap();
         assert::close(ln_m, expected_ln_m, 1E-7);
-        assert!(relative_eq(grad_ln_m, expected_grad, 1E-6, 1E-6));
+        assert!(grad_ln_m.relative_eq(&expected_grad, 1E-6, 1E-6));
         Ok(())
     }
 
@@ -625,11 +643,11 @@ mod tests {
         let gp = gp.optimize(100, 10, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
 
-        assert!(relative_eq(opt_params, vec![0.65785421], 1E-5, 1E-5));
-        assert::close(gp.ln_m(), -3.444937833462115, 1E-7);
+        assert!(opt_params.relative_eq(&dvector![0.657_854_21], 1E-5, 1E-5));
+        assert::close(gp.ln_m(), -3.444_937_833_462_115, 1E-7);
         assert::close(
             gp.ln_m(),
-            gp.ln_m_with_params(gp.kernel().parameters()).unwrap().0,
+            gp.ln_m_with_params(&gp.kernel().parameters()).unwrap().0,
             1E-7,
         );
     }
@@ -650,17 +668,16 @@ mod tests {
         let gp = gp.optimize(200, 30, &mut rng).expect("Failed to optimize");
         let opt_params = gp.kernel().parameters();
 
-        assert!(relative_eq(
-            opt_params,
-            vec![0.19980403, 0.69058965],
+        assert!(opt_params.relative_eq(
+            &dvector![0.199_804_03, 0.690_589_65],
             1E-5,
             1E-5
         ));
 
-        assert::close(gp.ln_m(), -3.414870095916796, 1E-7);
+        assert::close(gp.ln_m(), -3.414_870_095_916_796, 1E-7);
         assert::close(
             gp.ln_m(),
-            gp.ln_m_with_params(gp.kernel().parameters()).unwrap().0,
+            gp.ln_m_with_params(&gp.kernel().parameters()).unwrap().0,
             1E-7,
         );
     }
@@ -674,7 +691,7 @@ mod tests {
         let kernel: ProductKernel<ConstantKernel, RBFKernel> =
             (ConstantKernel::new_unchecked(1.0)
                 * RBFKernel::new_unchecked(1.0))
-            .from_parameters(&[3.09975267, 0.51633823])?;
+            .reparameterize(&[3.099_752_67, 0.516_338_23])?;
         let gp =
             GaussianProcess::train(kernel, xs, ys, NoiseModel::Uniform(0.0))
                 .expect("Should produce GP");
@@ -682,42 +699,42 @@ mod tests {
             6,
             6,
             &[
-                4.71088758e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                2.31120928e+00,
-                4.10496936e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                2.72928489e-01,
-                2.49869155e+00,
-                3.98428317e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                5.49801688e-02,
-                1.05810706e+00,
-                3.99430301e+00,
-                2.26172320e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                7.75767414e-03,
-                3.08846597e-01,
-                2.53847856e+00,
-                3.58428088e+00,
-                1.67513357e+00,
-                0.00000000e+00,
-                7.66699649e-04,
-                6.26639003e-02,
-                1.08269933e+00,
-                2.87253128e+00,
-                3.28904854e+00,
-                1.39535672e+00,
+                4.710_887_58e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                2.311_209_28e+00,
+                4.104_969_36e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                2.729_284_89e-01,
+                2.498_691_55e+00,
+                3.984_283_17e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                5.498_016_88e-02,
+                1.058_107_06e+00,
+                3.994_303_01e+00,
+                2.261_723_20e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                7.757_674_14e-03,
+                3.088_465_97e-01,
+                2.538_478_56e+00,
+                3.584_280_88e+00,
+                1.675_133_57e+00,
+                0.000_000_00e+00,
+                7.666_996_49e-04,
+                6.266_390_03e-02,
+                1.082_699_33e+00,
+                2.872_531_28e+00,
+                3.289_048_54e+00,
+                1.395_356_72e+00,
             ],
         );
 
@@ -731,8 +748,12 @@ mod tests {
             DMatrix::from_column_slice(6, 1, &[1., 3., 5., 6., 7., 8.]);
         let ys: DVector<f64> = xs.map(|x| x * x.sin()).column(0).into();
         let dy = DVector::from_row_slice(&[
-            0.917022, 1.22032449, 0.50011437, 0.80233257, 0.64675589,
-            0.59233859,
+            0.917_022,
+            1.220_324_49,
+            0.500_114_37,
+            0.802_332_57,
+            0.646_755_89,
+            0.592_338_59,
         ]);
 
         let ys = &ys + &dy;
@@ -740,7 +761,7 @@ mod tests {
         let kernel: ProductKernel<ConstantKernel, RBFKernel> =
             (ConstantKernel::new_unchecked(1.0)
                 * RBFKernel::new_unchecked(1.0))
-            .from_parameters(&[2.88672093, -0.03332773])?;
+            .reparameterize(&[2.886_720_93, -0.033_327_73])?;
         let gp = GaussianProcess::train(
             kernel,
             xs,
@@ -752,42 +773,42 @@ mod tests {
             6,
             6,
             &[
-                4.33305138e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                4.88016869e-01,
-                4.38011830e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                7.99944659e-04,
-                4.82683717e-01,
-                4.23692519e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                6.51671570e-06,
-                3.33549665e-02,
-                2.47659940e+00,
-                3.52753247e+00,
-                0.00000000e+00,
-                0.00000000e+00,
-                1.82292356e-08,
-                7.91346757e-04,
-                4.98998709e-01,
-                2.62886878e+00,
-                3.34555626e+00,
-                0.00000000e+00,
-                1.75097116e-11,
-                6.44668785e-06,
-                3.44822627e-02,
-                5.75247207e-01,
-                2.68410080e+00,
-                3.27853235e+00,
+                4.333_051_38e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                4.880_168_69e-01,
+                4.380_118_30e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                7.999_446_59e-04,
+                4.826_837_17e-01,
+                4.236_925_19e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                6.516_715_70e-06,
+                3.335_496_65e-02,
+                2.476_599_40e+00,
+                3.527_532_47e+00,
+                0.000_000_00e+00,
+                0.000_000_00e+00,
+                1.822_923_56e-08,
+                7.913_467_57e-04,
+                4.989_987_09e-01,
+                2.628_868_78e+00,
+                3.345_556_26e+00,
+                0.000_000_00e+00,
+                1.750_971_16e-11,
+                6.446_687_85e-06,
+                3.448_226_27e-02,
+                5.752_472_07e-01,
+                2.684_100_80e+00,
+                3.278_532_35e+00,
             ],
         );
 

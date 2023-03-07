@@ -36,8 +36,8 @@ pub fn mardia(xs: &[DVector<f64>]) -> (f64, f64) {
     });
 
     let k = dims as f64;
-    let b =
-        (n / (8.0 * k * (k + 2.0))).sqrt() * (n.recip() * bsum - k * (k + 2.0));
+    let b = (n / (8.0 * k * (k + 2.0))).sqrt()
+        * n.recip().mul_add(bsum, -k * (k + 2.0));
 
     let g = Gaussian::standard();
     let pb = g.sf(&b);

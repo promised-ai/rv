@@ -17,6 +17,7 @@ mod gaussian_prior;
 /// and `ρ ~ Gamma(ν/2, s/2)`.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalGamma {
     m: f64,
     r: f64,
@@ -26,6 +27,7 @@ pub struct NormalGamma {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NormalGammaError {
     /// The m parameter is infinite or NaN
     MNotFinite { m: f64 },

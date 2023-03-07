@@ -35,6 +35,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Crp {
     /// Discount parameter
     alpha: f64,
@@ -44,6 +45,7 @@ pub struct Crp {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum CrpError {
     /// n parameter is zero
     NIsZero,

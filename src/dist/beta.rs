@@ -42,6 +42,7 @@ pub mod bernoulli_prior;
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Beta {
     alpha: f64,
     beta: f64,
@@ -58,6 +59,7 @@ impl PartialEq for Beta {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum BetaError {
     /// The alpha parameter is less than or equal too zero
     AlphaTooLow { alpha: f64 },
@@ -367,9 +369,11 @@ impl Entropy for Beta {
         let apb = self.alpha + self.beta;
         (apb - 2.0).mul_add(
             apb.digamma(),
-            self.ln_beta_ab()
-                - (self.alpha - 1.0) * self.alpha.digamma()
-                - (self.beta - 1.0) * self.beta.digamma(),
+            (self.beta - 1.0).mul_add(
+                -self.beta.digamma(),
+                (self.alpha - 1.0)
+                    .mul_add(-self.alpha.digamma(), self.ln_beta_ab()),
+            ),
         )
     }
 }
@@ -388,7 +392,7 @@ impl Kurtosis for Beta {
         let apb = self.alpha + self.beta;
         let amb = self.alpha - self.beta;
         let atb = self.alpha * self.beta;
-        let numer = 6.0 * (amb * amb * (apb + 1.0) - atb * (apb + 2.0));
+        let numer = 6.0 * (amb * amb).mul_add(apb + 1.0, -atb * (apb + 2.0));
         let denom = atb * (apb + 2.0) * (apb + 3.0);
         Some(numer / denom)
     }

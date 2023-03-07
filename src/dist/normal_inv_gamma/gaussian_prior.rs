@@ -70,7 +70,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
             let post = posterior_from_stat(self, &stat);
             let n = stat.n() as f64;
             let lnz_n = ln_z(post.v, post.a, post.b);
-            lnz_n - cache - n * HALF_LN_2PI
+            n.mul_add(-HALF_LN_2PI, lnz_n - cache)
             // lnz_n - cache - n * HALF_LN_PI - n*LN_2
         })
     }
@@ -118,11 +118,7 @@ mod test {
             .map(|_| {
                 let mut tester = GewekeTester::new(pr.clone(), 20);
                 tester.run_chains(5_000, 20, &mut rng);
-                if tester.eval(0.025).is_ok() {
-                    1_u8
-                } else {
-                    0_u8
-                }
+                u8::from(tester.eval(0.025).is_ok())
             })
             .sum::<u8>();
         assert!(n_passes > 1);
@@ -135,12 +131,15 @@ mod test {
         let mu = gauss.mu();
         let sigma = gauss.sigma();
         let sig2 = sigma * sigma;
-        let lz_inv = a * b.ln() - a.ln_gamma().0 - 0.5 * (v.ln() + LN_2PI);
-        lz_inv
-            - 0.5 * sig2.ln()
-            - (a + 1.) * sig2.ln()
-            - b / sig2
-            - 0.5 / (sig2 * v) * (mu - m) * (mu - m)
+        let lz_inv = a.mul_add(
+            b.ln(),
+            -(0.5_f64.mul_add(v.ln() + LN_2PI, a.ln_gamma().0)),
+        );
+        (0.5 / (sig2 * v) * (mu - m)).mul_add(
+            -mu - m,
+            (a + 1.).mul_add(-sig2.ln(), 0.5_f64.mul_add(-sig2.ln(), lz_inv))
+                - b / sig2,
+        )
     }
 
     fn post_params(
@@ -159,8 +158,10 @@ mod test {
         let vn = vn_inv.recip();
         let mn = v_inv.mul_add(m, sum_x) * vn;
         let an = a + n / 2.0;
-        let bn = 0.5_f64
-            .mul_add((m * m).mul_add(v_inv, sum_x_sq) - mn * mn * vn_inv, b);
+        let bn = 0.5_f64.mul_add(
+            (mn * mn).mul_add(-vn_inv, (m * m).mul_add(v_inv, sum_x_sq)),
+            b,
+        );
 
         (mn, vn, an, bn)
     }
@@ -325,7 +326,7 @@ mod test {
             let t_shift = mn;
             let y_adj = (y - t_shift) / t_scale.sqrt();
 
-            t.ln_f(&y_adj) - 0.5 * t_scale.ln()
+            0.5_f64.mul_add(-t_scale.ln(), t.ln_f(&y_adj))
         };
 
         let ln_pp = {

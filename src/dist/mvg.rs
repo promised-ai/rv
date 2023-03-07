@@ -7,7 +7,7 @@ use crate::data::MvGaussianSuffStat;
 use crate::impl_display;
 use crate::traits::*;
 use nalgebra::linalg::Cholesky;
-use nalgebra::{DMatrix, DVector, Dynamic};
+use nalgebra::{DMatrix, DVector, Dyn};
 use once_cell::sync::OnceCell;
 use rand::Rng;
 use std::fmt;
@@ -16,7 +16,7 @@ use std::fmt;
 #[derive(Clone, Debug)]
 struct MvgCache {
     /// Covariant Matrix Cholesky Decomposition
-    pub cov_chol: Cholesky<f64, Dynamic>,
+    pub cov_chol: Cholesky<f64, Dyn>,
     /// Inverse of Covariance Matrix
     pub cov_inv: DMatrix<f64>,
 }
@@ -33,7 +33,7 @@ impl MvgCache {
     }
 
     #[inline]
-    pub fn from_chol(cov_chol: Cholesky<f64, Dynamic>) -> Self {
+    pub fn from_chol(cov_chol: Cholesky<f64, Dyn>) -> Self {
         let cov_inv = cov_chol.inverse();
         MvgCache { cov_chol, cov_inv }
     }
@@ -73,9 +73,11 @@ impl MvgCache {
 /// let xs = mvg.sample(df, &mut rng);
 ///
 /// // 3. Compute the sum Σ xx'
-/// let mat = xs.iter().fold(DMatrix::<f64>::zeros(k, k), |acc, x| {
-///     acc +x*x.transpose()
-/// });
+/// let mat = xs
+///     .iter()
+///     .fold(DMatrix::<f64>::zeros(k, k), |acc, x: &DVector<f64>| {
+///         acc +x*x.transpose()
+///     });
 ///
 /// // Check that the matrix is square and has the right size
 /// assert_eq!(mat.nrows(), k);
@@ -87,6 +89,7 @@ impl MvgCache {
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct MvGaussian {
     // Mean vector
     mu: DVector<f64>,
@@ -112,8 +115,9 @@ impl PartialEq for MvGaussian {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum MvGaussianError {
     /// The mu and cov parameters have incompatible dimensions
     MuCovDimensionMismatch {
@@ -188,7 +192,7 @@ impl MvGaussian {
     /// ```
     pub fn new_cholesky(
         mu: DVector<f64>,
-        cov_chol: Cholesky<f64, Dynamic>,
+        cov_chol: Cholesky<f64, Dyn>,
     ) -> Result<Self, MvGaussianError> {
         let l = cov_chol.l();
         let cov = &l * &l.transpose();
@@ -216,7 +220,7 @@ impl MvGaussian {
     #[inline]
     pub fn new_cholesky_unchecked(
         mu: DVector<f64>,
-        cov_chol: Cholesky<f64, Dynamic>,
+        cov_chol: Cholesky<f64, Dyn>,
     ) -> Self {
         let cache = OnceCell::from(MvgCache::from_chol(cov_chol));
         let cov = cache.get().unwrap().cov();
@@ -626,7 +630,7 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let xs = mvg.sample(103, &mut rng);
+        let xs: Vec<DVector<f64>> = mvg.sample(103, &mut rng);
 
         assert_eq!(xs.len(), 103);
     }
@@ -669,8 +673,10 @@ mod tests {
                 acc
             } else {
                 let xys = mvg.sample(500, &mut rng);
-                let xs: Vec<f64> = xys.iter().map(|xy| xy[0]).collect();
-                let ys: Vec<f64> = xys.iter().map(|xy| xy[1]).collect();
+                let xs: Vec<f64> =
+                    xys.iter().map(|xy: &DVector<f64>| xy[0]).collect();
+                let ys: Vec<f64> =
+                    xys.iter().map(|xy: &DVector<f64>| xy[1]).collect();
 
                 let (_, px) = ks_test(&xs, cdf);
                 let (_, py) = ks_test(&ys, cdf);

@@ -3,7 +3,7 @@ use crate::misc::bessel::bessel_ikv_temme;
 use super::{e2_norm, CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
-use nalgebra::{DMatrix, DVector, Dim, Matrix};
+use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
 use peroxide::prelude::gamma;
 use std::f64;
 
@@ -97,6 +97,10 @@ impl Default for MaternKernel {
 }
 
 impl Kernel for MaternKernel {
+    fn n_parameters(&self) -> usize {
+        2
+    }
+
     fn covariance<R1, R2, C1, C2, S1, S2>(
         &self,
         x1: &Matrix<f64, R1, C1, S1>,
@@ -150,29 +154,16 @@ impl Kernel for MaternKernel {
         DVector::repeat(x.nrows(), 1.0)
     }
 
-    fn parameters(&self) -> Vec<f64> {
-        vec![self.nu.ln(), self.length_scale.ln()]
+    fn parameters(&self) -> DVector<f64> {
+        dvector![self.nu.ln(), self.length_scale.ln()]
     }
 
-    fn from_parameters(&self, params: &[f64]) -> Result<Self, KernelError> {
+    fn reparameterize(&self, params: &[f64]) -> Result<Self, KernelError> {
         match params {
             [] => Err(KernelError::MissingParameters(2)),
             [_] => Err(KernelError::MissingParameters(1)),
             [ln_nu, ln_length] => Self::new(ln_nu.exp(), ln_length.exp()),
             _ => Err(KernelError::ExtraniousParameters(params.len() - 2)),
-        }
-    }
-
-    fn consume_parameters<'p>(
-        &self,
-        params: &'p [f64],
-    ) -> Result<(Self, &'p [f64]), KernelError> {
-        if params.len() < 2 {
-            Err(KernelError::MissingParameters(2 - params.len()))
-        } else {
-            let (cur, next) = params.split_at(2);
-            let ck = Self::from_parameters(self, cur)?;
-            Ok((ck, next))
         }
     }
 
@@ -195,7 +186,7 @@ impl Kernel for MaternKernel {
         let mut dv_params = self.parameters();
         dv_params[0] += EPS;
         let cov_pdv = (self.clone())
-            .from_parameters(&dv_params)
+            .reparameterize((&dv_params).into())
             .expect("Ought to be a valid matern kernel")
             .autocov(x);
 
@@ -204,7 +195,7 @@ impl Kernel for MaternKernel {
         let mut dl_params = self.parameters();
         dl_params[1] += EPS;
         let cov_pdl = (self.clone())
-            .from_parameters(&dl_params)
+            .reparameterize((&dl_params).into())
             .expect("Ought to be a valid matern kernel")
             .autocov(x);
 
@@ -229,7 +220,7 @@ mod tests {
         let expected_cov = DMatrix::from_row_slice(
             2,
             2,
-            &[0.00596769, 0.13966747, 0.13966747, 0.13966747],
+            &[0.005_967_69, 0.139_667_47, 0.139_667_47, 0.139_667_47],
         );
 
         assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));
@@ -241,13 +232,15 @@ mod tests {
         let x = DMatrix::from_row_slice(2, 2, &[1.0, 1.0, 2.0, 2.0]);
         let k = MaternKernel::new_unchecked(1.0, 1.0);
         let (cov, grad) = k.covariance_with_gradient(&x)?;
-
-        let expected_cov =
-            DMatrix::from_row_slice(2, 2, &[1.0, 0.27973176, 0.27973176, 1.0]);
+        let expected_cov = DMatrix::from_row_slice(
+            2,
+            2,
+            &[1.0, 0.279_731_76, 0.279_731_76, 1.0],
+        );
 
         let expected_grad = CovGrad::new_unchecked(&[
-            DMatrix::from_row_slice(2, 2, &[0.0, 0.0475717, 0.0475717, 0.0]),
-            DMatrix::from_row_slice(2, 2, &[0.0, 0.455575, 0.455575, 0.0]),
+            DMatrix::from_row_slice(2, 2, &[0.0, 0.0475_717, 0.047_571_7, 0.0]),
+            DMatrix::from_row_slice(2, 2, &[0.0, 0.455_575, 0.455_575, 0.0]),
         ]);
 
         assert!(cov.relative_eq(&expected_cov, 1E-8, 1E-8));

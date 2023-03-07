@@ -21,6 +21,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct ScaledInvChiSquared {
     /// Degrees of freedom in (0, ∞)
     v: f64,
@@ -41,6 +42,7 @@ impl PartialEq for ScaledInvChiSquared {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum ScaledInvChiSquaredError {
     /// v parameter is less than or equal to zero
     VTooLow { v: f64 },
@@ -308,7 +310,7 @@ impl Kurtosis for ScaledInvChiSquared {
     fn kurtosis(&self) -> Option<f64> {
         if self.v > 8.0 {
             let v = self.v;
-            Some(12.0 * (5.0 * v - 22.0) / ((v - 6.0) * (v - 8.0)))
+            Some(12.0 * 5.0_f64.mul_add(v, -22.0) / ((v - 6.0) * (v - 8.0)))
         } else {
             None
         }
@@ -343,6 +345,7 @@ mod test {
     use crate::misc::ks_test;
     use crate::{test_basic_impls, verify_cache_resets};
     use std::f64;
+    use std::f64::consts::PI;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
@@ -524,7 +527,7 @@ mod test {
         ScaledInvChiSquared::new(1.2, 3.4).unwrap(),
         4.5,
         1.2,
-        3.14
+        PI
     );
 
     verify_cache_resets!(
@@ -534,7 +537,7 @@ mod test {
         ScaledInvChiSquared::new(1.2, 3.4).unwrap(),
         4.5,
         1.2,
-        3.14
+        PI
     );
 
     verify_cache_resets!(

@@ -16,6 +16,7 @@ impl<T> DuParam for T where T: Integer + Copy {}
 /// U(a, b) on the interval x in [a, b]
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct DiscreteUniform<T: DuParam> {
     a: T,
     b: T,
@@ -23,6 +24,7 @@ pub struct DiscreteUniform<T: DuParam> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum DiscreteUniformError {
     /// a is greater than or equal to b
     InvalidInterval,
@@ -285,7 +287,7 @@ mod tests {
     #[test]
     fn entropy() {
         let h: f64 = DiscreteUniform::new(2, 4).unwrap().entropy();
-        assert::close(h, 0.693_147_180_559_9, TOL);
+        assert::close(h, f64::consts::LN_2, TOL);
     }
 
     #[test]

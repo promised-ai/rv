@@ -41,7 +41,7 @@ fn posterior_from_stat(
     //   = Sum[x^2] + n * xbar^2 - 2 * xbar + Sum[x]
     //   = Sum[x^2] + n * xbar^2 - 2 * n *xbar^2
     //   = Sum[x^2] - n * xbar^2
-    let mid = stat.sum_x_sq() - n * xbar * xbar;
+    let mid = (n * xbar).mul_add(-xbar, stat.sum_x_sq());
 
     let kn = k + n;
     let vn = v + n;
@@ -78,7 +78,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
             let n = stat.n() as f64;
             let post = posterior_from_stat(self, &stat);
             let lnz_n = ln_z(post.k, post.v, post.s2);
-            lnz_n - cache - n * HALF_LN_PI
+            n.mul_add(-HALF_LN_PI, lnz_n - cache)
         })
     }
 
@@ -173,14 +173,19 @@ mod test {
         let n = xs.len() as f64;
         let (_, kn, vn, s2n) = post_params(xs, m, k, v, s2);
 
-        (0.5 * v).mul_add(
-            (v * s2).ln(),
-            0.5_f64.mul_add(
-                (k / kn).ln(),
-                (vn / 2.).ln_gamma().0 - (v / 2.).ln_gamma().0,
+        (n / 2.).mul_add(
+            -1.144_729_885_849_399,
+            (0.5 * vn).mul_add(
+                -(vn * s2n).ln(),
+                (0.5 * v).mul_add(
+                    (v * s2).ln(),
+                    0.5_f64.mul_add(
+                        (k / kn).ln(),
+                        (vn / 2.).ln_gamma().0 - (v / 2.).ln_gamma().0,
+                    ),
+                ),
             ),
-        ) - (0.5 * vn) * (vn * s2n).ln()
-            - n / 2. * 1.144_729_885_849_399
+        )
     }
 
     #[test]
@@ -356,7 +361,7 @@ mod test {
             let t_shift = mn;
             let y_adj = (y - t_shift) / t_scale.sqrt();
 
-            t.ln_f(&y_adj) - 0.5 * t_scale.ln()
+            0.5_f64.mul_add(-t_scale.ln(), t.ln_f(&y_adj))
         };
 
         let ln_pp = nix.ln_pp(&y, &data);

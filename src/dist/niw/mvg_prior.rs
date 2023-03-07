@@ -36,7 +36,15 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
             |stat: MvGaussianSuffStat| {
                 let xbar = stat.sum_x() / stat.n() as f64;
                 let diff = &xbar - self.mu();
-                let s = stat.sum_x_sq() - nf * (&xbar * &xbar.transpose());
+                // s = \sum_{i=1}^N (x_i - \bar{x}) (x_i - \bar{x})^T
+                // = \sum_{i=1}^N (x_i x_i^T - x_i \bar{x}^T - \bar{x} x_i^T + \bar{x}\bar{x}^T)
+                // = N \bar{x} \bar{x}^T + \sum_{i=1}^N (x_i x_i^T - x_i \bar{x}^T - \bar{x} x_i^T)
+                // = N \bar{x} \bar{x}^T + \sum_{i=1}^N x_i x_i^T
+                //   - (\sum_{i=1}^N x_i) \bar{x}^T - \bar{x} (\sum_{i=1}^N x_i^T)
+                let s: DMatrix<f64> = stat.sum_x_sq()
+                    + nf * (&xbar * &xbar.transpose())
+                    - stat.sum_x() * &xbar.transpose()
+                    - &xbar * stat.sum_x().transpose();
 
                 let kn = self.k() + stat.n() as f64;
                 let vn = self.df() + stat.n();
@@ -64,7 +72,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         let zn = ln_z(post.k(), post.df(), post.scale());
         let nd: f64 = (self.ndims() as f64) * (x.n() as f64);
 
-        zn - z0 - nd / 2.0 * LN_2PI
+        (nd / 2.0).mul_add(-LN_2PI, zn - z0)
     }
 
     #[inline]
@@ -92,12 +100,14 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
 
         let d: f64 = self.ndims() as f64;
 
-        zm - zn - d / 2.0 * LN_2PI
+        (d / 2.0).mul_add(-LN_2PI, zm - zn)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use nalgebra::{dmatrix, dvector};
+
     use super::*;
 
     const TOL: f64 = 1E-12;
@@ -144,5 +154,47 @@ mod tests {
         let pp = niw.ln_m(&data);
 
         assert::close(pp, -16.392_377_722_027_5, TOL);
+    }
+
+    #[test]
+    fn posterior() {
+        // This checks this implementation against the one from
+        // Kevin Murphey
+        // Found here: https://github.com/probml/probml-utils/blob/983e107875d550957d6c046b5c1af0fbae4badff/probml_utils/dp_mixgauss_utils.py#L206-L225
+
+        let niw = NormalInvWishart::new(
+            dvector![-1.0, 1.0],
+            0.05,
+            2 + 5,
+            dmatrix![
+                9.0, 15.0;
+                15.0, 74.0;
+            ],
+        )
+        .unwrap();
+
+        let data: Vec<_> = (0..10)
+            .map(|i| i as f64)
+            .map(|i| dvector![i * 2.0, i.mul_add(2.0, 1.0)])
+            .collect();
+
+        let mut suff_stat = MvGaussianSuffStat::new(2);
+        suff_stat.observe_many(&data);
+
+        let posterior = niw.posterior(&MvgData::SuffStat(&suff_stat));
+        assert!(posterior.mu.relative_eq(
+            &dvector![8.950_249, 9.955_224],
+            1e-6,
+            1e-6
+        ));
+
+        assert!(posterior.scale.relative_eq(
+            &dmatrix![
+                343.97513, 349.4776;
+                349.4776 , 408.02985;
+            ],
+            1e-6,
+            1e-6
+        ));
     }
 }

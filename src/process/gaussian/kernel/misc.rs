@@ -59,7 +59,7 @@ where
     ShapeConstraint: SameNumberOfRows<R1, R2> + SameNumberOfColumns<C1, C2>,
 {
     m1.zip_fold(m2, N::RealField::zero(), |acc, a, b| {
-        let diff = (a - b) / scale;
+        let diff = (a - b) / scale.clone();
         acc + diff.modulus_squared()
     })
 }

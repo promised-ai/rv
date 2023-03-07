@@ -30,6 +30,7 @@ use rand::Rng;
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Empirical {
     xs: Vec<f64>,
     range: (f64, f64),
@@ -151,7 +152,7 @@ impl Rv<f64> for Empirical {
     fn draw<R: Rng>(&self, rng: &mut R) -> f64 {
         let n = self.xs.len() as f64;
         let u: f64 = rng.gen();
-        let uix = (u as f64 * n).ceil() as usize;
+        let uix = (u * n).ceil() as usize;
         self.xs[uix]
     }
 }

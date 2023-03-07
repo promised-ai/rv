@@ -107,11 +107,7 @@ mod tests {
             .map(|_| {
                 let mut tester = GewekeTester::new(pr.clone(), 20);
                 tester.run_chains(5_000, 20, &mut rng);
-                if tester.eval(0.025).is_ok() {
-                    1_u8
-                } else {
-                    0_u8
-                }
+                u8::from(tester.eval(0.025).is_ok())
             })
             .sum::<u8>();
         assert!(n_passes > 1);
@@ -188,7 +184,7 @@ mod tests {
     fn ln_m_vs_monte_carlo() {
         use crate::misc::logsumexp;
 
-        let n_samples = 2_000_000;
+        let n_samples = 8_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
 
         let (m, r, s, v) = (0.0, 1.2, 2.3, 3.4);

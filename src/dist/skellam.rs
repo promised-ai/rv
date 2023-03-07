@@ -8,7 +8,7 @@ use crate::misc::bessel::bessel_iv;
 use crate::traits::*;
 use lru::LruCache;
 use rand::Rng;
-use std::cell::RefCell;
+use std::{cell::RefCell, num::NonZeroUsize};
 
 /// [Skellam distribution](https://en.wikipedia.org/wiki/Skellam_distribution)
 /// over x in {.., -2, -1, 0, 1, ... }.
@@ -28,6 +28,7 @@ use std::cell::RefCell;
 /// ```
 #[derive(Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Skellam {
     /// Mean of first poisson
     mu_1: f64,
@@ -40,11 +41,13 @@ pub struct Skellam {
 }
 
 fn cache_default() -> RefCell<LruCache<i32, f64>> {
-    RefCell::new(LruCache::new(100))
+    // SAFETY: 100 is a valid usize.
+    RefCell::new(LruCache::new(unsafe { NonZeroUsize::new_unchecked(100) }))
 }
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum SkellamError {
     /// The first rate parameter is less than or equal to zero
     Mu1TooLow { mu_1: f64 },
@@ -197,9 +200,15 @@ impl Skellam {
     }
 
     /// Set the cache size on the internal LRU for Bessel Iv calls.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `cap` is 0.
     #[inline]
     pub fn set_cache_cap(&self, cap: usize) {
-        self.bessel_iv_cache.borrow_mut().resize(cap);
+        self.bessel_iv_cache
+            .borrow_mut()
+            .resize(NonZeroUsize::new(cap).unwrap());
     }
 }
 
@@ -301,7 +310,7 @@ impl PartialEq for Skellam {
 impl Clone for Skellam {
     fn clone(&self) -> Self {
         let old_cache = self.bessel_iv_cache.borrow();
-        let mut cache = LruCache::new(old_cache.len());
+        let mut cache = LruCache::new(old_cache.cap());
         for (key, value) in old_cache.iter() {
             cache.put(*key, *value);
         }
@@ -405,12 +414,12 @@ mod tests {
 
         // How many bins do we need?
         let right_len: usize = (0..100)
-            .position(|x| pois.pmf(&(x as i32)) < f64::EPSILON)
+            .position(|x| pois.pmf(&x) < f64::EPSILON)
             .unwrap_or(99)
             + 1;
 
         let left_len: usize = (0..100)
-            .position(|x| pois.pmf(&(-(x as i32))) < f64::EPSILON)
+            .position(|x| pois.pmf(&(-x)) < f64::EPSILON)
             .unwrap_or(99)
             + 1;
 

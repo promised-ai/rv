@@ -44,6 +44,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Kumaraswamy {
     a: f64,
     b: f64,
@@ -60,6 +61,7 @@ impl PartialEq for Kumaraswamy {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum KumaraswamyError {
     /// The a parameter is less than or equal to zero
     ATooLow { a: f64 },
@@ -392,7 +394,7 @@ macro_rules! impl_kumaraswamy {
                 {
                     None
                 } else {
-                    let mode = ((self.a - 1.0) / (self.a * self.b - 1.0))
+                    let mode = ((self.a - 1.0) / self.a.mul_add(self.b, -1.0))
                         .powf(self.a.recip());
                     Some(mode as $kind)
                 }
@@ -434,8 +436,8 @@ impl fmt::Display for KumaraswamyError {
 mod tests {
     use super::*;
     use crate::dist::{Beta, Gamma, LogNormal};
+    use crate::misc::gauss_legendre_quadrature;
     use crate::misc::ks_test;
-    use crate::misc::quad;
     use crate::test_basic_impls;
 
     const KS_PVAL: f64 = 0.2;
@@ -496,8 +498,10 @@ mod tests {
     fn pdf_quad_and_cdf_agree() {
         // create a Kumaraswamy distr with median at 0.5
         let kuma = Kumaraswamy::centered(2.0).unwrap();
-        let intergral = quad(|x| kuma.f(&x), 0.0, 0.5);
-        assert::close(intergral, 0.5, 1E-6);
+        // let integral = quad(|x| kuma.f(&x), 0.0, 0.5);
+        let integral =
+            gauss_legendre_quadrature(|x| kuma.f(&x), 16, (0.0, 0.5));
+        assert::close(integral, 0.5, 1E-6);
     }
 
     #[test]
@@ -641,7 +645,7 @@ mod tests {
             "
         );
 
-        let kuma_1: Kumaraswamy = serde_yaml::from_str(&yaml).unwrap();
+        let kuma_1: Kumaraswamy = serde_yaml::from_str(yaml).unwrap();
         let kuma_2 = Kumaraswamy::new(2.0, 3.0).unwrap();
 
         assert::close(kuma_1.f(&0.5_f64), kuma_2.f(&0.5_f64), 1E-12);

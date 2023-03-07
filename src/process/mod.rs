@@ -1,38 +1,15 @@
+use std::fmt::Debug;
 use std::marker::PhantomData;
-use std::{fmt::Debug, iter::FromIterator};
 
-use argmin::core::Error as ArgminError;
-use argmin::prelude::ArgminOp;
-use argmin::prelude::Executor;
+use argmin::argmin_error;
+use argmin::core::{CostFunction, Executor, Gradient, IterState, Solver};
 use nalgebra::DVector;
 use nalgebra::Scalar;
 use rand::Rng;
-use serde::{Deserialize, Serialize};
 
 use crate::traits::Rv;
 
 pub mod gaussian;
-
-/// Parameters Much implement this trait
-pub trait Param:
-    Clone
-    + for<'de> Deserialize<'de>
-    + Serialize
-    + IntoIterator<Item = f64>
-    + FromIterator<f64>
-    + Debug
-{
-}
-
-impl<P> Param for P where
-    P: Clone
-        + for<'de> Deserialize<'de>
-        + Serialize
-        + IntoIterator<Item = f64>
-        + FromIterator<f64>
-        + Debug
-{
-}
 
 /// A representation of a generic random process
 pub trait RandomProcess<X>
@@ -44,9 +21,6 @@ where
     type Error: std::error::Error + Send + Sync + 'static;
     /// Type of the indexing set.
     type Index;
-
-    /// Parameter type
-    type Param: Param;
 
     /// Type of the sample function, aka trajectory of the process.
     type SampleFunction: Rv<DVector<X>>;
@@ -61,16 +35,16 @@ where
     /// gradient.
     fn ln_m_with_params(
         &self,
-        parameter: Self::Param,
-    ) -> Result<(f64, Self::Param), Self::Error>;
+        parameter: &DVector<f64>,
+    ) -> Result<(f64, DVector<f64>), Self::Error>;
 
     /// Get the parameters
-    fn parameters(&self) -> Self::Param;
+    fn parameters(&self) -> DVector<f64>;
 
     /// Set with the given parameters
     fn set_parameters(
         self,
-        parameters: Self::Param,
+        parameters: &DVector<f64>,
     ) -> Result<Self, Self::Error>;
 }
 
@@ -81,13 +55,16 @@ where
     X: Scalar + Debug,
 {
     /// Error type from Optimization errors
-    type Solver: argmin::core::Solver<RandomProcessMleOp<Self, X>>;
+    type Solver: Solver<
+        RandomProcessMleOp<Self, X>,
+        IterState<DVector<f64>, DVector<f64>, (), (), f64>,
+    >;
 
     /// Generator for optimizer
     fn generate_solver() -> Self::Solver;
 
     /// Create random parameters for this Process
-    fn random_params<R: Rng>(&self, rng: &mut R) -> Self::Param;
+    fn random_params<R: Rng>(&self, rng: &mut R) -> DVector<f64>;
 
     /// Run the optimization
     ///
@@ -113,17 +90,19 @@ where
 
         for params in once(best_params.clone()).chain(random_params) {
             let solver = Self::generate_solver();
-            // TODO: This is wasteful, we don't need to copy
-            let op = RandomProcessMleOp::new(self.clone());
-            let maybe_res =
-                Executor::new(op, solver, params).max_iters(max_iters).run();
+            let op = RandomProcessMleOp::new(&self);
+            let maybe_res = Executor::new(op, solver)
+                .configure(|state| state.param(params).max_iters(max_iters))
+                .run();
 
             match maybe_res {
                 Ok(res) => {
                     successes += 1;
                     if best_cost > res.state.best_cost {
                         best_cost = res.state.best_cost;
-                        best_params = res.state.best_param;
+                        best_params = res.state.best_param.expect(
+                            "Should have a best params if this was successful",
+                        );
                     }
                 }
                 Err(e) => {
@@ -133,7 +112,7 @@ where
         }
 
         if successes > 0 {
-            self.set_parameters(best_params)
+            self.set_parameters(&best_params)
                 .map_err(argmin::core::Error::from)
         } else {
             Err(last_err.unwrap())
@@ -157,38 +136,48 @@ where
     X: Scalar + Debug,
 {
     /// Create a new Process wrapper for optimization
-    pub fn new(process: P) -> Self {
+    pub fn new(process: &P) -> Self {
         Self {
-            process,
+            process: process.clone(),
             phantom_x: PhantomData,
         }
     }
 }
 
-impl<P, X> ArgminOp for RandomProcessMleOp<P, X>
+impl<P, X> CostFunction for RandomProcessMleOp<P, X>
 where
     P: RandomProcessMle<X>,
     X: Scalar + Debug,
 {
-    type Param = <P as RandomProcess<X>>::Param;
-    type Output = f64;
-    type Hessian = ();
-    type Jacobian = ();
-    type Float = f64;
+    type Param = DVector<f64>;
 
-    fn apply(&self, param: &Self::Param) -> Result<Self::Output, ArgminError> {
-        self.process.ln_m_with_params(param.clone())
+    type Output = f64;
+
+    fn cost(
+        &self,
+        param: &DVector<f64>,
+    ) -> Result<Self::Output, argmin::core::Error> {
+        self.process.ln_m_with_params(param)
             .map(|x| -x.0)
-            .map_err(|_| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
+            .map_err(|_| argmin_error!(InvalidParameter, format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
     }
+}
+
+impl<P, X> Gradient for RandomProcessMleOp<P, X>
+where
+    P: RandomProcessMle<X>,
+    X: Scalar + Debug,
+{
+    type Param = DVector<f64>;
+    type Gradient = DVector<f64>;
 
     fn gradient(
         &self,
-        param: &Self::Param,
-    ) -> Result<Self::Param, ArgminError> {
+        param: &DVector<f64>,
+    ) -> Result<Self::Gradient, argmin::core::Error> {
         self.process
-            .ln_m_with_params(param.clone())
-            .map(|x| Self::Param::from_iter(x.1.into_iter().map(|y| -y)))
-            .map_err(|_| ArgminError::msg(format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
+            .ln_m_with_params(param)
+            .map(|x| -x.1)
+            .map_err(|_| argmin_error!(InvalidParameter, format!("Could not compute ln_m_with_parameters where params = {:?}", param)))
     }
 }

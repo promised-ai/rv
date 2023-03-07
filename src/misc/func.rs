@@ -193,12 +193,14 @@ pub fn ln_pflip<R: Rng>(
 ) -> Vec<usize> {
     let z = if normed { 0.0 } else { logsumexp(ln_weights) };
 
-    let mut cws: Vec<f64> = ln_weights.iter().map(|w| (w - z).exp()).collect();
-
     // doing this instead of calling pflip shaves about 30% off the runtime.
-    for i in 1..cws.len() {
-        cws[i] += cws[i - 1];
-    }
+    let cws: Vec<f64> = ln_weights
+        .iter()
+        .scan(0.0, |state, w| {
+            *state += (w - z).exp();
+            Some(*state)
+        })
+        .collect();
 
     (0..n)
         .map(|_| {
@@ -288,7 +290,8 @@ pub fn ln_fact(n: usize) -> f64 {
         LN_FACT[n]
     } else {
         let y: f64 = (n as f64) + 1.0;
-        (y - 0.5) * y.ln() - y + 0.5_f64.mul_add(LN_2PI, (12.0 * y).recip())
+        (y - 0.5).mul_add(y.ln(), -y)
+            + 0.5_f64.mul_add(LN_2PI, (12.0 * y).recip())
     }
 }
 

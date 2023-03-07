@@ -38,6 +38,7 @@ mod mvg_prior;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalInvWishart {
     /// The mean of μ, μ<sub>0</sub>
     mu: DVector<f64>,
@@ -51,6 +52,7 @@ pub struct NormalInvWishart {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NormalInvWishartError {
     /// The k parameter is less than or equal to zero
     KTooLow { k: f64 },
@@ -252,7 +254,7 @@ impl Rv<MvGaussian> for NormalInvWishart {
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> MvGaussian {
         let iw = InvWishart::new_unchecked(self.scale.clone(), self.df);
-        let sigma = iw.draw(&mut rng);
+        let sigma: DMatrix<f64> = iw.draw(&mut rng);
 
         let mvg =
             MvGaussian::new_unchecked(self.mu.clone(), sigma.clone() / self.k);
@@ -311,7 +313,6 @@ mod tests {
         let scale = DMatrix::identity(2, 2);
         let res = NormalInvWishart::new(mu, 0.0, 2, scale);
         if let Err(NormalInvWishartError::KTooLow { .. }) = res {
-            ()
         } else {
             panic!("wrong error");
         }
@@ -323,7 +324,6 @@ mod tests {
         let scale = DMatrix::identity(2, 2);
         let res = NormalInvWishart::new(mu, -1.0, 2, scale);
         if let Err(NormalInvWishartError::KTooLow { .. }) = res {
-            ()
         } else {
             panic!("wrong error");
         }
@@ -339,7 +339,6 @@ mod tests {
             ndims: 2,
         }) = res
         {
-            ()
         } else {
             panic!("wrong error");
         }
@@ -355,7 +354,6 @@ mod tests {
             n_scale: 3,
         }) = res
         {
-            ()
         } else {
             panic!("wrong error");
         }
@@ -371,7 +369,6 @@ mod tests {
             ncols: 3,
         }) = res
         {
-            ()
         } else {
             panic!("wrong error");
         }

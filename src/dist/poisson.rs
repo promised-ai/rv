@@ -65,6 +65,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Poisson {
     rate: f64,
     /// Cached ln(rate)
@@ -80,6 +81,7 @@ impl PartialEq for Poisson {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum PoissonError {
     /// The rate parameter is less than or equal to zero
     RateTooLow { rate: f64 },
@@ -186,7 +188,7 @@ macro_rules! impl_traits {
         impl Rv<$kind> for Poisson {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let kf = *x as f64;
-                kf * self.ln_rate() - self.rate - ln_fact(*x as usize)
+                kf.mul_add(self.ln_rate(), -self.rate) - ln_fact(*x as usize)
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -283,14 +285,17 @@ impl Entropy for Poisson {
         if self.rate() < 200.0 {
             // compute expectation until f(x) is close to zero
             let mid = self.rate().floor() as u32;
-            crate::misc::entropy::count_entropy(&self, mid)
+            crate::misc::entropy::count_entropy(self, mid)
         } else {
             // Approximation for large rate. Error is O(1/rate^3)
             // https://en.wikipedia.org/wiki/Poisson_distribution
-            (0.5) * (LN_2PI_E + self.ln_rate())
-                - (12.0 * self.rate()).recip()
-                - (24.0 * self.rate() * self.rate()).recip()
-                - 19.0 * (360.0 * self.rate().powi(3)).recip()
+            19.0_f64.mul_add(
+                -(360.0 * self.rate().powi(3)).recip(),
+                0.5_f64.mul_add(
+                    LN_2PI_E + self.ln_rate(),
+                    -(12.0 * self.rate()).recip(),
+                ) - (24.0 * self.rate() * self.rate()).recip(),
+            )
         }
     }
 }

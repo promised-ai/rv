@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::consts::LN_2PI;
 use crate::impl_display;
-use crate::misc::{bessel, quad};
+use crate::misc::bessel;
 use crate::traits::*;
 use rand::Rng;
 use std::f64::consts::PI;
@@ -30,6 +30,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct VonMises {
     /// Mean
     mu: f64,
@@ -41,6 +42,7 @@ pub struct VonMises {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum VonMisesError {
     /// The mu parameter is less than zero or greater than `2*PI`
     MuOutOfBounds { mu: f64 },
@@ -224,7 +226,7 @@ macro_rules! impl_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could also cache ln(i0_k)
                 let xf = f64::from(*x);
-                self.k * (xf - self.mu).cos() - LN_2PI - self.i0_k.ln()
+                self.k.mul_add((xf - self.mu).cos(), -LN_2PI) - self.i0_k.ln()
             }
 
             // Best, D. J., & Fisher, N. I. (1979). Efficient simulation of the
@@ -244,7 +246,7 @@ macro_rules! impl_traits {
                     let f = r.mul_add(z, 1.0) / (r + z);
                     let c = self.k * (r - f);
 
-                    if (c * (2.0 - c) - u2 >= 0.0)
+                    if (c.mul_add(2.0 - c, -u2) >= 0.0)
                         || ((c / u2).ln() + 1.0 - c >= 0.0)
                     {
                         let u3: f64 = rng.sample(u);
@@ -263,8 +265,19 @@ macro_rules! impl_traits {
         // TODO: XXX:This is going to be SLOW, because it uses quadrature.
         impl Cdf<$kind> for VonMises {
             fn cdf(&self, x: &$kind) -> f64 {
+                use crate::misc::{
+                    gauss_legendre_quadrature_cached, gauss_legendre_table,
+                };
+
                 let func = |y: f64| self.f(&y);
-                quad(func, 0.0, f64::from(*x))
+
+                let (weights, roots) = gauss_legendre_table(16);
+                gauss_legendre_quadrature_cached(
+                    func,
+                    (0.0, *x as f64),
+                    &weights,
+                    &roots,
+                )
             }
         }
 

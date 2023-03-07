@@ -42,6 +42,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Binomial {
     /// Total number of trials
     n: u64,
@@ -51,6 +52,7 @@ pub struct Binomial {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum BinomialError {
     /// The number of trials is zero
     NIsZero,
@@ -277,7 +279,7 @@ macro_rules! impl_int_traits {
 impl Skewness for Binomial {
     fn skewness(&self) -> Option<f64> {
         let nf = self.n as f64;
-        Some((1.0 - 2.0 * self.p) / (nf * self.p * self.q()).sqrt())
+        Some(2.0_f64.mul_add(-self.p, 1.0) / (nf * self.p * self.q()).sqrt())
     }
 }
 
@@ -285,7 +287,7 @@ impl Kurtosis for Binomial {
     fn kurtosis(&self) -> Option<f64> {
         let q = self.q();
         let nf = self.n as f64;
-        Some((1.0 - 6.0 * self.p * q) / (nf * self.p * q))
+        Some((6.0 * self.p).mul_add(-q, 1.0) / (nf * self.p * q))
     }
 }
 

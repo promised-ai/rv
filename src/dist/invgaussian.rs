@@ -16,6 +16,7 @@ use crate::traits::*;
 /// N<sup>-1</sup>(μ, λ) over real values.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct InvGaussian {
     /// Mean
     mu: f64,
@@ -34,6 +35,7 @@ impl PartialEq for InvGaussian {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum InvGaussianError {
     /// The mu parameter is infinite or NaN
     MuNotFinite { mu: f64 },
@@ -255,11 +257,10 @@ macro_rules! impl_traits {
                 let y = v * v;
                 let mu2 = mu * mu;
                 let x = 0.5_f64.mul_add(
-                    (mu2 * y / lambda
-                        - mu / lambda
-                            * (4.0 * mu * lambda)
-                                .mul_add(y, mu2 * y * y)
-                                .sqrt()),
+                    (mu / lambda).mul_add(
+                        -(4.0 * mu * lambda).mul_add(y, mu2 * y * y).sqrt(),
+                        mu2 * y / lambda,
+                    ),
                     mu,
                 );
                 let z: f64 = rng.gen();
@@ -387,16 +388,22 @@ mod tests {
 
     #[test]
     fn quad_on_pdf_agrees_with_cdf_x() {
-        use crate::misc::quad_eps;
+        use peroxide::numerical::integral::{
+            gauss_kronrod_quadrature, Integral,
+        };
         let ig = InvGaussian::new(1.1, 2.5).unwrap();
         // use pdf to hit `supports(x)` first
         let pdf = |x: f64| ig.pdf(&x);
         let mut rng = rand::thread_rng();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
-            let res = quad_eps(pdf, 1e-16, x, Some(1e-10));
+            let res = gauss_kronrod_quadrature(
+                pdf,
+                (1e-16, x),
+                Integral::G7K15(1e-10),
+            );
             let cdf = ig.cdf(&x);
-            assert!((res - cdf).abs() < 1e-9);
+            assert::close(res, cdf, 1e-7);
         }
     }
 

@@ -1,5 +1,4 @@
 use criterion::black_box;
-use criterion::Benchmark;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use nalgebra::{DMatrix, DVector};
@@ -33,39 +32,37 @@ macro_rules! benchrv {
     };
     ($fxtype: ty, $ctor:expr, $fn_name:ident, $bench_name:expr, $xtype:ty) => {
         fn $fn_name(c: &mut Criterion) {
-            c.bench(
-                $bench_name,
-                Benchmark::new("ln_f", |b| {
-                    let mut rng = rand::thread_rng();
-                    let fx = $ctor;
-                    let x: $xtype = fx.draw(&mut rng);
-                    b.iter(|| fx.ln_f(black_box(&x)))
+            let mut group = c.benchmark_group($bench_name);
+            group.bench_function("ln_f", |b| {
+                let mut rng = rand::thread_rng();
+                let fx = $ctor;
+                let x: $xtype = fx.draw(&mut rng);
+                b.iter(|| fx.ln_f(black_box(&x)))
+            });
+            group.bench_function("draw", |b| {
+                let mut rng = rand::thread_rng();
+                let fx = $ctor;
+                b.iter(|| {
+                    let _x: $xtype = fx.draw(&mut rng);
+                });
+            });
+            group.bench_function("sample 5", |b| {
+                let mut rng = rand::thread_rng();
+                let fx = $ctor;
+                b.iter(|| {
+                    let _xs: Vec<$xtype> = fx.sample(5, &mut rng);
                 })
-                .with_function("draw", |b| {
-                    let mut rng = rand::thread_rng();
-                    let fx = $ctor;
-                    b.iter(|| {
-                        let _x: $xtype = fx.draw(&mut rng);
-                    })
+            });
+            group.bench_function("stream, 5", |b| {
+                let mut rng = rand::thread_rng();
+                let fx = $ctor;
+                b.iter(|| {
+                    let _count: usize =
+                        <$fxtype as Rv<$xtype>>::sample_stream(&fx, &mut rng)
+                        .take(5)
+                        .count();
                 })
-                .with_function("sample 5", |b| {
-                    let mut rng = rand::thread_rng();
-                    let fx = $ctor;
-                    b.iter(|| {
-                        let _xs: Vec<$xtype> = fx.sample(5, &mut rng);
-                    })
-                })
-                .with_function("stream, 5", |b| {
-                    let mut rng = rand::thread_rng();
-                    let fx = $ctor;
-                    b.iter(|| {
-                        let _count: usize =
-                            <$fxtype as Rv<$xtype>>::sample_stream(&fx, &mut rng)
-                            .take(5)
-                            .count();
-                    })
-                }),
-            );
+            });
         }
     };
 }

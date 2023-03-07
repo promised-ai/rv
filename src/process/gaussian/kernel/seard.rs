@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 ///
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct SEardKernel {
     length_scale: DVector<f64>,
 }
@@ -98,25 +99,14 @@ impl Kernel for SEardKernel {
         DVector::repeat(x.nrows(), 1.0)
     }
 
-    fn parameters(&self) -> Vec<f64> {
-        self.length_scale.iter().map(|x| x.ln()).collect()
+    fn parameters(&self) -> DVector<f64> {
+        DVector::from_iterator(
+            self.n_parameters(),
+            self.length_scale.iter().map(|x| x.ln()),
+        )
     }
 
-    fn consume_parameters<'p>(
-        &self,
-        params: &'p [f64],
-    ) -> Result<(Self, &'p [f64]), KernelError> {
-        let nrows = self.length_scale.nrows();
-        if params.len() < self.length_scale.nrows() {
-            Err(KernelError::MissingParameters(nrows))
-        } else {
-            let (cur, next) = params.split_at(nrows);
-            let ck = self.from_parameters(cur)?;
-            Ok((ck, next))
-        }
-    }
-
-    fn from_parameters(&self, params: &[f64]) -> Result<Self, KernelError> {
+    fn reparameterize(&self, params: &[f64]) -> Result<Self, KernelError> {
         use std::cmp::Ordering;
         match params.len().cmp(&self.length_scale.nrows()) {
             Ordering::Equal => {
@@ -174,5 +164,9 @@ impl Kernel for SEardKernel {
             }
         }
         Ok((cov, grad))
+    }
+
+    fn n_parameters(&self) -> usize {
+        self.length_scale.nrows()
     }
 }

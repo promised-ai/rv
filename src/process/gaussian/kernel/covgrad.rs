@@ -8,6 +8,7 @@ use std::ops::{Index, IndexMut};
 /// Representation of the gradient of the covariance matrix
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct CovGrad {
     slices: Vec<DMatrix<f64>>,
 }
@@ -205,8 +206,9 @@ impl IndexMut<(usize, usize, usize)> for CovGrad {
 }
 
 /// Error from constructing a CovGrad
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum CovGradError {
     /// The shapes of the slices do not match
     ShapeMismatch(Vec<(usize, usize)>),

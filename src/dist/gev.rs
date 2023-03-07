@@ -25,6 +25,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Gev {
     loc: f64,
     scale: f64,
@@ -33,6 +34,7 @@ pub struct Gev {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GevError {
     /// The location parameter is infinite or NaN
     LocNotFinite { loc: f64 },
@@ -263,7 +265,7 @@ macro_rules! impl_traits {
                 let u: f64 = rng.sample(uni);
                 let lnu = -u.ln();
                 if self.shape == 0.0 {
-                    (self.loc - self.scale * lnu.ln()) as $kind
+                    self.scale.mul_add(-lnu.ln(), self.loc) as $kind
                 } else {
                     (self.loc
                         + self.scale * (lnu.powf(-self.shape) - 1.0)
@@ -319,10 +321,10 @@ macro_rules! impl_traits {
                 } else {
                     Some(
                         (self.loc
-                            + (self.scale
-                                * (1.0 + self.shape).powf(-self.shape)
-                                - 1.0)
-                                / self.shape) as $kind,
+                            + self.scale.mul_add(
+                                (1.0 + self.shape).powf(-self.shape),
+                                -1.0,
+                            ) / self.shape) as $kind,
                     )
                 }
             }
@@ -331,7 +333,7 @@ macro_rules! impl_traits {
         impl Median<$kind> for Gev {
             fn median(&self) -> Option<$kind> {
                 if self.shape == 0.0 {
-                    Some((self.loc - self.scale * consts::LN_LN_2) as $kind)
+                    Some(self.scale.mul_add(-consts::LN_LN_2, self.loc) as $kind)
                 } else {
                     Some(
                         (self.loc
@@ -352,9 +354,9 @@ impl Variance<f64> for Gev {
             Some(f64::INFINITY)
         } else {
             let g1 = (1.0 - self.shape).gamma();
-            let g2 = (1.0 - 2.0 * self.shape).gamma();
+            let g2 = 2.0_f64.mul_add(-self.shape, 1.0).gamma();
             Some(
-                self.scale * self.scale * (g2 - g1 * g1)
+                self.scale * self.scale * g1.mul_add(-g1, g2)
                     / (self.shape * self.shape),
             )
         }

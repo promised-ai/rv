@@ -8,8 +8,9 @@ use std::f64;
 use serde::{Deserialize, Serialize};
 
 /// Kernel representing the sum of two other kernels
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct AddKernel<A, B>
 where
     A: Kernel,
@@ -61,6 +62,10 @@ where
     A: Kernel,
     B: Kernel,
 {
+    fn n_parameters(&self) -> usize {
+        self.a.n_parameters() + self.b.n_parameters()
+    }
+
     fn is_stationary(&self) -> bool {
         self.a.is_stationary() && self.b.is_stationary()
     }
@@ -96,26 +101,23 @@ where
         a.zip_map(&b, |y1, y2| y1 + y2)
     }
 
-    fn parameters(&self) -> Vec<f64> {
+    fn parameters(&self) -> DVector<f64> {
         let a = self.a.parameters();
         let b = self.b.parameters();
 
-        a.into_iter().chain(b.into_iter()).collect()
+        DVector::from_iterator(
+            self.a.n_parameters() + self.b.n_parameters(),
+            a.into_iter().chain(b.into_iter()).copied(),
+        )
     }
 
-    fn from_parameters(&self, params: &[f64]) -> Result<Self, KernelError> {
-        let (a, b_params) = self.a.consume_parameters(params)?;
-        let b = self.b.from_parameters(b_params)?;
+    fn reparameterize(&self, params: &[f64]) -> Result<Self, KernelError> {
+        let (a_params, b_params) = params.split_at(self.a.n_parameters());
+
+        let a = self.a.reparameterize(a_params)?;
+        let b = self.b.reparameterize(b_params)?;
+
         Ok(Self::new(a, b))
-    }
-
-    fn consume_parameters<'p>(
-        &self,
-        params: &'p [f64],
-    ) -> Result<(Self, &'p [f64]), KernelError> {
-        let (a, b_params) = self.a.consume_parameters(params)?;
-        let (b, left) = self.b.consume_parameters(b_params)?;
-        Ok((Self::new(a, b), left))
     }
 
     fn covariance_with_gradient<R, C, S>(
@@ -138,8 +140,9 @@ where
 }
 
 /// Kernel representing the product of two other kernels
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct ProductKernel<A, B>
 where
     A: Kernel,
@@ -191,6 +194,10 @@ where
     A: Kernel,
     B: Kernel,
 {
+    fn n_parameters(&self) -> usize {
+        self.a.n_parameters() + self.b.n_parameters()
+    }
+
     fn covariance<R1, R2, C1, C2, S1, S2>(
         &self,
         x1: &Matrix<f64, R1, C1, S1>,
@@ -226,25 +233,22 @@ where
         a.zip_map(&b, |y1, y2| y1 * y2)
     }
 
-    fn parameters(&self) -> Vec<f64> {
+    fn parameters(&self) -> DVector<f64> {
         let a = self.a.parameters();
         let b = self.b.parameters();
-        a.into_iter().chain(b.into_iter()).collect()
+        DVector::from_iterator(
+            self.a.n_parameters() + self.b.n_parameters(),
+            a.into_iter().chain(b.into_iter()).copied(),
+        )
     }
 
-    fn from_parameters(&self, param_vec: &[f64]) -> Result<Self, KernelError> {
-        let (a, b_params) = self.a.consume_parameters(param_vec)?;
-        let b = self.b.from_parameters(b_params)?;
+    fn reparameterize(&self, params: &[f64]) -> Result<Self, KernelError> {
+        let (a_params, b_params) = params.split_at(self.a.n_parameters());
+
+        let a = self.a.reparameterize(a_params)?;
+        let b = self.b.reparameterize(b_params)?;
+
         Ok(Self::new(a, b))
-    }
-
-    fn consume_parameters<'p>(
-        &self,
-        param_vec: &'p [f64],
-    ) -> Result<(Self, &'p [f64]), KernelError> {
-        let (a, b_params) = self.a.consume_parameters(param_vec)?;
-        let (b, left) = self.b.consume_parameters(b_params)?;
-        Ok((Self::new(a, b), left))
     }
 
     fn covariance_with_gradient<R, C, S>(
@@ -306,10 +310,10 @@ mod tests {
             2,
             2,
             &[
-                1.3212949635179978,
-                0.8856905007720425,
-                2.313154757410699,
-                1.8195919791379003,
+                1.321_294_963_517_997_8,
+                0.885_690_500_772_042_5,
+                2.313_154_757_410_699,
+                1.819_591_979_137_900_3,
             ],
         );
         let cov = kernel.covariance(&x, &y);
@@ -319,19 +323,19 @@ mod tests {
         let expected_cov = DMatrix::from_row_slice(
             2,
             2,
-            &[3.0, 2.556431366898634, 2.556431366898634, 3.0],
+            &[3.0, 2.556_431_366_898_634, 2.556_431_366_898_634, 3.0],
         );
 
         let expected_grad = CovGrad::new_unchecked(&[
             DMatrix::from_row_slice(
                 2,
                 2,
-                &[3.0, 2.556431366898634, 2.556431366898634, 3.0],
+                &[3.0, 2.556_431_366_898_634, 2.556_431_366_898_634, 3.0],
             ),
             DMatrix::from_row_slice(
                 2,
                 2,
-                &[0.0, 0.8180580374075628, 0.8180580374075628, 0.0],
+                &[0.0, 0.818_058_037_407_562_8, 0.818_058_037_407_562_8, 0.0],
             ),
         ]);
 

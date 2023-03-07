@@ -28,6 +28,7 @@ use std::fmt;
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Geometric {
     p: f64,
     // ln_(p)
@@ -40,6 +41,7 @@ pub struct Geometric {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GeometricError {
     /// The p parameter is infinite or NaN
     PNotFinite { p: f64 },
@@ -274,7 +276,8 @@ impl Kurtosis for Geometric {
 
 impl Entropy for Geometric {
     fn entropy(&self) -> f64 {
-        (-(1.0 - self.p) * (1.0 - self.p).log2() - self.p * self.p.log2())
+        (-(1.0 - self.p))
+            .mul_add((1.0 - self.p).log2(), -self.p * self.p.log2())
             / self.p
     }
 }
@@ -332,7 +335,7 @@ mod tests {
     #[test]
     fn ln_pdf() {
         let geom = Geometric::new(0.5).unwrap();
-        assert::close(geom.ln_pmf(&0_u32), -0.693_147_180_559_945_3, TOL);
+        assert::close(geom.ln_pmf(&0_u32), -f64::consts::LN_2, TOL);
         assert::close(geom.ln_pmf(&1_u32), -1.386_294_361_119_890_6, TOL);
         assert::close(geom.ln_pmf(&5_u32), -4.158_883_083_359_671_5, TOL);
         assert::close(geom.ln_pmf(&11_u32), -8.317_766_166_719_343, TOL);

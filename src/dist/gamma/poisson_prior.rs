@@ -66,7 +66,9 @@ macro_rules! impl_traits {
 
             #[inline]
             fn ln_m_cache(&self) -> Self::LnMCache {
-                let z0 = self.ln_gamma_shape() - self.shape() * self.ln_rate();
+                let z0 = self
+                    .shape()
+                    .mul_add(-self.ln_rate(), self.ln_gamma_shape());
                 z0
             }
 
@@ -89,7 +91,9 @@ macro_rules! impl_traits {
                     DataOrSuffStat::SuffStat(&stat);
                 let post = self.posterior(&data_or_suff);
 
-                let zn = post.ln_gamma_shape() - post.shape() * post.ln_rate();
+                let zn = post
+                    .shape()
+                    .mul_add(-post.ln_rate(), post.ln_gamma_shape());
 
                 zn - cache - stat.sum_ln_fact()
             }
@@ -150,7 +154,7 @@ mod tests {
         let dist = Gamma::new(1.0, 1.0).unwrap();
         let inputs: [u8; 5] = [0, 1, 2, 3, 4];
         let expected: [f64; 5] = [
-            -0.693_147_180_559_945_3,
+            -std::f64::consts::LN_2,
             -2.197_224_577_336_219_6,
             -4.446_565_155_811_452,
             -7.171_720_824_816_601,
@@ -182,7 +186,7 @@ mod tests {
         let dist = Gamma::new(1.0, 1.0).unwrap();
         let inputs: [u8; 5] = [0, 1, 2, 3, 4];
         let expected: [f64; 5] = [
-            -0.693_147_180_559_945_3,
+            -std::f64::consts::LN_2,
             -1.386_294_361_119_890_6,
             -2.079_441_541_679_835_7,
             -2.772_588_722_239_781,
