@@ -143,10 +143,6 @@ pub trait Support<X> {
 pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
     /// The value of the Probability Density Function (PDF) at `x`
     ///
-    /// # Panics
-    ///
-    /// If `x` is not in the support.
-    ///
     /// # Example
     ///
     /// Compute the Gaussian PDF, f(x)
@@ -165,15 +161,22 @@ pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
     /// assert!(f_mean > f_high);
     /// assert!((f_low - f_high).abs() < 1E-12);
     /// ```
+    ///
+    /// Returns 0 if x is not in support
+    ///
+    /// ```
+    /// # use rv::traits::ContinuousDistr;
+    /// use rv::dist::Exponential;
+    ///
+    /// let expon = Exponential::new(1.0).unwrap();
+    /// let f = expon.pdf(&-1.0_f64);
+    /// assert_eq!(f, 0.0);
+    /// ```
     fn pdf(&self, x: &X) -> f64 {
         self.ln_pdf(x).exp()
     }
 
     /// The value of the log Probability Density Function (PDF) at `x`
-    ///
-    /// # Panics
-    ///
-    /// If `x` is not in the support.
     ///
     /// # Example
     ///
@@ -193,9 +196,23 @@ pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
     /// assert!(lnf_mean > lnf_high);
     /// assert!((lnf_low - lnf_high).abs() < 1E-12);
     /// ```
+    ///
+    /// Returns -inf if x is not in support
+    ///
+    /// ```
+    /// # use rv::traits::ContinuousDistr;
+    /// use rv::dist::Exponential;
+    ///
+    /// let expon = Exponential::new(1.0).unwrap();
+    /// let f = expon.ln_pdf(&-1.0_f64);
+    /// assert_eq!(f, std::f64::NEG_INFINITY);
+    /// ```
     fn ln_pdf(&self, x: &X) -> f64 {
-        assert!(self.supports(x), "x not in support");
-        self.ln_f(x)
+        if self.supports(x) {
+            self.ln_f(x)
+        } else {
+            std::f64::NEG_INFINITY
+        }
     }
 }
 
@@ -300,10 +317,6 @@ pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
 
     /// Natural logarithm of the probability mass function (PMF)
     ///
-    /// # Panics
-    ///
-    /// If `x` is not supported
-    ///
     /// # Example
     ///
     /// The probability of a fair coin coming up heads in 0.5
@@ -318,8 +331,11 @@ pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
     /// assert!( (b.ln_pmf(&true) - 0.5_f64.ln()).abs() < 1E-12);
     /// ```
     fn ln_pmf(&self, x: &X) -> f64 {
-        assert!(self.supports(x), "x not in support");
-        self.ln_f(x)
+        if self.supports(x) {
+            self.ln_f(x)
+        } else {
+            std::f64::NEG_INFINITY
+        }
     }
 }
 

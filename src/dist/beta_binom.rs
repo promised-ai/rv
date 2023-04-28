@@ -42,12 +42,13 @@ use crate::traits::*;
 /// assert!(!beta_binom.supports(&21_u32));
 /// ```
 ///
-/// The following will panic because 21 is out of the support
+/// PMF calls will return 0 for out-of-support data
 ///
-/// ```should_panic
+/// ```
 /// # use rv::prelude::*;
 /// # let beta_binom = BetaBinomial::new(20, 3.0, 2.0).unwrap();
-/// beta_binom.pmf(&21_u32); // panics
+/// let f = beta_binom.pmf(&21_u32);
+/// assert_eq!(f, 0.0);
 /// ```
 
 #[derive(Debug, Clone)]
