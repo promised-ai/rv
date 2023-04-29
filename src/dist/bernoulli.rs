@@ -279,6 +279,15 @@ impl<X: Booleable> HasSuffStat<X> for Bernoulli {
     fn empty_suffstat(&self) -> Self::Stat {
         BernoulliSuffStat::new()
     }
+
+    fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+        let n = stat.n() as f64;
+        let k = stat.k() as f64;
+
+        let ln_p = self.p().ln();
+        let ln_q = self.q().ln();
+        k * ln_p + (n - k) * ln_q
+    }
 }
 
 impl KlDivergence for Bernoulli {

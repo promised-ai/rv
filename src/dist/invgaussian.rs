@@ -312,8 +312,13 @@ macro_rules! impl_traits {
 
         impl HasSuffStat<$kind> for InvGaussian {
             type Stat = InvGaussianSuffStat;
+
             fn empty_suffstat(&self) -> Self::Stat {
                 InvGaussianSuffStat::new()
+            }
+
+            fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+                unimplemented!()
             }
         }
     };

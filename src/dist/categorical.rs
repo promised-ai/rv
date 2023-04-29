@@ -248,8 +248,17 @@ impl Entropy for Categorical {
 
 impl<X: CategoricalDatum> HasSuffStat<X> for Categorical {
     type Stat = CategoricalSuffStat;
+
     fn empty_suffstat(&self) -> Self::Stat {
         CategoricalSuffStat::new(self.k())
+    }
+
+    fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+        self.ln_weights()
+            .iter()
+            .zip(stat.counts().iter())
+            .map(|(&w, &ct)| (ct as f64) * w)
+            .sum()
     }
 }
 

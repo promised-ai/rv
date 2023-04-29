@@ -425,9 +425,13 @@ pub trait KlDivergence {
 }
 
 /// The data for this distribution can be summarized by a statistic
-pub trait HasSuffStat<X> {
+pub trait HasSuffStat<X>: Rv<X> {
     type Stat: SuffStat<X>;
     fn empty_suffstat(&self) -> Self::Stat;
+
+    /// Return the log likelihood for the data represented by the sufficient
+    /// statistic.
+    fn ln_f_stat(&self, stat: &Self::Stat) -> f64;
 }
 
 /// Is a [sufficient statistic](https://en.wikipedia.org/wiki/Sufficient_statistic) for a
