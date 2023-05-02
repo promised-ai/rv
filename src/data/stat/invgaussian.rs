@@ -19,6 +19,8 @@ pub struct InvGaussianSuffStat {
     sum_x: f64,
     /// sum of `1/x`
     sum_inv_x: f64,
+    /// sum of ln(x)
+    sum_ln_x: f64,
 }
 
 impl InvGaussianSuffStat {
@@ -28,17 +30,24 @@ impl InvGaussianSuffStat {
             n: 0,
             sum_x: 0.0,
             sum_inv_x: 0.0,
+            sum_ln_x: 0.0,
         }
     }
 
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
-    pub fn from_parts_unchecked(n: usize, sum_x: f64, sum_inv_x: f64) -> Self {
+    pub fn from_parts_unchecked(
+        n: usize,
+        sum_x: f64,
+        sum_inv_x: f64,
+        sum_ln_x: f64,
+    ) -> Self {
         InvGaussianSuffStat {
             n,
             sum_x,
             sum_inv_x,
+            sum_ln_x,
         }
     }
 
@@ -60,10 +69,15 @@ impl InvGaussianSuffStat {
         self.sum_x
     }
 
-    /// Sum of `x^2`
+    /// Sum of `1/x`
     #[inline]
     pub fn sum_inv_x(&self) -> f64 {
         self.sum_inv_x
+    }
+
+    #[inline]
+    pub fn sum_ln_x(&self) -> f64 {
+        self.sum_ln_x
     }
 }
 
@@ -125,6 +139,7 @@ macro_rules! impl_invgaussian_suffstat {
 
                 self.sum_x += xf;
                 self.sum_inv_x += xf.recip();
+                self.sum_ln_x += xf.ln();
             }
 
             fn forget(&mut self, x: &$kind) {
@@ -133,6 +148,7 @@ macro_rules! impl_invgaussian_suffstat {
 
                     self.sum_x -= xf;
                     self.sum_inv_x -= xf.recip();
+                    self.sum_ln_x -= xf.ln();
                     self.n -= 1;
                 } else {
                     self.n = 0;
