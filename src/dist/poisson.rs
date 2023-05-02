@@ -233,7 +233,9 @@ macro_rules! impl_traits {
 
             fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
                 let n = stat.n() as f64;
-                self.ln_rate() * stat.sum() - stat.sum_ln_fact() - n * self.rate
+                let t1 =
+                    self.ln_rate().mul_add(stat.sum(), -stat.sum_ln_fact());
+                n.mul_add(-self.rate, t1)
             }
         }
 

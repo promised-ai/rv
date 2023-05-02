@@ -328,9 +328,11 @@ macro_rules! impl_traits {
                 // (0.5 * k).mul_add(-k, -self.ln_sigma()) - HALF_LN_2PI
                 let z = (2.0 * self.sigma * self.sigma).recip();
                 let n = stat.n() as f64;
-                let expterm = stat.sum_x_sq() - 2.0 * self.mu * stat.sum_x()
-                    + n * self.mu * self.mu;
-                -n * (self.ln_sigma() + HALF_LN_2PI) - z * expterm
+                let expterm = stat.sum_x_sq()
+                    + self
+                        .mu
+                        .mul_add(-2.0 * stat.sum_x(), n * self.mu * self.mu);
+                -n.mul_add(self.ln_sigma() + HALF_LN_2PI, z * expterm)
             }
         }
     };

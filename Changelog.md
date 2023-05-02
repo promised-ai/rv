@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.16.0
+- Fix bug to InvGaussianSuffStat
+- Add `ln_f_stat` method to `HasSuffStat` trait. This method computes the log
+    likelihood of the data represented by the statistic.
+- Un-implement `HasSuffStat<f64>` for `InverseGamma`
+
+
 ## 0.15.0
 - All structs and enums use `snake_case` naming.
 - Dependency updates (thanks @bsull).
