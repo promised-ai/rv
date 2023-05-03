@@ -1,4 +1,5 @@
 mod bernoulli;
+mod beta;
 mod categorical;
 mod gaussian;
 mod invgamma;
@@ -8,6 +9,7 @@ mod mvg;
 mod poisson;
 
 pub use bernoulli::*;
+pub use beta::*;
 pub use categorical::*;
 pub use gaussian::*;
 pub use invgamma::*;

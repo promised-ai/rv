@@ -2,29 +2,29 @@
 use serde::{Deserialize, Serialize};
 
 use crate::data::DataOrSuffStat;
-use crate::dist::InvGamma;
+use crate::dist::Beta;
 use crate::traits::SuffStat;
 
 /// Inverse Gamma sufficient statistic.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
-pub struct InvGammaSuffStat {
+pub struct BetaSuffStat {
     /// Number of observations
     n: usize,
     /// sum of `ln(x)`
     sum_ln_x: f64,
-    /// sum of `1/x`
-    sum_inv_x: f64,
+    /// sum of `ln(1 - x)`
+    sum_ln_1mx: f64,
 }
 
-impl InvGammaSuffStat {
+impl BetaSuffStat {
     #[inline]
     pub fn new() -> Self {
-        InvGammaSuffStat {
+        BetaSuffStat {
             n: 0,
             sum_ln_x: 0.0,
-            sum_inv_x: 0.0,
+            sum_ln_1mx: 0.0,
         }
     }
 
@@ -34,12 +34,12 @@ impl InvGammaSuffStat {
     pub fn from_parts_unchecked(
         n: usize,
         sum_ln_x: f64,
-        sum_inv_x: f64,
+        sum_ln_1mx: f64,
     ) -> Self {
-        InvGammaSuffStat {
+        BetaSuffStat {
             n,
             sum_ln_x,
-            sum_inv_x,
+            sum_ln_1mx,
         }
     }
 
@@ -55,58 +55,56 @@ impl InvGammaSuffStat {
         self.sum_ln_x
     }
 
-    /// Sum of `1/x`
+    /// Sum of `ln(1-x)`
     #[inline]
-    pub fn sum_inv_x(&self) -> f64 {
-        self.sum_inv_x
+    pub fn sum_ln_1mx(&self) -> f64 {
+        self.sum_ln_1mx
     }
 }
 
-impl Default for InvGammaSuffStat {
+impl Default for BetaSuffStat {
     fn default() -> Self {
-        InvGammaSuffStat::new()
+        BetaSuffStat::new()
     }
 }
 
 macro_rules! impl_suffstat {
     ($kind:ty) => {
-        impl<'a> From<&'a InvGammaSuffStat>
-            for DataOrSuffStat<'a, $kind, InvGamma>
-        {
-            fn from(stat: &'a InvGammaSuffStat) -> Self {
+        impl<'a> From<&'a BetaSuffStat> for DataOrSuffStat<'a, $kind, Beta> {
+            fn from(stat: &'a BetaSuffStat) -> Self {
                 DataOrSuffStat::SuffStat(stat)
             }
         }
 
-        impl<'a> From<&'a Vec<$kind>> for DataOrSuffStat<'a, $kind, InvGamma> {
+        impl<'a> From<&'a Vec<$kind>> for DataOrSuffStat<'a, $kind, Beta> {
             fn from(xs: &'a Vec<$kind>) -> Self {
                 DataOrSuffStat::Data(xs.as_slice())
             }
         }
 
-        impl<'a> From<&'a [$kind]> for DataOrSuffStat<'a, $kind, InvGamma> {
+        impl<'a> From<&'a [$kind]> for DataOrSuffStat<'a, $kind, Beta> {
             fn from(xs: &'a [$kind]) -> Self {
                 DataOrSuffStat::Data(xs)
             }
         }
 
-        impl From<&Vec<$kind>> for InvGammaSuffStat {
+        impl From<&Vec<$kind>> for BetaSuffStat {
             fn from(xs: &Vec<$kind>) -> Self {
-                let mut stat = InvGammaSuffStat::new();
+                let mut stat = BetaSuffStat::new();
                 stat.observe_many(xs);
                 stat
             }
         }
 
-        impl From<&[$kind]> for InvGammaSuffStat {
+        impl From<&[$kind]> for BetaSuffStat {
             fn from(xs: &[$kind]) -> Self {
-                let mut stat = InvGammaSuffStat::new();
+                let mut stat = BetaSuffStat::new();
                 stat.observe_many(xs);
                 stat
             }
         }
 
-        impl SuffStat<$kind> for InvGammaSuffStat {
+        impl SuffStat<$kind> for BetaSuffStat {
             fn n(&self) -> usize {
                 self.n
             }
@@ -117,7 +115,7 @@ macro_rules! impl_suffstat {
                 self.n += 1;
 
                 self.sum_ln_x += xf.ln();
-                self.sum_inv_x += xf.recip();
+                self.sum_ln_1mx += (1.0 - xf).ln();
             }
 
             fn forget(&mut self, x: &$kind) {
@@ -125,12 +123,12 @@ macro_rules! impl_suffstat {
                     let xf = f64::from(*x);
 
                     self.sum_ln_x -= xf.ln();
-                    self.sum_inv_x -= xf.recip();
+                    self.sum_ln_1mx -= (1.0 - xf).ln();
                     self.n -= 1;
                 } else {
                     self.n = 0;
                     self.sum_ln_x = 0.0;
-                    self.sum_inv_x = 0.0;
+                    self.sum_ln_1mx = 0.0;
                 }
             }
         }

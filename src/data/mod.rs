@@ -10,6 +10,7 @@ pub use datum::Datum;
 
 pub use partition::Partition;
 pub use stat::BernoulliSuffStat;
+pub use stat::BetaSuffStat;
 pub use stat::CategoricalSuffStat;
 pub use stat::GaussianSuffStat;
 pub use stat::InvGammaSuffStat;
