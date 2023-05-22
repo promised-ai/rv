@@ -7,6 +7,7 @@
 - Un-implement `HasSuffStat<f64>` for `InverseGamma`
 - Add `InvGammaSuffStat`
 - Add `BetaSuffStat`
+- Cache ln(weights) for `Mixture` to improve `ln_f` computation performance
 
 
 ## 0.15.0

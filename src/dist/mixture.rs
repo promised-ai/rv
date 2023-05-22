@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::dist::{Categorical, Gaussian, Poisson};
 use crate::misc::{logsumexp, pflip};
 use crate::traits::*;
+use once_cell::sync::OnceCell;
 use rand::Rng;
 use std::convert::TryFrom;
 use std::fmt;
@@ -37,6 +38,8 @@ pub struct Mixture<Fx> {
     weights: Vec<f64>,
     /// The component distributions.
     components: Vec<Fx>,
+    // Cached ln(weights)
+    ln_weights: OnceCell<Vec<f64>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -114,7 +117,13 @@ impl<Fx> Mixture<Fx> {
         Ok(Mixture {
             weights,
             components,
+            ln_weights: OnceCell::new(),
         })
+    }
+
+    pub fn ln_weights(&self) -> &[f64] {
+        self.ln_weights
+            .get_or_init(|| self.weights.iter().map(|&w| w.ln()).collect())
     }
 
     /// Creates a new Mixture without checking whether the parameters are valid.
@@ -123,6 +132,7 @@ impl<Fx> Mixture<Fx> {
         Mixture {
             weights,
             components,
+            ln_weights: OnceCell::new(),
         }
     }
 
@@ -140,6 +150,7 @@ impl<Fx> Mixture<Fx> {
             Ok(Mixture {
                 weights,
                 components,
+                ln_weights: OnceCell::new(),
             })
         }
     }
@@ -258,12 +269,14 @@ impl<Fx> Mixture<Fx> {
 
         validate_weights(&weights)?;
 
+        self.ln_weights = OnceCell::new();
         self.weights = weights;
         Ok(())
     }
 
     #[inline]
     pub fn set_weights_unchecked(&mut self, weights: Vec<f64>) {
+        self.ln_weights = OnceCell::new();
         self.weights = weights;
     }
 
@@ -346,10 +359,10 @@ where
 {
     fn ln_f(&self, x: &X) -> f64 {
         let lfs: Vec<f64> = self
-            .weights
+            .ln_weights()
             .iter()
             .zip(self.components.iter())
-            .map(|(&w, cpnt)| w.ln() + cpnt.ln_f(x))
+            .map(|(&w, cpnt)| w + cpnt.ln_f(x))
             .collect();
 
         logsumexp(&lfs)
@@ -561,6 +574,7 @@ where
                 Ok(Mixture {
                     weights,
                     components,
+                    ln_weights: OnceCell::new(),
                 })
             }
 
@@ -598,6 +612,7 @@ where
                 Ok(Mixture {
                     weights,
                     components,
+                    ln_weights: OnceCell::new(),
                 })
             }
         }
