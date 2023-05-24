@@ -487,13 +487,15 @@ impl HasSuffStat<DVector<f64>> for MvGaussian {
         let sigma_inv = &self.cache().cov_inv;
         let ln_cov_det = self.cache().cov_chol.ln_determinant();
 
-        -LN_2PI * n * k / 2.0
-            - n / 2.0 * ln_cov_det
-            - n / 2.0
-                * ((&x_bar - &self.mu).transpose()
+        let neg_half_n = -0.5 * n;
+
+        neg_half_n.mul_add(
+            LN_2PI.mul_add(k, ln_cov_det)
+                + ((&x_bar - &self.mu).transpose()
                     * sigma_inv
-                    * (&x_bar - &self.mu))[0]
-            - (sigma_inv * sigma_hat).trace() / 2.0
+                    * (&x_bar - &self.mu))[0],
+            -(sigma_inv * sigma_hat).trace() / 2.0,
+        )
     }
 }
 
@@ -772,7 +774,7 @@ mod tests {
             dvector![5.0, 6.0],
         ]);
 
-        assert::close(f.ln_f_stat(&stat), -17.23128531808, 1E-10);
+        assert::close(f.ln_f_stat(&stat), -17.231_285_318_08, 1E-12);
     }
 
     #[test]
@@ -797,7 +799,7 @@ mod tests {
             stat.observe_many(&data);
 
             let ln_f_sum: f64 = data.iter().map(|x| f.ln_f(x)).sum();
-            assert::close(f.ln_f_stat(&stat), ln_f_sum, 1E-10);
+            assert::close(f.ln_f_stat(&stat), ln_f_sum, 1E-13);
         }
     }
 }
