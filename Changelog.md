@@ -9,6 +9,9 @@
 - Add `BetaSuffStat`
 - Cache ln(weights) for `Mixture` to improve `ln_f` computation performance
 
+## 0.15.1
+- Fix bug in `Empirical::draw` that causes an `index out of bounds error` when
+    the last last bin is drawn.
 
 ## 0.15.0
 - All structs and enums use `snake_case` naming.

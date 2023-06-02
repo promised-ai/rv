@@ -150,10 +150,9 @@ impl Rv<f64> for Empirical {
     }
 
     fn draw<R: Rng>(&self, rng: &mut R) -> f64 {
-        let n = self.xs.len() as f64;
-        let u: f64 = rng.gen();
-        let uix = (u * n).ceil() as usize;
-        self.xs[uix]
+        let n = self.xs.len();
+        let ix: usize = rng.gen_range(0..n);
+        self.xs[ix]
     }
 }
 
@@ -222,5 +221,18 @@ mod tests {
 
         assert!(max_cdf_err < 1E-5);
         assert!(max_f_err < 1E-5);
+    }
+
+    #[test]
+    fn draw_smoke() {
+        let mut rng = rand::thread_rng();
+        // create a distribution with only a few bins so that draw hits all the
+        // bins.
+        let xs = vec![0.0, 1.0, 2.0];
+        let emp_dist = Empirical::new(xs);
+
+        for _ in 0..1_000 {
+            let _x: f64 = emp_dist.draw(&mut rng);
+        }
     }
 }
