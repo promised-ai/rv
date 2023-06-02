@@ -6,10 +6,10 @@ use crate::data::PoissonSuffStat;
 use crate::impl_display;
 use crate::misc::ln_fact;
 use crate::traits::*;
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Poisson as RPossion;
 use special::Gamma as _;
+use std::cell::OnceCell;
 use std::fmt;
 
 /// [Possion distribution](https://en.wikipedia.org/wiki/Poisson_distribution)

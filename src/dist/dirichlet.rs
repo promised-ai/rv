@@ -5,10 +5,10 @@ use serde::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::misc::vec_to_string;
 use crate::traits::*;
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Gamma as RGamma;
 use special::Gamma as _;
+use std::cell::OnceCell;
 use std::fmt;
 
 mod categorical_prior;

@@ -2,9 +2,9 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Normal;
+use std::cell::OnceCell;
 use std::fmt;
 
 use crate::consts::*;

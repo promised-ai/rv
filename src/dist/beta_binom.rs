@@ -2,9 +2,9 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Beta as _;
+use std::cell::OnceCell;
 use std::f64;
 use std::fmt;
 

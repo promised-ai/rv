@@ -3,10 +3,10 @@
 use argmin::solver::{linesearch::MoreThuenteLineSearch, quasinewton::LBFGS};
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dyn};
-use once_cell::sync::OnceCell;
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
+use std::cell::OnceCell;
 
 use crate::dist::MvGaussian;
 use crate::{consts::HALF_LN_2PI, traits::Mean, traits::Rv, traits::Variance};

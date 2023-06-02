@@ -1,8 +1,8 @@
 use crate::dist::Poisson;
 use crate::misc::ln_binom;
 use crate::traits::*;
-use once_cell::sync::OnceCell;
 use rand::Rng;
+use std::cell::OnceCell;
 use std::fmt;
 
 #[cfg(feature = "serde1")]

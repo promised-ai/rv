@@ -8,8 +8,8 @@ use crate::impl_display;
 use crate::traits::*;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dyn};
-use once_cell::sync::OnceCell;
 use rand::Rng;
+use std::cell::OnceCell;
 use std::fmt;
 
 /// Cache for MvGaussian Internals
@@ -383,8 +383,7 @@ impl MvGaussian {
     #[inline]
     fn cache(&self) -> &MvgCache {
         self.cache
-            .get_or_try_init(|| MvgCache::from_cov(&self.cov))
-            .unwrap()
+            .get_or_init(|| MvgCache::from_cov(&self.cov).unwrap())
     }
 }
 

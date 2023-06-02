@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Gamma as _;
+use std::cell::OnceCell;
 use std::fmt;
 
 /// Scaled [Χ<sup>-2</sup> distribution](https://en.wikipedia.org/wiki/Scaled_inverse_chi-squared_distribution)

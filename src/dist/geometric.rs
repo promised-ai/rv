@@ -6,8 +6,8 @@ use crate::dist::Uniform;
 use crate::impl_display;
 use crate::traits::*;
 use num::{Bounded, FromPrimitive, Integer, Saturating, ToPrimitive, Unsigned};
-use once_cell::sync::OnceCell;
 use rand::Rng;
+use std::cell::OnceCell;
 use std::fmt;
 
 /// [Geometric distribution](https://en.wikipedia.org/wiki/Geometric_distribution)

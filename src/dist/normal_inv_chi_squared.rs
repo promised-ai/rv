@@ -10,8 +10,8 @@ mod gaussian_prior;
 use crate::dist::{Gaussian, ScaledInvChiSquared};
 use crate::impl_display;
 use crate::traits::Rv;
-use once_cell::sync::OnceCell;
 use rand::Rng;
+use std::cell::OnceCell;
 
 /// Prior for Gaussian
 ///

@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Gamma as _;
+use std::cell::OnceCell;
 use std::f64::consts::LN_2;
 use std::fmt;
 

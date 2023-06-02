@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use crate::dist::{Categorical, Gaussian, Poisson};
 use crate::misc::{logsumexp, pflip};
 use crate::traits::*;
-use once_cell::sync::OnceCell;
 use rand::Rng;
+use std::cell::OnceCell;
 use std::convert::TryFrom;
 use std::fmt;
 
