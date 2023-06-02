@@ -9,8 +9,8 @@ use crate::traits::*;
 use rand::Rng;
 use rand_distr::Poisson as RPossion;
 use special::Gamma as _;
-use std::cell::OnceCell;
 use std::fmt;
+use std::sync::OnceLock;
 
 /// [Possion distribution](https://en.wikipedia.org/wiki/Poisson_distribution)
 /// over x in {0, 1, ... }.
@@ -70,7 +70,7 @@ pub struct Poisson {
     rate: f64,
     /// Cached ln(rate)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_rate: OnceCell<f64>,
+    ln_rate: OnceLock<f64>,
 }
 
 impl PartialEq for Poisson {
@@ -107,7 +107,7 @@ impl Poisson {
     pub fn new_unchecked(rate: f64) -> Self {
         Poisson {
             rate,
-            ln_rate: OnceCell::new(),
+            ln_rate: OnceLock::new(),
         }
     }
 
@@ -171,7 +171,7 @@ impl Poisson {
     #[inline]
     pub fn set_rate_unchecked(&mut self, rate: f64) {
         self.rate = rate;
-        self.ln_rate = OnceCell::new();
+        self.ln_rate = OnceLock::new();
     }
 }
 

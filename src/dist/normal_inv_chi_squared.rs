@@ -11,7 +11,7 @@ use crate::dist::{Gaussian, ScaledInvChiSquared};
 use crate::impl_display;
 use crate::traits::Rv;
 use rand::Rng;
-use std::cell::OnceCell;
+use std::sync::OnceLock;
 
 /// Prior for Gaussian
 ///
@@ -27,7 +27,7 @@ pub struct NormalInvChiSquared {
     s2: f64,
     /// Cached scaled inv X^2
     #[cfg_attr(feature = "serde1", serde(skip))]
-    scaled_inv_x2: OnceCell<ScaledInvChiSquared>,
+    scaled_inv_x2: OnceLock<ScaledInvChiSquared>,
 }
 
 impl PartialEq for NormalInvChiSquared {
@@ -95,7 +95,7 @@ impl NormalInvChiSquared {
                 k,
                 v,
                 s2,
-                scaled_inv_x2: OnceCell::new(),
+                scaled_inv_x2: OnceLock::new(),
             })
         }
     }
@@ -109,7 +109,7 @@ impl NormalInvChiSquared {
             k,
             v,
             s2,
-            scaled_inv_x2: OnceCell::new(),
+            scaled_inv_x2: OnceLock::new(),
         }
     }
 
@@ -263,7 +263,7 @@ impl NormalInvChiSquared {
             Err(NormalInvChiSquaredError::VTooLow { v })
         } else {
             self.set_v_unchecked(v);
-            self.scaled_inv_x2 = OnceCell::new();
+            self.scaled_inv_x2 = OnceLock::new();
             Ok(())
         }
     }
@@ -272,7 +272,7 @@ impl NormalInvChiSquared {
     #[inline]
     pub fn set_v_unchecked(&mut self, v: f64) {
         self.v = v;
-        self.scaled_inv_x2 = OnceCell::new();
+        self.scaled_inv_x2 = OnceLock::new();
     }
 
     /// Get the s2 parameter
@@ -319,7 +319,7 @@ impl NormalInvChiSquared {
             Err(NormalInvChiSquaredError::S2TooLow { s2 })
         } else {
             self.set_s2_unchecked(s2);
-            self.scaled_inv_x2 = OnceCell::new();
+            self.scaled_inv_x2 = OnceLock::new();
             Ok(())
         }
     }
@@ -328,7 +328,7 @@ impl NormalInvChiSquared {
     #[inline]
     pub fn set_s2_unchecked(&mut self, s2: f64) {
         self.s2 = s2;
-        self.scaled_inv_x2 = OnceCell::new();
+        self.scaled_inv_x2 = OnceLock::new();
     }
 
     #[inline]

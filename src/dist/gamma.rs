@@ -6,8 +6,8 @@ use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
 use special::Gamma as _;
-use std::cell::OnceCell;
 use std::fmt;
+use std::sync::OnceLock;
 
 mod poisson_prior;
 
@@ -30,10 +30,10 @@ pub struct Gamma {
     rate: f64,
     // ln(gamma(shape))
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_gamma_shape: OnceCell<f64>,
+    ln_gamma_shape: OnceLock<f64>,
     // ln(rate)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_rate: OnceCell<f64>,
+    ln_rate: OnceLock<f64>,
 }
 
 impl PartialEq for Gamma {
@@ -78,8 +78,8 @@ impl Gamma {
         Gamma {
             shape,
             rate,
-            ln_gamma_shape: OnceCell::new(),
-            ln_rate: OnceCell::new(),
+            ln_gamma_shape: OnceLock::new(),
+            ln_rate: OnceLock::new(),
         }
     }
 
@@ -150,7 +150,7 @@ impl Gamma {
     #[inline]
     pub fn set_shape_unchecked(&mut self, shape: f64) {
         self.shape = shape;
-        self.ln_gamma_shape = OnceCell::new();
+        self.ln_gamma_shape = OnceLock::new();
     }
 
     /// Get the rate parameter
@@ -208,7 +208,7 @@ impl Gamma {
     #[inline]
     pub fn set_rate_unchecked(&mut self, rate: f64) {
         self.rate = rate;
-        self.ln_rate = OnceCell::new();
+        self.ln_rate = OnceLock::new();
     }
 }
 

@@ -6,9 +6,9 @@ use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
 use special::Gamma as _;
-use std::cell::OnceCell;
 use std::f64::consts::LN_2;
 use std::fmt;
+use std::sync::OnceLock;
 
 /// [Χ<sup>-2</sup> distribution](https://en.wikipedia.org/wiki/Inverse-chi-squared_distribution)
 /// Χ<sup>-2</sup>(v).
@@ -28,7 +28,7 @@ pub struct InvChiSquared {
     v: f64,
     // ln( 2^{-v/2} / gamma(v/2))
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_f_const: OnceCell<f64>,
+    ln_f_const: OnceLock<f64>,
 }
 
 impl PartialEq for InvChiSquared {
@@ -61,7 +61,7 @@ impl InvChiSquared {
         } else {
             Ok(InvChiSquared {
                 v,
-                ln_f_const: OnceCell::new(),
+                ln_f_const: OnceLock::new(),
             })
         }
     }
@@ -72,7 +72,7 @@ impl InvChiSquared {
     pub fn new_unchecked(v: f64) -> Self {
         InvChiSquared {
             v,
-            ln_f_const: OnceCell::new(),
+            ln_f_const: OnceLock::new(),
         }
     }
 
@@ -128,7 +128,7 @@ impl InvChiSquared {
     #[inline(always)]
     pub fn set_v_unchecked(&mut self, v: f64) {
         self.v = v;
-        self.ln_f_const = OnceCell::new();
+        self.ln_f_const = OnceLock::new();
     }
 
     /// Get ln( 2^{-v/2} / Gamma(v/2) )

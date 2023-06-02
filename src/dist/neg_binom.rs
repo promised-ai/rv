@@ -2,8 +2,8 @@ use crate::dist::Poisson;
 use crate::misc::ln_binom;
 use crate::traits::*;
 use rand::Rng;
-use std::cell::OnceCell;
 use std::fmt;
+use std::sync::OnceLock;
 
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -41,10 +41,10 @@ pub struct NegBinomial {
     p: f64,
     // ln(1-p)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_1mp: OnceCell<f64>,
+    ln_1mp: OnceLock<f64>,
     // r*ln(p)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    r_ln_p: OnceCell<f64>,
+    r_ln_p: OnceLock<f64>,
 }
 
 impl PartialEq for NegBinomial {
@@ -76,8 +76,8 @@ impl NegBinomial {
         NegBinomial {
             r,
             p,
-            ln_1mp: OnceCell::new(),
-            r_ln_p: OnceCell::new(),
+            ln_1mp: OnceLock::new(),
+            r_ln_p: OnceLock::new(),
         }
     }
 
@@ -134,7 +134,7 @@ impl NegBinomial {
     #[inline]
     pub fn set_r_unchecked(&mut self, r: f64) {
         self.r = r;
-        self.r_ln_p = OnceCell::new();
+        self.r_ln_p = OnceLock::new();
     }
 
     /// Get the value of the `p` parameter
@@ -195,8 +195,8 @@ impl NegBinomial {
     #[inline]
     pub fn set_p_unchecked(&mut self, p: f64) {
         self.p = p;
-        self.ln_1mp = OnceCell::new();
-        self.r_ln_p = OnceCell::new();
+        self.ln_1mp = OnceLock::new();
+        self.r_ln_p = OnceLock::new();
     }
 
     #[inline]

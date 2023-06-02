@@ -6,8 +6,8 @@ use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
 use special::Gamma as _;
-use std::cell::OnceCell;
 use std::fmt;
+use std::sync::OnceLock;
 
 /// Scaled [Χ<sup>-2</sup> distribution](https://en.wikipedia.org/wiki/Scaled_inverse_chi-squared_distribution)
 /// Scaled-Χ<sup>-2</sup>(v, τ<sup>2</sup>).
@@ -28,10 +28,10 @@ pub struct ScaledInvChiSquared {
     t2: f64,
     // ln Gamma(v/2)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_gamma_v_2: OnceCell<f64>,
+    ln_gamma_v_2: OnceLock<f64>,
     // ln (t2*v/2)^(v/2)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_f_const: OnceCell<f64>,
+    ln_f_const: OnceLock<f64>,
 }
 
 impl PartialEq for ScaledInvChiSquared {
@@ -74,8 +74,8 @@ impl ScaledInvChiSquared {
             Ok(ScaledInvChiSquared {
                 v,
                 t2,
-                ln_gamma_v_2: OnceCell::new(),
-                ln_f_const: OnceCell::new(),
+                ln_gamma_v_2: OnceLock::new(),
+                ln_f_const: OnceLock::new(),
             })
         }
     }
@@ -87,8 +87,8 @@ impl ScaledInvChiSquared {
         ScaledInvChiSquared {
             v,
             t2,
-            ln_gamma_v_2: OnceCell::new(),
-            ln_f_const: OnceCell::new(),
+            ln_gamma_v_2: OnceLock::new(),
+            ln_f_const: OnceLock::new(),
         }
     }
 
@@ -144,8 +144,8 @@ impl ScaledInvChiSquared {
     #[inline(always)]
     pub fn set_v_unchecked(&mut self, v: f64) {
         self.v = v;
-        self.ln_gamma_v_2 = OnceCell::new();
-        self.ln_f_const = OnceCell::new();
+        self.ln_gamma_v_2 = OnceLock::new();
+        self.ln_f_const = OnceLock::new();
     }
 
     /// Get the scale factor `t2`.
@@ -200,8 +200,8 @@ impl ScaledInvChiSquared {
     #[inline(always)]
     pub fn set_t2_unchecked(&mut self, t2: f64) {
         self.t2 = t2;
-        self.ln_gamma_v_2 = OnceCell::new();
-        self.ln_f_const = OnceCell::new();
+        self.ln_gamma_v_2 = OnceLock::new();
+        self.ln_f_const = OnceLock::new();
     }
 
     /// Get ln Gamma(v/2)

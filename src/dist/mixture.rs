@@ -9,9 +9,9 @@ use crate::dist::{Categorical, Gaussian, Poisson};
 use crate::misc::{logsumexp, pflip};
 use crate::traits::*;
 use rand::Rng;
-use std::cell::OnceCell;
 use std::convert::TryFrom;
 use std::fmt;
+use std::sync::OnceLock;
 
 /// [Mixture distribution](https://en.wikipedia.org/wiki/Mixture_model)
 /// Σ w<sub>i</sub> f(x|θ<sub>i</sub>)
@@ -39,7 +39,7 @@ pub struct Mixture<Fx> {
     /// The component distributions.
     components: Vec<Fx>,
     // Cached ln(weights)
-    ln_weights: OnceCell<Vec<f64>>,
+    ln_weights: OnceLock<Vec<f64>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -117,7 +117,7 @@ impl<Fx> Mixture<Fx> {
         Ok(Mixture {
             weights,
             components,
-            ln_weights: OnceCell::new(),
+            ln_weights: OnceLock::new(),
         })
     }
 
@@ -132,7 +132,7 @@ impl<Fx> Mixture<Fx> {
         Mixture {
             weights,
             components,
-            ln_weights: OnceCell::new(),
+            ln_weights: OnceLock::new(),
         }
     }
 
@@ -150,7 +150,7 @@ impl<Fx> Mixture<Fx> {
             Ok(Mixture {
                 weights,
                 components,
-                ln_weights: OnceCell::new(),
+                ln_weights: OnceLock::new(),
             })
         }
     }
@@ -269,14 +269,14 @@ impl<Fx> Mixture<Fx> {
 
         validate_weights(&weights)?;
 
-        self.ln_weights = OnceCell::new();
+        self.ln_weights = OnceLock::new();
         self.weights = weights;
         Ok(())
     }
 
     #[inline]
     pub fn set_weights_unchecked(&mut self, weights: Vec<f64>) {
-        self.ln_weights = OnceCell::new();
+        self.ln_weights = OnceLock::new();
         self.weights = weights;
     }
 
@@ -574,7 +574,7 @@ where
                 Ok(Mixture {
                     weights,
                     components,
-                    ln_weights: OnceCell::new(),
+                    ln_weights: OnceLock::new(),
                 })
             }
 
@@ -612,7 +612,7 @@ where
                 Ok(Mixture {
                     weights,
                     components,
-                    ln_weights: OnceCell::new(),
+                    ln_weights: OnceLock::new(),
                 })
             }
         }

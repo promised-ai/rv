@@ -9,8 +9,8 @@ use crate::traits::*;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dyn};
 use rand::Rng;
-use std::cell::OnceCell;
 use std::fmt;
+use std::sync::OnceLock;
 
 /// Cache for MvGaussian Internals
 #[derive(Clone, Debug)]
@@ -100,13 +100,13 @@ pub struct MvGaussian {
         feature = "serde1",
         serde(skip, default = "default_cache_none")
     )]
-    cache: OnceCell<MvgCache>,
+    cache: OnceLock<MvgCache>,
 }
 
 #[allow(dead_code)]
 #[cfg(feature = "serde1")]
-fn default_cache_none() -> OnceCell<MvgCache> {
-    OnceCell::new()
+fn default_cache_none() -> OnceLock<MvgCache> {
+    OnceLock::new()
 }
 
 impl PartialEq for MvGaussian {
@@ -162,7 +162,7 @@ impl MvGaussian {
                 n_cov: cov_rows,
             })
         } else {
-            let cache = OnceCell::from(MvgCache::from_cov(&cov)?);
+            let cache = OnceLock::from(MvgCache::from_cov(&cov)?);
             Ok(MvGaussian { mu, cov, cache })
         }
     }
@@ -202,7 +202,7 @@ impl MvGaussian {
                 n_cov: cov.nrows(),
             })
         } else {
-            let cache = OnceCell::from(MvgCache::from_chol(cov_chol));
+            let cache = OnceLock::from(MvgCache::from_chol(cov_chol));
             Ok(MvGaussian { mu, cov, cache })
         }
     }
@@ -211,7 +211,7 @@ impl MvGaussian {
     /// whether the parameters are valid.
     #[inline]
     pub fn new_unchecked(mu: DVector<f64>, cov: DMatrix<f64>) -> Self {
-        let cache = OnceCell::from(MvgCache::from_cov(&cov).unwrap());
+        let cache = OnceLock::from(MvgCache::from_cov(&cov).unwrap());
         MvGaussian { mu, cov, cache }
     }
 
@@ -222,7 +222,7 @@ impl MvGaussian {
         mu: DVector<f64>,
         cov_chol: Cholesky<f64, Dyn>,
     ) -> Self {
-        let cache = OnceCell::from(MvgCache::from_chol(cov_chol));
+        let cache = OnceLock::from(MvgCache::from_chol(cov_chol));
         let cov = cache.get().unwrap().cov();
         MvGaussian { mu, cov, cache }
     }
@@ -237,7 +237,7 @@ impl MvGaussian {
             let mu = DVector::zeros(dims);
             let cov = DMatrix::identity(dims, dims);
             let cov_chol = cov.clone().cholesky().unwrap();
-            let cache = OnceCell::from(MvgCache::from_chol(cov_chol));
+            let cache = OnceLock::from(MvgCache::from_chol(cov_chol));
             Ok(MvGaussian { mu, cov, cache })
         }
     }
@@ -366,7 +366,7 @@ impl MvGaussian {
         } else {
             let cache = MvgCache::from_cov(&cov)?;
             self.cov = cov;
-            self.cache = OnceCell::new();
+            self.cache = OnceLock::new();
             self.cache.set(cache).unwrap();
             Ok(())
         }
@@ -377,7 +377,7 @@ impl MvGaussian {
     pub fn set_cov_unchecked(&mut self, cov: DMatrix<f64>) {
         let cache = MvgCache::from_cov(&cov).unwrap();
         self.cov = cov;
-        self.cache = OnceCell::from(cache);
+        self.cache = OnceLock::from(cache);
     }
 
     #[inline]

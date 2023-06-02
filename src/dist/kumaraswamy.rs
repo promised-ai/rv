@@ -7,9 +7,9 @@ use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
 use special::Gamma as _;
-use std::cell::OnceCell;
 use std::f64;
 use std::fmt;
+use std::sync::OnceLock;
 
 /// [Kumaraswamy distribution](https://en.wikipedia.org/wiki/Kumaraswamy_distribution),
 /// Kumaraswamy(α, β) over x in (0, 1).
@@ -50,7 +50,7 @@ pub struct Kumaraswamy {
     b: f64,
     #[cfg_attr(feature = "serde1", serde(skip))]
     /// Cached log(a*b)
-    ab_ln: OnceCell<f64>,
+    ab_ln: OnceLock<f64>,
 }
 
 impl PartialEq for Kumaraswamy {
@@ -116,7 +116,7 @@ impl Kumaraswamy {
             Ok(Kumaraswamy {
                 a,
                 b,
-                ab_ln: OnceCell::new(),
+                ab_ln: OnceLock::new(),
             })
         }
     }
@@ -128,7 +128,7 @@ impl Kumaraswamy {
         Kumaraswamy {
             a,
             b,
-            ab_ln: OnceCell::new(),
+            ab_ln: OnceLock::new(),
         }
     }
 
@@ -146,7 +146,7 @@ impl Kumaraswamy {
         Kumaraswamy {
             a: 1.0,
             b: 1.0,
-            ab_ln: OnceCell::from(0.0),
+            ab_ln: OnceLock::from(0.0),
         }
     }
 
@@ -200,7 +200,7 @@ impl Kumaraswamy {
             Ok(Kumaraswamy {
                 a,
                 b,
-                ab_ln: OnceCell::new(),
+                ab_ln: OnceLock::new(),
             })
         }
     }
@@ -272,7 +272,7 @@ impl Kumaraswamy {
     #[inline]
     pub fn set_a_unchecked(&mut self, a: f64) {
         self.a = a;
-        self.ab_ln = OnceCell::new();
+        self.ab_ln = OnceLock::new();
     }
 
     /// Set the value of the b parameter
@@ -314,7 +314,7 @@ impl Kumaraswamy {
     #[inline]
     pub fn set_b_unchecked(&mut self, b: f64) {
         self.b = b;
-        self.ab_ln = OnceCell::new();
+        self.ab_ln = OnceLock::new();
     }
 
     /// Evaluate or fetch cached ln(a*b)

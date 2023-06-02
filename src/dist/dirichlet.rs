@@ -8,8 +8,8 @@ use crate::traits::*;
 use rand::Rng;
 use rand_distr::Gamma as RGamma;
 use special::Gamma as _;
-use std::cell::OnceCell;
 use std::fmt;
+use std::sync::OnceLock;
 
 mod categorical_prior;
 
@@ -27,7 +27,7 @@ pub struct SymmetricDirichlet {
     k: usize,
     /// Cached ln_gamma(alpha)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_gamma_alpha: OnceCell<f64>,
+    ln_gamma_alpha: OnceLock<f64>,
 }
 
 impl PartialEq for SymmetricDirichlet {
@@ -66,7 +66,7 @@ impl SymmetricDirichlet {
             Ok(Self {
                 alpha,
                 k,
-                ln_gamma_alpha: OnceCell::new(),
+                ln_gamma_alpha: OnceLock::new(),
             })
         }
     }
@@ -78,7 +78,7 @@ impl SymmetricDirichlet {
         Self {
             alpha,
             k,
-            ln_gamma_alpha: OnceCell::new(),
+            ln_gamma_alpha: OnceLock::new(),
         }
     }
 
@@ -99,7 +99,7 @@ impl SymmetricDirichlet {
             Ok(Self {
                 alpha: 0.5,
                 k,
-                ln_gamma_alpha: OnceCell::new(),
+                ln_gamma_alpha: OnceLock::new(),
             })
         }
     }
@@ -153,7 +153,7 @@ impl SymmetricDirichlet {
             Err(SymmetricDirichletError::AlphaNotFinite { alpha })
         } else {
             self.set_alpha_unchecked(alpha);
-            self.ln_gamma_alpha = OnceCell::new();
+            self.ln_gamma_alpha = OnceLock::new();
             Ok(())
         }
     }
@@ -162,7 +162,7 @@ impl SymmetricDirichlet {
     #[inline]
     pub fn set_alpha_unchecked(&mut self, alpha: f64) {
         self.alpha = alpha;
-        self.ln_gamma_alpha = OnceCell::new();
+        self.ln_gamma_alpha = OnceLock::new();
     }
 
     /// Get the number of weights, k
