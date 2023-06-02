@@ -226,8 +226,16 @@ macro_rules! impl_traits {
 
         impl HasSuffStat<$kind> for Poisson {
             type Stat = PoissonSuffStat;
+
             fn empty_suffstat(&self) -> Self::Stat {
                 PoissonSuffStat::new()
+            }
+
+            fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+                let n = stat.n() as f64;
+                let t1 =
+                    self.ln_rate().mul_add(stat.sum(), -stat.sum_ln_fact());
+                n.mul_add(-self.rate, t1)
             }
         }
 
@@ -526,5 +534,20 @@ mod tests {
             let mode: u32 = pois.mode().unwrap();
             assert_eq!(mode, 1);
         }
+    }
+
+    #[test]
+    fn ln_f_stat() {
+        let data: Vec<u32> = vec![1, 2, 2, 8, 10, 3];
+        let mut stat = PoissonSuffStat::new();
+        stat.observe_many(&data);
+
+        let pois = Poisson::new(0.53).unwrap();
+
+        let ln_f_base: f64 = data.iter().map(|x| pois.ln_f(x)).sum();
+        let ln_f_stat: f64 =
+            <Poisson as HasSuffStat<u32>>::ln_f_stat(&pois, &stat);
+
+        assert::close(ln_f_base, ln_f_stat, TOL);
     }
 }

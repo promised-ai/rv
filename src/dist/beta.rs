@@ -2,6 +2,7 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::data::BetaSuffStat;
 use crate::impl_display;
 use crate::traits::*;
 use once_cell::sync::OnceCell;
@@ -352,6 +353,22 @@ macro_rules! impl_traits {
                 } else {
                     None
                 }
+            }
+        }
+
+        impl HasSuffStat<$kind> for Beta {
+            type Stat = BetaSuffStat;
+
+            fn empty_suffstat(&self) -> Self::Stat {
+                Self::Stat::new()
+            }
+
+            fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+                let n = stat.n() as f64;
+                let t1 = n * self.ln_beta_ab();
+                let t2 = (self.alpha - 1.0) * stat.sum_ln_x();
+                let t3 = (self.beta - 1.0) * stat.sum_ln_1mx();
+                t2 + t3 - t1
             }
         }
     };
@@ -712,5 +729,20 @@ mod tests {
             .drain(..)
             .any(|x: f64| x == 1.0);
         assert!(!some_1);
+    }
+
+    #[test]
+    fn ln_f_stat() {
+        let data: Vec<f64> = vec![0.1, 0.23, 0.4, 0.65, 0.22, 0.31];
+        let mut stat = BetaSuffStat::new();
+        stat.observe_many(&data);
+
+        let beta = Beta::new(0.3, 2.33).unwrap();
+
+        let ln_f_base: f64 = data.iter().map(|x| beta.ln_f(x)).sum();
+        let ln_f_stat: f64 =
+            <Beta as HasSuffStat<f64>>::ln_f_stat(&beta, &stat);
+
+        assert::close(ln_f_base, ln_f_stat, 1e-12);
     }
 }

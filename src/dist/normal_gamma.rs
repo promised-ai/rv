@@ -2,7 +2,6 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::data::GaussianSuffStat;
 use crate::dist::{Gamma, Gaussian};
 use crate::impl_display;
 use crate::traits::*;
@@ -362,13 +361,6 @@ impl Support<Gaussian> for NormalGamma {
         // NOTE: Could replace this with Gaussian::new(mu, sigma).is_ok(),
         // but this is more explicit.
         x.mu().is_finite() && x.sigma() > 0.0 && x.sigma().is_finite()
-    }
-}
-
-impl HasSuffStat<f64> for NormalGamma {
-    type Stat = GaussianSuffStat;
-    fn empty_suffstat(&self) -> Self::Stat {
-        GaussianSuffStat::new()
     }
 }
 
