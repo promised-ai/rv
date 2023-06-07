@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use std::f64;
 use std::fmt;
+use std::sync::OnceLock;
 
 /// [Continuous uniform distribution](https://en.wikipedia.org/wiki/Uniform_distribution_(continuous)),
 /// U(a, b) on the interval x in [a, b]
@@ -35,7 +35,7 @@ pub struct Uniform {
     b: f64,
     /// Cached value of the ln(PDF)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    lnf: OnceCell<f64>,
+    lnf: OnceLock<f64>,
 }
 
 impl PartialEq for Uniform {
@@ -78,7 +78,7 @@ impl Uniform {
         Uniform {
             a,
             b,
-            lnf: OnceCell::new(),
+            lnf: OnceLock::new(),
         }
     }
 

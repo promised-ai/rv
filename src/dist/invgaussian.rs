@@ -2,10 +2,10 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Normal;
 use std::fmt;
+use std::sync::OnceLock;
 
 use crate::consts::*;
 use crate::data::InvGaussianSuffStat;
@@ -24,7 +24,7 @@ pub struct InvGaussian {
     lambda: f64,
     /// Cached log(lambda)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_lambda: OnceCell<f64>,
+    ln_lambda: OnceLock<f64>,
 }
 
 impl PartialEq for InvGaussian {
@@ -84,7 +84,7 @@ impl InvGaussian {
             Ok(InvGaussian {
                 mu,
                 lambda,
-                ln_lambda: OnceCell::new(),
+                ln_lambda: OnceLock::new(),
             })
         }
     }
@@ -96,7 +96,7 @@ impl InvGaussian {
         InvGaussian {
             mu,
             lambda,
-            ln_lambda: OnceCell::new(),
+            ln_lambda: OnceLock::new(),
         }
     }
 
@@ -213,7 +213,7 @@ impl InvGaussian {
     /// Set the value of lambda without input validation
     #[inline]
     pub fn set_lambda_unchecked(&mut self, lambda: f64) {
-        self.ln_lambda = OnceCell::new();
+        self.ln_lambda = OnceLock::new();
         self.lambda = lambda;
     }
 

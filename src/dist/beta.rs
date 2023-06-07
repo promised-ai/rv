@@ -5,12 +5,12 @@ use serde::{Deserialize, Serialize};
 use crate::data::BetaSuffStat;
 use crate::impl_display;
 use crate::traits::*;
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Beta as _;
 use special::Gamma as _;
 use std::f64;
 use std::fmt;
+use std::sync::OnceLock;
 
 pub mod bernoulli_prior;
 
@@ -49,7 +49,7 @@ pub struct Beta {
     beta: f64,
     #[cfg_attr(feature = "serde1", serde(skip))]
     /// Cached ln(Beta(a, b))
-    ln_beta_ab: OnceCell<f64>,
+    ln_beta_ab: OnceLock<f64>,
 }
 
 impl PartialEq for Beta {
@@ -104,7 +104,7 @@ impl Beta {
             Ok(Beta {
                 alpha,
                 beta,
-                ln_beta_ab: OnceCell::new(),
+                ln_beta_ab: OnceLock::new(),
             })
         }
     }
@@ -115,7 +115,7 @@ impl Beta {
         Beta {
             alpha,
             beta,
-            ln_beta_ab: OnceCell::new(),
+            ln_beta_ab: OnceLock::new(),
         }
     }
 
@@ -133,7 +133,7 @@ impl Beta {
         Beta {
             alpha: 1.0,
             beta: 1.0,
-            ln_beta_ab: OnceCell::new(),
+            ln_beta_ab: OnceLock::new(),
         }
     }
 
@@ -152,7 +152,7 @@ impl Beta {
         Beta {
             alpha: 0.5,
             beta: 0.5,
-            ln_beta_ab: OnceCell::new(),
+            ln_beta_ab: OnceLock::new(),
         }
     }
 

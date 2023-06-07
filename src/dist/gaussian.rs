@@ -2,12 +2,12 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Normal;
 use special::Error as _;
 use std::f64::consts::SQRT_2;
 use std::fmt;
+use std::sync::OnceLock;
 
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
@@ -46,7 +46,7 @@ pub struct Gaussian {
     sigma: f64,
     /// Cached log(sigma)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_sigma: OnceCell<f64>,
+    ln_sigma: OnceLock<f64>,
 }
 
 impl PartialEq for Gaussian {
@@ -84,7 +84,7 @@ impl Gaussian {
             Ok(Gaussian {
                 mu,
                 sigma,
-                ln_sigma: OnceCell::new(),
+                ln_sigma: OnceLock::new(),
             })
         }
     }
@@ -96,7 +96,7 @@ impl Gaussian {
         Gaussian {
             mu,
             sigma,
-            ln_sigma: OnceCell::new(),
+            ln_sigma: OnceLock::new(),
         }
     }
 
@@ -115,7 +115,7 @@ impl Gaussian {
         Gaussian {
             mu: 0.0,
             sigma: 1.0,
-            ln_sigma: OnceCell::from(0.0),
+            ln_sigma: OnceLock::from(0.0),
         }
     }
 
@@ -229,7 +229,7 @@ impl Gaussian {
     #[inline]
     pub fn set_sigma_unchecked(&mut self, sigma: f64) {
         self.sigma = sigma;
-        self.ln_sigma = OnceCell::new();
+        self.ln_sigma = OnceLock::new();
     }
 
     /// Evaluate or fetch cached log sigma
