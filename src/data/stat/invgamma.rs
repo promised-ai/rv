@@ -2,35 +2,29 @@
 use serde::{Deserialize, Serialize};
 
 use crate::data::DataOrSuffStat;
-use crate::dist::InvGaussian;
+use crate::dist::InvGamma;
 use crate::traits::SuffStat;
 
-/// Gaussian sufficient statistic.
-///
-/// Holds the number of observations, their sum, and the sum of their squared
-/// values.
+/// Inverse Gamma sufficient statistic.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
-pub struct InvGaussianSuffStat {
+pub struct InvGammaSuffStat {
     /// Number of observations
     n: usize,
-    /// sum of `x`
-    sum_x: f64,
+    /// sum of `ln(x)`
+    sum_ln_x: f64,
     /// sum of `1/x`
     sum_inv_x: f64,
-    /// sum of ln(x)
-    sum_ln_x: f64,
 }
 
-impl InvGaussianSuffStat {
+impl InvGammaSuffStat {
     #[inline]
     pub fn new() -> Self {
-        InvGaussianSuffStat {
+        InvGammaSuffStat {
             n: 0,
-            sum_x: 0.0,
-            sum_inv_x: 0.0,
             sum_ln_x: 0.0,
+            sum_inv_x: 0.0,
         }
     }
 
@@ -39,15 +33,13 @@ impl InvGaussianSuffStat {
     #[inline]
     pub fn from_parts_unchecked(
         n: usize,
-        sum_x: f64,
-        sum_inv_x: f64,
         sum_ln_x: f64,
+        sum_inv_x: f64,
     ) -> Self {
-        InvGaussianSuffStat {
+        InvGammaSuffStat {
             n,
-            sum_x,
-            sum_inv_x,
             sum_ln_x,
+            sum_inv_x,
         }
     }
 
@@ -57,16 +49,10 @@ impl InvGaussianSuffStat {
         self.n
     }
 
-    /// Get the sample mean
+    /// Sum of `ln(x)`
     #[inline]
-    pub fn mean(&self) -> f64 {
-        self.sum_x / self.n as f64
-    }
-
-    /// Sum of `x`
-    #[inline]
-    pub fn sum_x(&self) -> f64 {
-        self.sum_x
+    pub fn sum_ln_x(&self) -> f64 {
+        self.sum_ln_x
     }
 
     /// Sum of `1/x`
@@ -74,60 +60,53 @@ impl InvGaussianSuffStat {
     pub fn sum_inv_x(&self) -> f64 {
         self.sum_inv_x
     }
-
-    #[inline]
-    pub fn sum_ln_x(&self) -> f64 {
-        self.sum_ln_x
-    }
 }
 
-impl Default for InvGaussianSuffStat {
+impl Default for InvGammaSuffStat {
     fn default() -> Self {
-        InvGaussianSuffStat::new()
+        InvGammaSuffStat::new()
     }
 }
 
-macro_rules! impl_invgaussian_suffstat {
+macro_rules! impl_suffstat {
     ($kind:ty) => {
-        impl<'a> From<&'a InvGaussianSuffStat>
-            for DataOrSuffStat<'a, $kind, InvGaussian>
+        impl<'a> From<&'a InvGammaSuffStat>
+            for DataOrSuffStat<'a, $kind, InvGamma>
         {
-            fn from(stat: &'a InvGaussianSuffStat) -> Self {
+            fn from(stat: &'a InvGammaSuffStat) -> Self {
                 DataOrSuffStat::SuffStat(stat)
             }
         }
 
-        impl<'a> From<&'a Vec<$kind>>
-            for DataOrSuffStat<'a, $kind, InvGaussian>
-        {
+        impl<'a> From<&'a Vec<$kind>> for DataOrSuffStat<'a, $kind, InvGamma> {
             fn from(xs: &'a Vec<$kind>) -> Self {
                 DataOrSuffStat::Data(xs.as_slice())
             }
         }
 
-        impl<'a> From<&'a [$kind]> for DataOrSuffStat<'a, $kind, InvGaussian> {
+        impl<'a> From<&'a [$kind]> for DataOrSuffStat<'a, $kind, InvGamma> {
             fn from(xs: &'a [$kind]) -> Self {
                 DataOrSuffStat::Data(xs)
             }
         }
 
-        impl From<&Vec<$kind>> for InvGaussianSuffStat {
+        impl From<&Vec<$kind>> for InvGammaSuffStat {
             fn from(xs: &Vec<$kind>) -> Self {
-                let mut stat = InvGaussianSuffStat::new();
+                let mut stat = InvGammaSuffStat::new();
                 stat.observe_many(xs);
                 stat
             }
         }
 
-        impl From<&[$kind]> for InvGaussianSuffStat {
+        impl From<&[$kind]> for InvGammaSuffStat {
             fn from(xs: &[$kind]) -> Self {
-                let mut stat = InvGaussianSuffStat::new();
+                let mut stat = InvGammaSuffStat::new();
                 stat.observe_many(xs);
                 stat
             }
         }
 
-        impl SuffStat<$kind> for InvGaussianSuffStat {
+        impl SuffStat<$kind> for InvGammaSuffStat {
             fn n(&self) -> usize {
                 self.n
             }
@@ -137,29 +116,26 @@ macro_rules! impl_invgaussian_suffstat {
 
                 self.n += 1;
 
-                self.sum_x += xf;
-                self.sum_inv_x += xf.recip();
                 self.sum_ln_x += xf.ln();
+                self.sum_inv_x += xf.recip();
             }
 
             fn forget(&mut self, x: &$kind) {
                 if self.n > 1 {
                     let xf = f64::from(*x);
 
-                    self.sum_x -= xf;
-                    self.sum_inv_x -= xf.recip();
                     self.sum_ln_x -= xf.ln();
+                    self.sum_inv_x -= xf.recip();
                     self.n -= 1;
                 } else {
                     self.n = 0;
-                    self.sum_x = 0.0;
-                    self.sum_inv_x = 0.0;
                     self.sum_ln_x = 0.0;
+                    self.sum_inv_x = 0.0;
                 }
             }
         }
     };
 }
 
-impl_invgaussian_suffstat!(f32);
-impl_invgaussian_suffstat!(f64);
+impl_suffstat!(f32);
+impl_suffstat!(f64);

@@ -10,20 +10,25 @@ pub use datum::Datum;
 
 pub use partition::Partition;
 pub use stat::BernoulliSuffStat;
+pub use stat::BetaSuffStat;
 pub use stat::CategoricalSuffStat;
 pub use stat::GaussianSuffStat;
+pub use stat::InvGammaSuffStat;
 pub use stat::InvGaussianSuffStat;
 #[cfg(feature = "arraydist")]
 pub use stat::MvGaussianSuffStat;
 pub use stat::PoissonSuffStat;
 
-use crate::dist::{Bernoulli, Categorical, Gaussian, InvGaussian, Poisson};
+use crate::dist::{
+    Bernoulli, Categorical, Gaussian, InvGamma, InvGaussian, Poisson,
+};
 use crate::traits::{HasSuffStat, SuffStat};
 
 pub type BernoulliData<'a, X> = DataOrSuffStat<'a, X, Bernoulli>;
 pub type CategoricalData<'a, X> = DataOrSuffStat<'a, X, Categorical>;
 pub type GaussianData<'a, X> = DataOrSuffStat<'a, X, Gaussian>;
 pub type InvGaussianData<'a, X> = DataOrSuffStat<'a, X, InvGaussian>;
+pub type InvGammaData<'a, X> = DataOrSuffStat<'a, X, InvGamma>;
 pub type PoissonData<'a, X> = DataOrSuffStat<'a, X, Poisson>;
 
 /// The trait that data must implemented by all data used with the

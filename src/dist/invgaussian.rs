@@ -2,10 +2,10 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Normal;
 use std::fmt;
+use std::sync::OnceLock;
 
 use crate::consts::*;
 use crate::data::InvGaussianSuffStat;
@@ -24,7 +24,7 @@ pub struct InvGaussian {
     lambda: f64,
     /// Cached log(lambda)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_lambda: OnceCell<f64>,
+    ln_lambda: OnceLock<f64>,
 }
 
 impl PartialEq for InvGaussian {
@@ -84,7 +84,7 @@ impl InvGaussian {
             Ok(InvGaussian {
                 mu,
                 lambda,
-                ln_lambda: OnceCell::new(),
+                ln_lambda: OnceLock::new(),
             })
         }
     }
@@ -96,7 +96,7 @@ impl InvGaussian {
         InvGaussian {
             mu,
             lambda,
-            ln_lambda: OnceCell::new(),
+            ln_lambda: OnceLock::new(),
         }
     }
 
@@ -213,7 +213,7 @@ impl InvGaussian {
     /// Set the value of lambda without input validation
     #[inline]
     pub fn set_lambda_unchecked(&mut self, lambda: f64) {
-        self.ln_lambda = OnceCell::new();
+        self.ln_lambda = OnceLock::new();
         self.lambda = lambda;
     }
 
@@ -312,8 +312,22 @@ macro_rules! impl_traits {
 
         impl HasSuffStat<$kind> for InvGaussian {
             type Stat = InvGaussianSuffStat;
+
             fn empty_suffstat(&self) -> Self::Stat {
                 InvGaussianSuffStat::new()
+            }
+
+            fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+                let n = stat.n() as f64;
+                let mu2 = self.mu * self.mu;
+                let t1 = n.mul_add(
+                    0.5_f64.mul_add(self.ln_lambda(), -HALF_LN_2PI),
+                    -3.0 / 2.0 * stat.sum_ln_x(),
+                );
+                let t2 = self.lambda() / (2.0 * mu2);
+                let t3 = (2.0 * n).mul_add(-self.mu, stat.sum_x());
+                let t4 = stat.sum_inv_x().mul_add(mu2, t3);
+                t2.mul_add(-t4, t1)
             }
         }
     };
@@ -425,5 +439,20 @@ mod tests {
         });
 
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn ln_f_stat() {
+        let data: Vec<f64> = vec![0.1, 0.23, 1.4, 0.65, 0.22, 3.1];
+        let mut stat = InvGaussianSuffStat::new();
+        stat.observe_many(&data);
+
+        let igauss = InvGaussian::new(0.3, 2.33).unwrap();
+
+        let ln_f_base: f64 = data.iter().map(|x| igauss.ln_f(x)).sum();
+        let ln_f_stat: f64 =
+            <InvGaussian as HasSuffStat<f64>>::ln_f_stat(&igauss, &stat);
+
+        assert::close(ln_f_base, ln_f_stat, 1e-12);
     }
 }

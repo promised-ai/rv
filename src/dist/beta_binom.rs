@@ -2,11 +2,11 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use special::Beta as _;
 use std::f64;
 use std::fmt;
+use std::sync::OnceLock;
 
 use crate::impl_display;
 use crate::misc::{ln_binom, ln_pflip};
@@ -42,12 +42,13 @@ use crate::traits::*;
 /// assert!(!beta_binom.supports(&21_u32));
 /// ```
 ///
-/// The following will panic because 21 is out of the support
+/// PMF calls will return 0 for out-of-support data
 ///
-/// ```should_panic
+/// ```
 /// # use rv::prelude::*;
 /// # let beta_binom = BetaBinomial::new(20, 3.0, 2.0).unwrap();
-/// beta_binom.pmf(&21_u32); // panics
+/// let f = beta_binom.pmf(&21_u32);
+/// assert_eq!(f, 0.0);
 /// ```
 
 #[derive(Debug, Clone)]
@@ -62,7 +63,7 @@ pub struct BetaBinomial {
     beta: f64,
     // ln_beta(alpha, beta)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_beta_ab: OnceCell<f64>,
+    ln_beta_ab: OnceLock<f64>,
 }
 
 impl PartialEq for BetaBinomial {
@@ -117,7 +118,7 @@ impl BetaBinomial {
                 n,
                 alpha,
                 beta,
-                ln_beta_ab: OnceCell::new(),
+                ln_beta_ab: OnceLock::new(),
             })
         }
     }
@@ -130,7 +131,7 @@ impl BetaBinomial {
             n,
             alpha,
             beta,
-            ln_beta_ab: OnceCell::new(),
+            ln_beta_ab: OnceLock::new(),
         }
     }
 
@@ -209,7 +210,7 @@ impl BetaBinomial {
     /// Set alpha without input validation
     #[inline]
     pub fn set_alpha_unchecked(&mut self, alpha: f64) {
-        self.ln_beta_ab = OnceCell::new();
+        self.ln_beta_ab = OnceLock::new();
         self.alpha = alpha
     }
 
@@ -265,7 +266,7 @@ impl BetaBinomial {
     /// Set beta without input validation
     #[inline]
     pub fn set_beta_unchecked(&mut self, beta: f64) {
-        self.ln_beta_ab = OnceCell::new();
+        self.ln_beta_ab = OnceLock::new();
         self.beta = beta
     }
 

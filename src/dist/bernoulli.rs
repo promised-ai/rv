@@ -279,6 +279,15 @@ impl<X: Booleable> HasSuffStat<X> for Bernoulli {
     fn empty_suffstat(&self) -> Self::Stat {
         BernoulliSuffStat::new()
     }
+
+    fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+        let n = stat.n() as f64;
+        let k = stat.k() as f64;
+
+        let ln_p = self.p().ln();
+        let ln_q = self.q().ln();
+        k.mul_add(ln_p, (n - k) * ln_q)
+    }
 }
 
 impl KlDivergence for Bernoulli {
@@ -698,5 +707,20 @@ mod tests {
         bern.set_p(0.5).unwrap();
 
         assert::close(bern.pmf(&true), 0.5, 1E-10);
+    }
+
+    #[test]
+    fn ln_f_stat() {
+        let data: Vec<bool> = vec![true, false, false, false, true];
+        let mut stat = BernoulliSuffStat::new();
+        stat.observe_many(&data);
+
+        let bern = Bernoulli::new(0.3).unwrap();
+
+        let ln_f_base: f64 = data.iter().map(|x| bern.ln_f(x)).sum();
+        let ln_f_stat: f64 =
+            <Bernoulli as HasSuffStat<bool>>::ln_f_stat(&bern, &stat);
+
+        assert::close(ln_f_base, ln_f_stat, TOL);
     }
 }

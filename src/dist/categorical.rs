@@ -248,8 +248,17 @@ impl Entropy for Categorical {
 
 impl<X: CategoricalDatum> HasSuffStat<X> for Categorical {
     type Stat = CategoricalSuffStat;
+
     fn empty_suffstat(&self) -> Self::Stat {
         CategoricalSuffStat::new(self.k())
+    }
+
+    fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+        self.ln_weights()
+            .iter()
+            .zip(stat.counts().iter())
+            .map(|(&w, &ct)| ct * w)
+            .sum()
     }
 }
 
@@ -444,5 +453,20 @@ mod tests {
         assert::close(cat.cdf(&1_u8), 0.3, TOL);
         assert::close(cat.cdf(&2_u8), 0.7, TOL);
         assert::close(cat.cdf(&3_u8), 1.0, TOL);
+    }
+
+    #[test]
+    fn ln_f_stat() {
+        let data: Vec<u8> = vec![0, 1, 2, 1, 1, 0];
+        let mut stat = CategoricalSuffStat::new(3);
+        stat.observe_many(&data);
+
+        let cat = Categorical::new(&[0.3, 0.6, 0.1]).unwrap();
+
+        let ln_f_base: f64 = data.iter().map(|x| cat.ln_f(x)).sum();
+        let ln_f_stat: f64 =
+            <Categorical as HasSuffStat<u8>>::ln_f_stat(&cat, &stat);
+
+        assert::close(ln_f_base, ln_f_stat, TOL);
     }
 }

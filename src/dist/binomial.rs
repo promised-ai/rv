@@ -32,13 +32,14 @@ use std::fmt;
 /// assert!(!binom.supports(&5_u8))
 /// ```
 ///
-/// The maximum allowed value is 4, so the PMF of 5 cannot be computed
+/// The maximum allowed value is 4, so the PMF of 5 will be 0.0
 ///
-/// ```should_panic
+/// ```
 /// # use rv::prelude::*;
 /// # let n = 4;
 /// # let binom = Binomial::new(n, 0.5).unwrap();
-/// binom.pmf(&5_u8); // panics
+/// let f = binom.pmf(&5_u8);
+/// assert_eq!(f, 0.0);
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]

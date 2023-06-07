@@ -1,6 +1,6 @@
 [package]
 name = "rv"
-version = "0.15.1"
+version = "0.16.0"
 authors = ["Baxter Eaves", "Michael Schmidt"]
 description = "Random variables"
 repository = "https://gitlab.com/baxe/rv"
@@ -8,11 +8,12 @@ readme = "README.md"
 license = "MIT"
 keywords = ["Probability", "Statistics", "Bayesian", "Machine-learning"]
 categories = ["science"]
-edition = "2018"
+edition = "2021"
 include = ["README.md", "src/**/*", "benches/*", "Cargo.toml"]
+rust-version = "1.70"
 
 [badges]
-gitlab = { repository = "baxe/rv", tag = "v0.15.0" }
+gitlab = { repository = "baxe/rv", tag = "v0.16.0" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
@@ -22,7 +23,6 @@ doc-comment = "0.3"
 lru = "0.9.0"
 nalgebra = { version = "0.32", optional = true }
 num = "0.4"
-once_cell = "1"
 rand = { version = "0.8.5", features = ["small_rng"] }
 rand_distr = "0.4.3"
 serde = {version = "1", features = ["derive"], optional = true}

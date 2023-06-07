@@ -2,12 +2,12 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use rand_distr::Normal;
 use special::Error as _;
 use std::f64::consts::SQRT_2;
 use std::fmt;
+use std::sync::OnceLock;
 
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
@@ -46,7 +46,7 @@ pub struct Gaussian {
     sigma: f64,
     /// Cached log(sigma)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_sigma: OnceCell<f64>,
+    ln_sigma: OnceLock<f64>,
 }
 
 impl PartialEq for Gaussian {
@@ -84,7 +84,7 @@ impl Gaussian {
             Ok(Gaussian {
                 mu,
                 sigma,
-                ln_sigma: OnceCell::new(),
+                ln_sigma: OnceLock::new(),
             })
         }
     }
@@ -96,7 +96,7 @@ impl Gaussian {
         Gaussian {
             mu,
             sigma,
-            ln_sigma: OnceCell::new(),
+            ln_sigma: OnceLock::new(),
         }
     }
 
@@ -115,7 +115,7 @@ impl Gaussian {
         Gaussian {
             mu: 0.0,
             sigma: 1.0,
-            ln_sigma: OnceCell::from(0.0),
+            ln_sigma: OnceLock::from(0.0),
         }
     }
 
@@ -229,7 +229,7 @@ impl Gaussian {
     #[inline]
     pub fn set_sigma_unchecked(&mut self, sigma: f64) {
         self.sigma = sigma;
-        self.ln_sigma = OnceCell::new();
+        self.ln_sigma = OnceLock::new();
     }
 
     /// Evaluate or fetch cached log sigma
@@ -318,8 +318,21 @@ macro_rules! impl_traits {
 
         impl HasSuffStat<$kind> for Gaussian {
             type Stat = GaussianSuffStat;
+
             fn empty_suffstat(&self) -> Self::Stat {
                 GaussianSuffStat::new()
+            }
+
+            fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+                // let k = (f64::from(*x) - self.mu) / self.sigma;
+                // (0.5 * k).mul_add(-k, -self.ln_sigma()) - HALF_LN_2PI
+                let z = (2.0 * self.sigma * self.sigma).recip();
+                let n = stat.n() as f64;
+                let expterm = stat.sum_x_sq()
+                    + self
+                        .mu
+                        .mul_add(-2.0 * stat.sum_x(), n * self.mu * self.mu);
+                -n.mul_add(self.ln_sigma() + HALF_LN_2PI, z * expterm)
             }
         }
     };
@@ -634,5 +647,20 @@ mod tests {
         gauss.set_sigma(0.33).unwrap();
         assert::close(gauss.ln_pdf(&-1.2_f64), 0.189_724_091_316_938_46, TOL);
         assert::close(gauss.ln_pdf(&0.0_f32), -6.421_846_156_616_945, TOL);
+    }
+
+    #[test]
+    fn ln_f_stat() {
+        let data: Vec<f64> = vec![0.1, 0.23, 1.4, 0.65, 0.22, 3.1];
+        let mut stat = GaussianSuffStat::new();
+        stat.observe_many(&data);
+
+        let gauss = Gaussian::new(-0.3, 2.33).unwrap();
+
+        let ln_f_base: f64 = data.iter().map(|x| gauss.ln_f(x)).sum();
+        let ln_f_stat: f64 =
+            <Gaussian as HasSuffStat<f64>>::ln_f_stat(&gauss, &stat);
+
+        assert::close(ln_f_base, ln_f_stat, TOL);
     }
 }

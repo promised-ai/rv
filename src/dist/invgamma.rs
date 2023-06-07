@@ -2,6 +2,7 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::data::InvGammaSuffStat;
 use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
@@ -252,6 +253,24 @@ macro_rules! impl_traits {
         impl Mode<$kind> for InvGamma {
             fn mode(&self) -> Option<$kind> {
                 Some((self.scale / (self.shape + 1.0)) as $kind)
+            }
+        }
+
+        impl HasSuffStat<$kind> for InvGamma {
+            type Stat = InvGammaSuffStat;
+
+            fn empty_suffstat(&self) -> Self::Stat {
+                InvGammaSuffStat::new()
+            }
+
+            fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+                let n = stat.n() as f64;
+                let ln_beta = self.scale.ln();
+                let ln_gamma_alpha = self.shape.ln_gamma().0;
+                let t1 = n * self.shape.mul_add(ln_beta, -ln_gamma_alpha);
+                let t2 = (-self.shape - 1.0) * stat.sum_ln_x();
+                let t3 = self.scale * stat.sum_inv_x();
+                t1 + t2 - t3
             }
         }
     };
@@ -545,5 +564,20 @@ mod tests {
         });
 
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn ln_f_stat() {
+        let data: Vec<f64> = vec![0.1, 0.23, 1.4, 0.65, 0.22, 3.1];
+        let mut stat = InvGammaSuffStat::new();
+        stat.observe_many(&data);
+
+        let igam = InvGamma::new(0.3, 2.33).unwrap();
+
+        let ln_f_base: f64 = data.iter().map(|x| igam.ln_f(x)).sum();
+        let ln_f_stat: f64 =
+            <InvGamma as HasSuffStat<f64>>::ln_f_stat(&igam, &stat);
+
+        assert::close(ln_f_base, ln_f_stat, 1e-12);
     }
 }

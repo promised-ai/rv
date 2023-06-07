@@ -8,9 +8,9 @@ use crate::impl_display;
 use crate::traits::*;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dyn};
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use std::fmt;
+use std::sync::OnceLock;
 
 /// Cache for MvGaussian Internals
 #[derive(Clone, Debug)]
@@ -100,13 +100,13 @@ pub struct MvGaussian {
         feature = "serde1",
         serde(skip, default = "default_cache_none")
     )]
-    cache: OnceCell<MvgCache>,
+    cache: OnceLock<MvgCache>,
 }
 
 #[allow(dead_code)]
 #[cfg(feature = "serde1")]
-fn default_cache_none() -> OnceCell<MvgCache> {
-    OnceCell::new()
+fn default_cache_none() -> OnceLock<MvgCache> {
+    OnceLock::new()
 }
 
 impl PartialEq for MvGaussian {
@@ -162,7 +162,7 @@ impl MvGaussian {
                 n_cov: cov_rows,
             })
         } else {
-            let cache = OnceCell::from(MvgCache::from_cov(&cov)?);
+            let cache = OnceLock::from(MvgCache::from_cov(&cov)?);
             Ok(MvGaussian { mu, cov, cache })
         }
     }
@@ -202,7 +202,7 @@ impl MvGaussian {
                 n_cov: cov.nrows(),
             })
         } else {
-            let cache = OnceCell::from(MvgCache::from_chol(cov_chol));
+            let cache = OnceLock::from(MvgCache::from_chol(cov_chol));
             Ok(MvGaussian { mu, cov, cache })
         }
     }
@@ -211,7 +211,7 @@ impl MvGaussian {
     /// whether the parameters are valid.
     #[inline]
     pub fn new_unchecked(mu: DVector<f64>, cov: DMatrix<f64>) -> Self {
-        let cache = OnceCell::from(MvgCache::from_cov(&cov).unwrap());
+        let cache = OnceLock::from(MvgCache::from_cov(&cov).unwrap());
         MvGaussian { mu, cov, cache }
     }
 
@@ -222,7 +222,7 @@ impl MvGaussian {
         mu: DVector<f64>,
         cov_chol: Cholesky<f64, Dyn>,
     ) -> Self {
-        let cache = OnceCell::from(MvgCache::from_chol(cov_chol));
+        let cache = OnceLock::from(MvgCache::from_chol(cov_chol));
         let cov = cache.get().unwrap().cov();
         MvGaussian { mu, cov, cache }
     }
@@ -237,7 +237,7 @@ impl MvGaussian {
             let mu = DVector::zeros(dims);
             let cov = DMatrix::identity(dims, dims);
             let cov_chol = cov.clone().cholesky().unwrap();
-            let cache = OnceCell::from(MvgCache::from_chol(cov_chol));
+            let cache = OnceLock::from(MvgCache::from_chol(cov_chol));
             Ok(MvGaussian { mu, cov, cache })
         }
     }
@@ -366,7 +366,7 @@ impl MvGaussian {
         } else {
             let cache = MvgCache::from_cov(&cov)?;
             self.cov = cov;
-            self.cache = OnceCell::new();
+            self.cache = OnceLock::new();
             self.cache.set(cache).unwrap();
             Ok(())
         }
@@ -377,14 +377,13 @@ impl MvGaussian {
     pub fn set_cov_unchecked(&mut self, cov: DMatrix<f64>) {
         let cache = MvgCache::from_cov(&cov).unwrap();
         self.cov = cov;
-        self.cache = OnceCell::from(cache);
+        self.cache = OnceLock::from(cache);
     }
 
     #[inline]
     fn cache(&self) -> &MvgCache {
         self.cache
-            .get_or_try_init(|| MvgCache::from_cov(&self.cov))
-            .unwrap()
+            .get_or_init(|| MvgCache::from_cov(&self.cov).unwrap())
     }
 }
 
@@ -471,10 +470,31 @@ impl Entropy for MvGaussian {
             .mul_add(0.5, HALF_LN_2PI_E * (self.cov.nrows() as f64))
     }
 }
+
 impl HasSuffStat<DVector<f64>> for MvGaussian {
     type Stat = MvGaussianSuffStat;
     fn empty_suffstat(&self) -> Self::Stat {
         MvGaussianSuffStat::new(self.mu.len())
+    }
+
+    fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+        let n = stat.n() as f64;
+        let k = stat.sum_x().len() as f64;
+        let x_bar = stat.sum_x() / n;
+        let sigma_hat =
+            stat.sum_x_sq() - (stat.sum_x() * stat.sum_x().transpose()) / n;
+        let sigma_inv = &self.cache().cov_inv;
+        let ln_cov_det = self.cache().cov_chol.ln_determinant();
+
+        let neg_half_n = -0.5 * n;
+
+        neg_half_n.mul_add(
+            LN_2PI.mul_add(k, ln_cov_det)
+                + ((&x_bar - &self.mu).transpose()
+                    * sigma_inv
+                    * (&x_bar - &self.mu))[0],
+            -(sigma_inv * sigma_hat).trace() / 2.0,
+        )
     }
 }
 
@@ -504,6 +524,9 @@ impl fmt::Display for MvGaussianError {
 
 #[cfg(test)]
 mod tests {
+    use nalgebra::{dmatrix, dvector};
+    use rand::{thread_rng, SeedableRng};
+
     use super::*;
     use crate::dist::Gaussian;
     use crate::misc::{ks_test, mardia};
@@ -734,5 +757,48 @@ mod tests {
         });
 
         assert!(passed);
+    }
+
+    #[test]
+    fn suff_stat_ln_f() {
+        let f = MvGaussian::new(
+            dvector![1.0, 2.0],
+            dmatrix![1.0, 3.0/5.0; 3.0/5.0, 2.0;],
+        )
+        .unwrap();
+        let mut stat = f.empty_suffstat();
+        stat.observe_many(&[
+            dvector![1.0, 2.0],
+            dvector![3.0, 4.0],
+            dvector![5.0, 6.0],
+        ]);
+
+        assert::close(f.ln_f_stat(&stat), -17.231_285_318_08, 1E-12);
+    }
+
+    #[test]
+    fn suff_stat_ln_f_fuzzy() {
+        let f = MvGaussian::new(
+            dvector![1.0, 2.0],
+            dmatrix![1.0, 3.0/5.0; 3.0/5.0, 2.0;],
+        )
+        .unwrap();
+        let g =
+            MvGaussian::new(dvector![0.0, 0.0], dmatrix![1.0, 0.0; 0.0, 1.0;])
+                .unwrap();
+
+        let seed: u64 = thread_rng().gen();
+        dbg!(&seed); // Show this for diagnosing issues later.
+        let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
+
+        for _ in 0..100 {
+            let data: Vec<DVector<f64>> = g.sample(11, &mut rng);
+
+            let mut stat = f.empty_suffstat();
+            stat.observe_many(&data);
+
+            let ln_f_sum: f64 = data.iter().map(|x| f.ln_f(x)).sum();
+            assert::close(f.ln_f_stat(&stat), ln_f_sum, 1E-13);
+        }
     }
 }

@@ -6,9 +6,9 @@ use crate::dist::Uniform;
 use crate::impl_display;
 use crate::traits::*;
 use num::{Bounded, FromPrimitive, Integer, Saturating, ToPrimitive, Unsigned};
-use once_cell::sync::OnceCell;
 use rand::Rng;
 use std::fmt;
+use std::sync::OnceLock;
 
 /// [Geometric distribution](https://en.wikipedia.org/wiki/Geometric_distribution)
 /// over x in {0, 1, 2, 3, ... }.
@@ -33,10 +33,10 @@ pub struct Geometric {
     p: f64,
     // ln_(p)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_p: OnceCell<f64>,
+    ln_p: OnceLock<f64>,
     // ln_(1-p)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_1mp: OnceCell<f64>,
+    ln_1mp: OnceLock<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -70,8 +70,8 @@ impl Geometric {
         } else {
             Ok(Geometric {
                 p,
-                ln_p: OnceCell::new(),
-                ln_1mp: OnceCell::new(),
+                ln_p: OnceLock::new(),
+                ln_1mp: OnceLock::new(),
             })
         }
     }
@@ -82,8 +82,8 @@ impl Geometric {
     pub fn new_unchecked(p: f64) -> Self {
         Geometric {
             p,
-            ln_p: OnceCell::new(),
-            ln_1mp: OnceCell::new(),
+            ln_p: OnceLock::new(),
+            ln_1mp: OnceLock::new(),
         }
     }
 
@@ -136,8 +136,8 @@ impl Geometric {
     /// Set p without input validation
     #[inline]
     pub fn set_p_unchecked(&mut self, p: f64) {
-        self.ln_p = OnceCell::new();
-        self.ln_1mp = OnceCell::new();
+        self.ln_p = OnceLock::new();
+        self.ln_1mp = OnceLock::new();
         self.p = p;
     }
 
@@ -190,8 +190,8 @@ impl Default for Geometric {
     fn default() -> Self {
         Geometric {
             p: 0.5,
-            ln_p: OnceCell::new(),
-            ln_1mp: OnceCell::new(),
+            ln_p: OnceLock::new(),
+            ln_1mp: OnceLock::new(),
         }
     }
 }

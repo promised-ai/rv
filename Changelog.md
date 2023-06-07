@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.16.0
+- Fix bug in `InvGaussianSuffStat`
+- Add `ln_f_stat` method to `HasSuffStat` trait. This method computes the log
+    likelihood of the data represented by the statistic.
+- Un-implement `HasSuffStat<f64>` for `InverseGamma`
+- Add `InvGammaSuffStat`
+- Add `BetaSuffStat`
+- Cache ln(weights) for `Mixture` to improve `ln_f` computation performance
+
 ## 0.15.1
 - Fix bug in `Empirical::draw` that causes an `index out of bounds error` when
     the last last bin is drawn.
