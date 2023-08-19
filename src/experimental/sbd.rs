@@ -1,14 +1,15 @@
+use rand::{Rng, SeedableRng};
+use rand_xoshiro::Xoshiro128Plus;
+#[cfg(feature = "serde1")]
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 
+use super::sbd_stat::SbdSuffStat;
 use crate::dist::Beta;
 use crate::misc::ln_pflip;
 use crate::traits::{HasSuffStat, Rv};
-use rand::{Rng, SeedableRng};
-use rand_xoshiro::Xoshiro128Plus;
-
-use super::sbd_stat::SbdSuffStat;
 
 #[derive(Clone, Debug)]
 pub enum SbdError {
@@ -31,6 +32,39 @@ impl std::fmt::Display for SbdError {
     }
 }
 
+#[cfg(feature = "serde1")]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+struct SbdFmt {
+    beta: Beta,
+    inner: _Inner,
+}
+
+#[cfg(feature = "serde1")]
+impl From<SbdFmt> for Sbd {
+    fn from(fmt: SbdFmt) -> Self {
+        Self {
+            beta: fmt.beta,
+            inner: Arc::new(RwLock::new(fmt.inner)),
+        }
+    }
+}
+
+#[cfg(feature = "serde1")]
+impl From<Sbd> for SbdFmt {
+    fn from(sbd: Sbd) -> Self {
+        Self {
+            beta: sbd.beta,
+            inner: Arc::into_inner(sbd.inner)
+                .and_then(|rwlock| rwlock.into_inner().ok())
+                .unwrap(),
+        }
+    }
+}
+
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+#[derive(Clone)]
 pub(crate) struct _Inner {
     remaining_mass: f64,
     lookup: HashMap<usize, usize>,
@@ -40,6 +74,12 @@ pub(crate) struct _Inner {
     rng: rand_xoshiro::Xoshiro128Plus,
 }
 
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde1",
+    serde(rename_all = "snake_case", from = "SbdFmt", into = "SbdFmt")
+)]
+#[derive(Clone)]
 pub struct Sbd {
     beta: Beta,
     pub(crate) inner: Arc<RwLock<_Inner>>,

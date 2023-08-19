@@ -28,7 +28,7 @@ rand_distr = "0.4.3"
 serde = {version = "1", features = ["derive"], optional = true}
 special = "0.10"
 peroxide = { version = "0.32.1" }
-rand_xoshiro = { version = "0.6", optional = true}
+rand_xoshiro = { version = "0.6", optional = true, features=["serde1"]}
 
 [dev-dependencies]
 assert = "0.7"
