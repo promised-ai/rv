@@ -8,7 +8,9 @@ use std::sync::RwLock;
 
 use super::sbd_stat::SbdSuffStat;
 use crate::dist::Beta;
+use crate::misc::argmax;
 use crate::misc::ln_pflip;
+use crate::prelude::Mode;
 use crate::traits::{HasSuffStat, Rv};
 
 #[derive(Clone, Debug)]
@@ -242,6 +244,21 @@ impl Rv<usize> for Sbd {
         } else {
             self.inner.read().map(|obj| obj.rev_lookup[&x]).unwrap()
         }
+    }
+}
+
+impl Mode<usize> for Sbd {
+    fn mode(&self) -> Option<usize> {
+        let k = self.k();
+        Some(
+            self.inner
+                .read()
+                .map(|inner| {
+                    let ix = argmax(&inner.ln_weights[..k])[0];
+                    inner.rev_lookup[&ix]
+                })
+                .unwrap(),
+        )
     }
 }
 
