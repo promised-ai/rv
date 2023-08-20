@@ -20,6 +20,14 @@ impl Sb {
     pub fn new(alpha: f64, k: usize, seed: Option<u64>) -> Self {
         Self { alpha, k, seed }
     }
+
+    pub fn set_alpha_unchecked(&mut self, alpha: f64) {
+        self.alpha = alpha;
+    }
+
+    pub fn alpha(&self) -> f64 {
+        self.alpha
+    }
 }
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -32,12 +40,25 @@ pub struct SbPosterior {
 
 impl Rv<Sbd> for Sb {
     fn ln_f(&self, x: &Sbd) -> f64 {
-        let k = x.k() + 1;
-        let symdir = SymmetricDirichlet::new_unchecked(self.alpha, k);
+        // let k = x.k() + 1;
+        // let symdir = SymmetricDirichlet::new_unchecked(self.alpha, k);
+        // x.inner
+        //     .read()
+        //     .map(|obj| symdir.ln_f(&obj.ln_weights))
+        //     .unwrap()
+        let beta = Beta::new_unchecked(1.0, self.alpha);
         x.inner
             .read()
-            .map(|obj| symdir.ln_f(&obj.ln_weights))
+            .map(|inner| {
+                inner.ln_weights.iter().map(|&lnw| lnw.exp()).fold(
+                    (1.0, 0.0),
+                    |(rm_mass, ln_f), w| {
+                        (rm_mass - w, ln_f + beta.ln_f(&(w / rm_mass)))
+                    },
+                )
+            })
             .unwrap()
+            .1
     }
 
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Sbd {
