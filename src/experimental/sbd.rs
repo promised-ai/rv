@@ -66,7 +66,7 @@ impl From<Sbd> for SbdFmt {
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct _Inner {
     remaining_mass: f64,
     lookup: HashMap<usize, usize>,
@@ -81,7 +81,7 @@ pub(crate) struct _Inner {
     feature = "serde1",
     serde(rename_all = "snake_case", from = "SbdFmt", into = "SbdFmt")
 )]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Sbd {
     beta: Beta,
     pub(crate) inner: Arc<RwLock<_Inner>>,

@@ -1,5 +1,5 @@
 use crate::data::DataOrSuffStat;
-use crate::dist::{Beta, Dirichlet, SymmetricDirichlet};
+use crate::dist::{Beta, Dirichlet};
 use crate::traits::{ConjugatePrior, Rv, SuffStat};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -10,6 +10,7 @@ use super::sbd_stat::SbdSuffStat;
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+#[derive(Clone, Debug)]
 pub struct Sb {
     alpha: f64,
     k: usize,
@@ -32,6 +33,7 @@ impl Sb {
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+#[derive(Clone, Debug)]
 pub struct SbPosterior {
     alpha: f64,
     lookup: HashMap<usize, usize>,
@@ -78,7 +80,7 @@ impl Rv<Sbd> for Sb {
 }
 
 impl Rv<Sbd> for SbPosterior {
-    fn ln_f(&self, x: &Sbd) -> f64 {
+    fn ln_f(&self, _x: &Sbd) -> f64 {
         unimplemented!()
     }
 
