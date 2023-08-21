@@ -1,5 +1,6 @@
-use crate::data::DataOrSuffStat;
+use crate::data::{CategoricalSuffStat, DataOrSuffStat};
 use crate::dist::{Beta, Dirichlet};
+use crate::prelude::{Categorical, SymmetricDirichlet};
 use crate::traits::{ConjugatePrior, Rv, SuffStat};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -117,6 +118,16 @@ fn sbpost_from_stat(alpha: f64, stat: &SbdSuffStat) -> SbPosterior {
     SbPosterior { alpha, lookup, dir }
 }
 
+fn sbm_from_stat(alpha: f64, stat: &SbdSuffStat) -> f64 {
+    let stat = CategoricalSuffStat::from_parts_unchecked(
+        stat.n(),
+        stat.counts().values().map(|&ct| ct as f64).collect(),
+    );
+
+    let symdir = SymmetricDirichlet::new(alpha, stat.counts().len()).unwrap();
+    symdir.ln_m(&DataOrSuffStat::SuffStat::<usize, Categorical>(&stat))
+}
+
 impl ConjugatePrior<usize, Sbd> for Sb {
     type LnMCache = ();
     type LnPpCache = ();
@@ -143,9 +154,17 @@ impl ConjugatePrior<usize, Sbd> for Sb {
     fn ln_m_with_cache(
         &self,
         _cache: &Self::LnMCache,
-        _x: &DataOrSuffStat<usize, Sbd>,
+        x: &DataOrSuffStat<usize, Sbd>,
     ) -> f64 {
-        unimplemented!()
+        match x {
+            DataOrSuffStat::Data(xs) => {
+                let mut stat = SbdSuffStat::new();
+                stat.observe_many(xs);
+                sbm_from_stat(self.alpha, &stat)
+            }
+            DataOrSuffStat::SuffStat(stat) => sbm_from_stat(self.alpha, stat),
+            DataOrSuffStat::None => panic!("Need data for posterior"),
+        }
     }
 
     fn ln_pp_with_cache(&self, _cache: &Self::LnPpCache, _y: &usize) -> f64 {
