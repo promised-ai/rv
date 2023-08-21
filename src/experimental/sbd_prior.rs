@@ -49,7 +49,9 @@ impl Rv<Sbd> for Sb {
         //     .read()
         //     .map(|obj| symdir.ln_f(&obj.ln_weights))
         //     .unwrap()
-        if x.k() == 0 {
+        //
+        let k = x.k();
+        if k == 0 {
             return 1.0;
         }
 
@@ -57,10 +59,12 @@ impl Rv<Sbd> for Sb {
         x.inner
             .read()
             .map(|inner| {
-                inner.ln_weights.iter().map(|&lnw| lnw.exp()).fold(
+                inner.ln_weights.iter().take(k).map(|&lnw| lnw.exp()).fold(
                     (1.0, 0.0),
                     |(rm_mass, ln_f), w| {
-                        (rm_mass - w, ln_f + beta.ln_f(&(w / rm_mass)))
+                        let ln_f_b = beta.ln_f(&(w / rm_mass));
+                        // dbg!(&ln_f_b, &w, &rm_mass);
+                        (rm_mass - w, ln_f + ln_f_b)
                     },
                 )
             })
@@ -186,7 +190,7 @@ mod tests {
         let prior = Sb::new(alpha, 1, None);
         let sbd = Sbd::new(alpha, None).unwrap();
         // populate sbd
-        (0..10).for_each(|x| {
+        (0..1).for_each(|x| {
             sbd.ln_f(&x);
         });
 
@@ -211,5 +215,20 @@ mod tests {
 
         eprintln!("POST: {:?}", post);
         eprintln!("SBD: {:?}", sbd);
+    }
+
+    #[test]
+    fn breaking_ex1() {
+        let ln_weights = [
+            (-0.627_512_722_454_201_5_f64).exp(),
+            (-0.763_394_023_914_272_2_f64).exp(),
+        ];
+        let alpha = 1.0;
+        let prior = Sb::new(alpha, 1, None);
+        let sbd =
+            Sbd::from_canonical_weights(&ln_weights, alpha, None).unwrap();
+        let ln_f = prior.ln_f(&sbd);
+        eprintln!("{:?}", ln_weights);
+        eprintln!("{ln_f}");
     }
 }
