@@ -57,9 +57,7 @@ impl From<Sbd> for SbdFmt {
     fn from(sbd: Sbd) -> Self {
         Self {
             beta: sbd.beta,
-            inner: Arc::into_inner(sbd.inner)
-                .and_then(|rwlock| rwlock.into_inner().ok())
-                .unwrap(),
+            inner: sbd.inner.read().map(|inner| inner.clone()).unwrap(),
         }
     }
 }
