@@ -10,7 +10,7 @@ use super::sbd_stat::SbdSuffStat;
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Sb {
     alpha: f64,
     k: usize,
