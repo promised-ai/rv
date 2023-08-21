@@ -67,12 +67,12 @@ impl From<Sbd> for SbdFmt {
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct _Inner {
+pub struct _Inner {
     remaining_mass: f64,
     lookup: HashMap<usize, usize>,
     rev_lookup: HashMap<usize, usize>,
     // the bin weights. the last entry is ln(remaining_mass)
-    pub(crate) ln_weights: Vec<f64>,
+    pub ln_weights: Vec<f64>,
     rng: rand_xoshiro::Xoshiro128Plus,
 }
 
@@ -83,8 +83,8 @@ pub(crate) struct _Inner {
 )]
 #[derive(Clone, Debug)]
 pub struct Sbd {
-    beta: Beta,
-    pub(crate) inner: Arc<RwLock<_Inner>>,
+    pub beta: Beta,
+    pub inner: Arc<RwLock<_Inner>>,
 }
 
 impl PartialEq<Sbd> for Sbd {
