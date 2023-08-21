@@ -49,6 +49,10 @@ impl Rv<Sbd> for Sb {
         //     .read()
         //     .map(|obj| symdir.ln_f(&obj.ln_weights))
         //     .unwrap()
+        if x.k() == 0 {
+            return 1.0;
+        }
+
         let beta = Beta::new_unchecked(1.0, self.alpha);
         x.inner
             .read()
@@ -169,5 +173,43 @@ impl ConjugatePrior<usize, Sbd> for Sb {
 
     fn ln_pp_with_cache(&self, _cache: &Self::LnPpCache, _y: &usize) -> f64 {
         unimplemented!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rv_sbd() {
+        let alpha = 0.5;
+        let prior = Sb::new(alpha, 1, None);
+        let sbd = Sbd::new(alpha, None).unwrap();
+        // populate sbd
+        (0..10).for_each(|x| {
+            sbd.ln_f(&x);
+        });
+
+        let ln_f = prior.ln_f(&sbd);
+        eprintln!("{ln_f}");
+    }
+
+    #[test]
+    fn sbd_posterior() {
+        let alpha = 0.5;
+        let prior = Sb::new(alpha, 1, None);
+        let mut stat = SbdSuffStat::new();
+        // populate sbd
+        (0..10_usize)
+            .cycle()
+            .take(100)
+            .for_each(|x| stat.observe(&x));
+
+        let mut rng = rand::thread_rng();
+        let post = prior.posterior(&DataOrSuffStat::SuffStat(&stat));
+        let sbd = post.draw(&mut rng);
+
+        eprintln!("POST: {:?}", post);
+        eprintln!("SBD: {:?}", sbd);
     }
 }
