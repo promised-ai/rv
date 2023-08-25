@@ -185,7 +185,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn rv_sbd() {
+    fn rv_sbd_smoke() {
         let alpha = 0.5;
         let prior = Sb::new(alpha, 1, None);
         let sbd = Sbd::new(alpha, None).unwrap();
@@ -199,7 +199,7 @@ mod tests {
     }
 
     #[test]
-    fn sbd_posterior() {
+    fn sbd_posterior_smoke() {
         let alpha = 0.5;
         let prior = Sb::new(alpha, 1, None);
         let mut stat = SbdSuffStat::new();
@@ -219,6 +219,7 @@ mod tests {
 
     #[test]
     fn breaking_ex1() {
+        // This example used to result in NaN weight
         let ln_weights = [
             (-0.627_512_722_454_201_5_f64).exp(),
             (-0.763_394_023_914_272_2_f64).exp(),
@@ -230,5 +231,36 @@ mod tests {
         let ln_f = prior.ln_f(&sbd);
         eprintln!("{:?}", ln_weights);
         eprintln!("{ln_f}");
+    }
+
+    #[test]
+    fn posterior_sanity() {
+        let data: Vec<usize> = vec![0, 3, 3, 3, 3, 3, 4, 4, 4, 6];
+
+        let mut stat = SbdSuffStat::new();
+        stat.observe_many(&data);
+
+        let prior = Sb::new(0.1, 1, None);
+
+        let mut rng = rand::thread_rng();
+        let post = prior.posterior(&DataOrSuffStat::SuffStat(&stat));
+
+        let mut sums = vec![0.0; 4];
+
+        for _ in 0..100 {
+            let sbd = post.draw(&mut rng);
+            let f0 = sbd.f(&0_usize);
+            let f3 = sbd.f(&3_usize);
+            let f4 = sbd.f(&4_usize);
+            let f6 = sbd.f(&6_usize);
+
+            sums[0] += f0;
+            sums[1] += f3;
+            sums[2] += f4;
+            sums[3] += f6;
+        }
+        assert!(sums[1] > sums[2]);
+        assert!(sums[2] > sums[0]);
+        assert!(sums[2] > sums[3]);
     }
 }
