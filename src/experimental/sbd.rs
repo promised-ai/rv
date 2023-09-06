@@ -16,6 +16,7 @@ use crate::traits::{HasSuffStat, Rv};
 #[derive(Clone, Debug)]
 pub enum SbdError {
     InvalidAlpha(f64),
+    InvalidNumberOfWeights { n_weights: usize, n_entries: usize },
 }
 
 impl std::error::Error for SbdError {}
@@ -28,6 +29,16 @@ impl std::fmt::Display for SbdError {
                     f,
                     "alpha ({}) must be finite and greater than zero",
                     alpha
+                )
+            }
+            Self::InvalidNumberOfWeights {
+                n_weights,
+                n_entries,
+            } => {
+                write!(
+                    f,
+                    "There should be one more weight than lookup entries. \
+                    Given {n_weights}, but there are {n_entries} lookup entries",
                 )
             }
         }
@@ -117,16 +128,24 @@ impl Sbd {
         }
     }
 
-    pub fn from_weights_and_lookup(
-        weights: &[f64],
+    pub fn from_ln_weights_and_lookup(
+        ln_weights: Vec<f64>,
         lookup: HashMap<usize, usize>,
         alpha: f64,
         seed: Option<u64>,
     ) -> Result<Self, SbdError> {
-        let k = weights.len() - 1;
+        let n_weights = ln_weights.len();
+        let n_entries = lookup.len();
+        if n_weights != n_entries + 1 {
+            return Err(SbdError::InvalidNumberOfWeights {
+                n_weights,
+                n_entries,
+            });
+        }
+        let k = ln_weights.len() - 1;
         let inner = _Inner {
-            remaining_mass: weights[k],
-            ln_weights: weights.iter().map(|&w| w.ln()).collect(),
+            remaining_mass: ln_weights[k].exp(),
+            ln_weights,
             rev_lookup: lookup.iter().map(|(a, b)| (*b, *a)).collect(),
             lookup,
             rng: seed.map_or_else(
@@ -141,6 +160,16 @@ impl Sbd {
         })
     }
 
+    pub fn from_weights_and_lookup(
+        weights: &[f64],
+        lookup: HashMap<usize, usize>,
+        alpha: f64,
+        seed: Option<u64>,
+    ) -> Result<Self, SbdError> {
+        let ln_weights = weights.iter().map(|w| w.ln()).collect();
+        Self::from_ln_weights_and_lookup(ln_weights, lookup, alpha, seed)
+    }
+
     pub fn from_canonical_weights(
         weights: &[f64],
         alpha: f64,
@@ -153,13 +182,17 @@ impl Sbd {
             let inner = _Inner {
                 remaining_mass: weights[k],
                 ln_weights: weights.iter().map(|&w| w.ln()).collect(),
-                lookup: (0..k - 1).map(|x| (x, x)).collect(),
-                rev_lookup: (0..k - 1).map(|x| (x, x)).collect(),
+                lookup: (0..k).map(|x| (x, x)).collect(),
+                rev_lookup: (0..k).map(|x| (x, x)).collect(),
                 rng: seed.map_or_else(
                     Xoshiro128Plus::from_entropy,
                     Xoshiro128Plus::seed_from_u64,
                 ),
             };
+
+            assert_eq!(inner.ln_weights.len(), k + 1);
+            assert_eq!(inner.lookup.len(), k);
+            assert_eq!(inner.rev_lookup.len(), k);
 
             Ok(Self {
                 beta: Beta::new_unchecked(1.0, alpha),
@@ -248,10 +281,22 @@ impl Rv<usize> for Sbd {
             .read()
             .map(|obj| ln_pflip(&obj.ln_weights, 1, false, rng)[0])
             .unwrap();
+
         if x == self.k() {
             self.k() // FIXME: better way
         } else {
-            self.inner.read().map(|obj| obj.rev_lookup[&x]).unwrap()
+            self.inner
+                .read()
+                .map(|obj| {
+                    obj.rev_lookup
+                        .get(&x)
+                        .ok_or_else(|| {
+                            eprintln!("No entry `{}` in lookup: {:?}", x, obj);
+                        })
+                        .unwrap()
+                        .clone()
+                })
+                .unwrap()
         }
     }
 }
@@ -273,6 +318,8 @@ impl Mode<usize> for Sbd {
 
 #[cfg(test)]
 mod test {
+    use approx::assert_relative_eq;
+
     use super::*;
 
     #[test]
@@ -290,5 +337,21 @@ mod test {
             assert_eq!(ln_f_1, ln_f_2);
             assert_eq!(k, sbd.k());
         }
+    }
+
+    #[test]
+    fn static_ln_f_from_new() {
+        let sbd = Sbd::new(1.0, None).unwrap();
+
+        assert_eq!(sbd.k(), 0);
+
+        let lnf0 = sbd.ln_f(&0_usize);
+        assert::close(lnf0, sbd.ln_f(&0_usize), 1e-12);
+
+        assert_eq!(sbd.k(), 1);
+
+        let lnf1 = sbd.ln_f(&1_usize); // causes new category to form
+        assert::close(lnf0, sbd.ln_f(&0_usize), 1e-12);
+        assert_eq!(sbd.k(), 2);
     }
 }
