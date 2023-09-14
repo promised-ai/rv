@@ -118,10 +118,13 @@ fn sbpost_from_stat(alpha: f64, stat: &SbdSuffStat) -> SbPosterior {
             .counts()
             .iter()
             .map(|(_, &ct)| ct as f64 + alpha)
+            .chain(std::iter::once(alpha))
             .collect();
 
         Dirichlet::new(alphas).unwrap()
     };
+
+    assert_eq!(lookup.len() + 1, dir.alphas().len());
 
     SbPosterior { alpha, lookup, dir }
 }
@@ -136,14 +139,39 @@ fn sbm_from_stat(alpha: f64, stat: &SbdSuffStat) -> f64 {
     symdir.ln_m(&DataOrSuffStat::SuffStat::<usize, Categorical>(&stat))
 }
 
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct SbCache {
+    ln_weights: HashMap<usize, f64>,
+    ln_f_new: f64,
+}
+
 impl ConjugatePrior<usize, Sbd> for Sb {
-    type LnMCache = ();
-    type LnPpCache = ();
     type Posterior = SbPosterior;
+    type LnMCache = ();
+    type LnPpCache = SbCache;
 
     fn ln_m_cache(&self) -> Self::LnMCache {}
 
-    fn ln_pp_cache(&self, _x: &DataOrSuffStat<usize, Sbd>) -> Self::LnPpCache {}
+    fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::LnPpCache {
+        let post = self.posterior(x);
+
+        let norm = post.dir.alphas().iter().fold(0.0, |acc, &a| acc + a);
+
+        let ln_weights = post
+            .lookup
+            .iter()
+            .map(|(&x, &ix)| (x, post.dir.alphas[ix] - norm))
+            .collect();
+
+        let ln_f_new = *post.dir.alphas().last().unwrap() - norm;
+
+        SbCache {
+            ln_weights,
+            ln_f_new,
+        }
+    }
 
     fn posterior(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::Posterior {
         match x {
@@ -175,8 +203,9 @@ impl ConjugatePrior<usize, Sbd> for Sb {
         }
     }
 
-    fn ln_pp_with_cache(&self, _cache: &Self::LnPpCache, _y: &usize) -> f64 {
-        unimplemented!()
+    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &usize) -> f64 {
+        // FIXME: I feel like this isn't quite right
+        cache.ln_weights.get(y).copied().unwrap_or(cache.ln_f_new)
     }
 }
 

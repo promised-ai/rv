@@ -2,6 +2,7 @@ use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro128Plus;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
@@ -244,6 +245,13 @@ impl Sbd {
             .unwrap();
 
         ln_w
+    }
+
+    pub fn observed_values(&self) -> Vec<usize> {
+        self.inner
+            .read()
+            .map(|inner| inner.lookup.keys().copied().collect())
+            .unwrap()
     }
 }
 
