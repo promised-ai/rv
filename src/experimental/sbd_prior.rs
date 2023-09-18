@@ -136,7 +136,11 @@ fn sbm_from_stat(alpha: f64, stat: &SbdSuffStat) -> f64 {
 
     let stat = CategoricalSuffStat::from_parts_unchecked(
         stat.n(),
-        stat.counts().values().map(|&ct| ct as f64).collect(),
+        stat.counts()
+            .values()
+            .map(|&ct| ct as f64)
+            .chain(std::iter::once(alpha))
+            .collect(),
     );
 
     let symdir = SymmetricDirichlet::new(alpha, stat.counts().len()).unwrap();
