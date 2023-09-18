@@ -172,7 +172,7 @@ impl ConjugatePrior<usize, Sbd> for Sb {
             .collect();
 
         // ln (1/(1 + alpha))
-        let ln_f_new = -(1.0 + alpha).ln() - ln_norm;
+        let ln_f_new = (1.0 + alpha).recip().ln() - ln_norm;
 
         SbCache {
             ln_weights,
@@ -298,5 +298,45 @@ mod tests {
         assert!(sums[1] > sums[2]);
         assert!(sums[2] > sums[0]);
         assert!(sums[2] > sums[3]);
+    }
+
+    #[test]
+    fn posterior_predictive() {
+        let data: Vec<usize> = vec![0, 3, 3, 3, 3, 3, 4, 4, 4, 6];
+
+        let mut st = SbdSuffStat::new();
+        st.observe_many(&data);
+
+        let stat = DataOrSuffStat::SuffStat(&st);
+
+        let prior = Sb::new(0.1, 1, None);
+
+        let ln_pp_0 =
+            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &0, &stat);
+        let ln_pp_1 =
+            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &1, &stat);
+        let ln_pp_2 =
+            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &2, &stat);
+        let ln_pp_3 =
+            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &3, &stat);
+        let ln_pp_4 =
+            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &4, &stat);
+        let ln_pp_5 =
+            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &5, &stat);
+        let ln_pp_6 =
+            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &6, &stat);
+        let ln_pp_7 =
+            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &7, &stat);
+
+        assert!(ln_pp_0 < ln_pp_4);
+        assert::close(ln_pp_0, ln_pp_6, 1e-10);
+        assert!(ln_pp_4 < ln_pp_3);
+        assert!(ln_pp_1 < ln_pp_0);
+        assert::close(ln_pp_1, ln_pp_2, 1e-10);
+        assert::close(ln_pp_1, ln_pp_5, 1e-10);
+        assert::close(ln_pp_1, ln_pp_7, 1e-10);
+
+        let sum = ln_pp_0.exp() + ln_pp_3.exp() + ln_pp_4.exp() + ln_pp_6.exp();
+        eprintln!("{sum}");
     }
 }
