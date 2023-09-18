@@ -130,6 +130,10 @@ fn sbpost_from_stat(alpha: f64, stat: &SbdSuffStat) -> SbPosterior {
 }
 
 fn sbm_from_stat(alpha: f64, stat: &SbdSuffStat) -> f64 {
+    if stat.n() == 0 {
+        panic!("SBD Stat is empty {:?}", stat);
+    }
+
     let stat = CategoricalSuffStat::from_parts_unchecked(
         stat.n(),
         stat.counts().values().map(|&ct| ct as f64).collect(),
@@ -156,16 +160,19 @@ impl ConjugatePrior<usize, Sbd> for Sb {
 
     fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::LnPpCache {
         let post = self.posterior(x);
-
-        let norm = post.dir.alphas().iter().fold(0.0, |acc, &a| acc + a);
-
+        // we'll need the alpha for computing 1 / (1 + alpha), which is the
+        // expected liklelihood if a new class
+        let alpha = post.dir.alphas().last().unwrap();
+        // Need to norm the alphas to probabilities
+        let ln_norm = post.dir.alphas().iter().sum::<f64>().ln();
         let ln_weights = post
             .lookup
             .iter()
-            .map(|(&x, &ix)| (x, post.dir.alphas[ix] - norm))
+            .map(|(&x, &ix)| (x, post.dir.alphas[ix].ln() - ln_norm))
             .collect();
 
-        let ln_f_new = *post.dir.alphas().last().unwrap() - norm;
+        // ln (1/(1 + alpha))
+        let ln_f_new = -(1.0 + alpha).ln() - ln_norm;
 
         SbCache {
             ln_weights,
