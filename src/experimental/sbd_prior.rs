@@ -2,9 +2,9 @@ use crate::data::{CategoricalSuffStat, DataOrSuffStat};
 use crate::dist::{Beta, Dirichlet};
 use crate::prelude::{Categorical, SymmetricDirichlet};
 use crate::traits::{ConjugatePrior, Rv, SuffStat};
+use fxhash::FxHashMap as HashMap;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 use super::sbd::Sbd;
 use super::sbd_stat::SbdSuffStat;

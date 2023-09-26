@@ -29,6 +29,7 @@ serde = {version = "1", features = ["derive"], optional = true}
 special = "0.10"
 peroxide = { version = "0.32.1" }
 rand_xoshiro = { version = "0.6", optional = true, features=["serde1"]}
+fxhash = { version = "0.2.1", optional = true }
 
 [dev-dependencies]
 assert = "0.7"
@@ -44,7 +45,7 @@ serde1 = ["serde", "nalgebra/serde-serialize"]
 arraydist = ["nalgebra"]
 process = ["serde", "nalgebra/serde-serialize", "argmin", "argmin-math", "arraydist"]
 datum = []
-experimental = ["rand_xoshiro"]
+experimental = ["rand_xoshiro", "fxhash"]
 
 [package.metadata.docs.rs]
 all-features = true

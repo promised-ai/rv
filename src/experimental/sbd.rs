@@ -1,9 +1,8 @@
+use fxhash::FxHashMap as HashMap;
 use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro128Plus;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 
@@ -118,8 +117,8 @@ impl Sbd {
                 inner: Arc::new(RwLock::new(_Inner {
                     remaining_mass: 1.0,
                     ln_weights: vec![0.0], // ln(1)
-                    lookup: HashMap::new(),
-                    rev_lookup: HashMap::new(),
+                    lookup: HashMap::default(),
+                    rev_lookup: HashMap::default(),
                     rng: seed.map_or_else(
                         Xoshiro128Plus::from_entropy,
                         Xoshiro128Plus::seed_from_u64,
