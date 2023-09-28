@@ -175,8 +175,9 @@ impl ConjugatePrior<usize, Sbd> for Sb {
             .map(|(&x, &ix)| (x, post.dir.alphas[ix].ln() - ln_norm))
             .collect();
 
-        // ln (1/(1 + alpha))
-        let ln_f_new = (1.0 + alpha).recip().ln() - ln_norm;
+        // // ln (1/(1 + alpha))
+        // let ln_f_new = (1.0 + alpha).recip().ln() - ln_norm;
+        let ln_f_new = (alpha / (1.0 + alpha)).ln() - ln_norm;
 
         SbCache {
             ln_weights,
