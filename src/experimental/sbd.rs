@@ -2,8 +2,7 @@ use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro128Plus;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 
@@ -79,8 +78,10 @@ impl From<Sbd> for SbdFmt {
 #[derive(Clone, Debug, PartialEq)]
 pub struct _Inner {
     remaining_mass: f64,
-    lookup: HashMap<usize, usize>,
-    rev_lookup: HashMap<usize, usize>,
+    // Given a category, map the category key to the ln_weights index
+    // Note: Some functions rely on the ordered iteration of the BTreeMap
+    lookup: BTreeMap<usize, usize>,
+    rev_lookup: BTreeMap<usize, usize>,
     // the bin weights. the last entry is ln(remaining_mass)
     pub ln_weights: Vec<f64>,
     rng: rand_xoshiro::Xoshiro128Plus,
@@ -118,8 +119,8 @@ impl Sbd {
                 inner: Arc::new(RwLock::new(_Inner {
                     remaining_mass: 1.0,
                     ln_weights: vec![0.0], // ln(1)
-                    lookup: HashMap::new(),
-                    rev_lookup: HashMap::new(),
+                    lookup: BTreeMap::new(),
+                    rev_lookup: BTreeMap::new(),
                     rng: seed.map_or_else(
                         Xoshiro128Plus::from_entropy,
                         Xoshiro128Plus::seed_from_u64,
@@ -131,7 +132,7 @@ impl Sbd {
 
     pub fn from_ln_weights_and_lookup(
         ln_weights: Vec<f64>,
-        lookup: HashMap<usize, usize>,
+        lookup: BTreeMap<usize, usize>,
         alpha: f64,
         seed: Option<u64>,
     ) -> Result<Self, SbdError> {
@@ -163,7 +164,7 @@ impl Sbd {
 
     pub fn from_weights_and_lookup(
         weights: &[f64],
-        lookup: HashMap<usize, usize>,
+        lookup: BTreeMap<usize, usize>,
         alpha: f64,
         seed: Option<u64>,
     ) -> Result<Self, SbdError> {
@@ -217,6 +218,37 @@ impl Sbd {
             .unwrap()
     }
 
+    fn find_next_category(&self) -> usize {
+        let mut k: usize = 0;
+        self.inner
+            .read()
+            .map(|inner| {
+                inner
+                    .lookup
+                    .keys()
+                    .find(|&&key| {
+                        let pred = key > k;
+                        k += 1;
+                        pred
+                    })
+                    .copied()
+                    .unwrap_or(k)
+            })
+            .unwrap()
+    }
+
+    fn extend_until_mass_remains(&self, remaining_mass: f64) -> Vec<f64> {
+        let mut ln_ws = Vec::new();
+        loop {
+            let k = self.find_next_category();
+            let ln_w = self.extend(k);
+            ln_ws.push(ln_w);
+            if ln_w < remaining_mass {
+                return ln_ws;
+            }
+        }
+    }
+
     fn extend(&self, x: usize) -> f64 {
         let p: f64 = self
             .inner
@@ -234,7 +266,7 @@ impl Sbd {
             .write()
             .map(|mut obj| {
                 obj.remaining_mass = rm_mass;
-                obj.lookup.insert(x, k);
+                assert!(obj.lookup.insert(x, k).is_none());
                 obj.rev_lookup.insert(k, x);
                 obj.ln_weights
                     .last_mut()
@@ -284,27 +316,33 @@ impl Rv<usize> for Sbd {
     }
 
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
-        let x = self
-            .inner
-            .read()
-            .map(|obj| ln_pflip(&obj.ln_weights, 1, false, rng)[0])
-            .unwrap();
+        let u: f64 = rng.gen();
+        let remaining_mass =
+            self.inner.read().map(|inner| inner.remaining_mass).unwrap();
+        let k = self.k();
 
-        if x == self.k() {
-            self.k() // FIXME: better way
-        } else {
+        if u < 1.0 - remaining_mass {
+            let x = self
+                .inner
+                .read()
+                .map(|obj| ln_pflip(&obj.ln_weights[..k], 1, false, rng)[0])
+                .unwrap();
+
             self.inner
                 .read()
                 .map(|obj| {
-                    obj.rev_lookup
+                    *obj.rev_lookup
                         .get(&x)
                         .ok_or_else(|| {
                             eprintln!("No entry `{}` in lookup: {:?}", x, obj);
                         })
                         .unwrap()
-                        .clone()
                 })
                 .unwrap()
+        } else {
+            let ln_ws = self.extend_until_mass_remains(1.0 - u);
+            let ix = ln_pflip(&ln_ws, 1, false, rng)[0];
+            ix + k
         }
     }
 }
@@ -327,6 +365,8 @@ impl Mode<usize> for Sbd {
 #[cfg(test)]
 mod test {
     use approx::assert_relative_eq;
+    use rand::SeedableRng;
+    use std::collections::HashMap;
 
     use super::*;
 
@@ -361,5 +401,20 @@ mod test {
         let lnf1 = sbd.ln_f(&1_usize); // causes new category to form
         assert::close(lnf0, sbd.ln_f(&0_usize), 1e-12);
         assert_eq!(sbd.k(), 2);
+    }
+
+    #[test]
+    fn draw_many_smoke() {
+        let mut counter: HashMap<usize, usize> = HashMap::new();
+        let mut rng = rand::thread_rng();
+        let seed: u64 = rng.gen();
+        eprintln!("draw_many_smoke seed: {seed}");
+        let mut rng = rand_xoshiro::Xoroshiro128Plus::seed_from_u64(seed);
+        let sbd = Sbd::new(1.0, None).unwrap();
+        for _ in 0..1_000 {
+            let x: usize = sbd.draw(&mut rng);
+            counter.entry(x).and_modify(|ct| *ct += 1).or_insert(1);
+        }
+        // eprintln!("{:?}", counter);
     }
 }

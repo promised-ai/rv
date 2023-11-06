@@ -4,7 +4,7 @@ use crate::prelude::{Categorical, SymmetricDirichlet};
 use crate::traits::{ConjugatePrior, Rv, SuffStat};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use super::sbd::Sbd;
 use super::sbd_stat::SbdSuffStat;
@@ -14,13 +14,12 @@ use super::sbd_stat::SbdSuffStat;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sb {
     alpha: f64,
-    k: usize,
     seed: Option<u64>,
 }
 
 impl Sb {
-    pub fn new(alpha: f64, k: usize, seed: Option<u64>) -> Self {
-        Self { alpha, k, seed }
+    pub fn new(alpha: f64, seed: Option<u64>) -> Self {
+        Self { alpha, seed }
     }
 
     pub fn set_alpha_unchecked(&mut self, alpha: f64) {
@@ -37,7 +36,7 @@ impl Sb {
 #[derive(Clone, Debug)]
 pub struct SbPosterior {
     alpha: f64,
-    lookup: HashMap<usize, usize>,
+    lookup: BTreeMap<usize, usize>,
     dir: Dirichlet,
 }
 
@@ -73,18 +72,8 @@ impl Rv<Sbd> for Sb {
     }
 
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Sbd {
-        let mut remaining_mass = 1.0;
-        let mut weights: Vec<f64> = Vec::new();
-        let beta = Beta::new_unchecked(1.0, self.alpha);
-        (0..self.k).for_each(|_| {
-            let p: f64 = beta.draw(rng);
-            let w = remaining_mass * p;
-            remaining_mass -= w;
-            weights.push(w);
-        });
-        weights.push(remaining_mass);
-
-        Sbd::from_canonical_weights(&weights, self.alpha, self.seed).unwrap()
+        let seed: u64 = rng.gen();
+        Sbd::new(self.alpha, Some(seed)).unwrap()
     }
 }
 
@@ -106,7 +95,7 @@ impl Rv<Sbd> for SbPosterior {
 }
 
 fn sbpost_from_stat(alpha: f64, stat: &SbdSuffStat) -> SbPosterior {
-    let lookup: HashMap<usize, usize> = stat
+    let lookup: BTreeMap<usize, usize> = stat
         .counts()
         .keys()
         .enumerate()
