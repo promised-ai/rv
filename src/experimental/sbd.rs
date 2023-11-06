@@ -231,7 +231,7 @@ impl Sbd {
                         k += 1;
                         pred
                     })
-                    .copied()
+                    .map(|&key| key - 1)
                     .unwrap_or(k)
             })
             .unwrap()
