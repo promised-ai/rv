@@ -164,8 +164,9 @@ impl ConjugatePrior<usize, Sbd> for Sb {
             .map(|(&x, &ix)| (x, post.dir.alphas[ix].ln() - ln_norm))
             .collect();
 
-        // ln (1/(1 + alpha))
-        let ln_f_new = (1.0 + alpha).recip().ln() - ln_norm;
+        // // ln (1/(1 + alpha))
+        // let ln_f_new = (1.0 + alpha).recip().ln() - ln_norm;
+        let ln_f_new = (alpha / (1.0 + alpha)).ln() - ln_norm;
 
         SbCache {
             ln_weights,
@@ -216,7 +217,7 @@ mod tests {
     #[test]
     fn rv_sbd_smoke() {
         let alpha = 0.5;
-        let prior = Sb::new(alpha, 1, None);
+        let prior = Sb::new(alpha, None);
         let sbd = Sbd::new(alpha, None).unwrap();
         // populate sbd
         (0..1).for_each(|x| {
@@ -230,7 +231,7 @@ mod tests {
     #[test]
     fn sbd_posterior_smoke() {
         let alpha = 0.5;
-        let prior = Sb::new(alpha, 1, None);
+        let prior = Sb::new(alpha, None);
         let mut stat = SbdSuffStat::new();
         // populate sbd
         (0..10_usize)
@@ -254,7 +255,7 @@ mod tests {
             (-0.763_394_023_914_272_2_f64).exp(),
         ];
         let alpha = 1.0;
-        let prior = Sb::new(alpha, 1, None);
+        let prior = Sb::new(alpha, None);
         let sbd =
             Sbd::from_canonical_weights(&ln_weights, alpha, None).unwrap();
         let ln_f = prior.ln_f(&sbd);
@@ -269,7 +270,7 @@ mod tests {
         let mut stat = SbdSuffStat::new();
         stat.observe_many(&data);
 
-        let prior = Sb::new(0.1, 1, None);
+        let prior = Sb::new(0.1, None);
 
         let mut rng = rand::thread_rng();
         let post = prior.posterior(&DataOrSuffStat::SuffStat(&stat));
@@ -302,7 +303,7 @@ mod tests {
 
         let stat = DataOrSuffStat::SuffStat(&st);
 
-        let prior = Sb::new(0.1, 1, None);
+        let prior = Sb::new(0.1, None);
 
         let ln_pp_0 =
             <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &0, &stat);
