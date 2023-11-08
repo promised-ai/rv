@@ -62,7 +62,6 @@ impl Rv<Sbd> for Sb {
                     (1.0, 0.0),
                     |(rm_mass, ln_f), w| {
                         let ln_f_b = beta.ln_f(&(w / rm_mass));
-                        // dbg!(&ln_f_b, &w, &rm_mass);
                         (rm_mass - w, ln_f + ln_f_b)
                     },
                 )
@@ -128,7 +127,7 @@ fn sbm_from_stat(alpha: f64, stat: &SbdSuffStat) -> f64 {
         stat.counts()
             .values()
             .map(|&ct| ct as f64)
-            .chain(std::iter::once(alpha))
+            .chain(std::iter::once(0.0))
             .collect(),
     );
 
@@ -154,7 +153,7 @@ impl ConjugatePrior<usize, Sbd> for Sb {
     fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::LnPpCache {
         let post = self.posterior(x);
         // we'll need the alpha for computing 1 / (1 + alpha), which is the
-        // expected liklelihood if a new class
+        // expected likelihood of a new class
         let alpha = post.dir.alphas().last().unwrap();
         // Need to norm the alphas to probabilities
         let ln_norm = post.dir.alphas().iter().sum::<f64>().ln();
@@ -236,14 +235,37 @@ mod tests {
         // populate sbd
         (0..10_usize)
             .cycle()
-            .take(100)
+            .take(1000)
             .for_each(|x| stat.observe(&x));
 
         let mut rng = rand::thread_rng();
         let post = prior.posterior(&DataOrSuffStat::SuffStat(&stat));
         let sbd = post.draw(&mut rng);
 
-        eprintln!("POST: {:?}", post);
+        assert_eq!(sbd.k(), 10);
+
+        eprintln!("POST: {:?}\n", post);
+        eprintln!("SBD: {:?}", sbd);
+    }
+
+    #[test]
+    fn sbd_posterior_smoke_2() {
+        let mut rng = rand::thread_rng();
+        let alpha = 0.5;
+        let prior = Sb::new(alpha, None);
+        let cat = Categorical::new(&[0.2, 0.5, 0.1, 0.2]).unwrap();
+        let xs: Vec<usize> = cat.sample(1_000, &mut rng);
+
+        let mut stat = SbdSuffStat::new();
+        xs.iter().for_each(|&x| stat.observe(&(x * 2)));
+
+        let mut rng = rand::thread_rng();
+        let post = prior.posterior(&DataOrSuffStat::SuffStat(&stat));
+        let sbd = post.draw(&mut rng);
+
+        assert_eq!(sbd.k(), 4);
+
+        eprintln!("POST: {:?}\n", post);
         eprintln!("SBD: {:?}", sbd);
     }
 
@@ -332,5 +354,94 @@ mod tests {
 
         let sum = ln_pp_0.exp() + ln_pp_3.exp() + ln_pp_4.exp() + ln_pp_6.exp();
         eprintln!("{sum}");
+    }
+
+    #[test]
+    fn sbd_vs_canonical_cat_logm_should_be_same() {
+        let alpha = 1.2;
+        let data: Vec<usize> = vec![0, 1, 1, 1, 1, 1, 2, 2, 2, 3];
+
+        let mut sbd_stat = SbdSuffStat::new();
+        sbd_stat.observe_many(&data);
+
+        let mut cat_stat = CategoricalSuffStat::new(5);
+        cat_stat.observe_many(&data);
+
+        let sb = Sb::new(alpha, None);
+        let dir = SymmetricDirichlet::new(alpha, 5).unwrap();
+
+        let logm_sbd = <Sb as ConjugatePrior<usize, Sbd>>::ln_m(
+            &sb,
+            &DataOrSuffStat::SuffStat(&sbd_stat),
+        );
+        let logm_cat =
+            <SymmetricDirichlet as ConjugatePrior<usize, Categorical>>::ln_m(
+                &dir,
+                &DataOrSuffStat::SuffStat(&cat_stat),
+            );
+
+        eprintln!("SBD vs CAT: {logm_sbd}, {logm_cat}");
+        assert::close(logm_sbd, logm_cat, 1e-10);
+    }
+
+    #[test]
+    fn sbd_vs_canonical_cat_logpp_should_be_same() {
+        let alpha = 1.2;
+        let data: Vec<usize> = vec![0, 1, 1, 1, 1, 1, 2, 2, 2, 3];
+
+        let mut sbd_stat = SbdSuffStat::new();
+        sbd_stat.observe_many(&data);
+
+        let mut cat_stat = CategoricalSuffStat::new(5);
+        cat_stat.observe_many(&data);
+
+        let sb = Sb::new(alpha, None);
+        let dir = SymmetricDirichlet::new(alpha, 5).unwrap();
+
+        for x in 0_usize..4 {
+            let logpp_sbd = <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(
+                &sb,
+                &x,
+                &DataOrSuffStat::SuffStat(&sbd_stat),
+            );
+            let logpp_cat = <SymmetricDirichlet as ConjugatePrior<
+                usize,
+                Categorical,
+            >>::ln_pp(
+                &dir, &x, &DataOrSuffStat::SuffStat(&cat_stat)
+            );
+
+            eprintln!("SBD vs CAT (ln_pp {x}): {logpp_sbd}, {logpp_cat}");
+            assert::close(logpp_sbd, logpp_cat, 1e-10);
+        }
+    }
+
+    #[test]
+    fn sbd_vs_canonical_cat_posterior() {
+        let alpha = 1.2;
+        let data: Vec<usize> = vec![0, 1, 1, 1, 1, 1, 2, 2, 2, 3];
+
+        let mut sbd_stat = SbdSuffStat::new();
+        sbd_stat.observe_many(&data);
+
+        let mut cat_stat = CategoricalSuffStat::new(5);
+        cat_stat.observe_many(&data);
+
+        let sb = Sb::new(alpha, None);
+        let dir = SymmetricDirichlet::new(alpha, 5).unwrap();
+
+        let sbd_post = sb.posterior(&DataOrSuffStat::SuffStat(&sbd_stat));
+        let cat_post = <SymmetricDirichlet as ConjugatePrior<
+            usize,
+            Categorical,
+        >>::posterior(
+            &dir, &DataOrSuffStat::SuffStat(&cat_stat)
+        );
+
+        assert_eq!(sbd_post.dir.alphas.len(), cat_post.alphas.len());
+
+        for (w1, w2) in sbd_post.dir.alphas.iter().zip(cat_post.alphas.iter()) {
+            assert::close(*w1, *w2, 1e-10);
+        }
     }
 }

@@ -17,6 +17,7 @@ use crate::traits::{HasSuffStat, Rv};
 pub enum SbdError {
     InvalidAlpha(f64),
     InvalidNumberOfWeights { n_weights: usize, n_entries: usize },
+    WeightsDoNotSumToOne { sum: f64 },
 }
 
 impl std::error::Error for SbdError {}
@@ -40,6 +41,9 @@ impl std::fmt::Display for SbdError {
                     "There should be one more weight than lookup entries. \
                     Given {n_weights}, but there are {n_entries} lookup entries",
                 )
+            }
+            Self::WeightsDoNotSumToOne { sum } => {
+                write!(f, "Weights do not sum to 1 ({sum})")
             }
         }
     }
@@ -144,9 +148,9 @@ impl Sbd {
                 n_entries,
             });
         }
-        let k = ln_weights.len() - 1;
+
         let inner = _Inner {
-            remaining_mass: ln_weights[k].exp(),
+            remaining_mass: ln_weights.last().unwrap().exp(),
             ln_weights,
             rev_lookup: lookup.iter().map(|(a, b)| (*b, *a)).collect(),
             lookup,
@@ -168,6 +172,10 @@ impl Sbd {
         alpha: f64,
         seed: Option<u64>,
     ) -> Result<Self, SbdError> {
+        let sum = weights.iter().sum::<f64>();
+        if (sum - 1.0).abs() > 1e-13 {
+            return Err(SbdError::WeightsDoNotSumToOne { sum });
+        }
         let ln_weights = weights.iter().map(|w| w.ln()).collect();
         Self::from_ln_weights_and_lookup(ln_weights, lookup, alpha, seed)
     }
@@ -250,13 +258,13 @@ impl Sbd {
     }
 
     fn extend(&self, x: usize) -> f64 {
-        let p: f64 = self
+        let b: f64 = self
             .inner
             .write()
             .map(|mut obj| self.beta.draw(&mut obj.rng))
             .unwrap();
         let rm_mass = self.inner.read().map(|obj| obj.remaining_mass).unwrap();
-        let w = rm_mass * p;
+        let w = rm_mass * b;
         let rm_mass = rm_mass - w;
 
         let ln_w = w.ln();
@@ -312,6 +320,12 @@ impl Rv<usize> for Sbd {
                 self.inner.read().map(|obj| obj.ln_weights[ix]).unwrap()
             }
             None => self.extend(*x),
+            // None => {
+            //     let alpha = self.alpha();
+            //     let rm = self.inner.read().unwrap().remaining_mass;
+            //     (rm * alpha / (1.0 + alpha)).ln()
+            //     // rm.ln()
+            // }
         }
     }
 
@@ -416,5 +430,28 @@ mod test {
             counter.entry(x).and_modify(|ct| *ct += 1).or_insert(1);
         }
         // eprintln!("{:?}", counter);
+    }
+
+    #[test]
+    fn repeatedly_compute_oob_lnf() {
+        let sbd = Sbd::new(0.5, None).unwrap();
+        assert_eq!(sbd.k(), 0);
+
+        sbd.ln_f(&2);
+        assert_eq!(sbd.k(), 1);
+
+        sbd.ln_f(&2);
+        sbd.ln_f(&2);
+        sbd.ln_f(&2);
+        sbd.ln_f(&2);
+        assert_eq!(sbd.k(), 1);
+
+        sbd.ln_f(&0);
+        assert_eq!(sbd.k(), 2);
+
+        sbd.ln_f(&0);
+        sbd.ln_f(&0);
+        sbd.ln_f(&0);
+        assert_eq!(sbd.k(), 2);
     }
 }
