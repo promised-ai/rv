@@ -52,16 +52,25 @@ pub fn ln_binom(n: f64, k: f64) -> f64 {
 }
 
 /// Safely compute `log(sum(exp(xs))`
+/// Streaming `logexp` implementation as described in [Sebastian Nowozin's blog](https://www.nowozin.net/sebastian/blog/streaming-log-sum-exp-computation.html)
 pub fn logsumexp(xs: &[f64]) -> f64 {
     if xs.is_empty() {
         panic!("Empty container");
     } else if xs.len() == 1 {
         xs[0]
     } else {
-        let maxval =
-            *xs.iter().max_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
+        let mut alpha = std::f64::NEG_INFINITY;
+        let mut r = 0.0;
+        for &x in xs {
+            if x <= alpha {
+                r += (x - alpha).exp();
+            } else {
+                r = r.mul_add((alpha - x).exp(), 1.0);
+                alpha = x;
+            }
+        }
 
-        xs.iter().fold(0.0, |acc, x| acc + (x - maxval).exp()).ln() + maxval
+        r.ln() + alpha
     }
 }
 
