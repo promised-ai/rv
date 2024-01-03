@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.16.1
+- Performance improvements in `misc::logsumexp`
+
 ## 0.16.0
 - Fix bug in `InvGaussianSuffStat`
 - Add `ln_f_stat` method to `HasSuffStat` trait. This method computes the log
