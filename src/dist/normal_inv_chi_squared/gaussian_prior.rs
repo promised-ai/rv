@@ -136,7 +136,7 @@ mod test {
     }
 
     fn post_params(
-        xs: &Vec<f64>,
+        xs: &[f64],
         m: f64,
         k: f64,
         v: f64,
@@ -164,7 +164,7 @@ mod test {
     // examples/dpgmm.rs) words with the NormalInvGamma prior, then we should be
     // good to go.
     fn alternate_ln_marginal(
-        xs: &Vec<f64>,
+        xs: &[f64],
         m: f64,
         k: f64,
         v: f64,
