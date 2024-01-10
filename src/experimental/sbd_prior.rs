@@ -83,9 +83,8 @@ impl Rv<Sbd> for SbPosterior {
 
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Sbd {
         let weights: Vec<f64> = self.dir.draw(rng);
-        Sbd::from_weights_and_lookup(
+        Sbd::from_weights(
             &weights,
-            self.lookup.clone(),
             self.alpha,
             Some(rng.gen()),
         )

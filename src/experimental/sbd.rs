@@ -82,10 +82,6 @@ impl From<Sbd> for SbdFmt {
 #[derive(Clone, Debug, PartialEq)]
 pub struct _Inner {
     remaining_mass: f64,
-    // Given a category, map the category key to the ln_weights index
-    // Note: Some functions rely on the ordered iteration of the BTreeMap
-    lookup: BTreeMap<usize, usize>,
-    rev_lookup: BTreeMap<usize, usize>,
     // the bin weights. the last entry is ln(remaining_mass)
     pub ln_weights: Vec<f64>,
     rng: rand_xoshiro::Xoshiro128Plus,
@@ -123,8 +119,6 @@ impl Sbd {
                 inner: Arc::new(RwLock::new(_Inner {
                     remaining_mass: 1.0,
                     ln_weights: vec![0.0], // ln(1)
-                    lookup: BTreeMap::new(),
-                    rev_lookup: BTreeMap::new(),
                     rng: seed.map_or_else(
                         Xoshiro128Plus::from_entropy,
                         Xoshiro128Plus::seed_from_u64,
@@ -134,26 +128,16 @@ impl Sbd {
         }
     }
 
-    pub fn from_ln_weights_and_lookup(
+    pub fn from_ln_weights(
         ln_weights: Vec<f64>,
-        lookup: BTreeMap<usize, usize>,
         alpha: f64,
         seed: Option<u64>,
     ) -> Result<Self, SbdError> {
         let n_weights = ln_weights.len();
-        let n_entries = lookup.len();
-        if n_weights != n_entries + 1 {
-            return Err(SbdError::InvalidNumberOfWeights {
-                n_weights,
-                n_entries,
-            });
-        }
 
         let inner = _Inner {
             remaining_mass: ln_weights.last().unwrap().exp(),
             ln_weights,
-            rev_lookup: lookup.iter().map(|(a, b)| (*b, *a)).collect(),
-            lookup,
             rng: seed.map_or_else(
                 Xoshiro128Plus::from_entropy,
                 Xoshiro128Plus::seed_from_u64,
@@ -166,9 +150,8 @@ impl Sbd {
         })
     }
 
-    pub fn from_weights_and_lookup(
+    pub fn from_weights(
         weights: &[f64],
-        lookup: BTreeMap<usize, usize>,
         alpha: f64,
         seed: Option<u64>,
     ) -> Result<Self, SbdError> {
@@ -177,7 +160,7 @@ impl Sbd {
             return Err(SbdError::WeightsDoNotSumToOne { sum });
         }
         let ln_weights = weights.iter().map(|w| w.ln()).collect();
-        Self::from_ln_weights_and_lookup(ln_weights, lookup, alpha, seed)
+        Self::from_ln_weights(ln_weights, alpha, seed)
     }
 
     pub fn from_canonical_weights(
@@ -192,8 +175,6 @@ impl Sbd {
             let inner = _Inner {
                 remaining_mass: weights[k],
                 ln_weights: weights.iter().map(|&w| w.ln()).collect(),
-                lookup: (0..k).map(|x| (x, x)).collect(),
-                rev_lookup: (0..k).map(|x| (x, x)).collect(),
                 rng: seed.map_or_else(
                     Xoshiro128Plus::from_entropy,
                     Xoshiro128Plus::seed_from_u64,
@@ -201,8 +182,6 @@ impl Sbd {
             };
 
             assert_eq!(inner.ln_weights.len(), k + 1);
-            assert_eq!(inner.lookup.len(), k);
-            assert_eq!(inner.rev_lookup.len(), k);
 
             Ok(Self {
                 beta: Beta::new_unchecked(1.0, alpha),
@@ -274,8 +253,6 @@ impl Sbd {
             .write()
             .map(|mut obj| {
                 obj.remaining_mass = rm_mass;
-                assert!(obj.lookup.insert(x, k).is_none());
-                obj.rev_lookup.insert(k, x);
                 obj.ln_weights
                     .last_mut()
                     .map(|last| *last = ln_w)
