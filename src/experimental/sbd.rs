@@ -286,23 +286,12 @@ impl HasSuffStat<usize> for Sbd {
 
 impl Rv<usize> for Sbd {
     fn ln_f(&self, x: &usize) -> f64 {
-        let ix_opt = self
-            .inner
-            .read()
-            .map(|obj| obj.lookup.get(x).copied())
-            .unwrap();
-
-        match ix_opt {
-            Some(ix) => {
-                self.inner.read().map(|obj| obj.ln_weights[ix]).unwrap()
-            }
-            None => self.extend(*x),
-            // None => {
-            //     let alpha = self.alpha();
-            //     let rm = self.inner.read().unwrap().remaining_mass;
-            //     (rm * alpha / (1.0 + alpha)).ln()
-            //     // rm.ln()
-            // }
+        if *x <= self.k() {
+            self.inner.read().map(|obj| obj.ln_weights[*x]).unwrap()
+        } else
+        // x > *self.k()
+        {
+            self.extend(*x)
         }
     }
 
