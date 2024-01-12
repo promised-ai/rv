@@ -288,9 +288,7 @@ impl Rv<usize> for Sbd {
     fn ln_f(&self, x: &usize) -> f64 {
         if *x <= self.k() {
             self.inner.read().map(|obj| obj.ln_weights[*x]).unwrap()
-        } else
-        // x > *self.k()
-        {
+        } else {
             self.extend(*x)
         }
     }
