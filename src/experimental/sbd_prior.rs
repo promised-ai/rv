@@ -134,6 +134,11 @@ fn sbm_from_stat(alpha: f64, stat: &SbdSuffStat) -> f64 {
     symdir.ln_m(&DataOrSuffStat::SuffStat::<usize, Categorical>(&stat))
 }
 
+// TEMP NOTE from Bax (added here by Chad): 
+// ln_weights in SbCache is the posterior predictive (it’s a lookup which we
+// believe is wrong), and ln_f_new is the likelihood of an unobserved category,
+// which is m * remaining_weight where m is the expected value of beta(1,
+// alpha)from the stick breaking process.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
