@@ -77,6 +77,8 @@ impl From<Sbd> for SbdFmt {
     }
 }
 
+// NOTE: We currently derive PartialEq, but this (we think) compares the
+// internal state of the RNGs, which is probably not what we want.
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
