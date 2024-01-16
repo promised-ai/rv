@@ -49,6 +49,8 @@ impl std::fmt::Display for SbdError {
     }
 }
 
+// We'd like to be able to serialize and deserialize Sbd, but serde can't handle
+// `Arc` or `RwLock`. So we use `SbdFmt` as an intermediate type.
 #[cfg(feature = "serde1")]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
