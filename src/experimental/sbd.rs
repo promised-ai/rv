@@ -261,65 +261,6 @@ impl Sbd {
             .unwrap()
     }
 
-    fn find_next_category(&self) -> usize {
-        let mut k: usize = 0;
-        self.inner
-            .read()
-            .map(|inner| {
-                inner
-                    .lookup
-                    .keys()
-                    .find(|&&key| {
-                        let pred = key > k;
-                        k += 1;
-                        pred
-                    })
-                    .map(|&key| key - 1)
-                    .unwrap_or(k)
-            })
-            .unwrap()
-    }
-
-    fn extend_until_mass_remains(&self, remaining_mass: f64) -> Vec<f64> {
-        let mut ln_ws = Vec::new();
-        loop {
-            let k = self.find_next_category();
-            let ln_w = self.extend(k);
-            ln_ws.push(ln_w);
-            if ln_w < remaining_mass {
-                return ln_ws;
-            }
-        }
-    }
-
-    fn extend(&self, x: usize) -> f64 {
-        let b: f64 = self
-            .inner
-            .write()
-            .map(|mut obj| self.beta.draw(&mut obj.rng))
-            .unwrap();
-        let rm_mass = self.inner.read().map(|obj| obj.remaining_mass).unwrap();
-        let w = rm_mass * b;
-        let rm_mass = rm_mass - w;
-
-        let ln_w = w.ln();
-        let k = self.k();
-
-        self.inner
-            .write()
-            .map(|mut obj| {
-                obj.remaining_mass = rm_mass;
-                obj.ln_weights
-                    .last_mut()
-                    .map(|last| *last = ln_w)
-                    .expect("empty ln_weights");
-                obj.ln_weights.push(rm_mass.ln());
-            })
-            .unwrap();
-
-        ln_w
-    }
-
     pub fn observed_values(&self) -> Vec<usize> {
         self.inner
             .read()
