@@ -176,6 +176,14 @@ impl Sbd {
         }
     }
 
+    pub fn update_inner<F, Ans>(&self, f: F) -> Ans 
+    where
+        F: FnOnce(&mut _Inner) -> Ans,
+    {
+        self.inner.write().map(|mut inner| f(&mut inner)).unwrap()
+    }
+
+
     pub fn from_ln_weights(
         ln_weights: Vec<f64>,
         alpha: f64,
