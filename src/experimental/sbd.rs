@@ -101,22 +101,21 @@ impl _Inner {
         self.ln_weights.len() - 1
     }
 
+    fn extend(&self, beta: Beta, x: usize) -> f64 {
+        let b: f64 = beta.draw(&mut self.rng);
+        let rm_mass = self.remaining_mass;
         let w = rm_mass * b;
         let rm_mass = rm_mass - w;
 
         let ln_w = w.ln();
         let k = self.k();
 
-        self.write()
-            .map(|mut obj| {
-                obj.remaining_mass = rm_mass;
-                obj.ln_weights
-                    .last_mut()
+        self.remaining_mass = rm_mass;
+        self.ln_weights
+            .last()
                     .map(|last| *last = ln_w)
                     .expect("empty ln_weights");
-                obj.ln_weights.push(rm_mass.ln());
-            })
-            .unwrap();
+        self.ln_weights.push(rm_mass.ln());
 
         ln_w
     }
