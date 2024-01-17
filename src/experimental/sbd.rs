@@ -96,12 +96,11 @@ impl _Inner {
         self.ln_weights.len() - 1
     }
 
-    fn extend(&self, x: usize) -> f64 {
-        let b: f64 = self
-            .write()
-            .map(|mut obj| self.beta.draw(&mut obj.rng))
-            .unwrap();
-        let rm_mass = self.inner.read().map(|obj| obj.remaining_mass).unwrap();
+    // Maybe this should be `num_cats` of similar?
+    pub fn k(&self) -> usize {
+        self.ln_weights.len() - 1
+    }
+
         let w = rm_mass * b;
         let rm_mass = rm_mass - w;
 
