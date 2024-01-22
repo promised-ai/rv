@@ -269,7 +269,7 @@ impl Rv<usize> for Sbd {
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
         let u: f64 = rng.gen();
 
-        let beta = self.beta;
+        let beta = self.beta.clone();
         self.with_inner(|inner| {
             let remaining_mass = inner.remaining_mass;
             let k = inner.num_cats();
