@@ -117,7 +117,7 @@ impl _Inner {
         ln_w
     }
 
-    fn extend_until<F>(&self, beta: &Beta, p: F) -> &Vec<f64>
+    fn extend_until<F>(&mut self, beta: &Beta, p: F) -> &Vec<f64>
     where
         F: Fn(& _Inner) -> bool,
     {
