@@ -260,10 +260,10 @@ impl HasSuffStat<usize> for Sbd {
 impl Rv<usize> for Sbd {
     fn ln_f(&self, x: &usize) -> f64 {
         self.with_inner(|inner| {
-            inner.extend_until(&self.beta, |inner| {
+            inner.extend_until(&self.beta, move |inner| {
                 inner.ln_weights.len() > *x + 1
-            })
         })[*x]
+        }).clone()
     }
          
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
