@@ -99,7 +99,7 @@ impl _Inner {
         self.ln_weights.len() - 1
     }
 
-    fn extend(&self, beta: &Beta) -> f64 {
+    fn extend(&mut self, beta: &Beta) -> f64 {
         let b: f64 = beta.draw(&mut self.rng);
         let rm_mass = self.remaining_mass;
         let w = rm_mass * b;
