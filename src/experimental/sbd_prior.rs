@@ -36,20 +36,19 @@ impl Sb {
 #[derive(Clone, Debug)]
 pub struct SbPosterior {
     alpha: f64,
-    lookup: BTreeMap<usize, usize>,
     dir: Dirichlet,
 }
 
 impl Rv<Sbd> for Sb {
     fn ln_f(&self, x: &Sbd) -> f64 {
-        // let k = x.k() + 1;
+        // let k = x.num_cats() + 1;
         // let symdir = SymmetricDirichlet::new_unchecked(self.alpha, k);
         // x.inner
         //     .read()
         //     .map(|obj| symdir.ln_f(&obj.ln_weights))
         //     .unwrap()
         //
-        let k = x.k();
+        let k = x.num_cats();
         if k == 0 {
             return 1.0;
         }
@@ -113,7 +112,7 @@ fn sbpost_from_stat(alpha: f64, stat: &SbdSuffStat) -> SbPosterior {
 
     assert_eq!(lookup.len() + 1, dir.alphas().len());
 
-    SbPosterior { alpha, lookup, dir }
+    SbPosterior { alpha, dir }
 }
 
 fn sbm_from_stat(alpha: f64, stat: &SbdSuffStat) -> f64 {
@@ -162,7 +161,6 @@ impl ConjugatePrior<usize, Sbd> for Sb {
         // Need to norm the alphas to probabilities
         let ln_norm = post.dir.alphas().iter().sum::<f64>().ln();
         let ln_weights = post
-            .lookup
             .iter()
             .map(|(&x, &ix)| (x, post.dir.alphas[ix].ln() - ln_norm))
             .collect();
@@ -246,7 +244,7 @@ mod tests {
         let post = prior.posterior(&DataOrSuffStat::SuffStat(&stat));
         let sbd = post.draw(&mut rng);
 
-        assert_eq!(sbd.k(), 10);
+        assert_eq!(sbd.num_cats(), 10);
 
         eprintln!("POST: {:?}\n", post);
         eprintln!("SBD: {:?}", sbd);
@@ -267,7 +265,7 @@ mod tests {
         let post = prior.posterior(&DataOrSuffStat::SuffStat(&stat));
         let sbd = post.draw(&mut rng);
 
-        assert_eq!(sbd.k(), 4);
+        assert_eq!(sbd.num_cats(), 4);
 
         eprintln!("POST: {:?}\n", post);
         eprintln!("SBD: {:?}", sbd);
