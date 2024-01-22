@@ -245,8 +245,6 @@ impl Sbd {
     pub fn alpha(&self) -> f64 {
         self.beta.beta()
     }
-
-
 }
 
 impl HasSuffStat<usize> for Sbd {
@@ -369,20 +367,16 @@ mod test {
         let sbd = Sbd::new(0.5, None).unwrap();
         assert_eq!(sbd.num_cats(), 0);
 
-        sbd.ln_f(&2);
-        assert_eq!(sbd.num_cats(), 1);
-
-        sbd.ln_f(&2);
-        sbd.ln_f(&2);
-        sbd.ln_f(&2);
-        sbd.ln_f(&2);
-        assert_eq!(sbd.num_cats(), 1);
-
         sbd.ln_f(&0);
+        assert_eq!(sbd.num_cats(), 1);
+
+        sbd.ln_f(&1);
         assert_eq!(sbd.num_cats(), 2);
 
-        sbd.ln_f(&0);
-        sbd.ln_f(&0);
+        sbd.ln_f(&1);
+        sbd.ln_f(&1);
+        assert_eq!(sbd.num_cats(), 2);
+
         sbd.ln_f(&0);
         assert_eq!(sbd.num_cats(), 2);
     }
