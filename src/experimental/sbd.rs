@@ -234,13 +234,19 @@ impl Sbd {
         }
     }
 
-    // pub fn p_unobserved(&self) -> f64 {
-    //     self.remaining_mass()
-    // }
+    pub fn num_cats(&self) -> usize {
+        self.with_inner(|inner| inner.num_cats())
+    }
+
+    pub fn p_unobserved(&self) -> f64 {
+        self.with_inner(|inner| inner.remaining_mass)
+    }
 
     pub fn alpha(&self) -> f64 {
         self.beta.beta()
     }
+
+
 }
 
 impl HasSuffStat<usize> for Sbd {
@@ -316,14 +322,14 @@ mod test {
         let mut rm_mass = sbd.p_unobserved();
         for x in 0..10 {
             let ln_f_1 = sbd.ln_f(&x);
-            let k = sbd.k();
+            let k = sbd.num_cats();
             assert!(rm_mass > sbd.p_unobserved());
             rm_mass = sbd.p_unobserved();
 
             let ln_f_2 = sbd.ln_f(&x);
 
             assert_eq!(ln_f_1, ln_f_2);
-            assert_eq!(k, sbd.k());
+            assert_eq!(k, sbd.num_cats());
         }
     }
 
@@ -331,16 +337,16 @@ mod test {
     fn static_ln_f_from_new() {
         let sbd = Sbd::new(1.0, None).unwrap();
 
-        assert_eq!(sbd.k(), 0);
+        assert_eq!(sbd.num_cats(), 0);
 
         let lnf0 = sbd.ln_f(&0_usize);
         assert::close(lnf0, sbd.ln_f(&0_usize), 1e-12);
 
-        assert_eq!(sbd.k(), 1);
+        assert_eq!(sbd.num_cats(), 1);
 
         let lnf1 = sbd.ln_f(&1_usize); // causes new category to form
         assert::close(lnf0, sbd.ln_f(&0_usize), 1e-12);
-        assert_eq!(sbd.k(), 2);
+        assert_eq!(sbd.num_cats(), 2);
     }
 
     #[test]
@@ -361,23 +367,23 @@ mod test {
     #[test]
     fn repeatedly_compute_oob_lnf() {
         let sbd = Sbd::new(0.5, None).unwrap();
-        assert_eq!(sbd.k(), 0);
+        assert_eq!(sbd.num_cats(), 0);
 
         sbd.ln_f(&2);
-        assert_eq!(sbd.k(), 1);
+        assert_eq!(sbd.num_cats(), 1);
 
         sbd.ln_f(&2);
         sbd.ln_f(&2);
         sbd.ln_f(&2);
         sbd.ln_f(&2);
-        assert_eq!(sbd.k(), 1);
+        assert_eq!(sbd.num_cats(), 1);
 
         sbd.ln_f(&0);
-        assert_eq!(sbd.k(), 2);
+        assert_eq!(sbd.num_cats(), 2);
 
         sbd.ln_f(&0);
         sbd.ln_f(&0);
         sbd.ln_f(&0);
-        assert_eq!(sbd.k(), 2);
+        assert_eq!(sbd.num_cats(), 2);
     }
 }
