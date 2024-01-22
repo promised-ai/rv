@@ -2,9 +2,7 @@ use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro128Plus;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
-use std::sync::Arc;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
 use super::sbd_stat::SbdSuffStat;
 use crate::dist::Beta;
@@ -101,7 +99,7 @@ impl _Inner {
         self.ln_weights.len() - 1
     }
 
-    fn extend(&self, beta: Beta, x: usize) -> f64 {
+    fn extend(&self, beta: &Beta) -> f64 {
         let b: f64 = beta.draw(&mut self.rng);
         let rm_mass = self.remaining_mass;
         let w = rm_mass * b;
@@ -113,8 +111,8 @@ impl _Inner {
         self.remaining_mass = rm_mass;
         self.ln_weights
             .last()
-                    .map(|last| *last = ln_w)
-                    .expect("empty ln_weights");
+            .map(|last| *last = ln_w)
+            .expect("empty ln_weights");
         self.ln_weights.push(rm_mass.ln());
 
         ln_w
@@ -145,11 +143,9 @@ pub struct Sbd {
 impl PartialEq<Sbd> for Sbd {
     fn eq(&self, other: &Sbd) -> bool {
         self.beta == other.beta
-            && self
-                .inner
-                .read()
-                .and_then(|lhs| other.inner.read().map(|rhs| *rhs == *lhs))
-                .unwrap()
+            && self.with_inner(|inner| {
+                other.with_inner(|other_inner| *inner == *other_inner)
+            })
     }
 }
 
@@ -172,13 +168,12 @@ impl Sbd {
         }
     }
 
-    pub fn update_inner<F, Ans>(&self, f: F) -> Ans 
+    pub fn with_inner<F, Ans>(&self, f: F) -> Ans
     where
         F: FnOnce(&mut _Inner) -> Ans,
     {
         self.inner.write().map(|mut inner| f(&mut inner)).unwrap()
     }
-
 
     pub fn from_ln_weights(
         ln_weights: Vec<f64>,
@@ -242,26 +237,12 @@ impl Sbd {
         }
     }
 
-    pub fn p_unobserved(&self) -> f64 {
-        self.inner.read().map(|obj| obj.remaining_mass).unwrap()
-    }
+    // pub fn p_unobserved(&self) -> f64 {
+    //     self.remaining_mass()
+    // }
 
     pub fn alpha(&self) -> f64 {
         self.beta.beta()
-    }
-
-    pub fn k(&self) -> usize {
-        self.inner
-            .read()
-            .map(|obj| obj.ln_weights.len() - 1)
-            .unwrap()
-    }
-
-    pub fn observed_values(&self) -> Vec<usize> {
-        self.inner
-            .read()
-            .map(|inner| inner.lookup.keys().copied().collect())
-            .unwrap()
     }
 }
 
@@ -279,57 +260,74 @@ impl HasSuffStat<usize> for Sbd {
 
 impl Rv<usize> for Sbd {
     fn ln_f(&self, x: &usize) -> f64 {
-        if *x <= self.k() {
-            self.inner.read().map(|obj| obj.ln_weights[*x]).unwrap()
-        } else {
-            self.extend(*x)
-        }
+        self.with_inner(|inner| {
+            inner.extend_until(&self.beta, |inner| {
+                inner.ln_weights.len() > *x + 1
+            })
+        })[*x]
     }
-
+         
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
         let u: f64 = rng.gen();
-        let remaining_mass =
-            self.inner.read().map(|inner| inner.remaining_mass).unwrap();
-        let k = self.k();
 
-        if u < 1.0 - remaining_mass {
-            let x = self
-                .inner
-                .read()
-                .map(|obj| ln_pflip(&obj.ln_weights[..k], 1, false, rng)[0])
-                .unwrap();
+        let beta = self.beta;
+        self.with_inner(|inner| {
+            let remaining_mass = inner.remaining_mass;
+            let k = inner.k();
 
-            self.inner
-                .read()
-                .map(|obj| {
-                    *obj.rev_lookup
-                        .get(&x)
-                        .ok_or_else(|| {
-                            eprintln!("No entry `{}` in lookup: {:?}", x, obj);
-                        })
-                        .unwrap()
-                })
-                .unwrap()
-        } else {
-            let ln_ws = self.extend_until_mass_remains(1.0 - u);
-            let ix = ln_pflip(&ln_ws, 1, false, rng)[0];
-            ix + k
-        }
+            if u < 1.0 - remaining_mass {
+                // TODO: Since we know the remaining mass, we can easily
+                // normalize without needing logsumexp
+                ln_pflip(&inner.ln_weights[..k], 1, false, rng)[0]
+            } else {
+                let ln_ws = inner.extend_until(&beta, |inner| {
+                    inner.remaining_mass <= 1.0 - u
+                });
+                let ix = ln_pflip(&ln_ws, 1, false, rng)[0];
+                ix + k
+            }
+        })
+
+        // let remaining_mass =
+        //     self.inner.read().map(|inner| inner.remaining_mass).unwrap();
+        // let k = self.k();
+
+        // if u < 1.0 - remaining_mass {
+        //     let x = self
+        //         .inner
+        //         .read()
+        //         .map(|obj| ln_pflip(&obj.ln_weights[..k], 1, false, rng)[0])
+        //         .unwrap();
+
+        //     self.inner
+        //         .read()
+        //         .map(|obj| {
+        //             *obj.get(&x)
+        //                 .ok_or_else(|| {
+        //                     eprintln!("No entry `{}` in lookup: {:?}", x, obj);
+        //                 })
+        //                 .unwrap()
+        //         })
+        //         .unwrap()
+        // } else {
+        //     let ln_ws = self.extend_until_mass_remains(1.0 - u);
+        //     let ix = ln_pflip(&ln_ws, 1, false, rng)[0];
+        //     ix + k
+        // }
     }
 }
 
 impl Mode<usize> for Sbd {
     fn mode(&self) -> Option<usize> {
-        let k = self.k();
-        Some(
-            self.inner
-                .read()
-                .map(|inner| {
-                    let ix = argmax(&inner.ln_weights[..k])[0];
-                    inner.rev_lookup[&ix]
-                })
-                .unwrap(),
-        )
+        let i_max = self.with_inner(|inner| {
+            // TODO: Make this more efficient
+            inner.extend_until(&self.beta, |inner| {
+                argmax(&inner.ln_weights)[0] < inner.ln_weights.len() - 1
+            });
+            argmax(&inner.ln_weights)[0]
+        });
+
+        Some(i_max)
     }
 }
 
