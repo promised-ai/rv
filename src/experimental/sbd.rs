@@ -105,13 +105,13 @@ impl _Inner {
         let rm_mass = rm_mass - w;
 
         let ln_w = w.ln();
-        let k = self.num_cats();
 
         self.remaining_mass = rm_mass;
-        self.ln_weights
-            .last()
-            .map(|last| *last = ln_w)
-            .expect("empty ln_weights");
+        if let Some(last) = self.ln_weights.last_mut() {
+            *last = ln_w;
+        } else {
+            panic!("empty ln_weights");
+        }
         self.ln_weights.push(rm_mass.ln());
 
         ln_w
