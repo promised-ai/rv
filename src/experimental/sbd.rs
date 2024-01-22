@@ -119,12 +119,12 @@ impl _Inner {
 
     fn extend_until<F>(&mut self, beta: &Beta, p: F) -> &Vec<f64>
     where
-        F: Fn(& _Inner) -> bool,
+        F: Fn(&_Inner) -> bool,
     {
         while !p(self) {
             self.extend(beta);
         }
-        &self.ln_weights        
+        &self.ln_weights
     }
 }
 
@@ -179,8 +179,6 @@ impl Sbd {
         alpha: f64,
         seed: Option<u64>,
     ) -> Result<Self, SbdError> {
-        let n_weights = ln_weights.len();
-
         let inner = _Inner {
             remaining_mass: ln_weights.last().unwrap().exp(),
             ln_weights,
@@ -262,10 +260,11 @@ impl Rv<usize> for Sbd {
         self.with_inner(|inner| {
             inner.extend_until(&self.beta, move |inner| {
                 inner.ln_weights.len() > *x + 1
-        })[*x]
-        }).clone()
+            })[*x]
+        })
+        .clone()
     }
-         
+
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
         let u: f64 = rng.gen();
 
