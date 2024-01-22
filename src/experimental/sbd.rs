@@ -94,8 +94,7 @@ impl _Inner {
         self.ln_weights.len() - 1
     }
 
-    // Maybe this should be `num_cats` of similar?
-    pub fn k(&self) -> usize {
+    pub fn num_cats(&self) -> usize {
         self.ln_weights.len() - 1
     }
 
@@ -106,7 +105,7 @@ impl _Inner {
         let rm_mass = rm_mass - w;
 
         let ln_w = w.ln();
-        let k = self.k();
+        let k = self.num_cats();
 
         self.remaining_mass = rm_mass;
         self.ln_weights
@@ -273,7 +272,7 @@ impl Rv<usize> for Sbd {
         let beta = self.beta;
         self.with_inner(|inner| {
             let remaining_mass = inner.remaining_mass;
-            let k = inner.k();
+            let k = inner.num_cats();
 
             if u < 1.0 - remaining_mass {
                 // TODO: Since we know the remaining mass, we can easily
