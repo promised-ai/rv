@@ -286,33 +286,6 @@ impl Rv<usize> for Sbd {
                 ix + k
             }
         })
-
-        // let remaining_mass =
-        //     self.inner.read().map(|inner| inner.remaining_mass).unwrap();
-        // let k = self.k();
-
-        // if u < 1.0 - remaining_mass {
-        //     let x = self
-        //         .inner
-        //         .read()
-        //         .map(|obj| ln_pflip(&obj.ln_weights[..k], 1, false, rng)[0])
-        //         .unwrap();
-
-        //     self.inner
-        //         .read()
-        //         .map(|obj| {
-        //             *obj.get(&x)
-        //                 .ok_or_else(|| {
-        //                     eprintln!("No entry `{}` in lookup: {:?}", x, obj);
-        //                 })
-        //                 .unwrap()
-        //         })
-        //         .unwrap()
-        // } else {
-        //     let ln_ws = self.extend_until_mass_remains(1.0 - u);
-        //     let ix = ln_pflip(&ln_ws, 1, false, rng)[0];
-        //     ix + k
-        // }
     }
 }
 
