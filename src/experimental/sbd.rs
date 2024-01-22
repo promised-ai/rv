@@ -120,16 +120,14 @@ impl _Inner {
         ln_w
     }
 
-    fn extend_until_mass_remains(&self, remaining_mass: f64) -> Vec<f64> {
-        let mut ln_ws = Vec::new();
-        loop {
-            let k = self.next_category();
-            let ln_w = self.extend(k);
-            ln_ws.push(ln_w);
-            if ln_w < remaining_mass {
-                return ln_ws;
-            }
+    fn extend_until<F>(&self, beta: &Beta, p: F) -> &Vec<f64>
+    where
+        F: Fn(& _Inner) -> bool,
+    {
+        while !p(self) {
+            self.extend(beta);
         }
+        &self.ln_weights        
     }
 }
 
