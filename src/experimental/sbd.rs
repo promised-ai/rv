@@ -266,7 +266,6 @@ impl Rv<usize> for Sbd {
                 inner.ln_weights.len() > *x + 1
             })[*x]
         })
-        .clone()
     }
 
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
@@ -285,7 +284,7 @@ impl Rv<usize> for Sbd {
                 let ln_ws = inner.extend_until(&beta, |inner| {
                     inner.remaining_mass <= 1.0 - u
                 });
-                let ix = ln_pflip(&ln_ws, 1, false, rng)[0];
+                let ix = ln_pflip(ln_ws, 1, false, rng)[0];
                 ix + k
             }
         })
@@ -308,7 +307,6 @@ impl Mode<usize> for Sbd {
 
 #[cfg(test)]
 mod test {
-    use approx::assert_relative_eq;
     use rand::SeedableRng;
     use std::collections::HashMap;
 
@@ -342,7 +340,7 @@ mod test {
 
         assert_eq!(sbd.num_cats(), 1);
 
-        let lnf1 = sbd.ln_f(&1_usize); // causes new category to form
+        let _lnf1 = sbd.ln_f(&1_usize); // causes new category to form
         assert::close(lnf0, sbd.ln_f(&0_usize), 1e-12);
         assert_eq!(sbd.num_cats(), 2);
     }
