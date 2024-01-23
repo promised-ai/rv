@@ -455,7 +455,7 @@ where
     }
 }
 
-macro_rules! continuous_uv_mean_and_var {
+macro_rules! uv_mean_and_var {
     ($kind: ty) => {
         impl<Fx> Mean<$kind> for Mixture<Fx>
         where
@@ -476,7 +476,7 @@ macro_rules! continuous_uv_mean_and_var {
         // https://stats.stackexchange.com/a/16609/36044
         impl<Fx> Variance<$kind> for Mixture<Fx>
         where
-            Fx: ContinuousDistr<$kind> + Mean<$kind> + Variance<$kind>,
+            Fx: Mean<$kind> + Variance<$kind>,
         {
             fn variance(&self) -> Option<$kind> {
                 let mut p1: f64 = 0.0;
@@ -504,8 +504,8 @@ macro_rules! continuous_uv_mean_and_var {
     };
 }
 
-continuous_uv_mean_and_var!(f32);
-continuous_uv_mean_and_var!(f64);
+uv_mean_and_var!(f32);
+uv_mean_and_var!(f64);
 
 #[cfg(feature = "serde1")]
 impl<Fx> Serialize for Mixture<Fx>
@@ -1450,4 +1450,36 @@ mod tests {
             assert!(0.0 < jsd);
         }
     }
+
+    macro_rules! mm_unit_variance {
+        ($distr: ident, $f: expr) => {
+            mod $distr {
+                use super::*;
+                use $crate::dist::$distr::*;
+
+                #[test]
+                fn unit_variance() {
+                    let f1 = $f.unwrap();
+                    let f2 = $f.unwrap();
+
+                    let v1: f64 = f1.variance().unwrap();
+
+                    let mm =
+                        $crate::dist::Mixture::uniform(vec![f1, f2]).unwrap();
+
+                    let v2: f64 = mm.variance().unwrap();
+
+                    assert::close(v1, v2, 1E-12);
+                }
+            }
+        };
+    }
+
+    mm_unit_variance!(beta, Beta::new(1.5, 2.3));
+    mm_unit_variance!(beta_binom, BetaBinomial::new(20, 1.5, 2.3));
+    mm_unit_variance!(chi_squared, ChiSquared::new(3.2));
+    mm_unit_variance!(exponential, Exponential::new(4.3));
+    mm_unit_variance!(gamma, Gamma::new(2.1, 1.5));
+    mm_unit_variance!(gaussian, Gaussian::new(-2.0, 1.0));
+    mm_unit_variance!(poisson, Poisson::new(7.21));
 }
