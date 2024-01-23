@@ -45,6 +45,7 @@ mod pareto;
 mod poisson;
 #[cfg(feature = "datum")]
 mod product;
+mod reciprocal;
 mod scaled_inv_chi_squared;
 mod skellam;
 mod students_t;
@@ -53,6 +54,7 @@ mod vonmises;
 #[cfg(feature = "arraydist")]
 mod wishart;
 
+pub use self::reciprocal::{Reciprocal, ReciprocalError};
 pub use bernoulli::{Bernoulli, BernoulliError};
 pub use beta::{Beta, BetaError};
 pub use beta_binom::{BetaBinomial, BetaBinomialError};
