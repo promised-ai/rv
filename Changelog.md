@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.16.3
+- Implement `Variance<f64>`for mixture models whose component distribution type
+  also implements `Variance<f64>` and `Mean<f64>`.
+- Implement `Variance<f32>`for mixture models whose component distribution type
+  also implements `Variance<f32>` and `Mean<f32>`.
+
+## 0.16.2
+- Fix edge case in `misc::logsumexp` that would return `NaN` if the first value
+  in the slice was `-inf`.
+
 ## 0.16.1
 - Performance improvements in `misc::logsumexp`
 
