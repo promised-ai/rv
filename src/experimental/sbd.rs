@@ -169,6 +169,13 @@ impl Sbd {
 
     pub fn with_inner<F, Ans>(&self, f: F) -> Ans
     where
+        F: FnOnce(&_Inner) -> Ans,
+    {
+        self.inner.write().map(|inner| f(&inner)).unwrap()
+    }
+
+    pub fn with_inner_mut<F, Ans>(&self, f: F) -> Ans
+    where
         F: FnOnce(&mut _Inner) -> Ans,
     {
         self.inner.write().map(|mut inner| f(&mut inner)).unwrap()
@@ -261,18 +268,27 @@ impl HasSuffStat<usize> for Sbd {
 
 impl Rv<usize> for Sbd {
     fn ln_f(&self, x: &usize) -> f64 {
-        self.with_inner(|inner| {
-            inner.extend_until(&self.beta, move |inner| {
-                inner.ln_weights.len() > *x + 1
-            })[*x]
-        })
+        if self.with_inner(|inner| {
+            inner.num_cats() > *x
+        }) {
+            self.with_inner(|inner| {
+                inner.ln_weights[*x]
+            })
+        }
+        else {
+            self.with_inner_mut(|inner| {
+                inner.extend_until(&self.beta, move |inner| {
+                    inner.num_cats() > *x
+                })[*x]
+            })
+        }
     }
 
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
         let u: f64 = rng.gen();
 
         let beta = self.beta.clone();
-        self.with_inner(|inner| {
+        self.with_inner_mut(|inner| {
             let remaining_mass = inner.remaining_mass;
             let k = inner.num_cats();
 
@@ -293,7 +309,7 @@ impl Rv<usize> for Sbd {
 
 impl Mode<usize> for Sbd {
     fn mode(&self) -> Option<usize> {
-        let i_max = self.with_inner(|inner| {
+        let i_max = self.with_inner_mut(|inner| {
             // TODO: Make this more efficient
             inner.extend_until(&self.beta, |inner| {
                 argmax(&inner.ln_weights)[0] < inner.ln_weights.len() - 1
