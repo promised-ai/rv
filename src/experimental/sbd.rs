@@ -284,6 +284,21 @@ impl Rv<usize> for Sbd {
         }
     }
 
+    /// Alternate option:
+    // fn ln_f(&self, x: &usize) -> f64 {
+    //     self.with_inner(|inner| {
+    //         if inner.num_cats() > *x {
+    //             inner.ln_weights[*x]
+    //         } else {
+    //             self.with_inner_mut(|inner| {
+    //                 inner.extend_until(&self.beta, move |inner| {
+    //                     inner.num_cats() > *x
+    //                 })[*x]
+    //             })
+    //         }
+    //     })
+    // }
+
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
         let u: f64 = rng.gen();
 
