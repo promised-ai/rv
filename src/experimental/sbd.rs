@@ -171,7 +171,7 @@ impl Sbd {
     where
         F: FnOnce(&_Inner) -> Ans,
     {
-        self.inner.write().map(|inner| f(&inner)).unwrap()
+        self.inner.read().map(|inner| f(&inner)).unwrap()
     }
 
     pub fn with_inner_mut<F, Ans>(&self, f: F) -> Ans
