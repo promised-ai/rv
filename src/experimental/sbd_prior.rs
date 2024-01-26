@@ -41,32 +41,33 @@ pub struct SbPosterior {
 
 impl Rv<Sbd> for Sb {
     fn ln_f(&self, x: &Sbd) -> f64 {
-        // let k = x.num_cats() + 1;
-        // let symdir = SymmetricDirichlet::new_unchecked(self.alpha, k);
+        unimplemented!("Sb::ln_f")
+        // // let k = x.num_cats() + 1;
+        // // let symdir = SymmetricDirichlet::new_unchecked(self.alpha, k);
+        // // x.inner
+        // //     .read()
+        // //     .map(|obj| symdir.ln_f(&obj.ln_weights))
+        // //     .unwrap()
+        // //
+        // let k = x.num_cats();
+        // if k == 0 {
+        //     return 1.0;
+        // }
+
+        // let beta = Beta::new_unchecked(1.0, self.alpha);
         // x.inner
         //     .read()
-        //     .map(|obj| symdir.ln_f(&obj.ln_weights))
+        //     .map(|inner| {
+        //         inner.ln_weights.iter().take(k).map(|&lnw| lnw.exp()).fold(
+        //             (1.0, 0.0),
+        //             |(rm_mass, ln_f), w| {
+        //                 let ln_f_b = beta.ln_f(&(w / rm_mass));
+        //                 (rm_mass - w, ln_f + ln_f_b)
+        //             },
+        //         )
+        //     })
         //     .unwrap()
-        //
-        let k = x.num_cats();
-        if k == 0 {
-            return 1.0;
-        }
-
-        let beta = Beta::new_unchecked(1.0, self.alpha);
-        x.inner
-            .read()
-            .map(|inner| {
-                inner.ln_weights.iter().take(k).map(|&lnw| lnw.exp()).fold(
-                    (1.0, 0.0),
-                    |(rm_mass, ln_f), w| {
-                        let ln_f_b = beta.ln_f(&(w / rm_mass));
-                        (rm_mass - w, ln_f + ln_f_b)
-                    },
-                )
-            })
-            .unwrap()
-            .1
+        //     .1
     }
 
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Sbd {
