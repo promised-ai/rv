@@ -52,16 +52,26 @@ pub fn ln_binom(n: f64, k: f64) -> f64 {
 }
 
 /// Safely compute `log(sum(exp(xs))`
+/// Streaming `logexp` implementation as described in [Sebastian Nowozin's blog](https://www.nowozin.net/sebastian/blog/streaming-log-sum-exp-computation.html)
 pub fn logsumexp(xs: &[f64]) -> f64 {
     if xs.is_empty() {
         panic!("Empty container");
     } else if xs.len() == 1 {
         xs[0]
     } else {
-        let maxval =
-            *xs.iter().max_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
+        let (alpha, r) =
+            xs.iter()
+                .fold((std::f64::NEG_INFINITY, 0.0), |(alpha, r), &x| {
+                    if x == std::f64::NEG_INFINITY {
+                        (alpha, r)
+                    } else if x <= alpha {
+                        (alpha, r + (x - alpha).exp())
+                    } else {
+                        (x, r.mul_add((alpha - x).exp(), 1.0))
+                    }
+                });
 
-        xs.iter().fold(0.0, |acc, x| acc + (x - maxval).exp()).ln() + maxval
+        r.ln() + alpha
     }
 }
 
@@ -613,6 +623,22 @@ mod tests {
     fn logsumexp_should_panic_on_empty() {
         let xs: Vec<f64> = Vec::new();
         logsumexp(&xs);
+    }
+
+    #[test]
+    fn logsumexp_leading_neginf() {
+        let inf = std::f64::INFINITY;
+        let weights = vec![
+            -inf,
+            -210.14873879197316,
+            -818.1043044601643,
+            -1269.0480185226445,
+            -2916.862476271387,
+            -inf,
+        ];
+
+        let lse = logsumexp(&weights);
+        assert::close(lse, -210.14873879197316, TOL);
     }
 
     #[test]
