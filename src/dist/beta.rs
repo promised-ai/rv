@@ -208,7 +208,8 @@ impl Beta {
     /// Set alpha without input validation
     #[inline]
     pub fn set_alpha_unchecked(&mut self, alpha: f64) {
-        self.alpha = alpha
+        self.alpha = alpha;
+        self.ln_beta_ab = OnceLock::new();
     }
 
     /// Get the beta parameter
@@ -263,7 +264,8 @@ impl Beta {
     /// Set beta without input validation
     #[inline]
     pub fn set_beta_unchecked(&mut self, beta: f64) {
-        self.beta = beta
+        self.beta = beta;
+        self.ln_beta_ab = OnceLock::new();
     }
 
     /// Evaluate or fetch cached ln(a*b)
@@ -744,5 +746,67 @@ mod tests {
             <Beta as HasSuffStat<f64>>::ln_f_stat(&beta, &stat);
 
         assert::close(ln_f_base, ln_f_stat, 1e-12);
+    }
+
+    #[test]
+    fn set_alpha() {
+        let mut rng = rand::thread_rng();
+
+        for _ in 0..100 {
+            let a1 = rng.gen::<f64>();
+            let b1 = rng.gen::<f64>();
+            let mut beta1 = Beta::new(a1, b1).unwrap();
+
+            // Any value in the unit interval
+            let x: f64 = rng.gen();
+
+            // Evaluate the pdf to force computation of `ln_beta_ab`
+            let _ = beta1.pdf(&x);
+
+            // Next we'll `set_alpha` to a2, and compare with a fresh Beta
+            let a2 = rng.gen::<f64>();
+
+            // Setting the new values
+            beta1.set_alpha(a2).unwrap();
+
+            // ... and here's the fresh version
+            let beta2 = Beta::new(a2, b1).unwrap();
+
+            let pdf_1 = beta1.ln_f(&x);
+            let pdf_2 = beta2.ln_f(&x);
+
+            assert::close(pdf_1, pdf_2, 1e-14);
+        }
+    }
+
+    #[test]
+    fn set_beta() {
+        let mut rng = rand::thread_rng();
+
+        for _ in 0..100 {
+            let a1 = rng.gen::<f64>();
+            let b1 = rng.gen::<f64>();
+            let mut beta1 = Beta::new(a1, b1).unwrap();
+
+            // Any value in the unit interval
+            let x: f64 = rng.gen();
+
+            // Evaluate the pdf to force computation of `ln_beta_ab`
+            let _ = beta1.pdf(&x);
+
+            // Next we'll `set_beta` to b2, and compare this with a fresh Beta
+            let b2 = rng.gen::<f64>();
+
+            // Setting the new values
+            beta1.set_beta(b2).unwrap();
+
+            // ... and here's the fresh version
+            let beta2 = Beta::new(a1, b2).unwrap();
+
+            let pdf_1 = beta1.ln_f(&x);
+            let pdf_2 = beta2.ln_f(&x);
+
+            assert::close(pdf_1, pdf_2, 1e-14);
+        }
     }
 }
