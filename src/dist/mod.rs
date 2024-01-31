@@ -49,6 +49,7 @@ mod scaled_inv_chi_squared;
 mod skellam;
 mod students_t;
 mod uniform;
+mod unit_powerlaw;
 mod vonmises;
 #[cfg(feature = "arraydist")]
 mod wishart;
@@ -99,6 +100,7 @@ pub use scaled_inv_chi_squared::{
 pub use skellam::{Skellam, SkellamError};
 pub use students_t::{StudentsT, StudentsTError};
 pub use uniform::{Uniform, UniformError};
+pub use unit_powerlaw::{UnitPowerLaw, UnitPowerLawError};
 pub use vonmises::{VonMises, VonMisesError};
 #[cfg(feature = "arraydist")]
 pub use wishart::{InvWishart, InvWishartError};
