@@ -10,7 +10,7 @@ keywords = ["Probability", "Statistics", "Bayesian", "Machine-learning"]
 categories = ["science"]
 edition = "2021"
 include = ["README.md", "src/**/*", "benches/*", "Cargo.toml"]
-rust-version = "1.70"
+rust-version = "1.72"
 
 [badges]
 gitlab = { repository = "baxe/rv", tag = "v0.16.0" }

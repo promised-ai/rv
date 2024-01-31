@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.16.4
+- Bump min rust version to 1.72
 - Fix bug in `dist::Beta` that sometimes resulted in invalid cache setting
   `alpha`or `beta`.
 - Add `set_a` and `set_b` methods to `dist::Uniform`

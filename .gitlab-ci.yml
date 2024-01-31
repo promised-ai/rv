@@ -20,14 +20,14 @@ rustfmt:
 
 cargo-deny:
   stage: pedantry
-  image: "rust:1.70"
+  image: "rust:1.72"
   script:
     - cargo install --locked cargo-deny
     - cargo deny check
 
 clippy:
   stage: pedantry
-  image: "rust:1.70"
+  image: "rust:1.72"
   script:
     - rustup component add clippy
     - sed -i 's/\!\[warn/\!\[deny/' src/lib.rs  # deny lints
@@ -35,7 +35,7 @@ clippy:
 
 test:features:
   stage: test
-  image: rust:1.70
+  image: rust:1.72
   script:
     - cargo install cargo-hack --locked
     - cargo hack --feature-powerset check
@@ -46,6 +46,6 @@ bench:cargo-stable:
   stage: bench
   only:
     - master
-  image: "rust:1.70"
+  image: "rust:1.72"
   script:
     - cargo bench --no-run --features arraydist
