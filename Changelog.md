@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.16.4
+- Fix bug in `dist::Beta` that sometimes resulted in invalid cache setting
+  `alpha`or `beta`.
+- Add `set_a` and `set_b` methods to `dist::Uniform`
+
 ## 0.16.3
 - Implement `Variance<f64>`for mixture models whose component distribution type
   also implements `Variance<f64>` and `Mean<f64>`.

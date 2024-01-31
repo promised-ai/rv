@@ -96,6 +96,24 @@ impl Uniform {
         self.a
     }
 
+    /// Set the value of a
+    pub fn set_a(&mut self, a: f64) -> Result<(), UniformError> {
+        if !a.is_finite() {
+            Err(UniformError::ANotFinite { a })
+        } else if a >= self.b {
+            Err(UniformError::InvalidInterval { a, b: self.b })
+        } else {
+            self.set_a_unchecked(a);
+            Ok(())
+        }
+    }
+
+    /// Set the value of a without checking if a is valid
+    pub fn set_a_unchecked(&mut self, a: f64) {
+        self.lnf = OnceLock::new();
+        self.a = a
+    }
+
     /// Get the upper bound, b
     ///
     /// # Example
@@ -108,6 +126,24 @@ impl Uniform {
     #[inline]
     pub fn b(&self) -> f64 {
         self.b
+    }
+
+    /// Set the value of b
+    pub fn set_b(&mut self, b: f64) -> Result<(), UniformError> {
+        if !b.is_finite() {
+            Err(UniformError::BNotFinite { b })
+        } else if self.a >= b {
+            Err(UniformError::InvalidInterval { a: self.a, b })
+        } else {
+            self.set_b_unchecked(b);
+            Ok(())
+        }
+    }
+
+    /// Set the value of b without checking if b is valid
+    pub fn set_b_unchecked(&mut self, b: f64) {
+        self.lnf = OnceLock::new();
+        self.b = b
     }
 
     #[inline]
