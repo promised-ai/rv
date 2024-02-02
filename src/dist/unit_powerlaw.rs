@@ -26,7 +26,7 @@ use std::sync::OnceLock;
 /// use rv::prelude::*;
 ///
 /// // A prior that encodes our strong belief that coins are fair:
-/// let powlaw = UnitPowerLaw::new(5.0, 5.0).unwrap();
+/// let powlaw = UnitPowerLaw::new(5.0).unwrap();
 ///
 /// // The posterior predictive probability that a coin will come up heads given
 /// // no new observations.
@@ -79,7 +79,7 @@ impl UnitPowerLaw {
     /// # Example
     ///
     /// ```rust
-    /// # use rv::powlaw::UnitPowerLaw;
+    /// # use rv::unit_powerlaw::UnitPowerLaw;
     /// // Uniform
     /// let powlaw_unif = UnitPowerLaw::new(1.0, 1.0);
     /// assert!(powlaw_unif.is_ok());
@@ -121,7 +121,7 @@ impl UnitPowerLaw {
     /// # Example
     ///
     /// ```rust
-    /// # use rv::powlaw::UnitPowerLaw;
+    /// # use rv::unit_powerlaw::UnitPowerLaw;
     /// let powlaw = UnitPowerLaw::uniform();
     /// assert_eq!(powlaw, UnitPowerLaw::new(1.0, 1.0).unwrap());
     /// ```
@@ -140,7 +140,7 @@ impl UnitPowerLaw {
     // /// # Example
     // ///
     // /// ```rust
-    // /// # use rv::powlaw::UnitPowerLaw;
+    // /// # use rv::unit_powerlaw::UnitPowerLaw;
     // /// let powlaw = UnitPowerLaw::jeffreys();
     // /// assert_eq!(powlaw, UnitPowerLaw::new(0.5, 0.5).unwrap());
     // /// ```
@@ -158,7 +158,7 @@ impl UnitPowerLaw {
     /// # Example
     ///
     /// ```rust
-    /// # use rv::powlaw::UnitPowerLaw;
+    /// # use rv::unit_powerlaw::UnitPowerLaw;
     /// let powlaw = UnitPowerLaw::new(1.0, 5.0).unwrap();
     /// assert_eq!(powlaw.alpha(), 1.0);
     /// ```
@@ -172,7 +172,7 @@ impl UnitPowerLaw {
     /// # Example
     ///
     /// ```rust
-    /// # use rv::powlaw::UnitPowerLaw;
+    /// # use rv::unit_powerlaw::UnitPowerLaw;
     /// let mut powlaw = UnitPowerLaw::new(1.0, 5.0).unwrap();
     ///
     /// powlaw.set_alpha(2.0).unwrap();
@@ -182,7 +182,7 @@ impl UnitPowerLaw {
     /// Will error for invalid values
     ///
     /// ```rust
-    /// # use rv::powlaw::UnitPowerLaw;
+    /// # use rv::unit_powerlaw::UnitPowerLaw;
     /// # let mut powlaw = UnitPowerLaw::new(1.0, 5.0).unwrap();
     /// assert!(powlaw.set_alpha(0.1).is_ok());
     /// assert!(powlaw.set_alpha(0.0).is_err());
