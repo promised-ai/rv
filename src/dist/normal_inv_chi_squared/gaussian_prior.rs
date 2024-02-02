@@ -180,7 +180,7 @@ mod test {
                     (v * s2).ln(),
                     0.5_f64.mul_add(
                         (k / kn).ln(),
-                        ln_gammafn(vn / 2.).ln_gamma().0 - (v / 2.).0,
+                        ln_gammafn(vn / 2.) - ln_gammafn(v / 2.),
                     ),
                 ),
             ),
