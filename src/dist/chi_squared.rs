@@ -5,9 +5,10 @@ use serde::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
-use special::Gamma as _;
+use special::Gamma;
 use std::f64::consts::LN_2;
 use std::fmt;
+use crate::misc::ln_gammafn;
 
 /// [Χ<sup>2</sup> distribution](https://en.wikipedia.org/wiki/Chi-squared_distribution)
 /// Χ<sup>2</sup>(k).
@@ -131,7 +132,7 @@ macro_rules! impl_traits {
                 let xf = f64::from(*x);
                 // TODO: cache (k2 - LN_2 - k2.ln_gamma().0)
                 k2.mul_add(-LN_2, (k2 - 1.0).mul_add(xf.ln(), -xf / 2.0))
-                    - k2.ln_gamma().0
+                    - ln_gammafn(k2)
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {

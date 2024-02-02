@@ -5,8 +5,9 @@ use serde::{Deserialize, Serialize};
 use crate::data::InvGammaSuffStat;
 use crate::impl_display;
 use crate::traits::*;
+use crate::misc::ln_gammafn;
 use rand::Rng;
-use special::Gamma as _;
+use special::Gamma as GammaFn;
 use std::fmt;
 
 /// [Inverse gamma distribution](https://en.wikipedia.org/wiki/Inverse-gamma_distribution)
@@ -209,7 +210,7 @@ macro_rules! impl_traits {
                 (self.shape + 1.0).mul_add(
                     -xf.ln(),
                     self.shape
-                        .mul_add(self.scale.ln(), -self.shape.ln_gamma().0),
+                        .mul_add(self.scale.ln(), -ln_gammafn(self.shape)),
                 ) - (self.scale / xf)
             }
 
@@ -266,7 +267,7 @@ macro_rules! impl_traits {
             fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
                 let n = stat.n() as f64;
                 let ln_beta = self.scale.ln();
-                let ln_gamma_alpha = self.shape.ln_gamma().0;
+                let ln_gamma_alpha = ln_gammafn(self.shape);
                 let t1 = n * self.shape.mul_add(ln_beta, -ln_gamma_alpha);
                 let t2 = (-self.shape - 1.0) * stat.sum_ln_x();
                 let t3 = self.scale * stat.sum_inv_x();
@@ -293,7 +294,7 @@ impl Entropy for InvGamma {
     fn entropy(&self) -> f64 {
         (1.0 + self.shape).mul_add(
             -self.shape.digamma(),
-            self.shape + self.scale.ln() + self.shape.ln_gamma().0,
+            self.shape + self.scale.ln() + ln_gammafn(self.shape),
         )
     }
 }

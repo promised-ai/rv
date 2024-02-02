@@ -7,7 +7,7 @@ use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
 use special::Beta as _;
-use special::Gamma as _;
+use special::Gamma as GammaFn;
 use std::f64;
 use std::fmt;
 use std::sync::OnceLock;

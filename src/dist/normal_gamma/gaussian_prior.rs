@@ -1,8 +1,6 @@
 use std::collections::BTreeMap;
 use std::f64::consts::LN_2;
 
-use special::Gamma as SGamma;
-
 use crate::consts::*;
 use crate::data::{
     extract_stat, extract_stat_then, DataOrSuffStat, GaussianSuffStat,
@@ -11,16 +9,17 @@ use crate::dist::{Gaussian, NormalGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::test::GewekeTestable;
 use crate::traits::*;
+use crate::misc::ln_gammafn;
 
 #[inline]
 fn ln_z(r: f64, s: f64, v: f64) -> f64 {
     // This is what is should be in clearer, normal, operations
     // (v + 1.0) / 2.0 * LN_2 + HALF_LN_PI - 0.5 * r.ln() - (v / 2.0) * s.ln()
-    //     + (v / 2.0).ln_gamma().0
+    //     + GammaFn::ln_gamma(v / 2.0).0
     // ... and here is what is is when we use mul_add to reduce rounding errors
     let half_v = 0.5 * v;
     (half_v + 0.5).mul_add(LN_2, HALF_LN_PI)
-        - 0.5_f64.mul_add(r.ln(), half_v.mul_add(s.ln(), -half_v.ln_gamma().0))
+        - 0.5_f64.mul_add(r.ln(), half_v.mul_add(s.ln(), -ln_gammafn(half_v)))
 }
 
 fn posterior_from_stat(

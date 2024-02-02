@@ -1,7 +1,5 @@
 use std::collections::BTreeMap;
 
-use special::Gamma as _;
-
 use crate::consts::HALF_LN_2PI;
 use crate::data::{
     extract_stat, extract_stat_then, DataOrSuffStat, GaussianSuffStat,
@@ -10,11 +8,12 @@ use crate::dist::{Gaussian, NormalInvGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::test::GewekeTestable;
 use crate::traits::*;
+use crate::misc::ln_gammafn;
 
 #[inline]
 fn ln_z(v: f64, a: f64, b: f64) -> f64 {
     // -(a * b.ln() - 0.5 * v.ln() - a.ln_gamma().0)
-    let p1 = v.ln().mul_add(0.5, a.ln_gamma().0);
+    let p1 = v.ln().mul_add(0.5, ln_gammafn(a));
     -b.ln().mul_add(a, -p1)
 }
 

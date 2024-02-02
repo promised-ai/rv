@@ -1,5 +1,5 @@
 use rand::Rng;
-use special::Gamma as SGamma;
+use special::Gamma as GammaFn;
 
 use crate::data::{extract_stat_then, CategoricalDatum, CategoricalSuffStat};
 use crate::dist::{Categorical, Dirichlet, SymmetricDirichlet};
@@ -40,8 +40,8 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     #[inline]
     fn ln_m_cache(&self) -> Self::LnMCache {
         let sum_alpha = self.alpha() * self.k() as f64;
-        let a = sum_alpha.ln_gamma().0;
-        let d = self.alpha().ln_gamma().0 * self.k() as f64;
+        let a = GammaFn::ln_gamma(sum_alpha).0;
+        let d = GammaFn::ln_gamma(self.alpha()).0 * self.k() as f64;
         a - d
     }
 
@@ -57,9 +57,9 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
             || CategoricalSuffStat::new(self.k()),
             |stat: CategoricalSuffStat| {
                 // terms
-                let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
+                let b = GammaFn::ln_gamma(sum_alpha + stat.n() as f64).0;
                 let c = stat.counts().iter().fold(0.0, |acc, &ct| {
-                    acc + (self.alpha() + ct).ln_gamma().0
+                    acc + GammaFn::ln_gamma(self.alpha() + ct).0
                 });
 
                 -b + c + cache
@@ -116,11 +116,11 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     #[inline]
     fn ln_m_cache(&self) -> Self::LnMCache {
         let sum_alpha = self.alphas().iter().fold(0.0, |acc, &a| acc + a);
-        let a = sum_alpha.ln_gamma().0;
+        let a = GammaFn::ln_gamma(sum_alpha).0;
         let d = self
             .alphas()
             .iter()
-            .fold(0.0, |acc, &a| acc + a.ln_gamma().0);
+            .fold(0.0, |acc, &a| acc + GammaFn::ln_gamma(a).0);
         (sum_alpha, a - d)
     }
 
@@ -135,12 +135,12 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
             || CategoricalSuffStat::new(self.k()),
             |stat: CategoricalSuffStat| {
                 // terms
-                let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
+                let b = GammaFn::ln_gamma(sum_alpha + stat.n() as f64).0;
                 let c = self
                     .alphas()
                     .iter()
                     .zip(stat.counts().iter())
-                    .fold(0.0, |acc, (&a, &ct)| acc + (a + ct).ln_gamma().0);
+                    .fold(0.0, |acc, (&a, &ct)| GammaFn::ln_gamma(acc + (a + ct)).0);
 
                 -b + c + ln_norm
             },

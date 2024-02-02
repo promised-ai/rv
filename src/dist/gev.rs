@@ -5,7 +5,7 @@ use crate::consts;
 use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
-use special::Gamma;
+use special::Gamma as GammaFn;
 use std::f32;
 use std::f64;
 use std::f64::consts::{LN_2, PI};
@@ -305,7 +305,7 @@ macro_rules! impl_traits {
                 } else if self.shape >= 1.0 {
                     Some(f64::INFINITY as $kind)
                 } else {
-                    let g1 = (1.0 - self.shape).gamma();
+                    let g1 = GammaFn::gamma(1.0 - self.shape);
                     Some(
                         (self.loc + self.scale * (g1 - 1.0) / self.shape)
                             as $kind,
@@ -353,8 +353,8 @@ impl Variance<f64> for Gev {
         } else if self.shape >= 0.5 {
             Some(f64::INFINITY)
         } else {
-            let g1 = (1.0 - self.shape).gamma();
-            let g2 = 2.0_f64.mul_add(-self.shape, 1.0).gamma();
+            let g1 = GammaFn::gamma(1.0 - self.shape);
+            let g2 = GammaFn::gamma(2.0_f64.mul_add(-self.shape, 1.0));
             Some(
                 self.scale * self.scale * g1.mul_add(-g1, g2)
                     / (self.shape * self.shape),

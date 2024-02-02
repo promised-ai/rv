@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
-use special::Gamma as SGamma;
+use special::Gamma as GammaFn;
 use std::f64::consts::PI;
 use std::f64::INFINITY;
 use std::fmt;
@@ -128,7 +128,7 @@ macro_rules! impl_traits {
                 let xterm = -vp1 * (xf * xf / self.v).ln_1p();
                 let zterm = 0.5_f64.mul_add(
                     -(self.v * PI).ln(),
-                    vp1.ln_gamma().0 - (self.v / 2.0).ln_gamma().0,
+                    GammaFn::ln_gamma(vp1).0 - GammaFn::ln_gamma(self.v / 2.0).0,
                 );
                 zterm + xterm
             }

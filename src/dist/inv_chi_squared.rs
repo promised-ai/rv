@@ -5,10 +5,11 @@ use serde::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
-use special::Gamma as _;
 use std::f64::consts::LN_2;
 use std::fmt;
 use std::sync::OnceLock;
+use crate::misc::ln_gammafn; 
+use special::Gamma;
 
 /// [Χ<sup>-2</sup> distribution](https://en.wikipedia.org/wiki/Inverse-chi-squared_distribution)
 /// Χ<sup>-2</sup>(v).
@@ -136,7 +137,7 @@ impl InvChiSquared {
     fn ln_f_const(&self) -> f64 {
         *self.ln_f_const.get_or_init(|| {
             let v2 = self.v / 2.0;
-            (-v2).mul_add(LN_2, -v2.ln_gamma().0)
+            (-v2).mul_add(LN_2, -ln_gammafn(v2))
         })
     }
 }

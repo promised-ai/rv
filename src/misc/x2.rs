@@ -1,4 +1,4 @@
-use special::Gamma;
+use special::Gamma as GammaFn;
 
 /// Χ<sup>2</sup> (Chi-squared) test.
 ///
