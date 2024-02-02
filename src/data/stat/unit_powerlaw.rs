@@ -117,6 +117,16 @@ macro_rules! impl_suffstat {
                     self.sum_ln_x = 0.0;
                 }
             }
+
+            fn observe_many(&mut self, xs: &[$kind]) {
+                self.n += xs.len();
+                self.sum_ln_x += xs.iter().map(|x| f64::from(*x)).product::<f64>().ln();
+            }
+        
+            fn forget_many(&mut self, xs: &[$kind]) {
+                self.n -= xs.len();
+                self.sum_ln_x -= xs.iter().map(|x| f64::from(*x)).product::<f64>().ln();
+            }
         }
     };
 }
