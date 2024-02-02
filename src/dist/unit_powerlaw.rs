@@ -2,6 +2,7 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::prelude::Beta;  
 use crate::data::UnitPowerLawSuffStat;
 use crate::impl_display;
 use crate::traits::*;
@@ -25,11 +26,11 @@ use std::sync::OnceLock;
 /// use rv::prelude::*;
 ///
 /// // A prior that encodes our strong belief that coins are fair:
-/// let beta = UnitPowerLaw::new(5.0, 5.0).unwrap();
+/// let powlaw = UnitPowerLaw::new(5.0, 5.0).unwrap();
 ///
 /// // The posterior predictive probability that a coin will come up heads given
 /// // no new observations.
-/// let p_prior_heads = beta.pp(&true, &DataOrSuffStat::None); // 0.5
+/// let p_prior_heads = powlaw.pp(&true, &DataOrSuffStat::None); // 0.5
 /// assert!((p_prior_heads - 0.5).abs() < 1E-12);
 ///
 /// // Five Bernoulli trials. We flipped a coin five times and it came up head
@@ -38,7 +39,7 @@ use std::sync::OnceLock;
 ///
 /// // The posterior predictive probability that a coin will come up heads given
 /// // the five flips we just saw.
-/// let p_pred_heads = beta.pp(&true, &DataOrSuffStat::Data(&flips)); // 9/15
+/// let p_pred_heads = powlaw.pp(&true, &DataOrSuffStat::Data(&flips)); // 9/15
 /// assert!((p_pred_heads - 3.0/5.0).abs() < 1E-12);
 /// ```
 #[derive(Debug, Clone)]
@@ -63,7 +64,7 @@ impl PartialEq for UnitPowerLaw {
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum UnitPowerLawError {
-    /// The alpha parameter is less than or equal too zero
+    /// The alpha parameter is less than or equal to zero
     AlphaTooLow { alpha: f64 },
     /// The alpha parameter is infinite or NaN
     AlphaNotFinite { alpha: f64 },
@@ -75,18 +76,18 @@ impl UnitPowerLaw {
     /// # Example
     ///
     /// ```rust
-    /// # use rv::dist::UnitPowerLaw;
+    /// # use rv::powlaw::UnitPowerLaw;
     /// // Uniform
-    /// let beta_unif = UnitPowerLaw::new(1.0, 1.0);
-    /// assert!(beta_unif.is_ok());
+    /// let powlaw_unif = UnitPowerLaw::new(1.0, 1.0);
+    /// assert!(powlaw_unif.is_ok());
     ///
     /// // Jefferey's prior
-    /// let beta_jeff  = UnitPowerLaw::new(0.5, 0.5);
-    /// assert!(beta_jeff.is_ok());
+    /// let powlaw_jeff  = UnitPowerLaw::new(0.5, 0.5);
+    /// assert!(powlaw_jeff.is_ok());
     ///
     /// // Invalid negative parameter
-    /// let beta_nope  = UnitPowerLaw::new(-5.0, 1.0);
-    /// assert!(beta_nope.is_err());
+    /// let powlaw_nope  = UnitPowerLaw::new(-5.0, 1.0);
+    /// assert!(powlaw_nope.is_err());
     /// ```
     pub fn new(alpha: f64) -> Result<Self, UnitPowerLawError> {
         if alpha <= 0.0 {
@@ -117,9 +118,9 @@ impl UnitPowerLaw {
     /// # Example
     ///
     /// ```rust
-    /// # use rv::dist::UnitPowerLaw;
-    /// let beta = UnitPowerLaw::uniform();
-    /// assert_eq!(beta, UnitPowerLaw::new(1.0, 1.0).unwrap());
+    /// # use rv::powlaw::UnitPowerLaw;
+    /// let powlaw = UnitPowerLaw::uniform();
+    /// assert_eq!(powlaw, UnitPowerLaw::new(1.0, 1.0).unwrap());
     /// ```
     #[inline]
     pub fn uniform() -> Self {
@@ -136,16 +137,16 @@ impl UnitPowerLaw {
     // /// # Example
     // ///
     // /// ```rust
-    // /// # use rv::dist::UnitPowerLaw;
-    // /// let beta = UnitPowerLaw::jeffreys();
-    // /// assert_eq!(beta, UnitPowerLaw::new(0.5, 0.5).unwrap());
+    // /// # use rv::powlaw::UnitPowerLaw;
+    // /// let powlaw = UnitPowerLaw::jeffreys();
+    // /// assert_eq!(powlaw, UnitPowerLaw::new(0.5, 0.5).unwrap());
     // /// ```
     // #[inline]
     // pub fn jeffreys() -> Self {
     //     UnitPowerLaw {
     //         alpha: 0.5,
-    //         beta: 0.5,
-    //         ln_beta_ab: OnceLock::new(),
+    //         powlaw: 0.5,
+    //         ln_powlaw_ab: OnceLock::new(),
     //     }
     // }
 
@@ -154,9 +155,9 @@ impl UnitPowerLaw {
     /// # Example
     ///
     /// ```rust
-    /// # use rv::dist::UnitPowerLaw;
-    /// let beta = UnitPowerLaw::new(1.0, 5.0).unwrap();
-    /// assert_eq!(beta.alpha(), 1.0);
+    /// # use rv::powlaw::UnitPowerLaw;
+    /// let powlaw = UnitPowerLaw::new(1.0, 5.0).unwrap();
+    /// assert_eq!(powlaw.alpha(), 1.0);
     /// ```
     #[inline]
     pub fn alpha(&self) -> f64 {
@@ -168,23 +169,23 @@ impl UnitPowerLaw {
     /// # Example
     ///
     /// ```rust
-    /// # use rv::dist::UnitPowerLaw;
-    /// let mut beta = UnitPowerLaw::new(1.0, 5.0).unwrap();
+    /// # use rv::powlaw::UnitPowerLaw;
+    /// let mut powlaw = UnitPowerLaw::new(1.0, 5.0).unwrap();
     ///
-    /// beta.set_alpha(2.0).unwrap();
-    /// assert_eq!(beta.alpha(), 2.0);
+    /// powlaw.set_alpha(2.0).unwrap();
+    /// assert_eq!(powlaw.alpha(), 2.0);
     /// ```
     ///
     /// Will error for invalid values
     ///
     /// ```rust
-    /// # use rv::dist::UnitPowerLaw;
-    /// # let mut beta = UnitPowerLaw::new(1.0, 5.0).unwrap();
-    /// assert!(beta.set_alpha(0.1).is_ok());
-    /// assert!(beta.set_alpha(0.0).is_err());
-    /// assert!(beta.set_alpha(-1.0).is_err());
-    /// assert!(beta.set_alpha(std::f64::INFINITY).is_err());
-    /// assert!(beta.set_alpha(std::f64::NAN).is_err());
+    /// # use rv::powlaw::UnitPowerLaw;
+    /// # let mut powlaw = UnitPowerLaw::new(1.0, 5.0).unwrap();
+    /// assert!(powlaw.set_alpha(0.1).is_ok());
+    /// assert!(powlaw.set_alpha(0.0).is_err());
+    /// assert!(powlaw.set_alpha(-1.0).is_err());
+    /// assert!(powlaw.set_alpha(std::f64::INFINITY).is_err());
+    /// assert!(powlaw.set_alpha(std::f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_alpha(&mut self, alpha: f64) -> Result<(), UnitPowerLawError> {
@@ -211,6 +212,18 @@ impl UnitPowerLaw {
     fn alpha_inv(&self) -> f64 {
         *self.alpha_inv.get_or_init(|| self.alpha.inv())
     }
+
+    /// Evaluate or fetch cached ln(a*b)
+    #[inline]
+    fn alpha_ln(&self) -> f64 {
+        *self.alpha_ln.get_or_init(|| self.alpha.ln())
+    }
+}
+
+impl From<&UnitPowerLaw> for Beta {
+    fn from(powlaw: &UnitPowerLaw) -> Beta {
+        Beta::new(powlaw.alpha, 1.0).unwrap()
+    }
 }
 
 impl Default for UnitPowerLaw {
@@ -220,8 +233,8 @@ impl Default for UnitPowerLaw {
 }
 
 impl From<&UnitPowerLaw> for String {
-    fn from(dist: &UnitPowerLaw) -> String {
-        format!("UnitPowerLaw(α: {})", dist.alpha)
+    fn from(powlaw: &UnitPowerLaw) -> String {
+        format!("UnitPowerLaw(α: {})", powlaw.alpha)
     }
 }
 
@@ -233,7 +246,7 @@ macro_rules! impl_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: If we evaluate a lot of xs for a fixed alpha (which
                 // seems likely), we should cache self.alpha.ln()
-                (*x as f64).ln().mul_add(self.alpha - 1.0, self.alpha.ln())
+                (*x as f64).ln().mul_add(self.alpha - 1.0, self.alpha_ln())
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
@@ -241,8 +254,8 @@ macro_rules! impl_traits {
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let b = rand_distr::Uniform::new(0.0, 1.0);
-                (0..n).map(|_| rng.sample(b) as $kind).collect()
+                let alpha_inv = self.alpha_inv() as $kind;
+                (0..n).map(|_| rng.gen::<$kind>().powf(alpha_inv)).collect()
             }
         }
 
@@ -354,6 +367,7 @@ impl fmt::Display for UnitPowerLawError {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
@@ -363,43 +377,45 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
+    test_basic_impls!([continuous] UnitPowerLaw::new(1.5).unwrap());
     // test_basic_impls!([continuous] UnitPowerLaw::jeffreys());
 
     #[test]
     fn new() {
-        let beta = UnitPowerLaw::new(2.0).unwrap();
-        assert::close(beta.alpha, 2.0, TOL);
+        let powlaw = UnitPowerLaw::new(2.0).unwrap();
+        assert::close(powlaw.alpha, 2.0, TOL);
     }
 
     #[test]
     fn uniform() {
-        let beta = UnitPowerLaw::uniform();
-        assert::close(beta.alpha, 1.0, TOL);
+        let powlaw = UnitPowerLaw::uniform();
+        assert::close(powlaw.alpha, 1.0, TOL);
     }
 
     // #[test]
     // fn jeffreys() {
-    //     let beta = UnitPowerLaw::jeffreys();
-    //     assert::close(beta.alpha, 0.5, TOL);
-    //     assert::close(beta.beta, 0.5, TOL);
+    //     let powlaw = UnitPowerLaw::jeffreys();
+    //     assert::close(powlaw.alpha, 0.5, TOL);
+    //     assert::close(powlaw.powlaw, 0.5, TOL);
     // }
 
     #[test]
     fn ln_pdf_center_value() {
-        let beta = UnitPowerLaw::new(1.5).unwrap();
-        assert::close(beta.ln_pdf(&0.5), 0.282_035_069_142_401_84, TOL);
+        let powlaw = UnitPowerLaw::new(1.5).unwrap();
+
+        assert::close(powlaw.ln_pdf(&0.5), 0.282_035_069_142_401_84, TOL);
     }
 
     #[test]
     fn ln_pdf_low_value() {
-        let beta = UnitPowerLaw::new(1.5).unwrap();
-        assert::close(beta.ln_pdf(&0.01), -0.990_879_588_865_227_3, TOL);
+        let powlaw = UnitPowerLaw::new(1.5).unwrap();
+        assert::close(powlaw.ln_pdf(&0.01), -0.990_879_588_865_227_3, TOL);
     }
 
     #[test]
     fn ln_pdf_high_value() {
-        let beta = UnitPowerLaw::new(1.5).unwrap();
-        assert::close(beta.ln_pdf(&0.99), -3.288_439_513_932_521_8, TOL);
+        let powlaw = UnitPowerLaw::new(1.5).unwrap();
+        assert::close(powlaw.ln_pdf(&0.99), -3.288_439_513_932_521_8, TOL);
     }
 
     #[test]
@@ -407,69 +423,49 @@ mod tests {
         let x: f64 = 0.6;
         let alpha = 1.5;
 
-        let mut dist = UnitPowerLaw::new(alpha).unwrap();
+        let mut powlaw = UnitPowerLaw::new(alpha).unwrap();
 
-        let f_1 = dist.f(&x);
-        let ln_f_1 = dist.ln_f(&x);
+        let f_1 = powlaw.f(&x);
+        let ln_f_1 = powlaw.ln_f(&x);
 
-        dist.set_alpha(3.4).unwrap();
+        powlaw.set_alpha(3.4).unwrap();
 
-        assert_ne!(f_1, dist.f(&x));
-        assert_ne!(ln_f_1, dist.ln_f(&x));
+        assert_ne!(f_1, powlaw.f(&x));
+        assert_ne!(ln_f_1, powlaw.ln_f(&x));
 
-        dist.set_alpha(alpha).unwrap();
+        powlaw.set_alpha(alpha).unwrap();
 
-        assert_eq!(f_1, dist.f(&x));
-        assert_eq!(ln_f_1, dist.ln_f(&x));
+        assert_eq!(f_1, powlaw.f(&x));
+        assert_eq!(ln_f_1, powlaw.ln_f(&x));
     }
 
 
     #[test]
     fn cdf_hump_shaped() {
-        let beta = UnitPowerLaw::new(1.5).unwrap();
+        let powlaw = UnitPowerLaw::new(1.5).unwrap();
+        let beta: Beta = (&powlaw).into();
         let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
-        let true_cdfs = vec![
-            0.074_313_525_013_956_92,
-            0.196_773_982_019_981_59,
-            0.336_849_372_865_677_3,
-            0.480_666_204_345_593_76,
-            0.618_718_433_538_229_2,
-            0.743_612_802_471_823_9,
-            0.849_209_926_932_086_7,
-            0.930_204_278_639_912_5,
-            0.981_887_213_482_281_8,
-        ];
-        let cdfs: Vec<f64> = xs.iter().map(|x| beta.cdf(x)).collect();
-
-        assert::close(cdfs, true_cdfs, TOL);
+        for x in xs.iter() {
+            assert::close(powlaw.cdf(x), beta.cdf(x), TOL);
+        }
     }
 
     #[test]
     fn cdf_bowl_shaped() {
-        let beta = UnitPowerLaw::new(0.5).unwrap();
+        let powlaw = UnitPowerLaw::new(0.5).unwrap();
+        let beta: Beta = (&powlaw).into();
         let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
-        let true_cdfs = vec![
-            0.255_025_266_684_626_05,
-            0.364_709_208_611_865_45,
-            0.452_127_848_994_179_57,
-            0.529_074_597_952_903,
-            0.600_364_232_133_001_5,
-            0.668_832_465_457_723_9,
-            0.736_759_020_055_199_1,
-            0.806_781_320_991_993_7,
-            0.883_788_956_770_792_1,
-        ];
-        let cdfs: Vec<f64> = xs.iter().map(|x| beta.cdf(x)).collect();
-
-        assert::close(cdfs, true_cdfs, TOL);
+        for x in xs.iter() {
+            assert::close(powlaw.cdf(x), beta.cdf(x), TOL);
+        }
     }
 
     #[test]
     fn draw_should_resturn_values_within_0_to_1() {
         let mut rng = rand::thread_rng();
-        let dist = UnitPowerLaw::new(2.0).unwrap();
+        let powlaw = UnitPowerLaw::new(2.0).unwrap();
         for _ in 0..100 {
-            let x = dist.draw(&mut rng);
+            let x = powlaw.draw(&mut rng);
             assert!(0.0 < x && x < 1.0);
         }
     }
@@ -477,8 +473,8 @@ mod tests {
     #[test]
     fn sample_returns_the_correct_number_draws() {
         let mut rng = rand::thread_rng();
-        let dist = UnitPowerLaw::new(2.0).unwrap();
-        let xs: Vec<f32> = dist.sample(103, &mut rng);
+        let powlaw = UnitPowerLaw::new(2.0).unwrap();
+        let xs: Vec<f32> = powlaw.sample(103, &mut rng);
         assert_eq!(xs.len(), 103);
     }
 
@@ -502,53 +498,39 @@ mod tests {
 
     #[test]
     fn variance() {
-        let beta = UnitPowerLaw::new(1.5, 2.0).unwrap();
-        assert::close(beta.variance().unwrap(), 0.054_421_768_707_482_99, TOL);
+        let powlaw = UnitPowerLaw::new(1.5).unwrap();
+        assert::close(powlaw.variance().unwrap(), 0.054_421_768_707_482_99, TOL);
     }
 
     #[test]
-    fn mode_for_alpha_and_beta_greater_than_one() {
-        let mode: f64 = UnitPowerLaw::new(1.5, 2.0).unwrap().mode().unwrap();
+    fn mode_for_alpha_and_powlaw_greater_than_one() {
+        let mode: f64 = UnitPowerLaw::new(1.5).unwrap().mode().unwrap();
         assert::close(mode, 0.5 / 1.5, TOL);
     }
 
     #[test]
-    fn mode_for_alpha_one_and_large_beta() {
-        let mode: f64 = UnitPowerLaw::new(1.0, 2.0).unwrap().mode().unwrap();
+    fn mode_for_alpha_one_and_large_powlaw() {
+        let mode: f64 = UnitPowerLaw::new(2.0).unwrap().mode().unwrap();
         assert::close(mode, 0.0, TOL);
     }
 
     #[test]
-    fn mode_for_large_alpha_and_beta_one() {
-        let mode: f64 = UnitPowerLaw::new(2.0, 1.0).unwrap().mode().unwrap();
+    fn mode_for_large_alpha_and_powlaw_one() {
+        let mode: f64 = UnitPowerLaw::new(2.0).unwrap().mode().unwrap();
         assert::close(mode, 1.0, TOL);
     }
 
     #[test]
     fn mode_for_alpha_less_than_one_is_none() {
         let mode_opt: Option<f64> =
-            UnitPowerLaw::new(0.99, 2.0).unwrap().mode();
-        assert!(mode_opt.is_none());
-    }
-
-    #[test]
-    fn mode_for_beta_less_than_one_is_none() {
-        let mode_opt: Option<f64> =
-            UnitPowerLaw::new(2.0, 0.99).unwrap().mode();
-        assert!(mode_opt.is_none());
-    }
-
-    #[test]
-    fn mode_for_alpha_and_beta_less_than_one_is_none() {
-        let mode_opt: Option<f64> =
-            UnitPowerLaw::new(0.99, 0.99).unwrap().mode();
+            UnitPowerLaw::new(0.99).unwrap().mode();
         assert!(mode_opt.is_none());
     }
 
     #[test]
     fn entropy() {
-        let beta = UnitPowerLaw::new(1.5, 2.0).unwrap();
-        assert::close(beta.entropy(), -0.108_050_201_102_322_36, TOL);
+        let powlaw = UnitPowerLaw::new(1.5).unwrap();
+        assert::close(powlaw.entropy(), -0.108_050_201_102_322_36, TOL);
     }
 
     #[test]
@@ -556,32 +538,33 @@ mod tests {
         assert::close(UnitPowerLaw::uniform().skewness().unwrap(), 0.0, TOL);
     }
 
-    #[test]
-    fn jeffreysf_skewness_should_be_zero() {
-        assert::close(UnitPowerLaw::jeffreys().skewness().unwrap(), 0.0, TOL);
-    }
+    // #[test]
+    // fn jeffreysf_skewness_should_be_zero() {
+    //     assert::close(UnitPowerLaw::jeffreys().skewness().unwrap(), 0.0, TOL);
+    // }
 
     #[test]
     fn skewness() {
-        let beta = UnitPowerLaw::new(1.5, 2.0).unwrap();
-        assert::close(beta.skewness().unwrap(), 0.222_680_885_707_561_62, TOL);
+        let powlaw = UnitPowerLaw::new(1.5).unwrap();
+        assert::close(powlaw.skewness().unwrap(), 0.222_680_885_707_561_62, TOL);
     }
 
     #[test]
     fn kurtosis() {
-        let beta = UnitPowerLaw::new(1.5, 2.0).unwrap();
-        assert::close(beta.kurtosis().unwrap(), -0.860_139_860_139_860_1, TOL);
+        let powlaw = UnitPowerLaw::new(1.5).unwrap();
+        let beta: Beta = (&powlaw).into();
+        assert::close(powlaw.kurtosis().unwrap(), beta.kurtosis().unwrap(), TOL);
     }
 
     #[test]
-    fn draw_test_alpha_beta_gt_one() {
+    fn draw_test_alpha_powlaw_gt_one() {
         let mut rng = rand::thread_rng();
-        let beta = UnitPowerLaw::new(1.2, 3.4).unwrap();
-        let cdf = |x: f64| beta.cdf(&x);
+        let powlaw = UnitPowerLaw::new(1.2).unwrap();
+        let cdf = |x: f64| powlaw.cdf(&x);
 
         // test is flaky, try a few times
         let passes = (0..N_TRIES).fold(0, |acc, _| {
-            let xs: Vec<f64> = beta.sample(1000, &mut rng);
+            let xs: Vec<f64> = powlaw.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
             if p > KS_PVAL {
                 acc + 1
@@ -594,14 +577,14 @@ mod tests {
     }
 
     #[test]
-    fn draw_test_alpha_beta_lt_one() {
+    fn draw_test_alpha_powlaw_lt_one() {
         let mut rng = rand::thread_rng();
-        let beta = UnitPowerLaw::new(0.2, 0.7).unwrap();
-        let cdf = |x: f64| beta.cdf(&x);
+        let powlaw = UnitPowerLaw::new(0.2).unwrap();
+        let cdf = |x: f64| powlaw.cdf(&x);
 
         // test is flaky, try a few times
         let passes = (0..N_TRIES).fold(0, |acc, _| {
-            let xs: Vec<f64> = beta.sample(1000, &mut rng);
+            let xs: Vec<f64> = powlaw.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
             if p > KS_PVAL {
                 acc + 1
@@ -611,18 +594,6 @@ mod tests {
         });
 
         assert!(passes > 0);
-    }
-
-    #[test]
-    fn beta_u_should_never_draw_1() {
-        let mut rng = rand::thread_rng();
-        let beta = UnitPowerLaw::new(0.5, 0.5).unwrap();
-
-        let some_1 = beta
-            .sample(10_000, &mut rng)
-            .drain(..)
-            .any(|x: f64| x == 1.0);
-        assert!(!some_1);
     }
 
     #[test]
@@ -631,11 +602,11 @@ mod tests {
         let mut stat = UnitPowerLawSuffStat::new();
         stat.observe_many(&data);
 
-        let beta = UnitPowerLaw::new(0.3, 2.33).unwrap();
+        let powlaw = UnitPowerLaw::new(0.3).unwrap();
 
-        let ln_f_base: f64 = data.iter().map(|x| beta.ln_f(x)).sum();
+        let ln_f_base: f64 = data.iter().map(|x| powlaw.ln_f(x)).sum();
         let ln_f_stat: f64 =
-            <UnitPowerLaw as HasSuffStat<f64>>::ln_f_stat(&beta, &stat);
+            <UnitPowerLaw as HasSuffStat<f64>>::ln_f_stat(&powlaw, &stat);
 
         assert::close(ln_f_base, ln_f_stat, 1e-12);
     }
@@ -646,25 +617,25 @@ mod tests {
 
         for _ in 0..100 {
             let a1 = rng.gen::<f64>();
-            let mut dist1 = UnitPowerLaw::new(a1).unwrap();
+            let mut powlaw1 = UnitPowerLaw::new(a1).unwrap();
 
             // Any value in the unit interval
             let x: f64 = rng.gen();
 
-            // Evaluate the pdf to force computation of `ln_dist_ab`
-            let _ = dist1.pdf(&x);
+            // Evaluate the pdf to force computation of `ln_powlaw_ab`
+            let _ = powlaw1.pdf(&x);
 
             // Next we'll `set_alpha` to a2, and compare with a fresh UnitPowerLaw
             let a2 = rng.gen::<f64>();
 
             // Setting the new values
-            dist1.set_alpha(a2).unwrap();
+            powlaw1.set_alpha(a2).unwrap();
 
             // ... and here's the fresh version
-            let dist2 = UnitPowerLaw::new(a2).unwrap();
+            let powlaw2 = UnitPowerLaw::new(a2).unwrap();
 
-            let pdf_1 = dist1.ln_f(&x);
-            let pdf_2 = dist2.ln_f(&x);
+            let pdf_1 = powlaw1.ln_f(&x);
+            let pdf_2 = powlaw2.ln_f(&x);
 
             assert::close(pdf_1, pdf_2, 1e-14);
         }
