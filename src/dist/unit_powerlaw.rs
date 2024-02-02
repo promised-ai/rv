@@ -321,7 +321,7 @@ impl Entropy for UnitPowerLaw {
             apb.digamma(),
 
                 (self.alpha - 1.0)
-                    .mul_add(-self.alpha.digamma(), self.alpha_inv()),
+                    .mul_add(-self.alpha.digamma(), -self.alpha_ln()),
             )
         
     }
