@@ -530,7 +530,8 @@ mod tests {
     #[test]
     fn entropy() {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
-        assert::close(powlaw.entropy(), -0.108_050_201_102_322_36, TOL);
+        let beta: Beta = (&powlaw).into();
+        assert::close(powlaw.entropy(), beta.entropy(), TOL);
     }
 
     #[test]
@@ -546,7 +547,8 @@ mod tests {
     #[test]
     fn skewness() {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
-        assert::close(powlaw.skewness().unwrap(), 0.222_680_885_707_561_62, TOL);
+        let beta: Beta = (&powlaw).into();
+        assert::close(powlaw.skewness().unwrap(), beta.skewness().unwrap(), TOL);
     }
 
     #[test]
