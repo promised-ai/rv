@@ -491,10 +491,10 @@ mod tests {
 
     #[test]
     fn entropy_value_checks() {
-        let rates = vec![0.1, 0.5, 1.0, 2.2, 3.4, 10.2, 131.4];
+        let rates = [0.1, 0.5, 1.0, 2.2, 3.4, 10.2, 131.4];
         // from scipy, which I think uses an approximation via simulation. Not
         // 100% sure.
-        let hs = vec![
+        let hs = [
             0.333_676_996_501_232_7,
             0.927_637_467_495_797_5,
             1.304_842_242_256_251_6,

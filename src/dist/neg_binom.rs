@@ -447,7 +447,7 @@ mod tests {
     #[test]
     fn ln_f() {
         // NOTE: Truth values taken from scipy
-        let ln_fs = vec![
+        let ln_fs = [
             -1.021_651_247_531_981_4,
             -1.244_794_798_846_191_2,
             -1.755_620_422_612_181_9,
@@ -473,7 +473,7 @@ mod tests {
     #[test]
     fn f() {
         // NOTE: Truth values taken from scipy
-        let fs = vec![
+        let fs = [
             0.36,
             0.288,
             0.172_799_999_999_999_98,
@@ -499,7 +499,7 @@ mod tests {
     #[test]
     fn cdf() {
         // NOTE: Truth values taken from scipy
-        let cdfs = vec![
+        let cdfs = [
             0.064_000_000_000_000_02,
             0.179_200_000_000_000_03,
             0.317_440_000_000_000_3,
