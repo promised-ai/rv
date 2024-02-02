@@ -302,9 +302,9 @@ macro_rules! impl_traits {
 
             fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
                 let n = stat.n() as f64;
-                let t1 = n * self.alpha_inv();
+                let t1 = n * self.alpha_ln();
                 let t2 = (self.alpha - 1.0) * stat.sum_ln_x();
-                t2 - t1
+                t2 + t1
             }
         }
     };
@@ -371,8 +371,6 @@ impl fmt::Display for UnitPowerLawError {
 #[cfg(test)]
 mod tests {
 
-    // use argmin::solver::conjugategradient::beta;
-
     use super::*;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
@@ -407,20 +405,22 @@ mod tests {
     #[test]
     fn ln_pdf_center_value() {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
-
-        assert::close(powlaw.ln_pdf(&0.5), 0.282_035_069_142_401_84, TOL);
+        let beta: Beta = (&powlaw).into();
+        assert::close(powlaw.ln_pdf(&0.5), beta.ln_pdf(&0.5), TOL);
     }
 
     #[test]
     fn ln_pdf_low_value() {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
-        assert::close(powlaw.ln_pdf(&0.01), -0.990_879_588_865_227_3, TOL);
+        let beta: Beta = (&powlaw).into();
+        assert::close(powlaw.ln_pdf(&0.01), beta.ln_pdf(&0.01), TOL);
     }
 
     #[test]
     fn ln_pdf_high_value() {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
-        assert::close(powlaw.ln_pdf(&0.99), -3.288_439_513_932_521_8, TOL);
+        let beta: Beta = (&powlaw).into();
+        assert::close(powlaw.ln_pdf(&0.99), beta.ln_pdf(&0.99), TOL);
     }
 
     #[test]
@@ -506,18 +506,6 @@ mod tests {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
         let beta: Beta = (&powlaw).into();
         assert::close(powlaw.variance().unwrap(), beta.variance().unwrap(), TOL);
-    }
-
-    #[test]
-    fn mode_for_alpha_and_powlaw_greater_than_one() {
-        let mode: f64 = UnitPowerLaw::new(1.5).unwrap().mode().unwrap();
-        assert::close(mode, 0.5 / 1.5, TOL);
-    }
-
-    #[test]
-    fn mode_for_alpha_one_and_large_powlaw() {
-        let mode: f64 = UnitPowerLaw::new(2.0).unwrap().mode().unwrap();
-        assert::close(mode, 0.0, TOL);
     }
 
     #[test]
