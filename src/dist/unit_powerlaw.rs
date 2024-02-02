@@ -47,10 +47,13 @@ use std::sync::OnceLock;
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct UnitPowerLaw {
     alpha: f64,
-    #[cfg_attr(feature = "serde1", serde(skip))]
+    
     // Cached alpha.inv()
+    #[cfg_attr(feature = "serde1", serde(skip))]
     alpha_inv: OnceLock<f64>,
+
     // Cached alpha.ln()
+    #[cfg_attr(feature = "serde1", serde(skip))]
     alpha_ln: OnceLock<f64>,
 }
 
@@ -310,7 +313,7 @@ macro_rules! impl_traits {
 impl Variance<f64> for UnitPowerLaw {
     fn variance(&self) -> Option<f64> {
         let apb = self.alpha + 1.0;
-        Some(self.alpha * 1.0 / (apb * apb * (apb + 1.0)))
+        Some(self.alpha / (apb * apb * (apb + 1.0)))
     }
 }
 
@@ -367,6 +370,8 @@ impl fmt::Display for UnitPowerLawError {
 
 #[cfg(test)]
 mod tests {
+
+    // use argmin::solver::conjugategradient::beta;
 
     use super::*;
     use crate::misc::ks_test;
@@ -499,7 +504,8 @@ mod tests {
     #[test]
     fn variance() {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
-        assert::close(powlaw.variance().unwrap(), 0.054_421_768_707_482_99, TOL);
+        let beta: Beta = (&powlaw).into();
+        assert::close(powlaw.variance().unwrap(), beta.variance().unwrap(), TOL);
     }
 
     #[test]
