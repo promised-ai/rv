@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::misc::vec_to_string;
 use crate::traits::*;
+use crate::misc::ln_gammafn;
 use rand::Rng;
 use rand_distr::Gamma as RGamma;
-use special::Gamma as GammaFn;
 use std::fmt;
 use std::sync::OnceLock;
 
@@ -181,7 +181,7 @@ impl SymmetricDirichlet {
 
     #[inline]
     fn ln_gamma_alpha(&self) -> f64 {
-        *self.ln_gamma_alpha.get_or_init(|| GammaFn::ln_gamma(self.alpha).0)
+        *self.ln_gamma_alpha.get_or_init(|| ln_gammafn(self.alpha))
     }
 }
 
@@ -205,7 +205,7 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
     fn ln_f(&self, x: &Vec<f64>) -> f64 {
         let kf = self.k as f64;
         let sum_ln_gamma = self.ln_gamma_alpha() * kf;
-        let ln_gamma_sum = GammaFn::ln_gamma(self.alpha * kf).0;
+        let ln_gamma_sum = ln_gammafn(self.alpha * kf);
 
         let am1 = self.alpha - 1.0;
         let term = x.iter().fold(0.0, |acc, &xi| am1.mul_add(xi.ln(), acc));
@@ -394,9 +394,9 @@ impl Rv<Vec<f64>> for Dirichlet {
         let sum_ln_gamma: f64 = self
             .alphas
             .iter()
-            .fold(0.0, |acc, &alpha| acc + GammaFn::ln_gamma(alpha).0);
+            .fold(0.0, |acc, &alpha| acc + ln_gammafn(alpha));
 
-        let ln_gamma_sum: f64 = GammaFn::ln_gamma(self.alphas.iter().sum::<f64>()).0;
+        let ln_gamma_sum: f64 = ln_gammafn(self.alphas.iter().sum::<f64>());
 
         let term = x
             .iter()

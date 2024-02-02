@@ -14,8 +14,8 @@ use crate::data::Partition;
 use crate::impl_display;
 use crate::misc::pflip;
 use crate::traits::*;
+use crate::misc::ln_gammafn;
 use rand::Rng;
-use special::Gamma as GammaFn;
 use std::fmt;
 
 /// [Chinese Restaurant Process](https://en.wikipedia.org/wiki/Chinese_restaurant_process),
@@ -200,11 +200,11 @@ impl Rv<Partition> for Crp {
         let gsum = x
             .counts()
             .iter()
-            .fold(0.0, |acc, ct| acc + GammaFn::ln_gamma(*ct as f64).0);
+            .fold(0.0, |acc, ct| acc + ln_gammafn(*ct as f64));
 
         // TODO: could cache ln(alpha) and ln_gamma(alpha)
-        (x.k() as f64).mul_add(self.alpha.ln(), gsum) + GammaFn::ln_gamma(self.alpha).0
-            - GammaFn::ln_gamma(x.len() as f64 + self.alpha).0
+        (x.k() as f64).mul_add(self.alpha.ln(), gsum) + ln_gammafn(self.alpha)
+            - ln_gammafn(x.len() as f64 + self.alpha)
     }
 
     fn draw<R: Rng>(&self, rng: &mut R) -> Partition {

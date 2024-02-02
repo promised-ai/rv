@@ -7,7 +7,7 @@ use crate::impl_display;
 use crate::traits::*;
 use crate::misc::ln_gammafn;
 use rand::Rng;
-use special::Gamma as GammaFn;
+use special::Gamma as _;
 use std::fmt;
 
 /// [Inverse gamma distribution](https://en.wikipedia.org/wiki/Inverse-gamma_distribution)

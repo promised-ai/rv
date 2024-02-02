@@ -7,7 +7,7 @@ use crate::traits::*;
 use crate::misc::ln_gammafn;
 
 use rand::Rng;
-use special::Gamma as GammaFn;
+use special::Gamma as _;
 use std::fmt;
 use std::sync::OnceLock;
 

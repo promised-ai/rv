@@ -15,7 +15,7 @@ use crate::misc::ln_gammafn;
 fn ln_z(r: f64, s: f64, v: f64) -> f64 {
     // This is what is should be in clearer, normal, operations
     // (v + 1.0) / 2.0 * LN_2 + HALF_LN_PI - 0.5 * r.ln() - (v / 2.0) * s.ln()
-    //     + GammaFn::ln_gamma(v / 2.0).0
+    //     + ln_gammafn(v / 2.0).0
     // ... and here is what is is when we use mul_add to reduce rounding errors
     let half_v = 0.5 * v;
     (half_v + 0.5).mul_add(LN_2, HALF_LN_PI)

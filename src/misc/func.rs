@@ -1,11 +1,11 @@
 use crate::consts::{LN_2PI, LN_PI};
 use rand::distributions::Open01;
 use rand::Rng;
-use special::Gamma as GammaFn;
 use std::cmp::Ordering;
 use std::cmp::PartialOrd;
 use std::fmt::Debug;
 use std::ops::AddAssign;
+use special::Gamma;
 
 /// Convert a Vector to a printable string
 ///
@@ -49,7 +49,7 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
 /// ```
 pub fn ln_binom(n: f64, k: f64) -> f64 {
 
-    GammaFn::ln_gamma(n + 1.0).0 - GammaFn::ln_gamma(k + 1.0).0 - GammaFn::ln_gamma(n - k + 1.0).0
+    ln_gammafn(n + 1.0) - ln_gammafn(k + 1.0) - ln_gammafn(n - k + 1.0)
 }
 
 /// Gamma function, Γ(x)
@@ -68,7 +68,7 @@ pub fn ln_binom(n: f64, k: f64) -> f64 {
 /// is reserved for possible future use in standard libraries. This function is
 /// purely to avoid warnings resulting from this.
 pub fn gammafn(x: f64) -> f64 {
-    GammaFn::gamma(x)
+    Gamma::gamma(x)
 }
 
 /// Logarithm of the gamma function, ln Γ(x)
@@ -88,7 +88,7 @@ pub fn gammafn(x: f64) -> f64 {
 /// `ln_gamma` is reserved for possible future use in standard libraries. This
 /// function is purely to avoid warnings resulting from this.
 pub fn ln_gammafn(x: f64) -> f64 {
-    GammaFn::ln_gamma(x).0
+    Gamma::ln_gamma(x).0
 }
 
 /// Safely compute `log(sum(exp(xs))`
@@ -313,7 +313,7 @@ pub fn argmax<T: PartialOrd>(xs: &[T]) -> Vec<usize> {
 pub fn lnmv_gamma(p: usize, a: f64) -> f64 {
     let pf = p as f64;
     let a0 = pf * (pf - 1.0) / 4.0 * LN_PI;
-    (1..=p).fold(a0, |acc, j| acc + GammaFn::ln_gamma(a + (1.0 - j as f64) / 2.0).0)
+    (1..=p).fold(a0, |acc, j| acc + ln_gammafn(a + (1.0 - j as f64) / 2.0))
 }
 
 /// Multivariate gamma function, *Γ<sub>p</sub>(a)*.

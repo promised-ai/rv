@@ -4,8 +4,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
+use crate::misc::ln_gammafn;
 use rand::Rng;
-use special::Gamma as GammaFn;
+use special::Gamma as _;
 use std::fmt;
 use std::sync::OnceLock;
 
@@ -92,7 +93,7 @@ impl Gamma {
     /// Get ln(gamma(rate))
     #[inline]
     fn ln_gamma_shape(&self) -> f64 {
-        *self.ln_gamma_shape.get_or_init(|| GammaFn::ln_gamma(self.shape).0)
+        *self.ln_gamma_shape.get_or_init(|| ln_gammafn(self.shape))
     }
 
     /// Get the shape parameter

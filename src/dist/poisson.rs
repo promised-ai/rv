@@ -8,7 +8,7 @@ use crate::misc::ln_fact;
 use crate::traits::*;
 use rand::Rng;
 use rand_distr::Poisson as RPossion;
-use special::Gamma as GammaFn;
+use special::Gamma as _;
 use std::fmt;
 use std::sync::OnceLock;
 
