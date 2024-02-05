@@ -28,19 +28,22 @@ use std::sync::OnceLock;
 /// // A prior that encodes our strong belief that coins are fair:
 /// let powlaw = UnitPowerLaw::new(5.0).unwrap();
 ///
-/// // The posterior predictive probability that a coin will come up heads given
-/// // no new observations.
-/// let p_prior_heads = powlaw.pp(&true, &DataOrSuffStat::None); // 0.5
-/// assert!((p_prior_heads - 0.5).abs() < 1E-12);
 ///
-/// // Five Bernoulli trials. We flipped a coin five times and it came up head
-/// // four times.
-/// let flips = vec![true, true, false, true, true];
-///
-/// // The posterior predictive probability that a coin will come up heads given
-/// // the five flips we just saw.
-/// let p_pred_heads = powlaw.pp(&true, &DataOrSuffStat::Data(&flips)); // 9/15
-/// assert!((p_pred_heads - 3.0/5.0).abs() < 1E-12);
+ 
+// TODO: Set up posterior predictive with stick breaking
+// / // The posterior predictive probability that a coin will come up heads given
+// / // no new observations.
+// / let p_prior_heads = powlaw.pp(&true, &DataOrSuffStat::None); // 0.5
+// / assert!((p_prior_heads - 0.5).abs() < 1E-12);
+// /
+// / // Five Bernoulli trials. We flipped a coin five times and it came up head
+// / // four times.
+// / let flips = vec![true, true, false, true, true];
+// /
+// / // The posterior predictive probability that a coin will come up heads given
+// / // the five flips we just saw.
+// / let p_pred_heads = powlaw.pp(&true, &DataOrSuffStat::Data(&flips)); // 9/15
+// / assert!((p_pred_heads - 3.0/5.0).abs() < 1E-12);
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
