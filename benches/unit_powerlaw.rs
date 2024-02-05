@@ -10,8 +10,8 @@ use rv::traits::Rv;
 // }
 
 fn draw_rv<R: rand::Rng>(mut rng: &mut R) -> f64 {
-    let beta = rv::dist::UnitPowerLaw::new(5.0).unwrap();
-    beta.draw(&mut rng)
+    let powlaw = rv::dist::UnitPowerLaw::new(5.0).unwrap();
+    powlaw.draw(&mut rng)
 }
 
 fn draw_2u<R: rand::Rng>(rng: &mut R) -> f64 {
