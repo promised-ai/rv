@@ -79,17 +79,13 @@ impl UnitPowerLaw {
     /// # Example
     ///
     /// ```rust
-    /// # use rv::unit_powerlaw::UnitPowerLaw;
+    /// # use rv::dist::UnitPowerLaw;
     /// // Uniform
-    /// let powlaw_unif = UnitPowerLaw::new(1.0, 1.0);
+    /// let powlaw_unif = UnitPowerLaw::new(1.0);
     /// assert!(powlaw_unif.is_ok());
     ///
-    /// // Jefferey's prior
-    /// let powlaw_jeff  = UnitPowerLaw::new(0.5, 0.5);
-    /// assert!(powlaw_jeff.is_ok());
-    ///
     /// // Invalid negative parameter
-    /// let powlaw_nope  = UnitPowerLaw::new(-5.0, 1.0);
+    /// let powlaw_nope  = UnitPowerLaw::new(-5.0);
     /// assert!(powlaw_nope.is_err());
     /// ```
     pub fn new(alpha: f64) -> Result<Self, UnitPowerLawError> {
@@ -121,17 +117,13 @@ impl UnitPowerLaw {
     /// # Example
     ///
     /// ```rust
-    /// # use rv::unit_powerlaw::UnitPowerLaw;
+    /// # use rv::dist::UnitPowerLaw;
     /// let powlaw = UnitPowerLaw::uniform();
-    /// assert_eq!(powlaw, UnitPowerLaw::new(1.0, 1.0).unwrap());
+    /// assert_eq!(powlaw, UnitPowerLaw::new(1.0).unwrap());
     /// ```
     #[inline]
     pub fn uniform() -> Self {
-        UnitPowerLaw {
-            alpha: 1.0,
-            alpha_inv: OnceLock::new(),
-            alpha_ln: OnceLock::new(),
-        }
+        UnitPowerLaw::new_unchecked(1.0)
     }
 
     // /// Create a `UnitPowerLaw` distribution with the Jeffrey's parameterization,
@@ -140,7 +132,7 @@ impl UnitPowerLaw {
     // /// # Example
     // ///
     // /// ```rust
-    // /// # use rv::unit_powerlaw::UnitPowerLaw;
+    // /// # use rv::dist::UnitPowerLaw;
     // /// let powlaw = UnitPowerLaw::jeffreys();
     // /// assert_eq!(powlaw, UnitPowerLaw::new(0.5, 0.5).unwrap());
     // /// ```
@@ -158,9 +150,9 @@ impl UnitPowerLaw {
     /// # Example
     ///
     /// ```rust
-    /// # use rv::unit_powerlaw::UnitPowerLaw;
-    /// let powlaw = UnitPowerLaw::new(1.0, 5.0).unwrap();
-    /// assert_eq!(powlaw.alpha(), 1.0);
+    /// # use rv::dist::UnitPowerLaw;
+    /// let powlaw = UnitPowerLaw::new(5.0).unwrap();
+    /// assert_eq!(powlaw.alpha(), 5.0);
     /// ```
     #[inline]
     pub fn alpha(&self) -> f64 {
@@ -172,8 +164,8 @@ impl UnitPowerLaw {
     /// # Example
     ///
     /// ```rust
-    /// # use rv::unit_powerlaw::UnitPowerLaw;
-    /// let mut powlaw = UnitPowerLaw::new(1.0, 5.0).unwrap();
+    /// # use rv::dist::UnitPowerLaw;
+    /// let mut powlaw = UnitPowerLaw::new(5.0).unwrap();
     ///
     /// powlaw.set_alpha(2.0).unwrap();
     /// assert_eq!(powlaw.alpha(), 2.0);
@@ -182,8 +174,8 @@ impl UnitPowerLaw {
     /// Will error for invalid values
     ///
     /// ```rust
-    /// # use rv::unit_powerlaw::UnitPowerLaw;
-    /// # let mut powlaw = UnitPowerLaw::new(1.0, 5.0).unwrap();
+    /// # use rv::dist::UnitPowerLaw;
+    /// # let mut powlaw = UnitPowerLaw::new(5.0).unwrap();
     /// assert!(powlaw.set_alpha(0.1).is_ok());
     /// assert!(powlaw.set_alpha(0.0).is_err());
     /// assert!(powlaw.set_alpha(-1.0).is_err());
