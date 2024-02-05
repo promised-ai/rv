@@ -48,7 +48,46 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
 /// assert!((ln_binom(4.0, 2.0) - 6.0_f64.ln()) < 1E-12);
 /// ```
 pub fn ln_binom(n: f64, k: f64) -> f64 {
-    (n + 1.0).ln_gamma().0 - (k + 1.0).ln_gamma().0 - (n - k + 1.0).ln_gamma().0
+    ln_gammafn(n + 1.0) - ln_gammafn(k + 1.0) - ln_gammafn(n - k + 1.0)
+}
+
+/// Gamma function, Γ(x)
+///
+/// # Example
+///
+/// ```rust
+/// use rv::misc::gammafn;
+///
+/// assert!((gammafn(4.0) - 6.0) < 1E-12);
+/// ```
+///
+/// # Notes
+///
+/// This function is a wrapper around `special::Gamma::gamma`.. The name `gamma`
+/// is reserved for possible future use in standard libraries. This function is
+/// purely to avoid warnings resulting from this.
+pub fn gammafn(x: f64) -> f64 {
+    Gamma::gamma(x)
+}
+
+/// Logarithm of the gamma function, ln Γ(x)
+///
+/// # Example
+///
+/// ```rust
+///
+/// use rv::misc::ln_gammafn;
+///
+/// assert!((ln_gammafn(4.0) - 6.0_f64.ln()) < 1E-12);
+/// ```
+///
+/// # Notes
+///
+/// This function is a wrapper around `special::Gamma::ln_gamma`.. The name
+/// `ln_gamma` is reserved for possible future use in standard libraries. This
+/// function is purely to avoid warnings resulting from this.
+pub fn ln_gammafn(x: f64) -> f64 {
+    Gamma::ln_gamma(x).0
 }
 
 /// Safely compute `log(sum(exp(xs))`
@@ -273,7 +312,7 @@ pub fn argmax<T: PartialOrd>(xs: &[T]) -> Vec<usize> {
 pub fn lnmv_gamma(p: usize, a: f64) -> f64 {
     let pf = p as f64;
     let a0 = pf * (pf - 1.0) / 4.0 * LN_PI;
-    (1..=p).fold(a0, |acc, j| acc + (a + (1.0 - j as f64) / 2.0).ln_gamma().0)
+    (1..=p).fold(a0, |acc, j| acc + ln_gammafn(a + (1.0 - j as f64) / 2.0))
 }
 
 /// Multivariate gamma function, *Γ<sub>p</sub>(a)*.

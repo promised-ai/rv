@@ -107,7 +107,7 @@ where
 
         DVector::from_iterator(
             self.a.n_parameters() + self.b.n_parameters(),
-            a.into_iter().chain(b.into_iter()).copied(),
+            a.into_iter().chain(&b).copied(),
         )
     }
 
@@ -238,7 +238,7 @@ where
         let b = self.b.parameters();
         DVector::from_iterator(
             self.a.n_parameters() + self.b.n_parameters(),
-            a.into_iter().chain(b.into_iter()).copied(),
+            a.into_iter().chain(&b).copied(),
         )
     }
 

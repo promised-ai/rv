@@ -3,7 +3,9 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
+use crate::misc::ln_gammafn;
 use crate::traits::*;
+
 use rand::Rng;
 use special::Gamma as _;
 use std::fmt;
@@ -209,7 +211,7 @@ impl ScaledInvChiSquared {
     fn ln_gamma_v_2(&self) -> f64 {
         *self.ln_gamma_v_2.get_or_init(|| {
             let v2 = self.v / 2.0;
-            v2.ln_gamma().0
+            ln_gammafn(v2)
         })
     }
 

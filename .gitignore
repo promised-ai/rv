@@ -1,7 +1,6 @@
 /target
 **/*.rs.bk
 .idea/
-Cargo.lock
 .DS_Store
 .vim
 .helix
