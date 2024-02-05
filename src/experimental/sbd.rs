@@ -268,14 +268,9 @@ impl HasSuffStat<usize> for Sbd {
 
 impl Rv<usize> for Sbd {
     fn ln_f(&self, x: &usize) -> f64 {
-        if self.with_inner(|inner| {
-            inner.num_cats() > *x
-        }) {
-            self.with_inner(|inner| {
-                inner.ln_weights[*x]
-            })
-        }
-        else {
+        if self.with_inner(|inner| inner.num_cats() > *x) {
+            self.with_inner(|inner| inner.ln_weights[*x])
+        } else {
             self.with_inner_mut(|inner| {
                 inner.extend_until(&self.beta, move |inner| {
                     inner.num_cats() > *x
