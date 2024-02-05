@@ -248,7 +248,7 @@ macro_rules! impl_traits {
             }
 
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                rng.gen::<f64>().powf(self.alpha_inv()) as $kind
+                self.invcdf(rng.gen::<f64>())
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
@@ -269,6 +269,12 @@ macro_rules! impl_traits {
         impl Cdf<$kind> for UnitPowerLaw {
             fn cdf(&self, x: &$kind) -> f64 {
                 (*x as f64).powf(self.alpha)
+            }
+        }
+
+        impl InverseCdf<$kind> for UnitPowerLaw {
+            fn invcdf(&self, p: f64) -> $kind {
+                p.powf(self.alpha_inv()) as $kind
             }
         }
 
