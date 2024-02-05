@@ -1,11 +1,11 @@
 use crate::consts::{LN_2PI, LN_PI};
 use rand::distributions::Open01;
 use rand::Rng;
+use special::Gamma;
 use std::cmp::Ordering;
 use std::cmp::PartialOrd;
 use std::fmt::Debug;
 use std::ops::AddAssign;
-use special::Gamma;
 
 /// Convert a Vector to a printable string
 ///
@@ -48,22 +48,21 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
 /// assert!((ln_binom(4.0, 2.0) - 6.0_f64.ln()) < 1E-12);
 /// ```
 pub fn ln_binom(n: f64, k: f64) -> f64 {
-
     ln_gammafn(n + 1.0) - ln_gammafn(k + 1.0) - ln_gammafn(n - k + 1.0)
 }
 
 /// Gamma function, Γ(x)
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use rv::misc::gammafn;
-/// 
+///
 /// assert!((gammafn(4.0) - 6.0) < 1E-12);
 /// ```
-/// 
+///
 /// # Notes
-/// 
+///
 /// This function is a wrapper around `special::Gamma::gamma`.. The name `gamma`
 /// is reserved for possible future use in standard libraries. This function is
 /// purely to avoid warnings resulting from this.
@@ -72,18 +71,18 @@ pub fn gammafn(x: f64) -> f64 {
 }
 
 /// Logarithm of the gamma function, ln Γ(x)
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
-/// 
+///
 /// use rv::misc::ln_gammafn;
-/// 
+///
 /// assert!((ln_gammafn(4.0) - 6.0_f64.ln()) < 1E-12);
 /// ```
-/// 
+///
 /// # Notes
-/// 
+///
 /// This function is a wrapper around `special::Gamma::ln_gamma`.. The name
 /// `ln_gamma` is reserved for possible future use in standard libraries. This
 /// function is purely to avoid warnings resulting from this.

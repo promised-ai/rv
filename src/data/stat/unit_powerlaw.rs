@@ -28,14 +28,8 @@ impl UnitPowerLawSuffStat {
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
-    pub fn from_parts_unchecked(
-        n: usize,
-        sum_ln_x: f64,
-    ) -> Self {
-        UnitPowerLawSuffStat {
-            n,
-            sum_ln_x,
-        }
+    pub fn from_parts_unchecked(n: usize, sum_ln_x: f64) -> Self {
+        UnitPowerLawSuffStat { n, sum_ln_x }
     }
 
     /// Get the number of observations
@@ -59,13 +53,17 @@ impl Default for UnitPowerLawSuffStat {
 
 macro_rules! impl_suffstat {
     ($kind:ty) => {
-        impl<'a> From<&'a UnitPowerLawSuffStat> for DataOrSuffStat<'a, $kind, UnitPowerLaw> {
+        impl<'a> From<&'a UnitPowerLawSuffStat>
+            for DataOrSuffStat<'a, $kind, UnitPowerLaw>
+        {
             fn from(stat: &'a UnitPowerLawSuffStat) -> Self {
                 DataOrSuffStat::SuffStat(stat)
             }
         }
 
-        impl<'a> From<&'a Vec<$kind>> for DataOrSuffStat<'a, $kind, UnitPowerLaw> {
+        impl<'a> From<&'a Vec<$kind>>
+            for DataOrSuffStat<'a, $kind, UnitPowerLaw>
+        {
             fn from(xs: &'a Vec<$kind>) -> Self {
                 DataOrSuffStat::Data(xs.as_slice())
             }
@@ -120,12 +118,14 @@ macro_rules! impl_suffstat {
 
             fn observe_many(&mut self, xs: &[$kind]) {
                 self.n += xs.len();
-                self.sum_ln_x += xs.iter().map(|x| f64::from(*x)).product::<f64>().ln();
+                self.sum_ln_x +=
+                    xs.iter().map(|x| f64::from(*x)).product::<f64>().ln();
             }
-        
+
             fn forget_many(&mut self, xs: &[$kind]) {
                 self.n -= xs.len();
-                self.sum_ln_x -= xs.iter().map(|x| f64::from(*x)).product::<f64>().ln();
+                self.sum_ln_x -=
+                    xs.iter().map(|x| f64::from(*x)).product::<f64>().ln();
             }
         }
     };

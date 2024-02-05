@@ -2,9 +2,9 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::prelude::Beta;  
 use crate::data::UnitPowerLawSuffStat;
 use crate::impl_display;
+use crate::prelude::Beta;
 use crate::traits::*;
 use rand::Rng;
 // use special::UnitPowerLaw as _;
@@ -29,7 +29,7 @@ use std::sync::OnceLock;
 /// let powlaw = UnitPowerLaw::new(5.0).unwrap();
 ///
 ///
- 
+
 // TODO: Set up posterior predictive with stick breaking
 // / // The posterior predictive probability that a coin will come up heads given
 // / // no new observations.
@@ -50,7 +50,7 @@ use std::sync::OnceLock;
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct UnitPowerLaw {
     alpha: f64,
-    
+
     // Cached alpha.inv()
     #[cfg_attr(feature = "serde1", serde(skip))]
     alpha_inv: OnceLock<f64>,
@@ -317,11 +317,8 @@ impl Entropy for UnitPowerLaw {
         let apb = self.alpha + 1.0;
         (apb - 2.0).mul_add(
             apb.digamma(),
-
-                (self.alpha - 1.0)
-                    .mul_add(-self.alpha.digamma(), -self.alpha_ln()),
-            )
-        
+            (self.alpha - 1.0).mul_add(-self.alpha.digamma(), -self.alpha_ln()),
+        )
     }
 }
 
@@ -439,7 +436,6 @@ mod tests {
         assert_eq!(ln_f_1, powlaw.ln_f(&x));
     }
 
-
     #[test]
     fn cdf_hump_shaped() {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
@@ -500,7 +496,11 @@ mod tests {
     fn variance() {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
         let beta: Beta = (&powlaw).into();
-        assert::close(powlaw.variance().unwrap(), beta.variance().unwrap(), TOL);
+        assert::close(
+            powlaw.variance().unwrap(),
+            beta.variance().unwrap(),
+            TOL,
+        );
     }
 
     #[test]
@@ -511,8 +511,7 @@ mod tests {
 
     #[test]
     fn mode_for_alpha_less_than_one_is_none() {
-        let mode_opt: Option<f64> =
-            UnitPowerLaw::new(0.99).unwrap().mode();
+        let mode_opt: Option<f64> = UnitPowerLaw::new(0.99).unwrap().mode();
         assert!(mode_opt.is_none());
     }
 
@@ -537,14 +536,22 @@ mod tests {
     fn skewness() {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
         let beta: Beta = (&powlaw).into();
-        assert::close(powlaw.skewness().unwrap(), beta.skewness().unwrap(), TOL);
+        assert::close(
+            powlaw.skewness().unwrap(),
+            beta.skewness().unwrap(),
+            TOL,
+        );
     }
 
     #[test]
     fn kurtosis() {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
         let beta: Beta = (&powlaw).into();
-        assert::close(powlaw.kurtosis().unwrap(), beta.kurtosis().unwrap(), TOL);
+        assert::close(
+            powlaw.kurtosis().unwrap(),
+            beta.kurtosis().unwrap(),
+            TOL,
+        );
     }
 
     #[test]
@@ -631,5 +638,4 @@ mod tests {
             assert::close(pdf_1, pdf_2, 1e-14);
         }
     }
-
 }

@@ -12,9 +12,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::Partition;
 use crate::impl_display;
+use crate::misc::ln_gammafn;
 use crate::misc::pflip;
 use crate::traits::*;
-use crate::misc::ln_gammafn;
 use rand::Rng;
 use std::fmt;
 

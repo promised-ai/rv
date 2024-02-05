@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::consts;
 use crate::impl_display;
+use crate::misc::gammafn;
 use crate::traits::*;
-use crate::misc::gammafn;  
 use rand::Rng;
 use std::f32;
 use std::f64;

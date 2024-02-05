@@ -2,8 +2,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::*;
 use crate::misc::ln_gammafn;
+use crate::traits::*;
 use rand::Rng;
 use std::f64::consts::PI;
 use std::f64::INFINITY;

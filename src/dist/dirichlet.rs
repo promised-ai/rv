@@ -3,9 +3,9 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
+use crate::misc::ln_gammafn;
 use crate::misc::vec_to_string;
 use crate::traits::*;
-use crate::misc::ln_gammafn;
 use rand::Rng;
 use rand_distr::Gamma as RGamma;
 use std::fmt;

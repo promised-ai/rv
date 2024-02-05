@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::consts::EULER_MASCERONI;
 use crate::impl_display;
+use crate::misc::gammafn;
 use crate::traits::*;
-use crate::misc::gammafn; 
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;

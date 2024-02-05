@@ -2,9 +2,9 @@ use rand::Rng;
 
 use crate::data::{extract_stat_then, CategoricalDatum, CategoricalSuffStat};
 use crate::dist::{Categorical, Dirichlet, SymmetricDirichlet};
+use crate::misc::ln_gammafn;
 use crate::prelude::CategoricalData;
 use crate::traits::*;
-use crate::misc::ln_gammafn;
 
 impl Rv<Categorical> for SymmetricDirichlet {
     fn ln_f(&self, x: &Categorical) -> f64 {
@@ -58,9 +58,10 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
             |stat: CategoricalSuffStat| {
                 // terms
                 let b = ln_gammafn(sum_alpha + stat.n() as f64);
-                let c = stat.counts().iter().fold(0.0, |acc, &ct| {
-                    acc + ln_gammafn(self.alpha() + ct)
-                });
+                let c = stat
+                    .counts()
+                    .iter()
+                    .fold(0.0, |acc, &ct| acc + ln_gammafn(self.alpha() + ct));
 
                 -b + c + cache
             },

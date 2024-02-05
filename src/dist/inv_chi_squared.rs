@@ -3,13 +3,13 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
+use crate::misc::ln_gammafn;
 use crate::traits::*;
 use rand::Rng;
+use special::Gamma;
 use std::f64::consts::LN_2;
 use std::fmt;
 use std::sync::OnceLock;
-use crate::misc::ln_gammafn; 
-use special::Gamma;
 
 /// [Χ<sup>-2</sup> distribution](https://en.wikipedia.org/wiki/Inverse-chi-squared_distribution)
 /// Χ<sup>-2</sup>(v).
