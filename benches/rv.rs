@@ -121,6 +121,7 @@ benchrv! {
     (Skellam, Skellam::new(2.0, 3.2).unwrap(), skellam, "rv skellam", i32);
     (StudentsT, StudentsT::default(), students, "rv students", f64);
     (Uniform, Uniform::default(), uniform, "rv uniform", f64);
+    (UnitPowerLaw, UnitPowerLaw::new(5.0).unwrap(), unit_powerlaw, "rv_unit_powerlaw", f64);
     (VonMises, VonMises::new(0.5, 1.0).unwrap(), vonmises, "rv vonmises", f64);
     (InvWishart, InvWishart::identity(4), wishart, "rv wishart", DMatrix<f64>)
 }
