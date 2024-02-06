@@ -98,16 +98,13 @@ macro_rules! impl_suffstat {
 
             fn observe(&mut self, x: &$kind) {
                 let xf = f64::from(*x);
-
                 self.n += 1;
-
                 self.sum_ln_x += xf.ln();
             }
 
             fn forget(&mut self, x: &$kind) {
                 if self.n > 1 {
                     let xf = f64::from(*x);
-
                     self.sum_ln_x -= xf.ln();
                     self.n -= 1;
                 } else {

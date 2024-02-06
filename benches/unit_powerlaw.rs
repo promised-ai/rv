@@ -4,11 +4,6 @@ use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use rv::traits::Rv;
 
-// fn draw_rand_distr<R: rand::Rng>(rng: &mut R) -> f64 {
-//     let beta = UnitPowerLaw::new(5.0, 2.0).unwrap();
-//     rng.sample(beta)
-// }
-
 fn draw_rv<R: rand::Rng>(mut rng: &mut R) -> f64 {
     let powlaw = rv::dist::UnitPowerLaw::new(5.0).unwrap();
     powlaw.draw(&mut rng)
@@ -29,12 +24,6 @@ fn draw_2u_recip<R: rand::Rng>(rng: &mut R) -> f64 {
 
 fn bench_powlaw_draw(c: &mut Criterion) {
     let mut group = c.benchmark_group("unit_powerlaw_draw");
-    // group.bench_function("rand_distr", |b| {
-    //     b.iter(|| {
-    //         let mut rng = rand::thread_rng();
-    //         draw_rand_distr(&mut rng)
-    //     })
-    // });
     group.bench_function("draw_rv", |b| {
         let mut rng = rand::thread_rng();
         b.iter(|| draw_rv(&mut rng))

@@ -7,14 +7,10 @@ use crate::impl_display;
 use crate::prelude::Beta;
 use crate::traits::*;
 use rand::Rng;
-// use special::UnitPowerLaw as _;
-use num_traits::Inv;
 use special::Gamma as _;
 use std::f64;
 use std::fmt;
 use std::sync::OnceLock;
-
-// pub mod bernoulli_prior;
 
 /// UnitPowerLaw(α) over x in (0, 1).
 ///
@@ -27,23 +23,6 @@ use std::sync::OnceLock;
 ///
 /// // A prior that encodes our strong belief that coins are fair:
 /// let powlaw = UnitPowerLaw::new(5.0).unwrap();
-///
-///
-
-// TODO: Set up posterior predictive with stick breaking
-// / // The posterior predictive probability that a coin will come up heads given
-// / // no new observations.
-// / let p_prior_heads = powlaw.pp(&true, &DataOrSuffStat::None); // 0.5
-// / assert!((p_prior_heads - 0.5).abs() < 1E-12);
-// /
-// / // Five Bernoulli trials. We flipped a coin five times and it came up head
-// / // four times.
-// / let flips = vec![true, true, false, true, true];
-// /
-// / // The posterior predictive probability that a coin will come up heads given
-// / // the five flips we just saw.
-// / let p_pred_heads = powlaw.pp(&true, &DataOrSuffStat::Data(&flips)); // 9/15
-// / assert!((p_pred_heads - 3.0/5.0).abs() < 1E-12);
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -51,7 +30,7 @@ use std::sync::OnceLock;
 pub struct UnitPowerLaw {
     alpha: f64,
 
-    // Cached alpha.inv()
+    // Cached alpha..recip()
     #[cfg_attr(feature = "serde1", serde(skip))]
     alpha_inv: OnceLock<f64>,
 
@@ -129,25 +108,6 @@ impl UnitPowerLaw {
         UnitPowerLaw::new_unchecked(1.0)
     }
 
-    // /// Create a `UnitPowerLaw` distribution with the Jeffrey's parameterization,
-    // /// *UnitPowerLaw(0.5, 0.5)*.
-    // ///
-    // /// # Example
-    // ///
-    // /// ```rust
-    // /// # use rv::dist::UnitPowerLaw;
-    // /// let powlaw = UnitPowerLaw::jeffreys();
-    // /// assert_eq!(powlaw, UnitPowerLaw::new(0.5, 0.5).unwrap());
-    // /// ```
-    // #[inline]
-    // pub fn jeffreys() -> Self {
-    //     UnitPowerLaw {
-    //         alpha: 0.5,
-    //         powlaw: 0.5,
-    //         ln_powlaw_ab: OnceLock::new(),
-    //     }
-    // }
-
     /// Get the alpha parameter
     ///
     /// # Example
@@ -208,7 +168,7 @@ impl UnitPowerLaw {
     /// Evaluate or fetch cached ln(a*b)
     #[inline]
     fn alpha_inv(&self) -> f64 {
-        *self.alpha_inv.get_or_init(|| self.alpha.inv())
+        *self.alpha_inv.get_or_init(|| self.alpha.recip())
     }
 
     /// Evaluate or fetch cached ln(a*b)
@@ -242,8 +202,6 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl Rv<$kind> for UnitPowerLaw {
             fn ln_f(&self, x: &$kind) -> f64 {
-                // TODO: If we evaluate a lot of xs for a fixed alpha (which
-                // seems likely), we should cache self.alpha.ln()
                 (*x as f64).ln().mul_add(self.alpha - 1.0, self.alpha_ln())
             }
 
@@ -379,7 +337,6 @@ mod tests {
     const N_TRIES: usize = 5;
 
     test_basic_impls!([continuous] UnitPowerLaw::new(1.5).unwrap());
-    // test_basic_impls!([continuous] UnitPowerLaw::jeffreys());
 
     #[test]
     fn new() {
@@ -392,13 +349,6 @@ mod tests {
         let powlaw = UnitPowerLaw::uniform();
         assert::close(powlaw.alpha, 1.0, TOL);
     }
-
-    // #[test]
-    // fn jeffreys() {
-    //     let powlaw = UnitPowerLaw::jeffreys();
-    //     assert::close(powlaw.alpha, 0.5, TOL);
-    //     assert::close(powlaw.powlaw, 0.5, TOL);
-    // }
 
     #[test]
     fn ln_pdf_center_value() {
@@ -486,12 +436,6 @@ mod tests {
         assert::close(mean, 0.5, TOL);
     }
 
-    // #[test]
-    // fn jeffreys_mean() {
-    //     let mean: f64 = UnitPowerLaw::jeffreys().mean().unwrap();
-    //     assert::close(mean, 0.5, TOL);
-    // }
-
     #[test]
     fn mean() {
         let mean: f64 = UnitPowerLaw::new(5.0).unwrap().mean().unwrap();
@@ -532,11 +476,6 @@ mod tests {
     fn uniform_skewness_should_be_zero() {
         assert::close(UnitPowerLaw::uniform().skewness().unwrap(), 0.0, TOL);
     }
-
-    // #[test]
-    // fn jeffreysf_skewness_should_be_zero() {
-    //     assert::close(UnitPowerLaw::jeffreys().skewness().unwrap(), 0.0, TOL);
-    // }
 
     #[test]
     fn skewness() {
