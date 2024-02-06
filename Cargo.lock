@@ -892,6 +892,7 @@ dependencies = [
  "lru",
  "nalgebra",
  "num",
+ "num-traits",
  "peroxide",
  "rand",
  "rand_distr",

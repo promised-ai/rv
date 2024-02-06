@@ -1,8 +1,8 @@
 use rand::Rng;
-use special::Gamma as SGamma;
 
 use crate::data::{extract_stat_then, CategoricalDatum, CategoricalSuffStat};
 use crate::dist::{Categorical, Dirichlet, SymmetricDirichlet};
+use crate::misc::ln_gammafn;
 use crate::prelude::CategoricalData;
 use crate::traits::*;
 
@@ -40,8 +40,8 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     #[inline]
     fn ln_m_cache(&self) -> Self::LnMCache {
         let sum_alpha = self.alpha() * self.k() as f64;
-        let a = sum_alpha.ln_gamma().0;
-        let d = self.alpha().ln_gamma().0 * self.k() as f64;
+        let a = ln_gammafn(sum_alpha);
+        let d = ln_gammafn(self.alpha()) * self.k() as f64;
         a - d
     }
 
@@ -57,10 +57,11 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
             || CategoricalSuffStat::new(self.k()),
             |stat: CategoricalSuffStat| {
                 // terms
-                let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
-                let c = stat.counts().iter().fold(0.0, |acc, &ct| {
-                    acc + (self.alpha() + ct).ln_gamma().0
-                });
+                let b = ln_gammafn(sum_alpha + stat.n() as f64);
+                let c = stat
+                    .counts()
+                    .iter()
+                    .fold(0.0, |acc, &ct| acc + ln_gammafn(self.alpha() + ct));
 
                 -b + c + cache
             },
@@ -116,11 +117,11 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     #[inline]
     fn ln_m_cache(&self) -> Self::LnMCache {
         let sum_alpha = self.alphas().iter().fold(0.0, |acc, &a| acc + a);
-        let a = sum_alpha.ln_gamma().0;
+        let a = ln_gammafn(sum_alpha);
         let d = self
             .alphas()
             .iter()
-            .fold(0.0, |acc, &a| acc + a.ln_gamma().0);
+            .fold(0.0, |acc, &a| acc + ln_gammafn(a));
         (sum_alpha, a - d)
     }
 
@@ -135,12 +136,12 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
             || CategoricalSuffStat::new(self.k()),
             |stat: CategoricalSuffStat| {
                 // terms
-                let b = (sum_alpha + stat.n() as f64).ln_gamma().0;
+                let b = ln_gammafn(sum_alpha + stat.n() as f64);
                 let c = self
                     .alphas()
                     .iter()
                     .zip(stat.counts().iter())
-                    .fold(0.0, |acc, (&a, &ct)| acc + (a + ct).ln_gamma().0);
+                    .fold(0.0, |acc, (&a, &ct)| ln_gammafn(acc + (a + ct)));
 
                 -b + c + ln_norm
             },

@@ -3,6 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
+use crate::misc::ln_gammafn;
 use crate::traits::*;
 use rand::Rng;
 use special::Gamma as _;
@@ -92,7 +93,7 @@ impl Gamma {
     /// Get ln(gamma(rate))
     #[inline]
     fn ln_gamma_shape(&self) -> f64 {
-        *self.ln_gamma_shape.get_or_init(|| self.shape.ln_gamma().0)
+        *self.ln_gamma_shape.get_or_init(|| ln_gammafn(self.shape))
     }
 
     /// Get the shape parameter

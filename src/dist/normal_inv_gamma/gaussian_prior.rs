@@ -1,20 +1,19 @@
 use std::collections::BTreeMap;
 
-use special::Gamma as _;
-
 use crate::consts::HALF_LN_2PI;
 use crate::data::{
     extract_stat, extract_stat_then, DataOrSuffStat, GaussianSuffStat,
 };
 use crate::dist::{Gaussian, NormalInvGamma};
 use crate::gaussian_prior_geweke_testable;
+use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
 use crate::traits::*;
 
 #[inline]
 fn ln_z(v: f64, a: f64, b: f64) -> f64 {
     // -(a * b.ln() - 0.5 * v.ln() - a.ln_gamma().0)
-    let p1 = v.ln().mul_add(0.5, a.ln_gamma().0);
+    let p1 = v.ln().mul_add(0.5, ln_gammafn(a));
     -b.ln().mul_add(a, -p1)
 }
 
@@ -133,7 +132,7 @@ mod test {
         let sig2 = sigma * sigma;
         let lz_inv = a.mul_add(
             b.ln(),
-            -(0.5_f64.mul_add(v.ln() + LN_2PI, a.ln_gamma().0)),
+            -(0.5_f64.mul_add(v.ln() + LN_2PI, ln_gammafn(a))),
         );
         (0.5 / (sig2 * v) * (mu - m)).mul_add(
             -mu - m,
@@ -182,10 +181,10 @@ mod test {
         let n = xs.len() as f64;
         let (_, vn, an, bn) = post_params(xs, m, v, a, b);
 
-        let numer = 0.5_f64.mul_add(vn.ln(), a * b.ln()) + an.ln_gamma().0;
+        let numer = 0.5_f64.mul_add(vn.ln(), a * b.ln()) + ln_gammafn(an);
         let denom = (n / 2.0).mul_add(
             LN_2PI,
-            0.5_f64.mul_add(v.ln(), an * bn.ln()) + a.ln_gamma().0,
+            0.5_f64.mul_add(v.ln(), an * bn.ln()) + ln_gammafn(a),
         );
 
         numer - denom
