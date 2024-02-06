@@ -18,6 +18,7 @@ pub use stat::InvGaussianSuffStat;
 #[cfg(feature = "arraydist")]
 pub use stat::MvGaussianSuffStat;
 pub use stat::PoissonSuffStat;
+pub use stat::UnitPowerLawSuffStat;
 
 use crate::dist::{
     Bernoulli, Categorical, Gaussian, InvGamma, InvGaussian, Poisson,

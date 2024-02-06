@@ -735,7 +735,7 @@ pub(crate) fn bessel_ikv_temme(
 #[allow(clippy::many_single_char_names)]
 fn temme_ik_series(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
     use crate::consts::EULER_MASCERONI;
-    use special::Gamma;
+    use crate::misc::gammafn;
     use std::f64::consts::PI;
     /*
      * |x| <= 2, Temme series converge rapidly
@@ -744,8 +744,8 @@ fn temme_ik_series(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
     debug_assert!(x.abs() <= 2.0);
     debug_assert!(v.abs() <= 0.5);
 
-    let gp = (v + 1.0).gamma() - 1.0;
-    let gm = (1.0 - v).gamma() - 1.0;
+    let gp = gammafn(v + 1.0) - 1.0;
+    let gm = gammafn(1.0 - v) - 1.0;
 
     let a = (x / 2.0).ln();
     let b = (v * a).exp();

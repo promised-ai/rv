@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::consts::EULER_MASCERONI;
 use crate::impl_display;
+use crate::misc::gammafn;
 use crate::traits::*;
 use rand::Rng;
 use special::Gamma as _;
@@ -372,7 +373,7 @@ macro_rules! impl_kumaraswamy {
             fn mean(&self) -> Option<$kind> {
                 let b = self.b;
                 let ar1 = 1.0 + self.a.recip();
-                let mean = b * ar1.gamma() * b.gamma() / (ar1 + b).gamma();
+                let mean = b * gammafn(ar1) * gammafn(b) / gammafn(ar1 + b);
                 Some(mean as $kind)
             }
         }
