@@ -451,7 +451,8 @@ pub trait KlDivergence {
 ///
 /// ```
 /// # use rv::traits::ConjugatePrior;
-/// use rv::traits::{Rv, SuffStat};
+/// use rv::traits::Rv;
+/// use rv::suffstat_traits::SuffStat;
 /// use rv::dist::{Categorical, SymmetricDirichlet};
 /// use rv::data::{CategoricalSuffStat, DataOrSuffStat};
 /// use std::time::Instant;

@@ -17,7 +17,7 @@ pub trait HasSuffStat<X> {
 ///
 /// ```
 /// use rv::data::BernoulliSuffStat;
-/// use rv::traits::SuffStat;
+/// use rv::suffstat_traits::SuffStat;
 ///
 /// // Bernoulli sufficient statistics are the number of observations, n, and
 /// // the number of successes, k.
@@ -39,7 +39,7 @@ pub trait HasSuffStat<X> {
 /// success probability.
 ///
 /// ```
-/// use rv::traits::SuffStat;
+/// use rv::suffstat_traits::SuffStat;
 /// use rv::traits::ConjugatePrior;
 /// use rv::data::BernoulliSuffStat;
 /// use rv::dist::{Bernoulli, Beta};

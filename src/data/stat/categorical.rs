@@ -40,7 +40,7 @@ impl CategoricalSuffStat {
     ///
     /// ```
     /// # use rv::data::CategoricalSuffStat;
-    /// # use rv::traits::SuffStat;
+    /// # use rv::suffstat_traits::SuffStat;
     /// let mut stat = CategoricalSuffStat::new(3);
     ///
     /// stat.observe(&0_u8);
@@ -60,7 +60,7 @@ impl CategoricalSuffStat {
     ///
     /// ```
     /// # use rv::data::CategoricalSuffStat;
-    /// # use rv::traits::SuffStat;
+    /// # use rv::suffstat_traits::SuffStat;
     /// let mut stat = CategoricalSuffStat::new(3);
     ///
     /// stat.observe(&0_u8);

@@ -37,7 +37,7 @@ impl BernoulliSuffStat {
     ///
     /// ```
     /// # use rv::data::BernoulliSuffStat;
-    /// # use rv::traits::SuffStat;
+    /// # use rv::suffstat_traits::SuffStat;
     /// let mut stat = BernoulliSuffStat::new();
     ///
     /// stat.observe(&true);
@@ -56,7 +56,7 @@ impl BernoulliSuffStat {
     ///
     /// ```
     /// # use rv::data::BernoulliSuffStat;
-    /// # use rv::traits::SuffStat;
+    /// # use rv::suffstat_traits::SuffStat;
     /// let mut stat = BernoulliSuffStat::new();
     ///
     /// stat.observe(&true);
