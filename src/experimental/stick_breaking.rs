@@ -4,8 +4,8 @@ use rand_xoshiro::Xoshiro128Plus;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
-// use super::sbd_stat::StickBreakingSuffStat;
-use crate::dist::UnitPowerLaw;
+// use super::sb_stat::StickBreakingSuffStat;
+use crate::dist::{UnitPowerLaw, UnitPowerLawError};
 use crate::misc::argmax;
 use crate::misc::ln_pflip;
 use crate::prelude::Mode;
@@ -14,41 +14,8 @@ use crate::experimental::stick_breaking_stat::StickBreakingSuffStat;
 use crate::suffstat_traits::*;
 use crate::traits::Rv;
 
-#[derive(Clone, Debug)]
-pub enum StickBreakingError {
-    InvalidAlpha(f64),
-    InvalidNumberOfWeights { n_weights: usize, n_entries: usize },
-    WeightsDoNotSumToOne { sum: f64 },
-}
 
-impl std::error::Error for StickBreakingError {}
 
-impl std::fmt::Display for StickBreakingError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::InvalidAlpha(alpha) => {
-                write!(
-                    f,
-                    "alpha ({}) must be finite and greater than zero",
-                    alpha
-                )
-            }
-            Self::InvalidNumberOfWeights {
-                n_weights,
-                n_entries,
-            } => {
-                write!(
-                    f,
-                    "There should be one more weight than lookup entries. \
-                    Given {n_weights}, but there are {n_entries} lookup entries",
-                )
-            }
-            Self::WeightsDoNotSumToOne { sum } => {
-                write!(f, "Weights do not sum to 1 ({sum})")
-            }
-        }
-    }
-}
 
 // We'd like to be able to serialize and deserialize StickBreaking, but serde can't handle
 // `Arc` or `RwLock`. So we use `StickBreakingFmt` as an intermediate type.
@@ -72,10 +39,10 @@ impl From<StickBreakingFmt> for StickBreaking {
 
 #[cfg(feature = "serde1")]
 impl From<StickBreaking> for StickBreakingFmt {
-    fn from(sbd: StickBreaking) -> Self {
+    fn from(sb: StickBreaking) -> Self {
         Self {
-            powlaw: sbd.powlaw,
-            inner: sbd.inner.read().map(|inner| inner.clone()).unwrap(),
+            powlaw: sb.powlaw,
+            inner: sb.inner.read().map(|inner| inner.clone()).unwrap(),
         }
     }
 }
@@ -162,22 +129,16 @@ impl StickBreaking {
     pub fn new(
         alpha: f64,
         seed: Option<u64>,
-    ) -> Result<Self, StickBreakingError> {
-        if alpha <= 0.0 || !alpha.is_finite() {
-            Err(StickBreakingError::InvalidAlpha(alpha))
-        } else {
-            Ok(Self {
-                powlaw: UnitPowerLaw::new_unchecked(alpha),
-                inner: Arc::new(RwLock::new(_Inner {
-                    remaining_mass: 1.0,
-                    ln_weights: vec![0.0], // ln(1)
-                    rng: seed.map_or_else(
-                        Xoshiro128Plus::from_entropy,
-                        Xoshiro128Plus::seed_from_u64,
-                    ),
-                })),
-            })
-        }
+    ) -> Result<Self, UnitPowerLawError> {
+        let powlaw = UnitPowerLaw::new(alpha)?;
+        let inner = _Inner {
+            remaining_mass: 1.0,
+            ln_weights: vec![0.0], // ln(1)
+            rng: seed.map_or_else(
+                Xoshiro128Plus::from_entropy,
+                Xoshiro128Plus::seed_from_u64,
+            ),
+        };
     }
 
     pub fn with_inner<F, Ans>(&self, f: F) -> Ans
@@ -198,7 +159,9 @@ impl StickBreaking {
         ln_weights: Vec<f64>,
         alpha: f64,
         seed: Option<u64>,
-    ) -> Result<Self, StickBreakingError> {
+    ) -> Result<Self, UnitPowerLawError> {
+        let powlaw = UnitPowerLaw::new(alpha)?;
+
         let inner = _Inner {
             remaining_mass: ln_weights.last().unwrap().exp(),
             ln_weights,
@@ -209,7 +172,7 @@ impl StickBreaking {
         };
 
         Ok(Self {
-            powlaw: UnitPowerLaw::new_unchecked(alpha),
+            powlaw: powlaw,
             inner: Arc::new(RwLock::new(inner)),
         })
     }
@@ -353,35 +316,35 @@ mod test {
 
     #[test]
     fn canonical_order_ln_f() {
-        let sbd = StickBreaking::new(1.0, None).unwrap();
-        let mut rm_mass = sbd.p_unobserved();
+        let sb = StickBreaking::new(1.0, None).unwrap();
+        let mut rm_mass = sb.p_unobserved();
         for x in 0..10 {
-            let ln_f_1 = sbd.ln_f(&x);
-            let k = sbd.num_cats();
-            assert!(rm_mass > sbd.p_unobserved());
-            rm_mass = sbd.p_unobserved();
+            let ln_f_1 = sb.ln_f(&x);
+            let k = sb.num_cats();
+            assert!(rm_mass > sb.p_unobserved());
+            rm_mass = sb.p_unobserved();
 
-            let ln_f_2 = sbd.ln_f(&x);
+            let ln_f_2 = sb.ln_f(&x);
 
             assert_eq!(ln_f_1, ln_f_2);
-            assert_eq!(k, sbd.num_cats());
+            assert_eq!(k, sb.num_cats());
         }
     }
 
     #[test]
     fn static_ln_f_from_new() {
-        let sbd = StickBreaking::new(1.0, None).unwrap();
+        let sb = StickBreaking::new(1.0, None).unwrap();
 
-        assert_eq!(sbd.num_cats(), 0);
+        assert_eq!(sb.num_cats(), 0);
 
-        let lnf0 = sbd.ln_f(&0_usize);
-        assert::close(lnf0, sbd.ln_f(&0_usize), 1e-12);
+        let lnf0 = sb.ln_f(&0_usize);
+        assert::close(lnf0, sb.ln_f(&0_usize), 1e-12);
 
-        assert_eq!(sbd.num_cats(), 1);
+        assert_eq!(sb.num_cats(), 1);
 
-        let _lnf1 = sbd.ln_f(&1_usize); // causes new category to form
-        assert::close(lnf0, sbd.ln_f(&0_usize), 1e-12);
-        assert_eq!(sbd.num_cats(), 2);
+        let _lnf1 = sb.ln_f(&1_usize); // causes new category to form
+        assert::close(lnf0, sb.ln_f(&0_usize), 1e-12);
+        assert_eq!(sb.num_cats(), 2);
     }
 
     #[test]
@@ -391,9 +354,9 @@ mod test {
         let seed: u64 = rng.gen();
         eprintln!("draw_many_smoke seed: {seed}");
         let mut rng = rand_xoshiro::Xoroshiro128Plus::seed_from_u64(seed);
-        let sbd = StickBreaking::new(1.0, None).unwrap();
+        let sb = StickBreaking::new(1.0, None).unwrap();
         for _ in 0..1_000 {
-            let x: usize = sbd.draw(&mut rng);
+            let x: usize = sb.draw(&mut rng);
             counter.entry(x).and_modify(|ct| *ct += 1).or_insert(1);
         }
         // eprintln!("{:?}", counter);
@@ -401,20 +364,20 @@ mod test {
 
     #[test]
     fn repeatedly_compute_oob_lnf() {
-        let sbd = StickBreaking::new(0.5, None).unwrap();
-        assert_eq!(sbd.num_cats(), 0);
+        let sb = StickBreaking::new(0.5, None).unwrap();
+        assert_eq!(sb.num_cats(), 0);
 
-        sbd.ln_f(&0);
-        assert_eq!(sbd.num_cats(), 1);
+        sb.ln_f(&0);
+        assert_eq!(sb.num_cats(), 1);
 
-        sbd.ln_f(&1);
-        assert_eq!(sbd.num_cats(), 2);
+        sb.ln_f(&1);
+        assert_eq!(sb.num_cats(), 2);
 
-        sbd.ln_f(&1);
-        sbd.ln_f(&1);
-        assert_eq!(sbd.num_cats(), 2);
+        sb.ln_f(&1);
+        sb.ln_f(&1);
+        assert_eq!(sb.num_cats(), 2);
 
-        sbd.ln_f(&0);
-        assert_eq!(sbd.num_cats(), 2);
+        sb.ln_f(&0);
+        assert_eq!(sb.num_cats(), 2);
     }
 }
