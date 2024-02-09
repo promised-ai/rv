@@ -14,8 +14,30 @@ use crate::experimental::stick_breaking_stat::StickBreakingSuffStat;
 use crate::suffstat_traits::*;
 use crate::traits::Rv;
 
+#[derive(Clone, Debug)]
+pub enum StickBreakingError {
+    InvalidAlpha(f64),
+    WeightsDoNotSumToOne { sum: f64 },
+}
 
+impl std::error::Error for StickBreakingError {}
 
+impl std::fmt::Display for StickBreakingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidAlpha(alpha) => {
+                write!(
+                    f,
+                    "alpha ({}) must be finite and greater than zero",
+                    alpha
+                )
+            }
+            Self::WeightsDoNotSumToOne { sum } => {
+                write!(f, "Weights do not sum to 1 ({sum})")
+            }
+        }
+    }
+}
 
 // We'd like to be able to serialize and deserialize StickBreaking, but serde can't handle
 // `Arc` or `RwLock`. So we use `StickBreakingFmt` as an intermediate type.
@@ -129,8 +151,11 @@ impl StickBreaking {
     pub fn new(
         alpha: f64,
         seed: Option<u64>,
-    ) -> Result<Self, UnitPowerLawError> {
-        let powlaw = UnitPowerLaw::new(alpha)?;
+    ) -> Result<Self, StickBreakingError> {
+        if alpha <= 0.0 || !alpha.is_finite() {
+            return Err(StickBreakingError::InvalidAlpha(alpha));
+        }
+        let powlaw = UnitPowerLaw::new_unchecked(alpha);
         let inner = _Inner {
             remaining_mass: 1.0,
             ln_weights: vec![0.0], // ln(1)
@@ -139,6 +164,12 @@ impl StickBreaking {
                 Xoshiro128Plus::seed_from_u64,
             ),
         };
+            Ok(
+                Self {
+                powlaw,
+                inner: Arc::new(RwLock::new(inner)),
+            }
+            )
     }
 
     pub fn with_inner<F, Ans>(&self, f: F) -> Ans
@@ -159,8 +190,11 @@ impl StickBreaking {
         ln_weights: Vec<f64>,
         alpha: f64,
         seed: Option<u64>,
-    ) -> Result<Self, UnitPowerLawError> {
-        let powlaw = UnitPowerLaw::new(alpha)?;
+    ) -> Result<Self, StickBreakingError> {
+        if alpha <= 0.0 || !alpha.is_finite() {
+            return Err(StickBreakingError::InvalidAlpha(alpha));
+        }
+        let powlaw = UnitPowerLaw::new_unchecked(alpha);
 
         let inner = _Inner {
             remaining_mass: ln_weights.last().unwrap().exp(),
@@ -172,7 +206,7 @@ impl StickBreaking {
         };
 
         Ok(Self {
-            powlaw: powlaw,
+            powlaw,
             inner: Arc::new(RwLock::new(inner)),
         })
     }
