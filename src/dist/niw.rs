@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::dist::{InvWishart, MvGaussian};
 use crate::impl_display;
 use crate::traits::*;
+use crate::suffstat_traits::*;
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
 use std::fmt;

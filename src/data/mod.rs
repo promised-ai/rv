@@ -23,7 +23,7 @@ pub use stat::UnitPowerLawSuffStat;
 use crate::dist::{
     Bernoulli, Categorical, Gaussian, InvGamma, InvGaussian, Poisson,
 };
-use crate::traits::{HasSuffStat, SuffStat};
+use crate::suffstat_traits::{HasSuffStat, SuffStat};
 
 pub type BernoulliData<'a, X> = DataOrSuffStat<'a, X, Bernoulli>;
 pub type CategoricalData<'a, X> = DataOrSuffStat<'a, X, Categorical>;

@@ -4,6 +4,7 @@ use special::Beta as SBeta;
 use crate::data::{BernoulliSuffStat, Booleable, DataOrSuffStat};
 use crate::dist::{Bernoulli, Beta};
 use crate::traits::*;
+use crate::suffstat_traits::*;
 
 impl Rv<Bernoulli> for Beta {
     fn ln_f(&self, x: &Bernoulli) -> f64 {

@@ -102,6 +102,8 @@ pub mod prelude;
 pub mod process;
 pub mod test;
 pub mod traits;
+pub mod process_traits;
+pub mod suffstat_traits;
 
 pub use crate::model::ConjugateModel;
 

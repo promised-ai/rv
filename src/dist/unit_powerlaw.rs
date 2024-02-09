@@ -6,6 +6,7 @@ use crate::data::UnitPowerLawSuffStat;
 use crate::impl_display;
 use crate::prelude::Beta;
 use crate::traits::*;
+use crate::suffstat_traits::*;
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;

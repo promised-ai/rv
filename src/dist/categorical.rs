@@ -6,6 +6,7 @@ use crate::data::{CategoricalDatum, CategoricalSuffStat};
 use crate::impl_display;
 use crate::misc::{argmax, ln_pflip, logsumexp, vec_to_string};
 use crate::traits::*;
+use crate::suffstat_traits::*;
 use rand::Rng;
 use std::fmt;
 

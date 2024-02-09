@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::data::CategoricalDatum;
 use crate::data::DataOrSuffStat;
 use crate::dist::Categorical;
-use crate::traits::SuffStat;
+use crate::suffstat_traits::SuffStat; 
 
 /// Categorical distribution sufficient statistic.
 ///

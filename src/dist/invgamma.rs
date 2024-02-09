@@ -6,6 +6,7 @@ use crate::data::InvGammaSuffStat;
 use crate::impl_display;
 use crate::misc::ln_gammafn;
 use crate::traits::*;
+use crate::suffstat_traits::*;
 use rand::Rng;
 use special::Gamma as _;
 use std::fmt;

@@ -7,6 +7,7 @@ use crate::dist::poisson::PoissonError;
 use crate::dist::{Gamma, Poisson};
 use crate::misc::ln_binom;
 use crate::traits::*;
+use crate::suffstat_traits::*;
 
 impl Rv<Poisson> for Gamma {
     fn ln_f(&self, x: &Poisson) -> f64 {

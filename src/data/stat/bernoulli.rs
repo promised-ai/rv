@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::data::Booleable;
 use crate::data::DataOrSuffStat;
 use crate::dist::Bernoulli;
-use crate::traits::SuffStat;
+use crate::suffstat_traits::SuffStat; 
 
 /// Sufficient statistic for the Bernoulli distribution.
 ///
