@@ -5,12 +5,11 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
 // use super::sb_stat::StickBreakingSuffStat;
-use crate::dist::{UnitPowerLaw, UnitPowerLawError};
+use crate::dist::UnitPowerLaw;
+use crate::experimental::stick_breaking_stat::StickBreakingSuffStat;
 use crate::misc::argmax;
 use crate::misc::ln_pflip;
 use crate::prelude::Mode;
-// use crate::prelude::UnitPowerLaw;
-use crate::experimental::stick_breaking_stat::StickBreakingSuffStat;
 use crate::suffstat_traits::*;
 use crate::traits::Rv;
 
@@ -164,12 +163,10 @@ impl StickBreaking {
                 Xoshiro128Plus::seed_from_u64,
             ),
         };
-            Ok(
-                Self {
-                powlaw,
-                inner: Arc::new(RwLock::new(inner)),
-            }
-            )
+        Ok(Self {
+            powlaw,
+            inner: Arc::new(RwLock::new(inner)),
+        })
     }
 
     pub fn with_inner<F, Ans>(&self, f: F) -> Ans
