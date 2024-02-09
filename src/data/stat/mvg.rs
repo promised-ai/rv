@@ -1,7 +1,7 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::suffstat_traits::SuffStat; 
+use crate::suffstat_traits::SuffStat;
 use nalgebra::{DMatrix, DVector};
 
 #[derive(Debug, Clone, PartialEq)]

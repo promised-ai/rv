@@ -134,7 +134,11 @@ impl _Inner {
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(
     feature = "serde1",
-    serde(rename_all = "snake_case", from = "StickSequenceFmt", into = "StickSequenceFmt")
+    serde(
+        rename_all = "snake_case",
+        from = "StickSequenceFmt",
+        into = "StickSequenceFmt"
+    )
 )]
 #[derive(Clone, Debug)]
 pub struct StickSequence {
@@ -153,7 +157,10 @@ impl PartialEq<StickSequence> for StickSequence {
 }
 
 impl StickSequence {
-    pub fn new(alpha: f64, seed: Option<u64>) -> Result<Self, StickSequenceError> {
+    pub fn new(
+        alpha: f64,
+        seed: Option<u64>,
+    ) -> Result<Self, StickSequenceError> {
         if alpha <= 0.0 || !alpha.is_finite() {
             Err(StickSequenceError::InvalidAlpha(alpha))
         } else {

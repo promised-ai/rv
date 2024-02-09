@@ -10,9 +10,9 @@ use crate::misc::argmax;
 use crate::misc::ln_pflip;
 use crate::prelude::Mode;
 // use crate::prelude::UnitPowerLaw;
+use crate::experimental::stick_breaking_stat::StickBreakingSuffStat;
 use crate::suffstat_traits::*;
 use crate::traits::Rv;
-use crate::experimental::stick_breaking_stat::StickBreakingSuffStat;
 
 #[derive(Clone, Debug)]
 pub enum StickBreakingError {
@@ -137,7 +137,11 @@ impl _Inner {
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(
     feature = "serde1",
-    serde(rename_all = "snake_case", from = "StickBreakingFmt", into = "StickBreakingFmt")
+    serde(
+        rename_all = "snake_case",
+        from = "StickBreakingFmt",
+        into = "StickBreakingFmt"
+    )
 )]
 #[derive(Clone, Debug)]
 pub struct StickBreaking {
@@ -155,7 +159,10 @@ impl PartialEq<StickBreaking> for StickBreaking {
 }
 
 impl StickBreaking {
-    pub fn new(alpha: f64, seed: Option<u64>) -> Result<Self, StickBreakingError> {
+    pub fn new(
+        alpha: f64,
+        seed: Option<u64>,
+    ) -> Result<Self, StickBreakingError> {
         if alpha <= 0.0 || !alpha.is_finite() {
             Err(StickBreakingError::InvalidAlpha(alpha))
         } else {

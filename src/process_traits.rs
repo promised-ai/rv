@@ -1,5 +1,5 @@
-use rand::Rng;
 use crate::traits::Rv;
+use rand::Rng;
 
 /// Random variable
 ///
@@ -114,7 +114,6 @@ pub trait Process<SampleSpace, ObservationSpace> {
         Box::new(std::iter::repeat_with(move || self.draw(&mut rng)))
     }
 }
-
 
 impl<T, X> Process<X, X> for T
 where

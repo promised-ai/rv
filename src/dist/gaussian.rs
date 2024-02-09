@@ -12,8 +12,8 @@ use std::sync::OnceLock;
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
 use crate::impl_display;
-use crate::traits::*;
 use crate::suffstat_traits::*;
+use crate::traits::*;
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.

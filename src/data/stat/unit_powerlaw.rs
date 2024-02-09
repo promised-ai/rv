@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::DataOrSuffStat;
 use crate::dist::UnitPowerLaw;
-use crate::suffstat_traits::SuffStat; 
+use crate::suffstat_traits::SuffStat;
 
 /// Inverse Gamma sufficient statistic.
 #[derive(Debug, Clone, PartialEq)]

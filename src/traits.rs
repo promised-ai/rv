@@ -1,7 +1,7 @@
 //! Trait definitions
 use crate::data::DataOrSuffStat;
+use crate::suffstat_traits::HasSuffStat;
 use rand::Rng;
-use crate::suffstat_traits::HasSuffStat;   
 
 /// Random variable
 ///

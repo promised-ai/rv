@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::dist::MvGaussian;
 use crate::misc::lnmv_gamma;
-use crate::traits::*;
 use crate::suffstat_traits::*;
+use crate::traits::*;
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
 use std::f64::consts::LN_2;

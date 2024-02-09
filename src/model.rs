@@ -1,6 +1,6 @@
 use crate::data::DataOrSuffStat;
-use crate::traits::*;
 use crate::suffstat_traits::*;
+use crate::traits::*;
 use rand::Rng;
 use std::marker::PhantomData;
 use std::sync::Arc;

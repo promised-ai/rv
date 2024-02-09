@@ -1,4 +1,4 @@
-use crate::suffstat_traits::SuffStat; 
+use crate::suffstat_traits::SuffStat;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -27,7 +27,6 @@ impl StickBreakingSuffStat {
     }
 }
 
-
 // A standard stick-breaking process requires a Beta(1, α) distribution. We
 // instead parameterize by a UnitPowerLaw(α), which is equivalent to a
 // Beta(α,1). Given a sequence of stick lengths coming form such a process, we
@@ -35,14 +34,11 @@ impl StickBreakingSuffStat {
 fn stick_stat(sticks: &[f64]) -> (usize, f64) {
     // First we need to find the sequence of remaining stick lengths. Because we
     // broke the sticks left-to-right, we need to reverse the sequence.
-    let remaining = sticks
-        .iter()
-        .rev()
-        .scan(0.0, |acc, &x| {
-            *acc += x;
-            Some(*acc)
-        });
-    
+    let remaining = sticks.iter().rev().scan(0.0, |acc, &x| {
+        *acc += x;
+        Some(*acc)
+    });
+
     let qs = sticks
         .iter()
         // Reversing `remaining` would force us to collect the intermediate
@@ -60,9 +56,9 @@ fn stick_stat(sticks: &[f64]) -> (usize, f64) {
 
     // The sufficient statistic is (n, ∑ᵢ log(1 - pᵢ)) == (n, log ∏ᵢ(1 - pᵢ)).
     // First we compute `n` and `∏ᵢ(1 - pᵢ)`
-    let (num_breaks, prod_q) = qs
-        .fold((0, 1.0), |(n, prod_q), q| (n + 1, prod_q * q));
-    
+    let (num_breaks, prod_q) =
+        qs.fold((0, 1.0), |(n, prod_q), q| (n + 1, prod_q * q));
+
     (num_breaks, prod_q.ln())
 }
 
@@ -77,7 +73,6 @@ impl SuffStat<&[f64]> for StickBreakingSuffStat {
         self.num_breaks += num_breaks;
         self.sum_log_q += sum_log_q;
     }
-
 
     fn forget(&mut self, sticks: &&[f64]) {
         let (num_breaks, sum_log_q) = stick_stat(sticks);

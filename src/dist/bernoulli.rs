@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{BernoulliSuffStat, Booleable};
 use crate::impl_display;
-use crate::traits::*;
 use crate::suffstat_traits::*;
+use crate::traits::*;
 use rand::Rng;
 use std::f64;
 use std::fmt;

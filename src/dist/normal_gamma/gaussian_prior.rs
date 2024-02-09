@@ -8,9 +8,9 @@ use crate::data::{
 use crate::dist::{Gaussian, NormalGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
+use crate::suffstat_traits::*;
 use crate::test::GewekeTestable;
 use crate::traits::*;
-use crate::suffstat_traits::*;
 
 #[inline]
 fn ln_z(r: f64, s: f64, v: f64) -> f64 {

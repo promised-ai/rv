@@ -10,8 +10,8 @@ use std::sync::OnceLock;
 use crate::consts::*;
 use crate::data::InvGaussianSuffStat;
 use crate::impl_display;
-use crate::traits::*;
 use crate::suffstat_traits::*;
+use crate::traits::*;
 
 /// [Inverse Gaussian distribution](https://en.wikipedia.org/wiki/Inverse_Gaussian_distribution),
 /// N<sup>-1</sup>(μ, λ) over real values.

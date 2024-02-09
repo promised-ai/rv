@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::data::DataOrSuffStat;
 use crate::dist::Poisson;
 use crate::misc::ln_fact;
-use crate::suffstat_traits::SuffStat; 
+use crate::suffstat_traits::SuffStat;
 
 /// Poisson sufficient statistic.
 ///
