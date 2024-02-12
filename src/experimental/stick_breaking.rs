@@ -1,5 +1,4 @@
-use rand::{Rng, SeedableRng};
-use rand_xoshiro::Xoshiro128Plus;
+use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 

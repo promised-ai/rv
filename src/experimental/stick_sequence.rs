@@ -1,4 +1,4 @@
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 use rand_xoshiro::Xoshiro128Plus;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -6,9 +6,6 @@ use std::sync::{Arc, RwLock};
 
 // use super::sticks_stat::StickBreakingSuffStat;
 use crate::dist::UnitPowerLaw;
-use crate::misc::argmax;
-use crate::misc::ln_pflip;
-use crate::prelude::Mode;
 use crate::traits::Rv;
 
 #[derive(Clone, Debug)]
@@ -269,142 +266,78 @@ impl StickSequence {
     }
 }
 
-impl Rv<usize> for StickSequence {
-    fn ln_f(&self, x: &usize) -> f64 {
-        if self.with_inner(|inner| inner.num_cats() > *x) {
-            self.with_inner(|inner| inner.ln_weights[*x])
-        } else {
-            self.with_inner_mut(|inner| {
-                inner.extend_until(&self.breaker, move |inner| {
-                    inner.num_cats() > *x
-                })[*x]
-            })
-        }
-    }
 
-    /// Alternate option:
-    // fn ln_f(&self, x: &usize) -> f64 {
-    //     self.with_inner(|inner| {
-    //         if inner.num_cats() > *x {
-    //             inner.ln_weights[*x]
-    //         } else {
-    //             self.with_inner_mut(|inner| {
-    //                 inner.extend_until(&self.beta, move |inner| {
-    //                     inner.num_cats() > *x
-    //                 })[*x]
-    //             })
-    //         }
-    //     })
-    // }
+// #[cfg(test)]
+// mod test {
+//     use rand::SeedableRng;
+//     use std::collections::HashMap;
 
-    fn draw<R: Rng>(&self, rng: &mut R) -> usize {
-        let u: f64 = rng.gen();
+//     use super::*;
 
-        let powlaw = self.breaker.clone();
-        self.with_inner_mut(|inner| {
-            let remaining_mass = inner.remaining_mass;
-            let k = inner.num_cats();
+//     #[test]
+//     fn canonical_order_ln_f() {
+//         let sticks = StickSequence::new(1.0, None).unwrap();
+//         let mut rm_mass = sticks.p_unobserved();
+//         for x in 0..10 {
+//             let ln_f_1 = sticks.ln_f(&x);
+//             let k = sticks.num_cats();
+//             assert!(rm_mass > sticks.p_unobserved());
+//             rm_mass = sticks.p_unobserved();
 
-            if u < 1.0 - remaining_mass {
-                // TODO: Since we know the remaining mass, we can easily
-                // normalize without needing logsumexp
-                ln_pflip(&inner.ln_weights[..k], 1, false, rng)[0]
-            } else {
-                let ln_ws = inner.extend_until(&powlaw, |inner| {
-                    inner.remaining_mass <= 1.0 - u
-                });
-                let ix = ln_pflip(ln_ws, 1, false, rng)[0];
-                ix + k
-            }
-        })
-    }
-}
+//             let ln_f_2 = sticks.ln_f(&x);
 
-impl Mode<usize> for StickSequence {
-    fn mode(&self) -> Option<usize> {
-        let i_max = self.with_inner_mut(|inner| {
-            // TODO: Make this more efficient
-            inner.extend_until(&self.breaker, |inner| {
-                argmax(&inner.ln_weights)[0] < inner.ln_weights.len() - 1
-            });
-            argmax(&inner.ln_weights)[0]
-        });
+//             assert_eq!(ln_f_1, ln_f_2);
+//             assert_eq!(k, sticks.num_cats());
+//         }
+//     }
 
-        Some(i_max)
-    }
-}
+//     #[test]
+//     fn static_ln_f_from_new() {
+//         let sticks = StickSequence::new(1.0, None).unwrap();
 
-#[cfg(test)]
-mod test {
-    use rand::SeedableRng;
-    use std::collections::HashMap;
+//         assert_eq!(sticks.num_cats(), 0);
 
-    use super::*;
+//         let lnf0 = sticks.ln_f(&0_usize);
+//         assert::close(lnf0, sticks.ln_f(&0_usize), 1e-12);
 
-    #[test]
-    fn canonical_order_ln_f() {
-        let sticks = StickSequence::new(1.0, None).unwrap();
-        let mut rm_mass = sticks.p_unobserved();
-        for x in 0..10 {
-            let ln_f_1 = sticks.ln_f(&x);
-            let k = sticks.num_cats();
-            assert!(rm_mass > sticks.p_unobserved());
-            rm_mass = sticks.p_unobserved();
+//         assert_eq!(sticks.num_cats(), 1);
 
-            let ln_f_2 = sticks.ln_f(&x);
+//         let _lnf1 = sticks.ln_f(&1_usize); // causes new category to form
+//         assert::close(lnf0, sticks.ln_f(&0_usize), 1e-12);
+//         assert_eq!(sticks.num_cats(), 2);
+//     }
 
-            assert_eq!(ln_f_1, ln_f_2);
-            assert_eq!(k, sticks.num_cats());
-        }
-    }
+//     #[test]
+//     fn draw_many_smoke() {
+//         let mut counter: HashMap<usize, usize> = HashMap::new();
+//         let mut rng = rand::thread_rng();
+//         let seed: u64 = rng.gen();
+//         eprintln!("draw_many_smoke seed: {seed}");
+//         let mut rng = rand_xoshiro::Xoroshiro128Plus::seed_from_u64(seed);
+//         let sticks = StickSequence::new(1.0, None).unwrap();
+//         for _ in 0..1_000 {
+//             let x: usize = sticks.draw(&mut rng);
+//             counter.entry(x).and_modify(|ct| *ct += 1).or_insert(1);
+//         }
+//         // eprintln!("{:?}", counter);
+//     }
 
-    #[test]
-    fn static_ln_f_from_new() {
-        let sticks = StickSequence::new(1.0, None).unwrap();
+//     #[test]
+//     fn repeatedly_compute_oob_lnf() {
+//         let sticks = StickSequence::new(0.5, None).unwrap();
+//         assert_eq!(sticks.num_cats(), 0);
 
-        assert_eq!(sticks.num_cats(), 0);
+//         sticks.ln_f(&0);
+//         assert_eq!(sticks.num_cats(), 1);
 
-        let lnf0 = sticks.ln_f(&0_usize);
-        assert::close(lnf0, sticks.ln_f(&0_usize), 1e-12);
+//         sticks.ln_f(&1);
+//         assert_eq!(sticks.num_cats(), 2);
 
-        assert_eq!(sticks.num_cats(), 1);
+//         sticks.ln_f(&1);
+//         sticks.ln_f(&1);
+//         assert_eq!(sticks.num_cats(), 2);
 
-        let _lnf1 = sticks.ln_f(&1_usize); // causes new category to form
-        assert::close(lnf0, sticks.ln_f(&0_usize), 1e-12);
-        assert_eq!(sticks.num_cats(), 2);
-    }
-
-    #[test]
-    fn draw_many_smoke() {
-        let mut counter: HashMap<usize, usize> = HashMap::new();
-        let mut rng = rand::thread_rng();
-        let seed: u64 = rng.gen();
-        eprintln!("draw_many_smoke seed: {seed}");
-        let mut rng = rand_xoshiro::Xoroshiro128Plus::seed_from_u64(seed);
-        let sticks = StickSequence::new(1.0, None).unwrap();
-        for _ in 0..1_000 {
-            let x: usize = sticks.draw(&mut rng);
-            counter.entry(x).and_modify(|ct| *ct += 1).or_insert(1);
-        }
-        // eprintln!("{:?}", counter);
-    }
-
-    #[test]
-    fn repeatedly_compute_oob_lnf() {
-        let sticks = StickSequence::new(0.5, None).unwrap();
-        assert_eq!(sticks.num_cats(), 0);
-
-        sticks.ln_f(&0);
-        assert_eq!(sticks.num_cats(), 1);
-
-        sticks.ln_f(&1);
-        assert_eq!(sticks.num_cats(), 2);
-
-        sticks.ln_f(&1);
-        sticks.ln_f(&1);
-        assert_eq!(sticks.num_cats(), 2);
-
-        sticks.ln_f(&0);
-        assert_eq!(sticks.num_cats(), 2);
-    }
-}
+//         sticks.ln_f(&0);
+//         assert_eq!(sticks.num_cats(), 2);
+//     }
+// }
