@@ -266,7 +266,6 @@ impl StickSequence {
     }
 }
 
-
 // #[cfg(test)]
 // mod test {
 //     use rand::SeedableRng;
