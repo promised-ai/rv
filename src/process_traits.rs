@@ -1,4 +1,3 @@
-use crate::traits::Rv;
 use rand::Rng;
 
 /// Random variable
@@ -115,19 +114,19 @@ pub trait Process<SampleSpace, ObservationSpace> {
     }
 }
 
-impl<T, X> Process<X, X> for T
-where
-    T: Rv<X>,
-{
-    fn f(&self, x: &X) -> f64 {
-        self.f(x)
-    }
+// impl<T, X> Process<X, X> for T
+// where
+//     T: Rv<X>,
+// {
+//     fn f(&self, x: &X) -> f64 {
+//         self.f(x)
+//     }
 
-    fn ln_f(&self, x: &X) -> f64 {
-        self.ln_f(x)
-    }
+//     fn ln_f(&self, x: &X) -> f64 {
+//         self.ln_f(x)
+//     }
 
-    fn draw<R: Rng>(&self, rng: &mut R) -> X {
-        self.draw(rng)
-    }
-}
+//     fn draw<R: Rng>(&self, rng: &mut R) -> X {
+//         self.draw(rng)
+//     }
+// }

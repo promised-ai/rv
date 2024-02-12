@@ -1,4 +1,8 @@
-use crate::suffstat_traits::SuffStat;
+use crate::experimental::stick_breaking::StickBreaking;
+use crate::{
+    data::UnitPowerLawSuffStat,
+    suffstat_traits::{HasSuffStat, SuffStat},
+};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -6,9 +10,9 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct StickBreakingSuffStat {
-    n: usize,
-    num_breaks: usize,
-    sum_log_q: f64,
+    pub n: usize,
+    pub num_breaks: usize,
+    pub sum_log_q: f64,
 }
 
 impl Default for StickBreakingSuffStat {
@@ -26,6 +30,34 @@ impl StickBreakingSuffStat {
         }
     }
 }
+
+impl From<StickBreakingSuffStat> for UnitPowerLawSuffStat {
+    fn from(stat: StickBreakingSuffStat) -> Self {
+        Self {
+            n: stat.num_breaks,
+            sum_ln_x: stat.sum_log_q,
+        }
+    }
+}
+
+impl From<&&[f64]> for StickBreakingSuffStat {
+    fn from(x: &&[f64]) -> Self {
+        let mut stat = StickBreakingSuffStat::new();
+        stat.observe(x);
+        stat
+    }
+}
+
+// TODO: Generalize the above, something like
+// impl<Stat,X> From<&X> for Stat
+//     where Stat: SuffStat<X>
+//     {
+//     fn from(x: &X) -> Self {
+//         let mut stat = Stat::new();
+//         stat.observe(x);
+//         stat
+//     }
+// }
 
 // A standard stick-breaking process requires a Beta(1, α) distribution. We
 // instead parameterize by a UnitPowerLaw(α), which is equivalent to a
@@ -60,6 +92,18 @@ fn stick_stat(sticks: &[f64]) -> (usize, f64) {
         qs.fold((0, 1.0), |(n, prod_q), q| (n + 1, prod_q * q));
 
     (num_breaks, prod_q.ln())
+}
+
+impl HasSuffStat<&[f64]> for StickBreaking {
+    type Stat = StickBreakingSuffStat;
+
+    fn empty_suffstat(&self) -> Self::Stat {
+        StickBreakingSuffStat::new()
+    }
+
+    fn ln_f_stat(&self, _stat: &Self::Stat) -> f64 {
+        unimplemented!()
+    }
 }
 
 impl SuffStat<&[f64]> for StickBreakingSuffStat {

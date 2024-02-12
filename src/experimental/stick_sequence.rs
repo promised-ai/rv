@@ -90,11 +90,22 @@ pub struct _Inner {
 }
 
 impl _Inner {
-    pub fn next_category(&self) -> usize {
+    fn new(seed: Option<u64>) -> _Inner {
+        _Inner {
+            remaining_mass: 1.0,
+            ln_weights: vec![0.0], // ln(1)
+            rng: seed.map_or_else(
+                Xoshiro128Plus::from_entropy,
+                Xoshiro128Plus::seed_from_u64,
+            ),
+        }
+    }
+
+    fn next_category(&self) -> usize {
         self.ln_weights.len() - 1
     }
 
-    pub fn num_cats(&self) -> usize {
+    fn num_cats(&self) -> usize {
         self.ln_weights.len() - 1
     }
 
@@ -166,14 +177,7 @@ impl StickSequence {
         } else {
             Ok(Self {
                 breaker: UnitPowerLaw::new_unchecked(alpha),
-                inner: Arc::new(RwLock::new(_Inner {
-                    remaining_mass: 1.0,
-                    ln_weights: vec![0.0], // ln(1)
-                    rng: seed.map_or_else(
-                        Xoshiro128Plus::from_entropy,
-                        Xoshiro128Plus::seed_from_u64,
-                    ),
-                })),
+                inner: Arc::new(RwLock::new(_Inner::new(seed))),
             })
         }
     }
