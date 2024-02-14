@@ -33,7 +33,6 @@ impl std::fmt::Display for StickBreakingError {
     }
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct StickBreaking {
     pub alpha: f64,

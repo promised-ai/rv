@@ -1,6 +1,7 @@
 /// The data for this distribution can be summarized by a statistic
 pub trait HasSuffStat<X> {
     type Stat: SuffStat<X>;
+
     fn empty_suffstat(&self) -> Self::Stat;
 
     /// Return the log likelihood for the data represented by the sufficient
