@@ -135,7 +135,15 @@ impl _Inner {
         while !p(self) {
             self.extend(breaker);
         }
-        &self.ln_weights
+        &self.weights
+    }
+
+    fn first_n(&mut self, breaker: &UnitPowerLaw, n: usize) -> Vec<f64> {
+        self.extend_until(breaker, |inner| inner.num_cats() > n)
+            .iter()
+            .take(n)
+            .cloned()
+            .collect()
     }
 }
 
