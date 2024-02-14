@@ -272,79 +272,79 @@ impl StickSequence {
     pub fn alpha(&self) -> f64 {
         self.breaker.alpha()
     }
+
+    pub fn first_n(&self, n: usize) -> Vec<f64> {
+        self.with_inner_mut(|inner| inner.first_n(&self.breaker, n))
+    }
 }
 
-// #[cfg(test)]
-// mod test {
-//     use rand::SeedableRng;
-//     use std::collections::HashMap;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-//     use super::*;
+    #[test]
+    fn test_new() {
+        let alpha = 1.5;
+        let seed = Some(123);
+        let stick_sequence = StickSequence::new(alpha, seed).unwrap();
 
-//     #[test]
-//     fn canonical_order_ln_f() {
-//         let sticks = StickSequence::new(1.0, None).unwrap();
-//         let mut rm_mass = sticks.p_unobserved();
-//         for x in 0..10 {
-//             let ln_f_1 = sticks.ln_f(&x);
-//             let k = sticks.num_cats();
-//             assert!(rm_mass > sticks.p_unobserved());
-//             rm_mass = sticks.p_unobserved();
+        assert_eq!(stick_sequence.breaker.alpha(), alpha);
+        assert_eq!(stick_sequence.num_cats(), 0);
+        assert_eq!(stick_sequence.p_unobserved(), 1.0);
+    }
 
-//             let ln_f_2 = sticks.ln_f(&x);
+    #[test]
+    fn test_from_ln_weights() {
+        let ln_weights = vec![0.0, -1.0, -2.0];
+        let alpha = 1.5;
+        let seed = Some(123);
+        let stick_sequence =
+            StickSequence::from_ln_weights(&ln_weights, alpha, seed).unwrap();
 
-//             assert_eq!(ln_f_1, ln_f_2);
-//             assert_eq!(k, sticks.num_cats());
-//         }
-//     }
+        assert_eq!(stick_sequence.breaker.alpha(), alpha);
+        assert_eq!(stick_sequence.num_cats(), ln_weights.len());
+        assert_eq!(stick_sequence.p_unobserved(), 0.0);
+    }
 
-//     #[test]
-//     fn static_ln_f_from_new() {
-//         let sticks = StickSequence::new(1.0, None).unwrap();
+    #[test]
+    fn test_from_weights() {
+        let weights = vec![0.5, 0.3, 0.2];
+        let alpha = 1.5;
+        let seed = Some(123);
+        let stick_sequence =
+            StickSequence::from_weights(&weights, alpha, seed).unwrap();
 
-//         assert_eq!(sticks.num_cats(), 0);
+        assert_eq!(stick_sequence.breaker.alpha(), alpha);
+        assert_eq!(stick_sequence.num_cats(), weights.len());
+        assert_eq!(stick_sequence.p_unobserved(), 0.0);
+    }
 
-//         let lnf0 = sticks.ln_f(&0_usize);
-//         assert::close(lnf0, sticks.ln_f(&0_usize), 1e-12);
+    #[test]
+    fn test_eq() {
+        let alpha = 1.5;
+        let seed = Some(123);
+        let stick_sequence1 = StickSequence::new(alpha, seed).unwrap();
+        let stick_sequence2 = StickSequence::new(alpha, seed).unwrap();
 
-//         assert_eq!(sticks.num_cats(), 1);
+        assert_eq!(stick_sequence1, stick_sequence2);
+    }
 
-//         let _lnf1 = sticks.ln_f(&1_usize); // causes new category to form
-//         assert::close(lnf0, sticks.ln_f(&0_usize), 1e-12);
-//         assert_eq!(sticks.num_cats(), 2);
-//     }
+    #[test]
+    fn test_first_n() {
+        let alpha = 1.5;
+        let seed = Some(123);
+        let stick_sequence = StickSequence::new(alpha, seed).unwrap();
+        let n = 5;
+        let first_n = stick_sequence.first_n(n);
 
-//     #[test]
-//     fn draw_many_smoke() {
-//         let mut counter: HashMap<usize, usize> = HashMap::new();
-//         let mut rng = rand::thread_rng();
-//         let seed: u64 = rng.gen();
-//         eprintln!("draw_many_smoke seed: {seed}");
-//         let mut rng = rand_xoshiro::Xoroshiro128Plus::seed_from_u64(seed);
-//         let sticks = StickSequence::new(1.0, None).unwrap();
-//         for _ in 0..1_000 {
-//             let x: usize = sticks.draw(&mut rng);
-//             counter.entry(x).and_modify(|ct| *ct += 1).or_insert(1);
-//         }
-//         // eprintln!("{:?}", counter);
-//     }
+        assert_eq!(first_n.len(), n);
 
-//     #[test]
-//     fn repeatedly_compute_oob_lnf() {
-//         let sticks = StickSequence::new(0.5, None).unwrap();
-//         assert_eq!(sticks.num_cats(), 0);
-
-//         sticks.ln_f(&0);
-//         assert_eq!(sticks.num_cats(), 1);
-
-//         sticks.ln_f(&1);
-//         assert_eq!(sticks.num_cats(), 2);
-
-//         sticks.ln_f(&1);
-//         sticks.ln_f(&1);
-//         assert_eq!(sticks.num_cats(), 2);
-
-//         sticks.ln_f(&0);
-//         assert_eq!(sticks.num_cats(), 2);
-//     }
-// }
+        let another_first_n = stick_sequence
+            .first_n(n + 1)
+            .iter()
+            .take(n)
+            .cloned()
+            .collect::<Vec<f64>>();
+        assert_eq!(first_n, another_first_n);
+    }
+}
