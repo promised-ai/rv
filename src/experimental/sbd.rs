@@ -1,16 +1,13 @@
-use rand::{Rng, SeedableRng};
-use rand_xoshiro::Xoshiro128Plus;
+use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, RwLock};
 
 use super::StickSequence;
-use crate::dist::Beta;
-use crate::misc::argmax;
-use crate::misc::ln_pflip;
-use crate::prelude::Mode;
-use crate::suffstat_traits::HasSuffStat;
+// use crate::suffstat_traits::HasSuffStat;
 use crate::traits::Rv;
+use crate::traits::Support;
+use crate::traits::Cdf;
+use crate::traits::InverseCdf;
 
 #[derive(Clone, Debug)]
 pub enum SbdError {
@@ -55,9 +52,15 @@ pub struct Sbd {
 }
 
 impl Sbd {
-    // Is this how we want to set this up?
     pub fn new(sticks: StickSequence) -> Self {
         Self { sticks }
+    }
+
+    pub fn invccdf(&self, u: f64) -> usize {
+        self.sticks.extendmap_ccdf(
+            |ccdf| ccdf.last().unwrap() < &u,
+            |ccdf| ccdf.iter().position(|q| *q < u).unwrap() - 1,
+        )
     }
 }
 
@@ -73,6 +76,28 @@ impl Sbd {
 //     }
 // }
 
+impl Support<usize> for Sbd {
+    fn supports(&self, x: &usize) -> bool {
+        x.ge(&0)
+    }
+}
+
+impl Cdf<usize> for Sbd {
+     fn sf(&self, x: &usize) -> f64 {
+        self.sticks.ccdf(x + 1)
+    }
+
+    fn cdf(&self, x: &usize) -> f64 {
+        1.0 - self.sf(x)
+    }
+}
+
+impl InverseCdf<usize> for Sbd {
+    fn invcdf(&self, p: f64) -> usize {
+        self.invccdf(1.0 - p)
+    }
+}
+
 impl Rv<usize> for Sbd {
     fn f(&self, n: &usize) -> f64 {
         let sticks = &self.sticks;
@@ -83,27 +108,13 @@ impl Rv<usize> for Sbd {
         self.f(n).ln()
     }
 
-    /// Alternate option:
-    // fn ln_f(&self, x: &usize) -> f64 {
-    //     self.with_inner(|inner| {
-    //         if inner.num_cats() > *x {
-    //             inner.ln_weights[*x]
-    //         } else {
-    //             self.with_inner_mut(|inner| {
-    //                 inner.extend_until(&self.beta, move |inner| {
-    //                     inner.num_cats() > *x
-    //                 })[*x]
-    //             })
-    //         }
-    //     })
-    // }
-
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
         let u: f64 = rng.gen();
-        self.sticks.extendmap_ccdf(
-            |ccdf| ccdf.last().unwrap() < &u,
-            |ccdf| ccdf.iter().position(|q| *q < u).unwrap() - 1,
-        )
+        self.invccdf(u)
+    }
+
+    fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<usize> {
+        (0..n).map(|_| self.draw(&mut rng)).collect()
     }
 }
 
