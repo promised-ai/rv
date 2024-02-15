@@ -80,70 +80,60 @@ impl From<StickSequence> for StickSequenceFmt {
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct _Inner {
-    remaining_mass: f64,
-    // the bin weights. the last entry is ln(remaining_mass)
-    pub ln_weights: Vec<f64>,
     rng: rand_xoshiro::Xoshiro128Plus,
+    ccdf: Vec<f64>,
 }
 
 impl _Inner {
     fn new(seed: Option<u64>) -> _Inner {
         _Inner {
-            remaining_mass: 1.0,
-            ln_weights: vec![0.0], // ln(1)
             rng: seed.map_or_else(
                 Xoshiro128Plus::from_entropy,
                 Xoshiro128Plus::seed_from_u64,
             ),
+            ccdf: vec![1.0],
         }
     }
 
-    fn next_category(&self) -> usize {
-        self.ln_weights.len() - 1
+    fn weight(&mut self, breaker: &UnitPowerLaw, n: usize) -> f64 {
+        self.ensure_breaks(breaker, n);
+        let ccdf = &self.ccdf;
+        ccdf[n + 1] - ccdf[n]
     }
 
-    fn num_cats(&self) -> usize {
-        self.ln_weights.len() - 1
+    fn weights(&mut self, breaker: &UnitPowerLaw, n: usize) -> Vec<f64> {
+        self.ensure_breaks(breaker, n);
+        let mut last_p = 1.0;
+        self.ccdf
+            .iter()
+            .skip(1)
+            .map(|&p| {
+                let w = last_p - p;
+                last_p = p;
+                w
+            })
+            .collect()
     }
 
     fn extend(&mut self, breaker: &UnitPowerLaw) -> f64 {
-        let b: f64 = {
-            let p: f64 = breaker.draw(&mut self.rng);
-            1.0 - p
-        };
-        let rm_mass = self.remaining_mass;
-        let w = rm_mass * b;
-        let rm_mass = rm_mass - w;
-
-        let ln_w = w.ln();
-
-        self.remaining_mass = rm_mass;
-        if let Some(last) = self.ln_weights.last_mut() {
-            *last = ln_w;
-        } else {
-            panic!("empty ln_weights");
-        }
-        self.ln_weights.push(rm_mass.ln());
-
-        ln_w
+        let p: f64 = breaker.draw(&mut self.rng);
+        let remaining_mass = self.ccdf.last().unwrap();
+        let new_remaining_mass = remaining_mass * p;
+        self.ccdf.push(new_remaining_mass);
+        new_remaining_mass
     }
 
-    fn extend_until<F>(&mut self, breaker: &UnitPowerLaw, p: F) -> &Vec<f64>
+    fn extend_until<F>(&mut self, breaker: &UnitPowerLaw, p: F)
     where
         F: Fn(&_Inner) -> bool,
     {
         while !p(self) {
             self.extend(breaker);
         }
-        &self.weights
     }
 
-    fn first_n(&mut self, breaker: &UnitPowerLaw, n: usize) -> Vec<f64> {
-        self.extend_until(breaker, |inner| inner.num_cats() > n)
-            .iter()
-            .take(n)
-            .cloned()
-            .collect()
+    fn ensure_breaks(&mut self, breaker: &UnitPowerLaw, n: usize) {
+        self.extend_until(breaker, |inner| inner.ccdf.len() > n);
     }
 }
 
@@ -164,11 +154,8 @@ pub struct StickSequence {
 
 // TODO: Extend to equal length, then check for equality
 impl PartialEq<StickSequence> for StickSequence {
-    fn eq(&self, other: &StickSequence) -> bool {
-        self.breaker == other.breaker
-            && self.with_inner(|inner| {
-                other.with_inner(|other_inner| *inner == *other_inner)
-            })
+    fn eq(&self, _other: &StickSequence) -> bool {
+        todo!()
     }
 }
 
@@ -187,6 +174,15 @@ impl StickSequence {
         }
     }
 
+    pub fn extendmap_ccdf<P, F, Ans>(&self, pred: P, f: F) -> Ans
+    where
+        P: Fn(&Vec<f64>) -> bool,
+        F: Fn(&Vec<f64>) -> Ans,
+    {
+        self.extend_until(|inner| pred(&inner.ccdf));
+        self.with_inner(|inner| f(&inner.ccdf))
+    }
+
     pub fn with_inner<F, Ans>(&self, f: F) -> Ans
     where
         F: FnOnce(&_Inner) -> Ans,
@@ -201,80 +197,40 @@ impl StickSequence {
         self.inner.write().map(|mut inner| f(&mut inner)).unwrap()
     }
 
-    pub fn from_ln_weights(
-        ln_weights: Vec<f64>,
-        alpha: f64,
-        seed: Option<u64>,
-    ) -> Result<Self, StickSequenceError> {
-        let inner = _Inner {
-            remaining_mass: ln_weights.last().unwrap().exp(),
-            ln_weights,
-            rng: seed.map_or_else(
-                Xoshiro128Plus::from_entropy,
-                Xoshiro128Plus::seed_from_u64,
-            ),
-        };
+    fn ensure_breaks(&self, n: usize) {
+        self.extend_until(|inner| inner.ccdf.len() > n);
+    }
 
-        Ok(Self {
-            breaker: UnitPowerLaw::new_unchecked(alpha),
-            inner: Arc::new(RwLock::new(inner)),
+    fn weights(&mut self, n: usize) -> Vec<f64> {
+        self.ensure_breaks(n);
+        self.with_inner(|inner| {
+            let mut last_p = 1.0;
+            inner
+                .ccdf
+                .iter()
+                .skip(1)
+                .map(|&p| {
+                    let w = last_p - p;
+                    last_p = p;
+                    w
+                })
+                .collect()
         })
     }
 
-    pub fn from_weights(
-        weights: &[f64],
-        alpha: f64,
-        seed: Option<u64>,
-    ) -> Result<Self, StickSequenceError> {
-        let sum = weights.iter().sum::<f64>();
-        if (sum - 1.0).abs() > 1e-13 {
-            return Err(StickSequenceError::WeightsDoNotSumToOne { sum });
-        }
-        let ln_weights = weights.iter().map(|w| w.ln()).collect();
-        Self::from_ln_weights(ln_weights, alpha, seed)
-    }
-
-    pub fn from_canonical_weights(
-        weights: &[f64],
-        alpha: f64,
-        seed: Option<u64>,
-    ) -> Result<Self, StickSequenceError> {
-        if alpha <= 0.0 || !alpha.is_finite() {
-            Err(StickSequenceError::InvalidAlpha(alpha))
-        } else {
-            let k = weights.len() - 1;
-            let inner = _Inner {
-                remaining_mass: weights[k],
-                ln_weights: weights.iter().map(|&w| w.ln()).collect(),
-                rng: seed.map_or_else(
-                    Xoshiro128Plus::from_entropy,
-                    Xoshiro128Plus::seed_from_u64,
-                ),
-            };
-
-            assert_eq!(inner.ln_weights.len(), k + 1);
-
-            Ok(Self {
-                breaker: UnitPowerLaw::new_unchecked(alpha),
-                inner: Arc::new(RwLock::new(inner)),
-            })
-        }
-    }
-
-    pub fn num_cats(&self) -> usize {
-        self.with_inner(|inner| inner.num_cats())
-    }
-
-    pub fn p_unobserved(&self) -> f64 {
-        self.with_inner(|inner| inner.remaining_mass)
+    pub fn weight(&self, n: usize) -> f64 {
+        self.with_inner_mut(|inner| inner.weight(&self.breaker, n))
     }
 
     pub fn alpha(&self) -> f64 {
         self.breaker.alpha()
     }
 
-    pub fn first_n(&self, n: usize) -> Vec<f64> {
-        self.with_inner_mut(|inner| inner.first_n(&self.breaker, n))
+    pub fn extend_until<F>(&self, p: F)
+    where
+        F: Fn(&_Inner) -> bool,
+    {
+        self.with_inner_mut(|inner| inner.extend_until(&self.breaker, p));
     }
 }
 
