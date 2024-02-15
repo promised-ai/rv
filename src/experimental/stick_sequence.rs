@@ -95,11 +95,7 @@ impl _Inner {
         }
     }
 
-    fn weight(&mut self, breaker: &UnitPowerLaw, n: usize) -> f64 {
-        self.ensure_breaks(breaker, n);
-        let ccdf = &self.ccdf;
-        ccdf[n + 1] - ccdf[n]
-    }
+
 
     fn weights(&mut self, breaker: &UnitPowerLaw, n: usize) -> Vec<f64> {
         self.ensure_breaks(breaker, n);
@@ -201,7 +197,23 @@ impl StickSequence {
         self.extend_until(|inner| inner.ccdf.len() > n);
     }
 
-    fn weights(&mut self, n: usize) -> Vec<f64> {
+    pub fn ccdf(&self, n: usize) -> f64 {
+        self.ensure_breaks(n);
+        self.with_inner(|inner| {
+            let ccdf = &inner.ccdf;
+            ccdf[n]
+        })
+    }
+
+    pub fn weight(&self, n: usize) -> f64 {
+        self.ensure_breaks(n);
+        self.with_inner(|inner| {
+            let ccdf = &inner.ccdf;
+            ccdf[n + 1] - ccdf[n]
+        })
+    }
+
+    pub fn weights(&self, n: usize) -> Vec<f64> {
         self.ensure_breaks(n);
         self.with_inner(|inner| {
             let mut last_p = 1.0;
@@ -218,9 +230,7 @@ impl StickSequence {
         })
     }
 
-    pub fn weight(&self, n: usize) -> f64 {
-        self.with_inner_mut(|inner| inner.weight(&self.breaker, n))
-    }
+
 
     pub fn alpha(&self) -> f64 {
         self.breaker.alpha()
