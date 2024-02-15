@@ -65,9 +65,15 @@ impl DiscreteDistr<usize> for Sbd {}
 
 impl Mode<usize> for Sbd {
     fn mode(&self) -> Option<usize> {
+        let w0 = self.sticks.weight(0);
+        // Once the unallocated mass is less than that of first stick, the
+        // allocated mass is guaranteed to contain the mode.
         let n = self.sticks.extendmap_ccdf(
-            |ccdf| ccdf.last().unwrap() < &0.5,
-            |ccdf| ccdf.arg_max(),
+            |ccdf| ccdf.last().unwrap() < &w0,
+            |ccdf| {
+                let weights: Vec<f64> = ccdf.windows(2).map(|qs| qs[0] - qs[1]).collect();
+                weights.arg_max()
+            },
         );
         Some(n)
     }
