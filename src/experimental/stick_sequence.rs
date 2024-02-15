@@ -95,8 +95,6 @@ impl _Inner {
         }
     }
 
-
-
     fn weights(&mut self, breaker: &UnitPowerLaw, n: usize) -> Vec<f64> {
         self.ensure_breaks(breaker, n);
         let mut last_p = 1.0;
@@ -229,8 +227,6 @@ impl StickSequence {
                 .collect()
         })
     }
-
-
 
     pub fn alpha(&self) -> f64 {
         self.breaker.alpha()
