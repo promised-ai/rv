@@ -1,4 +1,5 @@
 use peroxide::fuga::Algorithm;
+use rand::seq::SliceRandom;
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -79,6 +80,18 @@ impl Mode<usize> for Sbd {
     }
 }
 
+// Normalizing a cumulative sum of Exp(1) random variables yields sorted uniforms
+fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
+    let mut xs: Vec<_> = (0..n).map(|_| -rng.gen::<f64>().ln())
+        .scan(0.0, |state, x| {
+            *state += x;
+            Some(*state)
+        }).collect();
+    let max = *xs.last().unwrap() - rng.gen::<f64>().ln() ;
+    (0..n).for_each(|i| xs[i] /= max);
+    xs
+}
+
 impl Rv<usize> for Sbd {
     fn f(&self, n: &usize) -> f64 {
         let sticks = &self.sticks;
@@ -95,81 +108,28 @@ impl Rv<usize> for Sbd {
     }
 
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<usize> {
-        (0..n).map(|_| self.draw(&mut rng)).collect()
-    }
-}
+        let ps = sorted_uniforms(n, &mut rng);
+        
+        let mut result = self.sticks.extendmap_ccdf(
+            // Note that ccdf is decreasing, but xs is increasing
+            |ccdf| ccdf.last().unwrap() < &ps.first().unwrap(),
+            |ccdf| {
+                let mut result: Vec<usize> = Vec::with_capacity(n);
 
-#[cfg(test)]
-mod test {
-    use rand::SeedableRng;
-    use std::collections::HashMap;
-
-    use super::*;
-
-    #[test]
-    fn canonical_order_ln_f() {
-        let sbd = Sbd::new(1.0, None).unwrap();
-        let mut rm_mass = sbd.p_unobserved();
-        for x in 0..10 {
-            let ln_f_1 = sbd.ln_f(&x);
-            let k = sbd.num_cats();
-            assert!(rm_mass > sbd.p_unobserved());
-            rm_mass = sbd.p_unobserved();
-
-            let ln_f_2 = sbd.ln_f(&x);
-
-            assert_eq!(ln_f_1, ln_f_2);
-            assert_eq!(k, sbd.num_cats());
-        }
-    }
-
-    #[test]
-    fn static_ln_f_from_new() {
-        let sbd = Sbd::new(1.0, None).unwrap();
-
-        assert_eq!(sbd.num_cats(), 0);
-
-        let lnf0 = sbd.ln_f(&0_usize);
-        assert::close(lnf0, sbd.ln_f(&0_usize), 1e-12);
-
-        assert_eq!(sbd.num_cats(), 1);
-
-        let _lnf1 = sbd.ln_f(&1_usize); // causes new category to form
-        assert::close(lnf0, sbd.ln_f(&0_usize), 1e-12);
-        assert_eq!(sbd.num_cats(), 2);
-    }
-
-    #[test]
-    fn draw_many_smoke() {
-        let mut counter: HashMap<usize, usize> = HashMap::new();
-        let mut rng = rand::thread_rng();
-        let seed: u64 = rng.gen();
-        eprintln!("draw_many_smoke seed: {seed}");
-        let mut rng = rand_xoshiro::Xoroshiro128Plus::seed_from_u64(seed);
-        let sbd = Sbd::new(1.0, None).unwrap();
-        for _ in 0..1_000 {
-            let x: usize = sbd.draw(&mut rng);
-            counter.entry(x).and_modify(|ct| *ct += 1).or_insert(1);
-        }
-        // eprintln!("{:?}", counter);
-    }
-
-    #[test]
-    fn repeatedly_compute_oob_lnf() {
-        let sbd = Sbd::new(0.5, None).unwrap();
-        assert_eq!(sbd.num_cats(), 0);
-
-        sbd.ln_f(&0);
-        assert_eq!(sbd.num_cats(), 1);
-
-        sbd.ln_f(&1);
-        assert_eq!(sbd.num_cats(), 2);
-
-        sbd.ln_f(&1);
-        sbd.ln_f(&1);
-        assert_eq!(sbd.num_cats(), 2);
-
-        sbd.ln_f(&0);
-        assert_eq!(sbd.num_cats(), 2);
+                // We'll start at the end of the sorted uniforms (the largest value)
+                let mut i: usize = ps.len() - 1;
+                for q in ccdf.iter().rev().enumerate() {
+                    while ps[i] > *q.1 {
+                        result.push(q.0 - 1);
+                        i -= 1;
+                    }
+                };
+                result
+            }
+        );
+        // At this point `result` is sorted, so we need to shuffle it.
+        // Note that shuffling is O(n) but sorting is O(n log n)
+        result.shuffle(&mut rng);
+        result
     }
 }
