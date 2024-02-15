@@ -98,11 +98,12 @@ impl HasSuffStat<&[f64]> for StickBreaking {
     type Stat = StickBreakingSuffStat;
 
     fn empty_suffstat(&self) -> Self::Stat {
-        StickBreakingSuffStat::new()
+        Self::Stat::new()
     }
 
-    fn ln_f_stat(&self, _stat: &Self::Stat) -> f64 {
-        unimplemented!()
+    fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+        stat.num_breaks as f64 * self.alpha().ln()
+            + (self.alpha() - 1.0) * stat.sum_log_q
     }
 }
 
