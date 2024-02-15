@@ -8,8 +8,6 @@ use crate::traits::DiscreteDistr;
 // use crate::suffstat_traits::HasSuffStat;
 use crate::traits::*;
 
-
-
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sbd {
@@ -48,7 +46,7 @@ impl Support<usize> for Sbd {
 }
 
 impl Cdf<usize> for Sbd {
-     fn sf(&self, x: &usize) -> f64 {
+    fn sf(&self, x: &usize) -> f64 {
         self.sticks.ccdf(x + 1)
     }
 
@@ -67,8 +65,10 @@ impl DiscreteDistr<usize> for Sbd {}
 
 impl Mode<usize> for Sbd {
     fn mode(&self) -> Option<usize> {
-        let ix = self.sticks.extendmap_ccdf(|ccdf| ccdf.last().unwrap() < &0.5, 
-        |ccdf| ccdf.arg_max());
+        let ix = self.sticks.extendmap_ccdf(
+            |ccdf| ccdf.last().unwrap() < &0.5,
+            |ccdf| ccdf.arg_max(),
+        );
         Some(ix)
     }
 }
