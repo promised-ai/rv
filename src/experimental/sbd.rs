@@ -1,49 +1,14 @@
+use peroxide::fuga::Algorithm;
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
 use super::StickSequence;
+use crate::traits::DiscreteDistr;
 // use crate::suffstat_traits::HasSuffStat;
-use crate::traits::Rv;
-use crate::traits::Support;
-use crate::traits::Cdf;
-use crate::traits::InverseCdf;
+use crate::traits::*;
 
-#[derive(Clone, Debug)]
-pub enum SbdError {
-    InvalidAlpha(f64),
-    InvalidNumberOfWeights { n_weights: usize, n_entries: usize },
-    WeightsDoNotSumToOne { sum: f64 },
-}
 
-impl std::error::Error for SbdError {}
-
-impl std::fmt::Display for SbdError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::InvalidAlpha(alpha) => {
-                write!(
-                    f,
-                    "alpha ({}) must be finite and greater than zero",
-                    alpha
-                )
-            }
-            Self::InvalidNumberOfWeights {
-                n_weights,
-                n_entries,
-            } => {
-                write!(
-                    f,
-                    "There should be one more weight than lookup entries. \
-                    Given {n_weights}, but there are {n_entries} lookup entries",
-                )
-            }
-            Self::WeightsDoNotSumToOne { sum } => {
-                write!(f, "Weights do not sum to 1 ({sum})")
-            }
-        }
-    }
-}
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
@@ -95,6 +60,16 @@ impl Cdf<usize> for Sbd {
 impl InverseCdf<usize> for Sbd {
     fn invcdf(&self, p: f64) -> usize {
         self.invccdf(1.0 - p)
+    }
+}
+
+impl DiscreteDistr<usize> for Sbd {}
+
+impl Mode<usize> for Sbd {
+    fn mode(&self) -> Option<usize> {
+        let ix = self.sticks.extendmap_ccdf(|ccdf| ccdf.last().unwrap() < &0.5, 
+        |ccdf| ccdf.arg_max());
+        Some(ix)
     }
 }
 
