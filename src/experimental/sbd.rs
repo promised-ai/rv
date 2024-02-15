@@ -65,11 +65,11 @@ impl DiscreteDistr<usize> for Sbd {}
 
 impl Mode<usize> for Sbd {
     fn mode(&self) -> Option<usize> {
-        let ix = self.sticks.extendmap_ccdf(
+        let n = self.sticks.extendmap_ccdf(
             |ccdf| ccdf.last().unwrap() < &0.5,
             |ccdf| ccdf.arg_max(),
         );
-        Some(ix)
+        Some(n)
     }
 }
 
