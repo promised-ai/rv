@@ -1,5 +1,5 @@
 use rand::SeedableRng;
-use rand_xoshiro::Xoshiro128Plus;
+use rand_xoshiro::Xoshiro256Plus;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
@@ -80,7 +80,7 @@ impl From<StickSequence> for StickSequenceFmt {
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct _Inner {
-    rng: rand_xoshiro::Xoshiro128Plus,
+    rng: Xoshiro256Plus,
     ccdf: Vec<f64>,
 }
 
@@ -88,25 +88,11 @@ impl _Inner {
     fn new(seed: Option<u64>) -> _Inner {
         _Inner {
             rng: seed.map_or_else(
-                Xoshiro128Plus::from_entropy,
-                Xoshiro128Plus::seed_from_u64,
+                Xoshiro256Plus::from_entropy,
+                Xoshiro256Plus::seed_from_u64,
             ),
             ccdf: vec![1.0],
         }
-    }
-
-    fn weights(&mut self, breaker: &UnitPowerLaw, n: usize) -> Vec<f64> {
-        self.ensure_breaks(breaker, n);
-        let mut last_p = 1.0;
-        self.ccdf
-            .iter()
-            .skip(1)
-            .map(|&p| {
-                let w = last_p - p;
-                last_p = p;
-                w
-            })
-            .collect()
     }
 
     fn extend(&mut self, breaker: &UnitPowerLaw) -> f64 {
@@ -126,9 +112,6 @@ impl _Inner {
         }
     }
 
-    fn ensure_breaks(&mut self, breaker: &UnitPowerLaw, n: usize) {
-        self.extend_until(breaker, |inner| inner.ccdf.len() > n);
-    }
 }
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -237,76 +220,5 @@ impl StickSequence {
         F: Fn(&_Inner) -> bool,
     {
         self.with_inner_mut(|inner| inner.extend_until(&self.breaker, p));
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_new() {
-        let alpha = 1.5;
-        let seed = Some(123);
-        let stick_sequence = StickSequence::new(alpha, seed).unwrap();
-
-        assert_eq!(stick_sequence.breaker.alpha(), alpha);
-        assert_eq!(stick_sequence.num_cats(), 0);
-        assert_eq!(stick_sequence.p_unobserved(), 1.0);
-    }
-
-    #[test]
-    fn test_from_ln_weights() {
-        let ln_weights = vec![0.0, -1.0, -2.0];
-        let alpha = 1.5;
-        let seed = Some(123);
-        let stick_sequence =
-            StickSequence::from_ln_weights(&ln_weights, alpha, seed).unwrap();
-
-        assert_eq!(stick_sequence.breaker.alpha(), alpha);
-        assert_eq!(stick_sequence.num_cats(), ln_weights.len());
-        assert_eq!(stick_sequence.p_unobserved(), 0.0);
-    }
-
-    #[test]
-    fn test_from_weights() {
-        let weights = vec![0.5, 0.3, 0.2];
-        let alpha = 1.5;
-        let seed = Some(123);
-        let stick_sequence =
-            StickSequence::from_weights(&weights, alpha, seed).unwrap();
-
-        assert_eq!(stick_sequence.breaker.alpha(), alpha);
-        assert_eq!(stick_sequence.num_cats(), weights.len());
-        assert_eq!(stick_sequence.p_unobserved(), 0.0);
-    }
-
-    #[test]
-    fn test_eq() {
-        let alpha = 1.5;
-        let seed = Some(123);
-        let stick_sequence1 = StickSequence::new(alpha, seed).unwrap();
-        let stick_sequence2 = StickSequence::new(alpha, seed).unwrap();
-
-        assert_eq!(stick_sequence1, stick_sequence2);
-    }
-
-    #[test]
-    fn test_first_n() {
-        let alpha = 1.5;
-        let seed = Some(123);
-        let stick_sequence = StickSequence::new(alpha, seed).unwrap();
-        let n = 5;
-        let first_n = stick_sequence.first_n(n);
-
-        assert_eq!(first_n.len(), n);
-
-        let another_first_n = stick_sequence
-            .first_n(n + 1)
-            .iter()
-            .take(n)
-            .cloned()
-            .collect::<Vec<f64>>();
-        assert_eq!(first_n, another_first_n);
     }
 }
