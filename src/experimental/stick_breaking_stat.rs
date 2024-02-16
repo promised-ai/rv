@@ -102,7 +102,8 @@ impl HasSuffStat<&[f64]> for StickBreaking {
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
-        (stat.num_breaks as f64).mul_add(self.alpha().ln(), (self.alpha() - 1.0) * stat.sum_log_q)
+        (stat.num_breaks as f64)
+            .mul_add(self.alpha().ln(), (self.alpha() - 1.0) * stat.sum_log_q)
     }
 }
 

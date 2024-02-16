@@ -111,7 +111,6 @@ impl _Inner {
             self.extend(breaker);
         }
     }
-
 }
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]

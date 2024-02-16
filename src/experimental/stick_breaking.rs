@@ -78,5 +78,4 @@ mod tests {
         let result = StickBreaking::new(alpha);
         assert!(result.is_err());
     }
-
 }

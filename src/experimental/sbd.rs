@@ -16,7 +16,7 @@ pub struct Sbd {
 }
 
 impl Sbd {
-    pub fn new(alpha:f64 ) -> Self {
+    pub fn new(alpha: f64) -> Self {
         let sticks = StickSequence::new(alpha, None).unwrap();
         Self { sticks }
     }
@@ -47,14 +47,12 @@ impl Sbd {
                             i -= 1;
                         }
                     }
-                };
+                }
                 result
-            }
+            },
         )
     }
 }
-
-
 
 // impl HasSuffStat<usize> for Sbd {
 //     type Stat = SbdSuffStat;
@@ -100,7 +98,8 @@ impl Mode<usize> for Sbd {
         let n = self.sticks.extendmap_ccdf(
             |ccdf| ccdf.last().unwrap() < &w0,
             |ccdf| {
-                let weights: Vec<f64> = ccdf.windows(2).map(|qs| qs[0] - qs[1]).collect();
+                let weights: Vec<f64> =
+                    ccdf.windows(2).map(|qs| qs[0] - qs[1]).collect();
                 weights.arg_max()
             },
         );
@@ -110,18 +109,17 @@ impl Mode<usize> for Sbd {
 
 // Normalizing a cumulative sum of Exp(1) random variables yields sorted uniforms
 fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
-    let mut xs: Vec<_> = (0..n).map(|_| -rng.gen::<f64>().ln())
+    let mut xs: Vec<_> = (0..n)
+        .map(|_| -rng.gen::<f64>().ln())
         .scan(0.0, |state, x| {
             *state += x;
             Some(*state)
-        }).collect();
-    let max = *xs.last().unwrap() - rng.gen::<f64>().ln() ;
+        })
+        .collect();
+    let max = *xs.last().unwrap() - rng.gen::<f64>().ln();
     (0..n).for_each(|i| xs[i] /= max);
     xs
 }
-
-
-
 
 impl Rv<usize> for Sbd {
     fn f(&self, n: &usize) -> f64 {
@@ -141,13 +139,12 @@ impl Rv<usize> for Sbd {
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<usize> {
         let ps = sorted_uniforms(n, &mut rng);
         let mut result = self.multi_invccdf_sorted(&ps);
-        
+
         // At this point `result` is sorted, so we need to shuffle it.
         // Note that shuffling is O(n) but sorting is O(n log n)
         result.shuffle(&mut rng);
         result
     }
-
 }
 
 #[cfg(test)]
@@ -166,11 +163,11 @@ mod tests {
         assert!(&0.0 < xs.first().unwrap());
         assert!(xs.last().unwrap() < &1.0);
         assert!(xs.windows(2).all(|w| w[0] <= w[1]));
-        
+
         // Mean is 1/2
         let mean = xs.iter().sum::<f64>() / n as f64;
         close(mean, 0.5, 1e-2);
-        
+
         // Variance is 1/12
         let var = xs.iter().map(|x| (x - 0.5).powi(2)).sum::<f64>() / n as f64;
         close(var, 1.0 / 12.0, 1e-2);
