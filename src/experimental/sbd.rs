@@ -158,6 +158,7 @@ mod tests {
         let mut rng = thread_rng();
         let n = 10000;
         let xs = sorted_uniforms(n, &mut rng);
+        assert!(xs.len() == n);
 
         // Result is sorted and in the unit interval
         assert!(&0.0 < xs.first().unwrap());
