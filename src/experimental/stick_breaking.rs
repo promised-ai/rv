@@ -8,9 +8,6 @@ use crate::experimental::stick_breaking_stat::StickBreakingSuffStat;
 use crate::experimental::stick_sequence::StickSequence;
 use crate::process_traits::Process;
 use crate::suffstat_traits::*;
-use crate::traits::Rv;
-use rand::SeedableRng;
-use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub enum StickBreakingError {
@@ -82,21 +79,4 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[test]
-    fn test_ln_f() {
-        let alpha = 1.5;
-        let stick_breaking = StickBreaking::new(alpha).unwrap();
-        let x = &[0.2, 0.3, 0.5] as &[f64];
-        let ln_f = stick_breaking.ln_f(&x);
-        assert_eq!(ln_f, 2.01);
-    }
-
-    #[test]
-    fn test_draw() {
-        let alpha = 1.5;
-        let stick_breaking = StickBreaking::new(alpha).unwrap();
-        let mut rng = rand::thread_rng();
-        let seq = stick_breaking.draw(&mut rng);
-        todo!()
-    }
 }
