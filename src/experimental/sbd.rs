@@ -16,7 +16,8 @@ pub struct Sbd {
 }
 
 impl Sbd {
-    pub fn new(sticks: StickSequence) -> Self {
+    pub fn new(alpha:f64 ) -> Self {
+        let sticks = StickSequence::new(alpha, None).unwrap();
         Self { sticks }
     }
 
@@ -26,7 +27,34 @@ impl Sbd {
             |ccdf| ccdf.iter().position(|q| *q < u).unwrap() - 1,
         )
     }
+
+    fn multi_invccdf_sorted(&self, ps: &[f64]) -> Vec<usize> {
+        let n = ps.len();
+        self.sticks.extendmap_ccdf(
+            // Note that ccdf is decreasing, but xs is increasing
+            |ccdf| ccdf.last().unwrap() < ps.first().unwrap(),
+            |ccdf| {
+                let mut result: Vec<usize> = Vec::with_capacity(n);
+
+                // We'll start at the end of the sorted uniforms (the largest value)
+                let mut i: usize = n - 1;
+                for q in ccdf.iter().skip(1).enumerate() {
+                    while ps[i] > *q.1 {
+                        result.push(q.0);
+                        if i == 0 {
+                            break;
+                        } else {
+                            i -= 1;
+                        }
+                    }
+                };
+                result
+            }
+        )
+    }
 }
+
+
 
 // impl HasSuffStat<usize> for Sbd {
 //     type Stat = SbdSuffStat;
@@ -92,6 +120,9 @@ fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
     xs
 }
 
+
+
+
 impl Rv<usize> for Sbd {
     fn f(&self, n: &usize) -> f64 {
         let sticks = &self.sticks;
@@ -109,27 +140,49 @@ impl Rv<usize> for Sbd {
 
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<usize> {
         let ps = sorted_uniforms(n, &mut rng);
+        let mut result = self.multi_invccdf_sorted(&ps);
         
-        let mut result = self.sticks.extendmap_ccdf(
-            // Note that ccdf is decreasing, but xs is increasing
-            |ccdf| ccdf.last().unwrap() < &ps.first().unwrap(),
-            |ccdf| {
-                let mut result: Vec<usize> = Vec::with_capacity(n);
-
-                // We'll start at the end of the sorted uniforms (the largest value)
-                let mut i: usize = ps.len() - 1;
-                for q in ccdf.iter().rev().enumerate() {
-                    while ps[i] > *q.1 {
-                        result.push(q.0 - 1);
-                        i -= 1;
-                    }
-                };
-                result
-            }
-        );
         // At this point `result` is sorted, so we need to shuffle it.
         // Note that shuffling is O(n) but sorting is O(n log n)
         result.shuffle(&mut rng);
         result
+    }
+
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use assert::close;
+    use rand::thread_rng;
+
+    #[test]
+    fn test_sorted_uniforms() {
+        let mut rng = thread_rng();
+        let n = 10000;
+        let xs = sorted_uniforms(n, &mut rng);
+
+        // Result is sorted and in the unit interval
+        assert!(&0.0 < xs.first().unwrap());
+        assert!(xs.last().unwrap() < &1.0);
+        assert!(xs.windows(2).all(|w| w[0] <= w[1]));
+        
+        // Mean is 1/2
+        let mean = xs.iter().sum::<f64>() / n as f64;
+        close(mean, 0.5, 1e-2);
+        
+        // Variance is 1/12
+        let var = xs.iter().map(|x| (x - 0.5).powi(2)).sum::<f64>() / n as f64;
+        close(var, 1.0 / 12.0, 1e-2);
+    }
+
+    #[test]
+    fn test_multi_invccdf_sorted() {
+        let sbd = Sbd::new(10.0);
+        let ps = sorted_uniforms(5, &mut thread_rng());
+        assert_eq!(
+            sbd.multi_invccdf_sorted(&ps),
+            ps.iter().rev().map(|p| sbd.invccdf(*p)).collect::<Vec<_>>()
+        )
     }
 }
