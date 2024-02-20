@@ -234,14 +234,16 @@ impl_display!(ScaledInvChiSquared);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for ScaledInvChiSquared {
+        impl HasDensity<$kind> for ScaledInvChiSquared {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let x64 = f64::from(*x);
                 let term_1 = -self.v * self.t2 / (2.0 * x64);
                 let term_2 = self.v.mul_add(0.5, 1.0) * x64.ln();
                 self.ln_f_const() - self.ln_gamma_v_2() + term_1 - term_2
             }
+        }
 
+        impl Sampleable<$kind> for ScaledInvChiSquared {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let a = 0.5 * self.v;
                 let b = 0.5 * self.v * self.t2;

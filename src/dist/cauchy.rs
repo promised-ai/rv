@@ -192,7 +192,7 @@ impl_display!(Cauchy);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Cauchy {
+        impl HasDensity<$kind> for Cauchy {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let ln_scale = self.scale.ln();
                 let term = 2.0_f64.mul_add(
@@ -202,7 +202,9 @@ macro_rules! impl_traits {
                 // TODO: make a logaddexp method for two floats
                 -logsumexp(&[ln_scale, term]) - LN_PI
             }
+        }
 
+        impl Sampleable<$kind> for Cauchy {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let cauchy = RCauchy::new(self.loc, self.scale).unwrap();
                 rng.sample(cauchy) as $kind

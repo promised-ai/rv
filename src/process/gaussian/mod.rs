@@ -352,14 +352,19 @@ where
     }
 }
 
-impl<K> Rv<DVector<f64>> for GaussianProcessPrediction<K>
+impl<K> HasDensity<DVector<f64>> for GaussianProcessPrediction<K>
 where
     K: Kernel,
 {
     fn ln_f(&self, x: &DVector<f64>) -> f64 {
         self.dist().ln_f(x)
     }
+}
 
+impl<K> Sampleable<DVector<f64>> for GaussianProcessPrediction<K>
+where
+    K: Kernel,
+{
     fn draw<R: Rng>(&self, rng: &mut R) -> DVector<f64> {
         self.dist().draw(rng)
     }

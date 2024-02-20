@@ -188,7 +188,7 @@ impl_display!(Pareto);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Pareto {
+        impl HasDensity<$kind> for Pareto {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: cache ln(shape) and ln(scale)
                 (self.shape + 1.0).mul_add(
@@ -196,7 +196,9 @@ macro_rules! impl_traits {
                     self.shape.mul_add(self.scale.ln(), self.shape.ln()),
                 )
             }
+        }
 
+        impl Sampleable<$kind> for Pareto {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let p =
                     rand_distr::Pareto::new(self.scale, self.shape).unwrap();

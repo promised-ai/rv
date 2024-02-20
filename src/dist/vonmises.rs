@@ -222,13 +222,15 @@ impl_display!(VonMises);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for VonMises {
+        impl HasDensity<$kind> for VonMises {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could also cache ln(i0_k)
                 let xf = f64::from(*x);
                 self.k.mul_add((xf - self.mu).cos(), -LN_2PI) - self.i0_k.ln()
             }
+        }
 
+        impl Sampleable<$kind> for VonMises {
             // Best, D. J., & Fisher, N. I. (1979). Efficient simulation of the
             //     von Mises distribution. Applied Statistics, 152-157.
             // https://www.researchgate.net/publication/246035131_Efficient_Simulation_of_the_von_Mises_Distribution

@@ -132,7 +132,7 @@ impl_display!(Exponential);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Exponential {
+        impl HasDensity<$kind> for Exponential {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(rate)
                 if x < &0.0 {
@@ -141,7 +141,9 @@ macro_rules! impl_traits {
                     self.rate.mul_add(-f64::from(*x), self.rate.ln())
                 }
             }
+        }
 
+        impl Sampleable<$kind> for Exponential {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let expdist = Exp::new(self.rate).unwrap();
                 rng.sample(expdist) as $kind

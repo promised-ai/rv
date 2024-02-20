@@ -201,11 +201,13 @@ impl_display!(UnitPowerLaw);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for UnitPowerLaw {
+        impl HasDensity<$kind> for UnitPowerLaw {
             fn ln_f(&self, x: &$kind) -> f64 {
                 (*x as f64).ln().mul_add(self.alpha - 1.0, self.alpha_ln())
             }
+        }
 
+        impl Sampleable<$kind> for UnitPowerLaw {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 self.invcdf(rng.gen::<f64>())
             }

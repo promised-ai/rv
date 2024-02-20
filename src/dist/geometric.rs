@@ -204,7 +204,7 @@ impl From<&Geometric> for String {
 
 impl_display!(Geometric);
 
-impl<X> Rv<X> for Geometric
+impl<X> HasDensity<X> for Geometric
 where
     X: Unsigned + Integer + FromPrimitive + ToPrimitive + Saturating + Bounded,
 {
@@ -213,7 +213,12 @@ where
         kf.mul_add(self.ln_1mp(), self.ln_p())
         // kf.mul_add((1.0 - self.p).ln(), self.p.ln())
     }
+}
 
+impl<X> Sampleable<X> for Geometric 
+where
+    X: Unsigned + Integer + FromPrimitive + ToPrimitive + Saturating + Bounded,
+    {
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
         // Follows the same pattern as
         // https://github.com/numpy/numpy/blob/7c41164f5340dc998ea1c04d2061f7d246894955/numpy/random/mtrand/distributions.c#L777

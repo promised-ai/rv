@@ -240,7 +240,7 @@ impl_display!(InvGaussian);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for InvGaussian {
+        impl HasDensity<$kind> for InvGaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let (mu, lambda) = self.params();
                 let xf = f64::from(*x);
@@ -249,7 +249,9 @@ macro_rules! impl_traits {
                 let term = lambda * err * err / (2.0 * mu * mu * xf);
                 z.mul_add(0.5, -term)
             }
+        }
 
+        impl Sampleable<$kind> for InvGaussian {
             // https://en.wikipedia.org/wiki/Inverse_Gaussian_distribution#Sampling_from_an_inverse-Gaussian_distribution
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let (mu, lambda) = self.params();

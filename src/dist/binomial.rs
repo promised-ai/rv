@@ -244,7 +244,7 @@ impl_display!(Binomial);
 
 macro_rules! impl_int_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Binomial {
+        impl HasDensity<$kind> for Binomial {
             fn ln_f(&self, k: &$kind) -> f64 {
                 let nf = self.n as f64;
                 let kf = *k as f64;
@@ -254,6 +254,9 @@ macro_rules! impl_int_traits {
                     self.p.ln().mul_add(kf, ln_binom(nf, kf)),
                 )
             }
+        }
+
+        impl Sampleable<$kind> for Binomial {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let b = rand_distr::Binomial::new(self.n, self.p).unwrap();
                 rng.sample(b) as $kind

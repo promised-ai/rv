@@ -352,7 +352,7 @@ impl<Fx> From<Mixture<Fx>> for Vec<(f64, Fx)> {
     }
 }
 
-impl<X, Fx> Rv<X> for Mixture<Fx>
+impl<X, Fx> HasDensity<X> for Mixture<Fx>
 where
     Fx: Rv<X>,
 {
@@ -373,7 +373,12 @@ where
             .zip(self.components.iter())
             .fold(0.0, |acc, (&w, cpnt)| cpnt.f(x).mul_add(w, acc))
     }
+}
 
+impl<X, Fx> Sampleable<X> for Mixture<Fx>
+where
+    Fx: Rv<X>,
+{
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
         let k: usize = pflip(&self.weights, 1, &mut rng)[0];
         self.components[k].draw(&mut rng)
@@ -1344,7 +1349,6 @@ mod tests {
         #[test]
         fn gauss_mixture_quad_bounds_have_zero_pdf() {
             use crate::dist::{InvGamma, Poisson};
-            use crate::traits::Rv;
 
             let mut rng = rand::thread_rng();
             let pois = Poisson::new(7.0).unwrap();

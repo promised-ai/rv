@@ -2,7 +2,7 @@ use std::f64;
 
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
-use rv::traits::Rv;
+use rv::traits::*;
 
 fn draw_rv<R: rand::Rng>(mut rng: &mut R) -> f64 {
     let powlaw = rv::dist::UnitPowerLaw::new(5.0).unwrap();

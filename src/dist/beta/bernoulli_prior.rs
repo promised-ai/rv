@@ -6,10 +6,13 @@ use crate::dist::{Bernoulli, Beta};
 use crate::suffstat_traits::*;
 use crate::traits::*;
 
-impl Rv<Bernoulli> for Beta {
+impl HasDensity<Bernoulli> for Beta {
     fn ln_f(&self, x: &Bernoulli) -> f64 {
         self.ln_f(&x.p())
     }
+}
+
+impl Sampleable<Bernoulli> for Beta {
 
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Bernoulli {
         let p: f64 = self.draw(&mut rng);

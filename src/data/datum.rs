@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "arraydist")]
 use crate::nalgebra::{DMatrix, DVector};
-use crate::traits::Rv;
+use crate::traits::*;
 use std::convert::TryInto;
 
 /// Represents any Datum/Value, X, for which Rv<X> may be implemented on a
@@ -40,7 +40,7 @@ where
     type Support: From<Datum> + Into<Datum>;
 }
 
-impl<Fx> Rv<Datum> for Fx
+impl<Fx> HasDensity<Datum> for Fx
 where
     Fx: RvDatum,
 {
@@ -48,7 +48,12 @@ where
         let y = <Self as RvDatum>::Support::from(x.clone());
         <Self as Rv<<Self as RvDatum>::Support>>::ln_f(self, &y)
     }
+}
 
+impl<Fx> Sampleable<Datum> for Fx
+where
+    Fx: RvDatum,
+{
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Datum {
         let x = <Self as Rv<<Self as RvDatum>::Support>>::draw(self, rng);
         x.into()

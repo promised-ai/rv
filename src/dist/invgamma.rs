@@ -204,7 +204,7 @@ impl_display!(InvGamma);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for InvGamma {
+        impl HasDensity<$kind> for InvGamma {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(scale) and ln_gamma(shape)
                 let xf = f64::from(*x);
@@ -214,7 +214,9 @@ macro_rules! impl_traits {
                         .mul_add(self.scale.ln(), -ln_gammafn(self.shape)),
                 ) - (self.scale / xf)
             }
+        }
 
+        impl Sampleable<$kind> for InvGamma {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let g = rand_distr::Gamma::new(self.shape, self.scale.recip())
                     .unwrap();

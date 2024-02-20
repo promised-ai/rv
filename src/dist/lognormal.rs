@@ -203,7 +203,7 @@ impl_display!(LogNormal);
 
 macro_rules! impl_traits {
     ($kind: ty) => {
-        impl Rv<$kind> for LogNormal {
+        impl HasDensity<$kind> for LogNormal {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: cache ln(sigma)
                 let xk = f64::from(*x);
@@ -211,7 +211,9 @@ macro_rules! impl_traits {
                 let d = (xk_ln - self.mu) / self.sigma;
                 (0.5 * d).mul_add(-d, -xk_ln - self.sigma.ln() - HALF_LN_2PI)
             }
+        }
 
+        impl Sampleable<$kind> for LogNormal {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let g =
                     rand_distr::LogNormal::new(self.mu, self.sigma).unwrap();

@@ -59,7 +59,7 @@ impl Bernoulli {
     ///
     /// ```rust
     /// # use rv::dist::Bernoulli;
-    /// # use rv::traits::Rv;
+    /// # use rv::traits::*;
     /// # let mut rng = rand::thread_rng();
     /// let b = Bernoulli::new(0.5).unwrap();
     ///
@@ -201,7 +201,7 @@ impl From<&Bernoulli> for String {
 
 impl_display!(Bernoulli);
 
-impl<X: Booleable> Rv<X> for Bernoulli {
+impl<X: Booleable> HasDensity<X> for Bernoulli {
     fn f(&self, x: &X) -> f64 {
         let val: bool = x.into_bool();
         if val {
@@ -215,7 +215,9 @@ impl<X: Booleable> Rv<X> for Bernoulli {
         // TODO: this is really slow, we should cache ln(p) and ln(q)
         self.f(x).ln()
     }
+}
 
+impl <X: Booleable> Sampleable<X> for Bernoulli {
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
         let u = rand_distr::Open01;
         let x: f64 = rng.sample(u);

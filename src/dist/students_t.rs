@@ -120,7 +120,7 @@ impl_display!(StudentsT);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for StudentsT {
+        impl HasDensity<$kind> for StudentsT {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(pi*v) and ln_gamma(v/2)
                 let vp1 = (self.v + 1.0) / 2.0;
@@ -132,7 +132,9 @@ macro_rules! impl_traits {
                 );
                 zterm + xterm
             }
+        }
 
+        impl Sampleable<$kind> for StudentsT {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let t = rand_distr::StudentT::new(self.v).unwrap();
                 rng.sample(t) as $kind

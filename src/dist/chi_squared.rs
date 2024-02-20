@@ -126,7 +126,7 @@ impl_display!(ChiSquared);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for ChiSquared {
+        impl HasDensity<$kind> for ChiSquared {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k2 = self.k / 2.0;
                 let xf = f64::from(*x);
@@ -134,7 +134,9 @@ macro_rules! impl_traits {
                 k2.mul_add(-LN_2, (k2 - 1.0).mul_add(xf.ln(), -xf / 2.0))
                     - ln_gammafn(k2)
             }
+        }
 
+        impl Sampleable<$kind> for ChiSquared {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let x2 = rand_distr::ChiSquared::new(self.k).unwrap();
                 rng.sample(x2) as $kind

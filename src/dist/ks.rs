@@ -270,11 +270,13 @@ impl_display!(KsTwoAsymptotic);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for KsTwoAsymptotic {
+        impl HasDensity<$kind> for KsTwoAsymptotic {
             fn ln_f(&self, x: &$kind) -> f64 {
                 Self::compute(*x as f64).pdf.ln()
             }
+        }
 
+        impl Sampleable<$kind> for KsTwoAsymptotic {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let p: f64 = rng.gen();
                 self.invcdf(p)

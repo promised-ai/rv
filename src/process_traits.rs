@@ -12,7 +12,7 @@ pub trait Process<SampleSpace, ObservationSpace> {
     ///
     /// ```
     /// use rv::dist::Gaussian;
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     ///
     /// let g = Gaussian::standard();
     /// assert!(g.f(&0.0_f64) > g.f(&0.1_f64));
@@ -28,7 +28,7 @@ pub trait Process<SampleSpace, ObservationSpace> {
     ///
     /// ```
     /// use rv::dist::Gaussian;
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     ///
     /// let g = Gaussian::standard();
     /// assert!(g.ln_f(&0.0_f64) > g.ln_f(&0.1_f64));
@@ -44,7 +44,7 @@ pub trait Process<SampleSpace, ObservationSpace> {
     ///
     /// ```
     /// use rv::dist::Bernoulli;
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     ///
     /// let b = Bernoulli::uniform();
     /// let mut rng = rand::thread_rng();
@@ -60,7 +60,7 @@ pub trait Process<SampleSpace, ObservationSpace> {
     ///
     /// ```
     /// use rv::dist::Bernoulli;
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     ///
     /// let b = Bernoulli::uniform();
     /// let mut rng = rand::thread_rng();
@@ -73,7 +73,7 @@ pub trait Process<SampleSpace, ObservationSpace> {
     ///
     /// ```
     /// use rv::dist::Gaussian;
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     ///
     /// let gauss = Gaussian::standard();
     /// let mut rng = rand::thread_rng();
@@ -92,7 +92,7 @@ pub trait Process<SampleSpace, ObservationSpace> {
     /// Estimate the mean of a Gamma distribution
     ///
     /// ```
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     /// use rv::dist::Gamma;
     ///
     /// let mut rng = rand::thread_rng();

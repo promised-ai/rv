@@ -9,14 +9,16 @@ use crate::misc::ln_binom;
 use crate::suffstat_traits::*;
 use crate::traits::*;
 
-impl Rv<Poisson> for Gamma {
+impl HasDensity<Poisson> for Gamma {
     fn ln_f(&self, x: &Poisson) -> f64 {
         match x.mean() {
             Some(mean) => self.ln_f(&mean),
             None => std::f64::NEG_INFINITY,
         }
     }
+}
 
+impl Sampleable<Poisson> for Gamma {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Poisson {
         let mean: f64 = self.draw(&mut rng);
         match Poisson::new(mean) {

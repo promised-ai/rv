@@ -189,12 +189,14 @@ impl From<&Categorical> for String {
 
 impl_display!(Categorical);
 
-impl<X: CategoricalDatum> Rv<X> for Categorical {
+impl<X: CategoricalDatum> HasDensity<X> for Categorical {
     fn ln_f(&self, x: &X) -> f64 {
         let ix: usize = x.into_usize();
         self.ln_weights[ix]
     }
+}
 
+impl<X: CategoricalDatum> Sampleable<X> for Categorical {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
         let ix = ln_pflip(&self.ln_weights, 1, true, &mut rng)[0];
         CategoricalDatum::from_usize(ix)

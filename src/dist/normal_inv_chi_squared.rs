@@ -9,7 +9,7 @@ mod gaussian_prior;
 
 use crate::dist::{Gaussian, ScaledInvChiSquared};
 use crate::impl_display;
-use crate::traits::Rv;
+use crate::traits::*;
 use rand::Rng;
 use std::sync::OnceLock;
 
@@ -349,14 +349,16 @@ impl From<&NormalInvChiSquared> for String {
 
 impl_display!(NormalInvChiSquared);
 
-impl Rv<Gaussian> for NormalInvChiSquared {
+impl HasDensity<Gaussian> for NormalInvChiSquared {
     fn ln_f(&self, x: &Gaussian) -> f64 {
         let lnf_sigma = self.scaled_inv_x2().ln_f(&(x.sigma() * x.sigma()));
         let prior_sigma = x.sigma() / self.k.sqrt();
         let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&x.mu());
         lnf_sigma + lnf_mu
     }
+}
 
+impl Sampleable<Gaussian> for NormalInvChiSquared {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
         let var: f64 = self.scaled_inv_x2().draw(&mut rng);
 

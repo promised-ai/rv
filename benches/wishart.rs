@@ -4,7 +4,7 @@ use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use nalgebra::DMatrix;
 use rv::dist::InvWishart;
-use rv::traits::Rv;
+use rv::traits::*;
 
 fn bench_wishart(c: &mut Criterion) {
     let mut group = c.benchmark_group("InvWishart");

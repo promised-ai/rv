@@ -152,13 +152,15 @@ impl_display!(InvChiSquared);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for InvChiSquared {
+        impl HasDensity<$kind> for InvChiSquared {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let x64 = f64::from(*x);
                 let z = self.ln_f_const();
                 (-self.v / 2.0 - 1.0).mul_add(x64.ln(), z) - (2.0 * x64).recip()
             }
+        }
 
+        impl Sampleable<$kind> for InvChiSquared {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let x2 = rand_distr::ChiSquared::new(self.v).unwrap();
                 let x_inv: f64 = rng.sample(x2);

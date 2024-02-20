@@ -253,13 +253,15 @@ impl_display!(Gev);
 
 macro_rules! impl_traits {
     ($kind: ty) => {
-        impl Rv<$kind> for Gev {
+        impl HasDensity<$kind> for Gev {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(scale)
                 let tv = t(self.loc, self.shape, self.scale, f64::from(*x));
                 (self.shape + 1.0).mul_add(tv.ln(), -self.scale.ln()) - tv
             }
+        }
 
+        impl Sampleable<$kind> for Gev {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let uni = rand_distr::Open01;
                 let u: f64 = rng.sample(uni);

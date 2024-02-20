@@ -294,14 +294,16 @@ impl_display!(Beta);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Beta {
+        impl HasDensity<$kind> for Beta {
             fn ln_f(&self, x: &$kind) -> f64 {
                 (self.alpha - 1.0).mul_add(
                     f64::from(*x).ln(),
                     (self.beta - 1.0) * (1.0 - f64::from(*x)).ln(),
                 ) - self.ln_beta_ab()
             }
+        }
 
+        impl Sampleable<$kind> for Beta {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let b = rand_distr::Beta::new(self.alpha, self.beta).unwrap();
                 rng.sample(b) as $kind

@@ -195,7 +195,7 @@ impl From<&Crp> for String {
 
 impl_display!(Crp);
 
-impl Rv<Partition> for Crp {
+impl HasDensity<Partition> for Crp {
     fn ln_f(&self, x: &Partition) -> f64 {
         let gsum = x
             .counts()
@@ -206,7 +206,9 @@ impl Rv<Partition> for Crp {
         (x.k() as f64).mul_add(self.alpha.ln(), gsum) + ln_gammafn(self.alpha)
             - ln_gammafn(x.len() as f64 + self.alpha)
     }
+}
 
+impl Sampleable<Partition> for Crp {
     fn draw<R: Rng>(&self, rng: &mut R) -> Partition {
         let mut k = 1;
         let mut weights: Vec<f64> = vec![1.0];

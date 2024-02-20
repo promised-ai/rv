@@ -320,7 +320,7 @@ impl_display!(BetaBinomial);
 
 macro_rules! impl_int_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for BetaBinomial {
+        impl HasDensity<$kind> for BetaBinomial {
             fn ln_f(&self, k: &$kind) -> f64 {
                 let nf = f64::from(self.n);
                 let kf = *k as f64;
@@ -328,7 +328,9 @@ macro_rules! impl_int_traits {
                     + (kf + self.alpha).ln_beta(nf - kf + self.beta)
                     - self.ln_beta_ab()
             }
+        }
 
+        impl Sampleable<$kind> for BetaBinomial {
             fn draw<R: Rng>(&self, mut rng: &mut R) -> $kind {
                 self.sample(1, &mut rng)[0]
             }

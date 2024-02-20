@@ -3,41 +3,7 @@ use crate::data::DataOrSuffStat;
 use crate::suffstat_traits::HasSuffStat;
 use rand::Rng;
 
-/// Random variable
-///
-/// Contains the minimal functionality that a random object must have to be
-/// useful: a function defining the un-normalized density/mass at a point,
-/// and functions to draw samples from the distribution.
-pub trait Rv<X> {
-    /// Probability function
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use rv::dist::Gaussian;
-    /// use rv::traits::Rv;
-    ///
-    /// let g = Gaussian::standard();
-    /// assert!(g.f(&0.0_f64) > g.f(&0.1_f64));
-    /// assert!(g.f(&0.0_f64) > g.f(&-0.1_f64));
-    /// ```
-    fn f(&self, x: &X) -> f64 {
-        self.ln_f(x).exp()
-    }
-
-    /// Probability function
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use rv::dist::Gaussian;
-    /// use rv::traits::Rv;
-    ///
-    /// let g = Gaussian::standard();
-    /// assert!(g.ln_f(&0.0_f64) > g.ln_f(&0.1_f64));
-    /// assert!(g.ln_f(&0.0_f64) > g.ln_f(&-0.1_f64));
-    /// ```
-    fn ln_f(&self, x: &X) -> f64;
+pub trait Sampleable<X> {
 
     /// Single draw from the `Rv`
     ///
@@ -47,7 +13,7 @@ pub trait Rv<X> {
     ///
     /// ```
     /// use rv::dist::Bernoulli;
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     ///
     /// let b = Bernoulli::uniform();
     /// let mut rng = rand::thread_rng();
@@ -63,7 +29,7 @@ pub trait Rv<X> {
     ///
     /// ```
     /// use rv::dist::Bernoulli;
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     ///
     /// let b = Bernoulli::uniform();
     /// let mut rng = rand::thread_rng();
@@ -76,7 +42,7 @@ pub trait Rv<X> {
     ///
     /// ```
     /// use rv::dist::Gaussian;
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     ///
     /// let gauss = Gaussian::standard();
     /// let mut rng = rand::thread_rng();
@@ -95,7 +61,7 @@ pub trait Rv<X> {
     /// Estimate the mean of a Gamma distribution
     ///
     /// ```
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     /// use rv::dist::Gamma;
     ///
     /// let mut rng = rand::thread_rng();
@@ -115,6 +81,52 @@ pub trait Rv<X> {
     ) -> Box<dyn Iterator<Item = X> + 'r> {
         Box::new(std::iter::repeat_with(move || self.draw(&mut rng)))
     }
+}
+
+pub trait HasDensity<X> {
+    /// Probability function
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rv::dist::Gaussian;
+    /// use rv::traits::*;
+    ///
+    /// let g = Gaussian::standard();
+    /// assert!(g.f(&0.0_f64) > g.f(&0.1_f64));
+    /// assert!(g.f(&0.0_f64) > g.f(&-0.1_f64));
+    /// ```
+    fn f(&self, x: &X) -> f64 {
+        self.ln_f(x).exp()
+    }
+
+    /// Probability function
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rv::dist::Gaussian;
+    /// use rv::traits::*;
+    ///
+    /// let g = Gaussian::standard();
+    /// assert!(g.ln_f(&0.0_f64) > g.ln_f(&0.1_f64));
+    /// assert!(g.ln_f(&0.0_f64) > g.ln_f(&-0.1_f64));
+    /// ```
+    fn ln_f(&self, x: &X) -> f64;
+}
+
+/// Random variable
+///
+/// Contains the minimal functionality that a random object must have to be
+/// useful: a function defining the un-normalized density/mass at a point,
+/// and functions to draw samples from the distribution.
+pub trait Rv<X>: Sampleable<X> + HasDensity<X>
+{
+}
+
+impl<X,T> Rv<X> for T
+where T: Sampleable<X> + HasDensity<X>
+{
 }
 
 /// Identifies the support of the Rv
@@ -242,7 +254,7 @@ pub trait Cdf<X>: Rv<X> {
 }
 
 /// Has an inverse-CDF / quantile function
-pub trait InverseCdf<X>: Rv<X> + Support<X> {
+pub trait InverseCdf<X>: HasDensity<X> + Support<X> {
     /// The value of the `x` at the given probability in the CDF
     ///
     /// # Example
@@ -451,7 +463,7 @@ pub trait KlDivergence {
 ///
 /// ```
 /// # use rv::traits::ConjugatePrior;
-/// use rv::traits::Rv;
+/// use rv::traits::*;
 /// use rv::suffstat_traits::SuffStat;
 /// use rv::dist::{Categorical, SymmetricDirichlet};
 /// use rv::data::{CategoricalSuffStat, DataOrSuffStat};
@@ -513,7 +525,7 @@ pub trait KlDivergence {
 /// ```
 pub trait ConjugatePrior<X, Fx>: Rv<Fx>
 where
-    Fx: Rv<X> + HasSuffStat<X>,
+    Fx: HasDensity<X> + HasSuffStat<X>,
 {
     /// Type of the posterior distribution
     type Posterior: Rv<Fx>;

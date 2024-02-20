@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::Datum;
 use crate::dist::Distribution;
-use crate::traits::Rv;
+use crate::traits::*;
 
 /// A product distribution is the distribution of independent distributions.
 ///
@@ -22,7 +22,7 @@ use crate::traits::Rv;
 /// use rv::dist::{
 ///     Categorical, Gaussian, Mixture, ProductDistribution, Distribution
 /// };
-/// use rv::traits::Rv;
+/// use rv::traits::*;
 ///
 /// // NOTE: Because the ProductDistribution is an abstraction around Vec<Dist>,
 /// // the user must take care to get the order of distributions in each
@@ -63,7 +63,7 @@ impl ProductDistribution {
     /// use rv::dist::{
     ///     Categorical, Gaussian, Mixture, ProductDistribution, Distribution
     /// };
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     ///
     /// let prod = ProductDistribution::new(vec![
     ///     Distribution::Categorical(Categorical::new(&[0.1, 0.9]).unwrap()),
@@ -78,7 +78,7 @@ impl ProductDistribution {
     }
 }
 
-impl Rv<Vec<Datum>> for ProductDistribution {
+impl HasDensity<Vec<Datum>> for ProductDistribution {
     fn ln_f(&self, x: &Vec<Datum>) -> f64 {
         self.dists
             .iter()
@@ -86,20 +86,24 @@ impl Rv<Vec<Datum>> for ProductDistribution {
             .map(|(dist, x_i)| dist.ln_f(x_i))
             .sum()
     }
+}
 
+impl Sampleable<Vec<Datum>> for ProductDistribution {
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Vec<Datum> {
         self.dists.iter().map(|dist| dist.draw(rng)).collect()
     }
 }
 
-impl Rv<Datum> for ProductDistribution {
+impl HasDensity<Datum> for ProductDistribution {
     fn ln_f(&self, x: &Datum) -> f64 {
         match x {
             Datum::Compound(ref xs) => self.ln_f(xs),
             _ => panic!("unsupported data type for product distribution"),
         }
     }
+}
 
+impl Sampleable<Datum> for ProductDistribution {
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Datum {
         Datum::Compound(self.draw(rng))
     }
