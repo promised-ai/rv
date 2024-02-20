@@ -472,7 +472,6 @@ fn ks_cdf(n: usize, d: f64) -> f64 {
 mod tests {
     use super::*;
     use crate::dist::Gaussian;
-    use crate::traits::Cdf;
 
     const TOL: f64 = 1E-12;
 

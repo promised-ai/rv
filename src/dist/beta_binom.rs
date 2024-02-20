@@ -422,7 +422,6 @@ impl fmt::Display for BetaBinomialError {
 mod tests {
     use super::*;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
 

@@ -399,7 +399,6 @@ mod tests {
     use crate::misc::ks_test;
     use crate::misc::linspace;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
