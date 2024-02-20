@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct SbdSuffStat {
-    pub counts: Vec<usize>
+    pub counts: Vec<usize>,
 }
 
 impl Default for SbdSuffStat {
@@ -22,13 +22,9 @@ impl Default for SbdSuffStat {
 
 impl SbdSuffStat {
     pub fn new() -> Self {
-        Self {
-            counts: Vec::new()
-        }
+        Self { counts: Vec::new() }
     }
 }
-
- 
 
 impl HasSuffStat<usize> for Sbd {
     type Stat = SbdSuffStat;
@@ -57,7 +53,6 @@ impl SuffStat<usize> for SbdSuffStat {
             self.counts.resize(*i + 1, 0)
         }
         self.counts[*i] += 1;
-        
     }
 
     fn forget(&mut self, i: &usize) {
@@ -65,4 +60,3 @@ impl SuffStat<usize> for SbdSuffStat {
         self.counts[*i] -= 1;
     }
 }
-
