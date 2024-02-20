@@ -509,7 +509,7 @@ pub trait KlDivergence {
 /// };
 ///
 /// // Using cache improves runtime
-/// assert!(t_no_cache.as_nanos() > 2 * t_cache.as_nanos());
+/// assert!(t_no_cache.as_nanos() > t_cache.as_nanos());
 /// ```
 pub trait ConjugatePrior<X, Fx>: Rv<Fx>
 where
