@@ -5,8 +5,6 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use super::StickSequence;
-use crate::traits::DiscreteDistr;
-// use crate::suffstat_traits::HasSuffStat;
 use crate::traits::*;
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]

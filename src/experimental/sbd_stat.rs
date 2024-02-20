@@ -1,9 +1,5 @@
 use crate::experimental::sbd::Sbd;
-use crate::{
-    data::UnitPowerLawSuffStat,
-    suffstat_traits::{HasSuffStat, SuffStat},
-};
-use peroxide::fuga::FPVector;
+use crate::suffstat_traits::{HasSuffStat, SuffStat};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -39,7 +35,7 @@ impl HasSuffStat<usize> for Sbd {
         let pairs = weights.iter().zip(counts.iter());
 
         // This can probably be sped up later if necessary
-        pairs.fold(0.0, |acc, (w, c)| acc + (*c as f64) * w.ln())
+        pairs.fold(0.0, |acc, (w, c)| (*c as f64).mul_add(w.ln(), acc))
     }
 }
 

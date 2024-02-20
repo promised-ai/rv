@@ -9,7 +9,6 @@ use crate::dist::{Categorical, Gaussian, Poisson};
 use crate::misc::{logsumexp, pflip};
 use crate::traits::*;
 use rand::Rng;
-use std::convert::TryFrom;
 use std::fmt;
 use std::sync::OnceLock;
 

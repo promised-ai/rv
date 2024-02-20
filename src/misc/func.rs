@@ -3,7 +3,6 @@ use rand::distributions::Open01;
 use rand::Rng;
 use special::Gamma;
 use std::cmp::Ordering;
-use std::cmp::PartialOrd;
 use std::fmt::Debug;
 use std::ops::AddAssign;
 

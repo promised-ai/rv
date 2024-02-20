@@ -1,13 +1,7 @@
-use rand::Rng;
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
-
-// use super::sb_stat::StickBreakingSuffStat;
-use crate::dist::UnitPowerLaw;
-use crate::experimental::stick_breaking_stat::StickBreakingSuffStat;
-use crate::experimental::stick_sequence::StickSequence;
+use crate::experimental::{StickBreakingSuffStat, StickSequence};
 use crate::process_traits::Process;
 use crate::suffstat_traits::*;
+use rand::Rng;
 
 #[derive(Clone, Debug)]
 pub enum StickBreakingError {
