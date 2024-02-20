@@ -3,6 +3,7 @@ use crate::{
     data::UnitPowerLawSuffStat,
     suffstat_traits::{HasSuffStat, SuffStat},
 };
+use peroxide::fuga::FPVector;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -27,7 +28,7 @@ impl SbdSuffStat {
     }
 }
 
-
+ 
 
 impl HasSuffStat<usize> for Sbd {
     type Stat = SbdSuffStat;
@@ -37,7 +38,12 @@ impl HasSuffStat<usize> for Sbd {
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
-        todo!()
+        let weights = &self.sticks.weights(stat.counts.len());
+        let counts = &stat.counts;
+        let pairs = weights.iter().zip(counts.iter());
+
+        // This can probably be sped up later if necessary
+        pairs.fold(0.0, |acc, (w, c)| acc + (*c as f64) * w.ln())
     }
 }
 
