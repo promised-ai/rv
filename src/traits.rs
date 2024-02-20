@@ -4,7 +4,6 @@ use crate::suffstat_traits::HasSuffStat;
 use rand::Rng;
 
 pub trait Sampleable<X> {
-
     /// Single draw from the `Rv`
     ///
     /// # Example
@@ -120,14 +119,9 @@ pub trait HasDensity<X> {
 /// Contains the minimal functionality that a random object must have to be
 /// useful: a function defining the un-normalized density/mass at a point,
 /// and functions to draw samples from the distribution.
-pub trait Rv<X>: Sampleable<X> + HasDensity<X>
-{
-}
+pub trait Rv<X>: Sampleable<X> + HasDensity<X> {}
 
-impl<X,T> Rv<X> for T
-where T: Sampleable<X> + HasDensity<X>
-{
-}
+impl<X, T> Rv<X> for T where T: Sampleable<X> + HasDensity<X> {}
 
 /// Identifies the support of the Rv
 pub trait Support<X> {

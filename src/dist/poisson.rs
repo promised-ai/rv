@@ -191,8 +191,6 @@ macro_rules! impl_traits {
                 let kf = *x as f64;
                 kf.mul_add(self.ln_rate(), -self.rate) - ln_fact(*x as usize)
             }
-
-
         }
 
         impl Sampleable<$kind> for Poisson {
@@ -201,7 +199,7 @@ macro_rules! impl_traits {
                 let x: u64 = rng.sample(pois) as u64;
                 x as $kind
             }
-            
+
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
                 let pois = RPossion::new(self.rate).unwrap();
                 (0..n)

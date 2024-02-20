@@ -217,7 +217,7 @@ impl<X: Booleable> HasDensity<X> for Bernoulli {
     }
 }
 
-impl <X: Booleable> Sampleable<X> for Bernoulli {
+impl<X: Booleable> Sampleable<X> for Bernoulli {
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
         let u = rand_distr::Open01;
         let x: f64 = rng.sample(u);

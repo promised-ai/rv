@@ -215,10 +215,10 @@ where
     }
 }
 
-impl<X> Sampleable<X> for Geometric 
+impl<X> Sampleable<X> for Geometric
 where
     X: Unsigned + Integer + FromPrimitive + ToPrimitive + Saturating + Bounded,
-    {
+{
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
         // Follows the same pattern as
         // https://github.com/numpy/numpy/blob/7c41164f5340dc998ea1c04d2061f7d246894955/numpy/random/mtrand/distributions.c#L777

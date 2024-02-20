@@ -5,9 +5,9 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use super::StickSequence;
-use crate::traits::*;
 use crate::prelude::DataOrSuffStat;
-use crate::prelude::UnitPowerLaw;  
+use crate::prelude::UnitPowerLaw;
+use crate::traits::*;
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
@@ -187,10 +187,7 @@ mod tests {
     }
 }
 
-impl Rv<Sbd> for UnitPowerLaw {
-   
-
-}
+impl Rv<Sbd> for UnitPowerLaw {}
 
 impl ConjugatePrior<usize, Sbd> for UnitPowerLaw {
     type Posterior = UnitPowerLaw;
@@ -224,10 +221,6 @@ impl ConjugatePrior<usize, Sbd> for UnitPowerLaw {
     // fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &usize) -> f64 {
     //     cache.ccdf(y + 1)
     // }
-
-
-
-
 
     // /// The log marginal likelihood
     // fn ln_m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
