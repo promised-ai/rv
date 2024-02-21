@@ -9,7 +9,8 @@ use serde::{Deserialize, Serialize};
 use std::cell::OnceCell;
 
 use crate::dist::MvGaussian;
-use crate::{consts::HALF_LN_2PI, traits::Mean, traits::Rv, traits::Variance};
+use crate::{consts::HALF_LN_2PI};
+use crate::traits::*;
 
 pub mod kernel;
 use kernel::{Kernel, KernelError};

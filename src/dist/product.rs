@@ -112,8 +112,7 @@ impl Sampleable<Datum> for ProductDistribution {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::Datum;
-    use crate::dist::{Categorical, Distribution, Gaussian};
+    use crate::dist::{Categorical, Gaussian};
 
     fn catgauss_mix() -> ProductDistribution {
         ProductDistribution::new(vec![

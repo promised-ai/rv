@@ -333,7 +333,7 @@ mod tests {
         ];
         let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
         let iw = InvWishart::new(inv_scale, 5).unwrap();
-        for x in <InvWishart as crate::traits::Rv<DMatrix<f64>>>::sample::<
+        for x in <InvWishart as crate::traits::Sampleable<DMatrix<f64>>>::sample::<
             rand::rngs::ThreadRng,
         >(&iw, 100, &mut rng)
         {

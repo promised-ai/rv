@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "arraydist")]
 use crate::nalgebra::{DMatrix, DVector};
 use crate::traits::*;
-use std::convert::TryInto;
 
 /// Represents any Datum/Value, X, for which Rv<X> may be implemented on a
 /// `Distribution`.
