@@ -1,5 +1,5 @@
 use crate::experimental::{StickBreakingSuffStat, StickSequence};
-use crate::process_traits::Process;
+use crate::traits::*;
 use crate::suffstat_traits::*;
 use rand::Rng;
 
@@ -42,12 +42,14 @@ impl StickBreaking {
     }
 }
 
-impl Process<StickSequence, &[f64]> for StickBreaking {
+impl HasDensity<&[f64]> for StickBreaking {
     fn ln_f(&self, x: &&[f64]) -> f64 {
         let stat = StickBreakingSuffStat::from(x);
         self.ln_f_stat(&stat)
     }
+}
 
+impl Sampleable<StickSequence> for StickBreaking {
     fn draw<R: Rng>(&self, rng: &mut R) -> StickSequence {
         let seed: u64 = rng.gen();
 

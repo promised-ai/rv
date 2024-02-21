@@ -6,7 +6,7 @@ use std::sync::{Arc, RwLock};
 
 // use super::sticks_stat::StickBreakingSuffStat;
 use crate::dist::UnitPowerLaw;
-use crate::traits::Rv;
+use crate::traits::*;
 
 #[derive(Clone, Debug)]
 pub enum StickSequenceError {

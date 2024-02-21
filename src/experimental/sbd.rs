@@ -54,18 +54,6 @@ impl Sbd {
     }
 }
 
-// impl HasSuffStat<usize> for Sbd {
-//     type Stat = SbdSuffStat;
-
-//     fn empty_suffstat(&self) -> Self::Stat {
-//         SbdSuffStat::new()
-//     }
-
-//     fn ln_f_stat(&self, _stat: &Self::Stat) -> f64 {
-//         unimplemented!()
-//     }
-// }
-
 impl Support<usize> for Sbd {
     fn supports(&self, x: &usize) -> bool {
         x.ge(&0)
@@ -187,60 +175,58 @@ mod tests {
     }
 }
 
-impl Rv<Sbd> for UnitPowerLaw {}
+// impl ConjugatePrior<usize, Sbd> for UnitPowerLaw {
+//     type Posterior = UnitPowerLaw;
+//     type LnMCache = StickSequence;
+//     type LnPpCache = StickSequence;
 
-impl ConjugatePrior<usize, Sbd> for UnitPowerLaw {
-    type Posterior = UnitPowerLaw;
-    type LnMCache = StickSequence;
-    type LnPpCache = StickSequence;
+//     // fn posterior(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::Posterior {
+//     //     let mut sticks = self.sticks.clone();
+//     //     x.suff_stat().counts.iter().for_each(|&n| {
+//     //         sticks.observe(n);
+//     //     });
+//     //     Self { sticks }
+//     // }
 
-    // fn posterior(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::Posterior {
-    //     let mut sticks = self.sticks.clone();
-    //     x.suff_stat().counts.iter().for_each(|&n| {
-    //         sticks.observe(n);
-    //     });
-    //     Self { sticks }
-    // }
+//     // fn ln_m_cache(&self) -> Self::LnMCache {
+//     //     self.sticks.clone()
+//     // }
 
-    // fn ln_m_cache(&self) -> Self::LnMCache {
-    //     self.sticks.clone()
-    // }
+//     // fn ln_m_with_cache(&self, cache: &Self::LnMCache, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
+//     //     let mut result = 0.0;
+//     //     for (n, &count) in x.data_or_suff_stat().counts.iter().enumerate() {
+//     //         result += cache.ccdf(n + 1) * count as f64;
+//     //     }
+//     //     result
+//     // }
 
-    // fn ln_m_with_cache(&self, cache: &Self::LnMCache, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
-    //     let mut result = 0.0;
-    //     for (n, &count) in x.data_or_suff_stat().counts.iter().enumerate() {
-    //         result += cache.ccdf(n + 1) * count as f64;
-    //     }
-    //     result
-    // }
+//     // fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::LnPpCache {
+//     //     self.sticks.clone()
+//     // }
 
-    // fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::LnPpCache {
-    //     self.sticks.clone()
-    // }
+//     // fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &usize) -> f64 {
+//     //     cache.ccdf(y + 1)
+//     // }
 
-    // fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &usize) -> f64 {
-    //     cache.ccdf(y + 1)
-    // }
+//     // /// The log marginal likelihood
+//     // fn ln_m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
+//     //     let cache = self.ln_m_cache();
+//     //     self.ln_m_with_cache(&cache, x)
+//     // }
 
-    // /// The log marginal likelihood
-    // fn ln_m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
-    //     let cache = self.ln_m_cache();
-    //     self.ln_m_with_cache(&cache, x)
-    // }
+//     // /// Log posterior predictive of y given x
+//     // fn ln_pp(&self, y: &usize, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
+//     //     let cache = self.ln_pp_cache(x);
+//     //     self.ln_pp_with_cache(&cache, y)
+//     // }
 
-    // /// Log posterior predictive of y given x
-    // fn ln_pp(&self, y: &usize, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
-    //     let cache = self.ln_pp_cache(x);
-    //     self.ln_pp_with_cache(&cache, y)
-    // }
+//     // /// Marginal likelihood of x
+//     // fn m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
+//     //     self.ln_m(x).exp()
+//     // }
 
-    // /// Marginal likelihood of x
-    // fn m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
-    //     self.ln_m(x).exp()
-    // }
-
-    // /// Posterior Predictive distribution
-    // fn pp(&self, y: &usize, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
-    //     self.ln_pp(y, x).exp()
-    // }
-}
+//     // /// Posterior Predictive distribution
+//     // fn pp(&self, y: &usize, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
+//     //     self.ln_pp(y, x).exp()
+//     // }
+// }

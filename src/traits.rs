@@ -123,6 +123,13 @@ pub trait Rv<X>: Sampleable<X> + HasDensity<X> {}
 
 impl<X, T> Rv<X> for T where T: Sampleable<X> + HasDensity<X> {}
 
+/// Stochastic process
+///
+pub trait Process<S,O>: Sampleable<S> + HasDensity<O> {}
+
+impl<S,O,T> Process<S,O> for T where T: Sampleable<S> + HasDensity<O> {}
+
+
 /// Identifies the support of the Rv
 pub trait Support<X> {
     /// Returns `true` if `x` is in the support of the `Rv`
@@ -147,7 +154,7 @@ pub trait Support<X> {
 ///
 /// This trait uses the `Rv<X>` and `Support<X>` implementations to implement
 /// itself.
-pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
+pub trait ContinuousDistr<X>: HasDensity<X> + Support<X> {
     /// The value of the Probability Density Function (PDF) at `x`
     ///
     /// # Example
@@ -224,7 +231,7 @@ pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
 }
 
 /// Has a cumulative distribution function (CDF)
-pub trait Cdf<X>: Rv<X> {
+pub trait Cdf<X>: HasDensity<X> {
     /// The value of the Cumulative Density Function at `x`
     ///
     /// # Example
