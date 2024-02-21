@@ -58,7 +58,7 @@ macro_rules! benchrv {
                 let fx = $ctor;
                 b.iter(|| {
                     let _count: usize =
-                        <$fxtype as Rv<$xtype>>::sample_stream(&fx, &mut rng)
+                        <$fxtype as Sampleable<$xtype>>::sample_stream(&fx, &mut rng)
                         .take(5)
                         .count();
                 })

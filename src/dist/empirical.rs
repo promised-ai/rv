@@ -11,7 +11,7 @@ use rand::Rng;
 ///
 /// ```rust
 /// use rv::dist::{Gaussian, Empirical};
-/// use rv::prelude::Rv;
+/// use rv::prelude::*;
 /// use rv::misc::linspace;
 /// use rand_xoshiro::Xoshiro256Plus;
 /// use rand::SeedableRng;
