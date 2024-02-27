@@ -5,11 +5,13 @@ use rand::Rng;
 #[derive(Clone, Debug, PartialEq)]
 pub struct StickBreaking<B: Rv<f64> + Clone> {
     pub breaker: B,
+    pub breaks: Vec<f64>,
 }
 
 impl<B:Rv<f64> + Clone> StickBreaking<B> {
     pub fn new(breaker: B) -> Self {
-        Self { breaker }
+        let breaks = Vec::new();
+        Self { breaker, breaks }
     }
 }
 
