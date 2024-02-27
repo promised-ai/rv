@@ -8,8 +8,8 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::cell::OnceCell;
 
+use crate::consts::HALF_LN_2PI;
 use crate::dist::MvGaussian;
-use crate::{consts::HALF_LN_2PI};
 use crate::traits::*;
 
 pub mod kernel;

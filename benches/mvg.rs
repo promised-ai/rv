@@ -29,7 +29,9 @@ fn bench_mvg_sample(c: &mut Criterion) {
         group.bench_with_input(n.to_string(), &n, |b, &n| {
             b.iter_batched_ref(
                 rand::thread_rng,
-                |mut rng| black_box::<Vec<DVector<f64>>>(mvg.sample(n, &mut rng)),
+                |mut rng| {
+                    black_box::<Vec<DVector<f64>>>(mvg.sample(n, &mut rng))
+                },
                 BatchSize::SmallInput,
             );
         });

@@ -232,7 +232,8 @@ mod tests {
     fn cannot_draw_zero_rate() {
         let mut rng = rand::thread_rng();
         let dist = Gamma::new(1.0, 1e-10).unwrap();
-        let stream = <Gamma as Sampleable<Poisson>>::sample_stream(&dist, &mut rng);
+        let stream =
+            <Gamma as Sampleable<Poisson>>::sample_stream(&dist, &mut rng);
         assert!(stream.take(10_000).all(|pois| pois.rate() > 0.0));
     }
 }

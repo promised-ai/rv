@@ -1,9 +1,9 @@
+use rand::Rng;
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256Plus;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
-use rand::Rng;  
 
 // use super::sticks_stat::StickBreakingSuffStat;
 use crate::dist::UnitPowerLaw;
@@ -20,7 +20,7 @@ struct StickSequenceFmt<B> {
 }
 
 #[cfg(feature = "serde1")]
-impl<B:Rv<f64> + Clone> From<StickSequenceFmt<B>> for StickSequence {
+impl<B: Rv<f64> + Clone> From<StickSequenceFmt<B>> for StickSequence {
     fn from(fmt: StickSequenceFmt<B>) -> Self {
         Self {
             breaker: fmt.breaker,
@@ -30,7 +30,7 @@ impl<B:Rv<f64> + Clone> From<StickSequenceFmt<B>> for StickSequence {
 }
 
 #[cfg(feature = "serde1")]
-impl<B:Rv> From<StickSequence<B>> for StickSequenceFmt<B> {
+impl<B: Rv> From<StickSequence<B>> for StickSequenceFmt<B> {
     fn from(sticks: StickSequence<B>) -> Self {
         Self {
             breaker: sticks.breaker,
@@ -60,8 +60,7 @@ impl _Inner {
         }
     }
 
-    fn extend<B: Rv<f64> + Clone>(&mut self, breaker: &B) -> f64 
-    {
+    fn extend<B: Rv<f64> + Clone>(&mut self, breaker: &B) -> f64 {
         let p: f64 = breaker.draw(&mut self.rng);
         let remaining_mass = self.ccdf.last().unwrap();
         let new_remaining_mass = remaining_mass * p;
@@ -69,7 +68,7 @@ impl _Inner {
         new_remaining_mass
     }
 
-    fn extend_until<B,F>(&mut self, breaker: &B, p: F)
+    fn extend_until<B, F>(&mut self, breaker: &B, p: F)
     where
         B: Rv<f64> + Clone,
         F: Fn(&_Inner) -> bool,
@@ -94,21 +93,18 @@ pub struct StickSequence<B> {
 }
 
 // TODO: Extend to equal length, then check for equality
-impl<B:Rv<f64> + Clone> PartialEq<StickSequence<B>> for StickSequence<B> {
+impl<B: Rv<f64> + Clone> PartialEq<StickSequence<B>> for StickSequence<B> {
     fn eq(&self, _other: &StickSequence<B>) -> bool {
         todo!()
     }
 }
 
-impl<B:Rv<f64> + Clone> StickSequence<B> {
-    pub fn new(
-        breaker: B,
-        seed: Option<u64>,
-    ) -> Self {
+impl<B: Rv<f64> + Clone> StickSequence<B> {
+    pub fn new(breaker: B, seed: Option<u64>) -> Self {
         Self {
-                breaker: breaker,
-                inner: Arc::new(RwLock::new(_Inner::new(seed))),
-            }
+            breaker: breaker,
+            inner: Arc::new(RwLock::new(_Inner::new(seed))),
+        }
     }
 
     pub fn extendmap_ccdf<P, F, Ans>(&self, pred: P, f: F) -> Ans

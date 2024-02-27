@@ -54,7 +54,8 @@ where
     Fx: RvDatum,
 {
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Datum {
-        let x = <Self as Sampleable<<Self as RvDatum>::Support>>::draw(self, rng);
+        let x =
+            <Self as Sampleable<<Self as RvDatum>::Support>>::draw(self, rng);
         x.into()
     }
 
@@ -70,8 +71,10 @@ where
         rng: &'r mut R,
     ) -> Box<dyn Iterator<Item = Datum> + 'r> {
         let iter =
-            <Self as Sampleable<<Self as RvDatum>::Support>>::sample_stream(self, rng)
-                .map(|x| x.try_into().unwrap());
+            <Self as Sampleable<<Self as RvDatum>::Support>>::sample_stream(
+                self, rng,
+            )
+            .map(|x| x.try_into().unwrap());
         Box::new(iter)
     }
 }

@@ -125,10 +125,9 @@ impl<X, T> Rv<X> for T where T: Sampleable<X> + HasDensity<X> {}
 
 /// Stochastic process
 ///
-pub trait Process<S,O>: Sampleable<S> + HasDensity<O> {}
+pub trait Process<S, O>: Sampleable<S> + HasDensity<O> {}
 
-impl<S,O,T> Process<S,O> for T where T: Sampleable<S> + HasDensity<O> {}
-
+impl<S, O, T> Process<S, O> for T where T: Sampleable<S> + HasDensity<O> {}
 
 /// Identifies the support of the Rv
 pub trait Support<X> {

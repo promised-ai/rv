@@ -1,16 +1,18 @@
 use crate::experimental::{StickBreakingSuffStat, StickSequence};
-use crate::traits::*;
+use crate::prelude::{UnitPowerLaw, UnitPowerLawError};
 use crate::suffstat_traits::*;
+use crate::traits::*;
 use rand::Rng;
-use crate::prelude::{UnitPowerLaw, UnitPowerLawError}; 
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct StickBreaking<B:Rv<f64> + Clone> {
-    pub breaker: B
+pub struct StickBreaking<B: Rv<f64> + Clone> {
+    pub breaker: B,
 }
 
 impl StickBreaking<UnitPowerLaw> {
-    pub fn new(alpha: f64) -> Result<StickBreaking<UnitPowerLaw>, UnitPowerLawError> {
+    pub fn new(
+        alpha: f64,
+    ) -> Result<StickBreaking<UnitPowerLaw>, UnitPowerLawError> {
         let breaker = UnitPowerLaw::new(alpha)?;
         Ok(Self { breaker })
     }
@@ -23,7 +25,7 @@ impl StickBreaking<UnitPowerLaw> {
 //     }
 // }
 
-impl<B:Rv<f64> + Clone> Sampleable<StickSequence<B>> for StickBreaking<B> {
+impl<B: Rv<f64> + Clone> Sampleable<StickSequence<B>> for StickBreaking<B> {
     fn draw<R: Rng>(&self, rng: &mut R) -> StickSequence<B> {
         let seed: u64 = rng.gen();
 

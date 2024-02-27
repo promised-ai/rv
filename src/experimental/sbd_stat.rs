@@ -1,6 +1,6 @@
 use crate::experimental::sbd::Sbd;
-use crate::traits::Rv;
 use crate::suffstat_traits::{HasSuffStat, SuffStat};
+use crate::traits::Rv;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -23,7 +23,7 @@ impl SbdSuffStat {
     }
 }
 
-impl<B:Rv<f64> + Clone> HasSuffStat<usize> for Sbd<B> {
+impl<B: Rv<f64> + Clone> HasSuffStat<usize> for Sbd<B> {
     type Stat = SbdSuffStat;
 
     fn empty_suffstat(&self) -> Self::Stat {
