@@ -142,6 +142,7 @@ mod tests {
     use super::*;
     use assert::close;
     use rand::thread_rng;
+    use crate::prelude::UnitPowerLaw;
 
     #[test]
     fn test_sorted_uniforms() {
@@ -166,7 +167,7 @@ mod tests {
 
     #[test]
     fn test_multi_invccdf_sorted() {
-        let sbd = Sbd::new(10.0);
+        let sbd = Sbd::new(UnitPowerLaw::new(10.0).unwrap());
         let ps = sorted_uniforms(5, &mut thread_rng());
         assert_eq!(
             sbd.multi_invccdf_sorted(&ps),

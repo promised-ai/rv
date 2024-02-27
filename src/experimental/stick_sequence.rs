@@ -100,7 +100,7 @@ impl<B: Rv<f64> + Clone> PartialEq<StickSequence<B>> for StickSequence<B> {
 impl<B: Rv<f64> + Clone> StickSequence<B> {
     pub fn new(breaker: B, seed: Option<u64>) -> Self {
         Self {
-            breaker: breaker,
+            breaker,
             inner: Arc::new(RwLock::new(_Inner::new(seed))),
         }
     }
