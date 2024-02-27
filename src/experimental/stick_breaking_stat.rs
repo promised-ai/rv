@@ -1,4 +1,5 @@
 use crate::experimental::stick_breaking::StickBreaking;
+use crate::prelude::UnitPowerLaw; 
 use crate::{
     data::UnitPowerLawSuffStat,
     suffstat_traits::{HasSuffStat, SuffStat},
@@ -94,7 +95,8 @@ fn stick_stat(sticks: &[f64]) -> (usize, f64) {
     (num_breaks, prod_q.ln())
 }
 
-impl HasSuffStat<&[f64]> for StickBreaking {
+impl HasSuffStat<&[f64]> for StickBreaking<UnitPowerLaw>
+{
     type Stat = StickBreakingSuffStat;
 
     fn empty_suffstat(&self) -> Self::Stat {
@@ -102,8 +104,9 @@ impl HasSuffStat<&[f64]> for StickBreaking {
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+        let alpha = self.breaker.alpha();
         (stat.num_breaks as f64)
-            .mul_add(self.alpha().ln(), (self.alpha() - 1.0) * stat.sum_log_q)
+            .mul_add(alpha.ln(), (alpha - 1.0) * stat.sum_log_q)
     }
 }
 
