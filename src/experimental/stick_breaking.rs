@@ -1,6 +1,5 @@
-use crate::experimental::{StickBreakingSuffStat, StickSequence};
+use crate::experimental::StickSequence;
 use crate::prelude::{UnitPowerLaw, UnitPowerLawError};
-use crate::suffstat_traits::*;
 use crate::traits::*;
 use rand::Rng;
 
@@ -29,7 +28,7 @@ impl<B: Rv<f64> + Clone> Sampleable<StickSequence<B>> for StickBreaking<B> {
     fn draw<R: Rng>(&self, rng: &mut R) -> StickSequence<B> {
         let seed: u64 = rng.gen();
 
-        StickSequence::new(self.breaker, Some(seed))
+        StickSequence::new(self.breaker.clone(), Some(seed))
     }
 }
 

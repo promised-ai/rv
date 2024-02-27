@@ -1,4 +1,3 @@
-use rand::Rng;
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256Plus;
 #[cfg(feature = "serde1")]
@@ -6,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
 // use super::sticks_stat::StickBreakingSuffStat;
-use crate::dist::UnitPowerLaw;
 use crate::traits::*;
 
 // We'd like to be able to serialize and deserialize StickSequence, but serde can't handle
