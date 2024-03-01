@@ -523,12 +523,12 @@ pub trait KlDivergence {
 /// // Using cache improves runtime
 /// assert!(t_no_cache.as_nanos() > t_cache.as_nanos());
 /// ```
-pub trait ConjugatePrior<X, Fx>: Rv<Fx>
+pub trait ConjugatePrior<X, Fx>: Sampleable<Fx>
 where
     Fx: HasDensity<X> + HasSuffStat<X>,
 {
     /// Type of the posterior distribution
-    type Posterior: Rv<Fx>;
+    type Posterior: Sampleable<Fx>;
     /// Type of the `ln_m` cache
     type LnMCache;
     /// Type of the `ln_pp` cache
