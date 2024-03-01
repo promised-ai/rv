@@ -1,10 +1,10 @@
 use crate::experimental::stick_breaking::StickBreaking;
+use crate::prelude::Beta;
 use crate::prelude::UnitPowerLaw;
 use crate::{
     data::UnitPowerLawSuffStat,
     suffstat_traits::{HasSuffStat, SuffStat},
 };
-use crate::prelude::Beta; 
 
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -96,12 +96,13 @@ fn stick_stat_beta(sticks: &[f64]) -> (usize, f64, f64) {
 
     // The sufficient statistic is (n, ∑ᵢ log pᵢ, ∑ᵢ log(1 - pᵢ)) == (n, log ∏ᵢ pᵢ, log ∏ᵢ(1 - pᵢ)).
     // First we compute `n` and `∏ᵢ(1 - pᵢ)`
-    let (num_breaks, prod_p, prod_q) =
-        qs.fold((0, 1.0, 1.0), |(n, prod_p, prod_q), q| (n + 1, prod_p * (1.0 - q), prod_q * q));
+    let (num_breaks, prod_p, prod_q) = qs
+        .fold((0, 1.0, 1.0), |(n, prod_p, prod_q), q| {
+            (n + 1, prod_p * (1.0 - q), prod_q * q)
+        });
 
     (num_breaks, prod_p.ln(), prod_q.ln())
 }
-
 
 impl HasSuffStat<&[f64]> for StickBreaking<Beta> {
     type Stat = StickBreakingBetaSuffStat;
@@ -245,7 +246,6 @@ impl HasSuffStat<&[f64]> for StickBreaking<UnitPowerLaw> {
     }
 }
 
-
 impl SuffStat<&[f64]> for StickBreakingUnitPowerLawSuffStat {
     fn n(&self) -> usize {
         self.n
@@ -265,7 +265,6 @@ impl SuffStat<&[f64]> for StickBreakingUnitPowerLawSuffStat {
         self.sum_log_q -= sum_log_q;
     }
 }
-
 
 // #[cfg(test)]
 // mod test {

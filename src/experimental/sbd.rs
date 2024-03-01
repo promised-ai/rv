@@ -138,9 +138,9 @@ impl<B: Rv<f64> + Clone> Sampleable<usize> for Sbd<B> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::prelude::UnitPowerLaw;
     use assert::close;
     use rand::thread_rng;
-    use crate::prelude::UnitPowerLaw;
 
     #[test]
     fn test_sorted_uniforms() {
