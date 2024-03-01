@@ -18,7 +18,7 @@ struct StickSequenceFmt<B> {
 }
 
 #[cfg(feature = "serde1")]
-impl<B: Rv<f64> + Clone> From<StickSequenceFmt<B>> for StickSequence {
+impl<B: Rv<f64> + Clone> From<StickSequenceFmt<B>> for StickSequence<B> {
     fn from(fmt: StickSequenceFmt<B>) -> Self {
         Self {
             breaker: fmt.breaker,
@@ -28,7 +28,7 @@ impl<B: Rv<f64> + Clone> From<StickSequenceFmt<B>> for StickSequence {
 }
 
 #[cfg(feature = "serde1")]
-impl<B: Rv> From<StickSequence<B>> for StickSequenceFmt<B> {
+impl<B: Rv<f64> + Clone> From<StickSequence<B>> for StickSequenceFmt<B> {
     fn from(sticks: StickSequence<B>) -> Self {
         Self {
             breaker: sticks.breaker,
