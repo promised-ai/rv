@@ -13,6 +13,8 @@ use std::f64;
 use std::fmt;
 use std::sync::OnceLock;
 
+pub mod bernoulli_prior;
+
 /// UnitPowerLaw(α) over x in (0, 1).
 ///
 /// # Examples
