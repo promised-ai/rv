@@ -1,7 +1,6 @@
 use crate::experimental::Sbd;
 use crate::experimental::SbdSuffStat;
-use crate::experimental::StickBreakingBetaSuffStat;
-use crate::experimental::StickBreakingUnitPowerLawSuffStat;
+use crate::experimental::StickBreakingSuffStat;
 use crate::experimental::StickSequence;
 use crate::prelude::Beta;
 use crate::prelude::DataOrSuffStat;
@@ -12,48 +11,48 @@ use crate::traits::*;
 use rand::Rng;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct StickBreaking<B: Rv<f64> + Clone> {
-    pub breaker: B,
-    pub breaks: Vec<f64>,
+pub struct StickBreaking {
+    pub breaker: UnitPowerLaw,
+    pub prefix: Vec<Beta>,
 }
 
-impl<B: Rv<f64> + Clone> StickBreaking<B> {
-    pub fn new(breaker: B) -> Self {
-        let breaks = Vec::new();
-        Self { breaker, breaks }
+impl StickBreaking {
+    pub fn new(breaker:UnitPowerLaw) -> Self {
+        let prefix = Vec::new();
+        Self { breaker, prefix }
     }
 }
 
-impl HasDensity<&[f64]> for StickBreaking<Beta> {
+impl HasDensity<&[f64]> for StickBreaking {
     fn ln_f(&self, x: &&[f64]) -> f64 {
-        let stat = StickBreakingBetaSuffStat::from(x);
+        let stat = StickBreakingSuffStat::from(x);
         self.ln_f_stat(&stat)
     }
 }
 
-impl HasDensity<&[f64]> for StickBreaking<UnitPowerLaw> {
-    fn ln_f(&self, x: &&[f64]) -> f64 {
-        let stat = StickBreakingUnitPowerLawSuffStat::from(x);
-        self.ln_f_stat(&stat)
-    }
-}
-
-impl<B: Rv<f64> + Clone> Sampleable<StickSequence<B>> for StickBreaking<B> {
-    fn draw<R: Rng>(&self, rng: &mut R) -> StickSequence<B> {
+impl Sampleable<StickSequence<UnitPowerLaw>> for StickBreaking {
+    fn draw<R: Rng>(&self, rng: &mut R) -> StickSequence<UnitPowerLaw> {
         let seed: u64 = rng.gen();
 
         StickSequence::new(self.breaker.clone(), Some(seed))
     }
 }
 
-// impl ConjugatePrior<usize, Sbd<Beta>> for StickBreaking<Beta> {
-//     type Posterior = SbPosterior;
-//     type LnMCache = ();
-//     type LnPpCache = SbCache;
+impl Sampleable<Sbd<Beta>> for StickBreaking {
+    fn draw<R: Rng>(&self, rng: &mut R) -> Sbd<Beta> {
+        todo!()
+    }
+}
 
-//     fn ln_m_cache(&self) -> Self::LnMCache {}
+impl ConjugatePrior<usize, Sbd<Beta>> for StickBreaking {
+    type Posterior = StickBreaking;
+    type LnMCache = ();
+    type LnPpCache = ();
 
-//     fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd<Beta>>) -> Self::LnPpCache {
+    fn ln_m_cache(&self) -> Self::LnMCache {}
+
+    fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd<Beta>>) -> Self::LnPpCache {
+        todo!()
 //         let post = self.posterior(x);
 //         // we'll need the alpha for computing 1 / (1 + alpha), which is the
 //         // expected likelihood of a new class
@@ -73,9 +72,10 @@ impl<B: Rv<f64> + Clone> Sampleable<StickSequence<B>> for StickBreaking<B> {
 //             ln_weights,
 //             ln_f_new,
 //         }
-//     }
+    }
 
-//     fn posterior(&self, x: &DataOrSuffStat<usize, Sbd<Beta>>) -> Self::Posterior {
+    fn posterior(&self, x: &DataOrSuffStat<usize, Sbd<Beta>>) -> Self::Posterior {
+        todo!()
 //         match x {
 //             DataOrSuffStat::Data(xs) => {
 //                 let mut stat = SbdSuffStat::new();
@@ -87,13 +87,14 @@ impl<B: Rv<f64> + Clone> Sampleable<StickSequence<B>> for StickBreaking<B> {
 //             }
 //             DataOrSuffStat::None => panic!("Need data for posterior"),
 //         }
-//     }
+    }
 
-//     fn ln_m_with_cache(
-//         &self,
-//         _cache: &Self::LnMCache,
-//         x: &DataOrSuffStat<usize, Sbd<Beta>>,
-//     ) -> f64 {
+    fn ln_m_with_cache(
+        &self,
+        _cache: &Self::LnMCache,
+        x: &DataOrSuffStat<usize, Sbd<Beta>>,
+    ) -> f64 {
+        todo!()
 //         match x {
 //             DataOrSuffStat::Data(xs) => {
 //                 let mut stat = SbdSuffStat::new();
@@ -103,10 +104,11 @@ impl<B: Rv<f64> + Clone> Sampleable<StickSequence<B>> for StickBreaking<B> {
 //             DataOrSuffStat::SuffStat(stat) => sbm_from_stat(self.alpha, stat),
 //             DataOrSuffStat::None => panic!("Need data for posterior"),
 //         }
-//     }
+    }
 
-//     fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &usize) -> f64 {
+    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &usize) -> f64 {
+        todo!()
 //         // FIXME: I feel like this isn't quite right
 //         cache.ln_weights.get(y).copied().unwrap_or(cache.ln_f_new)
-//     }
-// }
+    }
+}
