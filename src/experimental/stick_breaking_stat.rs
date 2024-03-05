@@ -9,157 +9,22 @@ use crate::{
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-/******************************************************************************
- * StickBreakingUnitBetaStat
- ******************************************************************************/
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
-pub struct StickBreakingBetaSuffStat {
-    pub n: usize,
-    pub num_breaks: usize,
-    pub sum_log_p: f64,
-    pub sum_log_q: f64,
-}
-
-impl Default for StickBreakingBetaSuffStat {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl StickBreakingBetaSuffStat {
-    pub fn new() -> Self {
-        Self {
-            n: 0,
-            num_breaks: 0,
-            sum_log_p: 0.0,
-            sum_log_q: 0.0,
-        }
-    }
-}
-
-impl From<StickBreakingBetaSuffStat> for UnitPowerLawSuffStat {
-    fn from(stat: StickBreakingBetaSuffStat) -> Self {
-        Self {
-            n: stat.num_breaks,
-            sum_ln_x: stat.sum_log_q,
-        }
-    }
-}
-
-impl From<&&[f64]> for StickBreakingBetaSuffStat {
-    fn from(x: &&[f64]) -> Self {
-        let mut stat = StickBreakingBetaSuffStat::new();
-        stat.observe(x);
-        stat
-    }
-}
-
-// TODO: Generalize the above, something like
-// impl<Stat,X> From<&X> for Stat
-//     where Stat: SuffStat<X>
-//     {
-//     fn from(x: &X) -> Self {
-//         let mut stat = Stat::new();
-//         stat.observe(x);
-//         stat
-//     }
-// }
-
-// A standard stick-breaking process requires a Beta(1, α) distribution. We
-// instead parameterize by a UnitPowerLaw(α), which is equivalent to a
-// Beta(α,1). Given a sequence of stick lengths coming form such a process, we
-// can recover the sufficient statistic for this UnitPowerLaw distribution
-fn stick_stat_beta(sticks: &[f64]) -> (usize, f64, f64) {
-    // First we need to find the sequence of remaining stick lengths. Because we
-    // broke the sticks left-to-right, we need to reverse the sequence.
-    let remaining = sticks.iter().rev().scan(0.0, |acc, &x| {
-        *acc += x;
-        Some(*acc)
-    });
-
-    let qs = sticks
-        .iter()
-        // Reversing `remaining` would force us to collect the intermediate
-        // result e.g. into a `Vec`. Instead, we can reverse the sequence of
-        // stick lengths to match.
-        .rev()
-        // Now zip the sequences together and do the main computation we're interested in.
-        .zip(remaining)
-        // In theory the broken stick lengths should all be less than what was
-        // remaining before the break. In practice, numerical instabilities can
-        // cause problems. So we filter to be sure we only consider valid
-        // values.
-        .filter(|(&len, remaining)| len < *remaining)
-        .map(|(&len, remaining)| 1.0 - len / remaining);
-
-    // The sufficient statistic is (n, ∑ᵢ log pᵢ, ∑ᵢ log(1 - pᵢ)) == (n, log ∏ᵢ pᵢ, log ∏ᵢ(1 - pᵢ)).
-    // First we compute `n` and `∏ᵢ(1 - pᵢ)`
-    let (num_breaks, prod_p, prod_q) = qs
-        .fold((0, 1.0, 1.0), |(n, prod_p, prod_q), q| {
-            (n + 1, prod_p * (1.0 - q), prod_q * q)
-        });
-
-    (num_breaks, prod_p.ln(), prod_q.ln())
-}
-
-impl HasSuffStat<&[f64]> for StickBreaking<Beta> {
-    type Stat = StickBreakingBetaSuffStat;
-
-    fn empty_suffstat(&self) -> Self::Stat {
-        Self::Stat::new()
-    }
-
-    fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
-        let alpha = self.breaker.alpha();
-        (stat.num_breaks as f64)
-            .mul_add(alpha.ln(), (alpha - 1.0) * stat.sum_log_q)
-    }
-}
-
-impl SuffStat<&[f64]> for StickBreakingBetaSuffStat {
-    fn n(&self) -> usize {
-        self.n
-    }
-
-    fn observe(&mut self, sticks: &&[f64]) {
-        let (num_breaks, sum_log_p, sum_log_q) = stick_stat_beta(sticks);
-        self.n += 1;
-        self.num_breaks += num_breaks;
-        self.sum_log_p += sum_log_p;
-        self.sum_log_q += sum_log_q;
-    }
-
-    fn forget(&mut self, sticks: &&[f64]) {
-        let (num_breaks, sum_log_p, sum_log_q) = stick_stat_beta(sticks);
-        self.n -= 1;
-        self.num_breaks -= num_breaks;
-        self.sum_log_p += sum_log_p;
-        self.sum_log_q -= sum_log_q;
-    }
-}
-
-/******************************************************************************
- * StickBreakingUnitPowerLawSuffStat
- ******************************************************************************/
-
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
-#[derive(Clone, Debug, PartialEq)]
-pub struct StickBreakingUnitPowerLawSuffStat {
+pub struct StickBreakingSuffStat {
     pub n: usize,
     pub num_breaks: usize,
     pub sum_log_q: f64,
 }
 
-impl Default for StickBreakingUnitPowerLawSuffStat {
+impl Default for StickBreakingSuffStat {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl StickBreakingUnitPowerLawSuffStat {
+impl StickBreakingSuffStat {
     pub fn new() -> Self {
         Self {
             n: 0,
@@ -169,8 +34,8 @@ impl StickBreakingUnitPowerLawSuffStat {
     }
 }
 
-impl From<StickBreakingUnitPowerLawSuffStat> for UnitPowerLawSuffStat {
-    fn from(stat: StickBreakingUnitPowerLawSuffStat) -> Self {
+impl From<StickBreakingSuffStat> for UnitPowerLawSuffStat {
+    fn from(stat: StickBreakingSuffStat) -> Self {
         Self {
             n: stat.num_breaks,
             sum_ln_x: stat.sum_log_q,
@@ -178,9 +43,9 @@ impl From<StickBreakingUnitPowerLawSuffStat> for UnitPowerLawSuffStat {
     }
 }
 
-impl From<&&[f64]> for StickBreakingUnitPowerLawSuffStat {
+impl From<&&[f64]> for StickBreakingSuffStat {
     fn from(x: &&[f64]) -> Self {
-        let mut stat = StickBreakingUnitPowerLawSuffStat::new();
+        let mut stat = StickBreakingSuffStat::new();
         stat.observe(x);
         stat
     }
@@ -232,8 +97,8 @@ fn stick_stat_unit_powerlaw(sticks: &[f64]) -> (usize, f64) {
     (num_breaks, prod_q.ln())
 }
 
-impl HasSuffStat<&[f64]> for StickBreaking<UnitPowerLaw> {
-    type Stat = StickBreakingUnitPowerLawSuffStat;
+impl HasSuffStat<&[f64]> for StickBreaking {
+    type Stat = StickBreakingSuffStat;
 
     fn empty_suffstat(&self) -> Self::Stat {
         Self::Stat::new()
@@ -246,7 +111,7 @@ impl HasSuffStat<&[f64]> for StickBreaking<UnitPowerLaw> {
     }
 }
 
-impl SuffStat<&[f64]> for StickBreakingUnitPowerLawSuffStat {
+impl SuffStat<&[f64]> for StickBreakingSuffStat {
     fn n(&self) -> usize {
         self.n
     }
