@@ -23,7 +23,7 @@ impl SbdSuffStat {
     }
 }
 
-impl<B: Rv<f64> + Clone> HasSuffStat<usize> for Sbd<B> {
+impl HasSuffStat<usize> for Sbd {
     type Stat = SbdSuffStat;
 
     fn empty_suffstat(&self) -> Self::Stat {

@@ -6,6 +6,7 @@ use std::sync::{Arc, RwLock};
 
 // use super::sticks_stat::StickBreakingSuffStat;
 use crate::traits::*;
+use crate::prelude::UnitPowerLaw; 
 
 // We'd like to be able to serialize and deserialize StickSequence, but serde can't handle
 // `Arc` or `RwLock`. So we use `StickSequenceFmt<B>` as an intermediate type.
@@ -18,7 +19,7 @@ struct StickSequenceFmt<B> {
 }
 
 #[cfg(feature = "serde1")]
-impl<B: Rv<f64> + Clone> From<StickSequenceFmt<B>> for StickSequence<B> {
+impl From<StickSequenceFmt<B>> for StickSequence {
     fn from(fmt: StickSequenceFmt<B>) -> Self {
         Self {
             breaker: fmt.breaker,
@@ -28,8 +29,8 @@ impl<B: Rv<f64> + Clone> From<StickSequenceFmt<B>> for StickSequence<B> {
 }
 
 #[cfg(feature = "serde1")]
-impl<B: Rv<f64> + Clone> From<StickSequence<B>> for StickSequenceFmt<B> {
-    fn from(sticks: StickSequence<B>) -> Self {
+impl From<StickSequence> for StickSequenceFmt<B> {
+    fn from(sticks: StickSequence) -> Self {
         Self {
             breaker: sticks.breaker,
             inner: sticks.inner.read().map(|inner| inner.clone()).unwrap(),
@@ -80,20 +81,20 @@ impl _Inner {
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug)]
-pub struct StickSequence<B> {
-    pub breaker: B,
+pub struct StickSequence {
+    pub breaker: UnitPowerLaw,
     pub inner: Arc<RwLock<_Inner>>,
 }
 
 // TODO: Extend to equal length, then check for equality
-impl<B: Rv<f64> + Clone> PartialEq<StickSequence<B>> for StickSequence<B> {
-    fn eq(&self, _other: &StickSequence<B>) -> bool {
+impl PartialEq<StickSequence> for StickSequence {
+    fn eq(&self, _other: &StickSequence) -> bool {
         todo!()
     }
 }
 
-impl<B: Rv<f64> + Clone> StickSequence<B> {
-    pub fn new(breaker: B, seed: Option<u64>) -> Self {
+impl StickSequence {
+    pub fn new(breaker: UnitPowerLaw, seed: Option<u64>) -> Self {
         Self {
             breaker,
             inner: Arc::new(RwLock::new(_Inner::new(seed))),
@@ -160,7 +161,7 @@ impl<B: Rv<f64> + Clone> StickSequence<B> {
         })
     }
 
-    pub fn breaker(&self) -> B {
+    pub fn breaker(&self) -> UnitPowerLaw {
         self.breaker.clone()
     }
 

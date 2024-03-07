@@ -30,28 +30,28 @@ impl HasDensity<&[f64]> for StickBreaking {
     }
 }
 
-impl Sampleable<StickSequence<UnitPowerLaw>> for StickBreaking {
-    fn draw<R: Rng>(&self, rng: &mut R) -> StickSequence<UnitPowerLaw> {
+impl Sampleable<StickSequence> for StickBreaking {
+    fn draw<R: Rng>(&self, rng: &mut R) -> StickSequence {
         let seed: u64 = rng.gen();
 
         StickSequence::new(self.breaker.clone(), Some(seed))
     }
 }
 
-impl Sampleable<Sbd<Beta>> for StickBreaking {
-    fn draw<R: Rng>(&self, rng: &mut R) -> Sbd<Beta> {
-        todo!()
+impl Sampleable<Sbd> for StickBreaking {
+    fn draw<R: Rng>(&self, rng: &mut R) -> Sbd {
+        Sbd::new(self.draw(rng))
     }
 }
 
-impl ConjugatePrior<usize, Sbd<Beta>> for StickBreaking {
+impl ConjugatePrior<usize, Sbd> for StickBreaking {
     type Posterior = StickBreaking;
     type LnMCache = ();
     type LnPpCache = ();
 
     fn ln_m_cache(&self) -> Self::LnMCache {}
 
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd<Beta>>) -> Self::LnPpCache {
+    fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::LnPpCache {
         todo!()
 //         let post = self.posterior(x);
 //         // we'll need the alpha for computing 1 / (1 + alpha), which is the
@@ -74,7 +74,7 @@ impl ConjugatePrior<usize, Sbd<Beta>> for StickBreaking {
 //         }
     }
 
-    fn posterior(&self, x: &DataOrSuffStat<usize, Sbd<Beta>>) -> Self::Posterior {
+    fn posterior(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::Posterior {
         todo!()
 //         match x {
 //             DataOrSuffStat::Data(xs) => {
@@ -92,7 +92,7 @@ impl ConjugatePrior<usize, Sbd<Beta>> for StickBreaking {
     fn ln_m_with_cache(
         &self,
         _cache: &Self::LnMCache,
-        x: &DataOrSuffStat<usize, Sbd<Beta>>,
+        x: &DataOrSuffStat<usize, Sbd>,
     ) -> f64 {
         todo!()
 //         match x {

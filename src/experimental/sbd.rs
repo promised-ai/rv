@@ -9,13 +9,12 @@ use crate::traits::*;
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
-pub struct Sbd<B: Rv<f64> + Clone> {
-    pub sticks: StickSequence<B>,
+pub struct Sbd {
+    pub sticks: StickSequence,
 }
 
-impl<B: Rv<f64> + Clone> Sbd<B> {
-    pub fn new(breaker: B) -> Sbd<B> {
-        let sticks = StickSequence::new(breaker, None);
+impl Sbd {
+    pub fn new(sticks: StickSequence) -> Sbd {
         Self { sticks }
     }
 
@@ -52,13 +51,13 @@ impl<B: Rv<f64> + Clone> Sbd<B> {
     }
 }
 
-impl<B: Rv<f64> + Clone> Support<usize> for Sbd<B> {
+impl Support<usize> for Sbd {
     fn supports(&self, x: &usize) -> bool {
         x.ge(&0)
     }
 }
 
-impl<B: Rv<f64> + Clone> Cdf<usize> for Sbd<B> {
+impl Cdf<usize> for Sbd {
     fn sf(&self, x: &usize) -> f64 {
         self.sticks.ccdf(x + 1)
     }
@@ -68,15 +67,15 @@ impl<B: Rv<f64> + Clone> Cdf<usize> for Sbd<B> {
     }
 }
 
-impl<B: Rv<f64> + Clone> InverseCdf<usize> for Sbd<B> {
+impl InverseCdf<usize> for Sbd {
     fn invcdf(&self, p: f64) -> usize {
         self.invccdf(1.0 - p)
     }
 }
 
-impl<B: Rv<f64> + Clone> DiscreteDistr<usize> for Sbd<B> {}
+impl DiscreteDistr<usize> for Sbd {}
 
-impl<B: Rv<f64> + Clone> Mode<usize> for Sbd<B> {
+impl Mode<usize> for Sbd {
     fn mode(&self) -> Option<usize> {
         let w0 = self.sticks.weight(0);
         // Once the unallocated mass is less than that of first stick, the
@@ -107,7 +106,7 @@ fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
     xs
 }
 
-impl<B: Rv<f64> + Clone> HasDensity<usize> for Sbd<B> {
+impl HasDensity<usize> for Sbd {
     fn f(&self, n: &usize) -> f64 {
         let sticks = &self.sticks;
         sticks.weight(*n)
@@ -118,7 +117,7 @@ impl<B: Rv<f64> + Clone> HasDensity<usize> for Sbd<B> {
     }
 }
 
-impl<B: Rv<f64> + Clone> Sampleable<usize> for Sbd<B> {
+impl Sampleable<usize> for Sbd {
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
         let u: f64 = rng.gen();
         self.invccdf(u)
@@ -165,7 +164,8 @@ mod tests {
 
     #[test]
     fn test_multi_invccdf_sorted() {
-        let sbd = Sbd::new(UnitPowerLaw::new(10.0).unwrap());
+        let sticks = StickSequence::new(UnitPowerLaw::new(10.0).unwrap(), None);
+        let sbd = Sbd::new(sticks);
         let ps = sorted_uniforms(5, &mut thread_rng());
         assert_eq!(
             sbd.multi_invccdf_sorted(&ps),
