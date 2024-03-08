@@ -8,6 +8,8 @@ use crate::prelude::UnitPowerLaw;
 use crate::suffstat_traits::HasSuffStat;
 use crate::traits::*;
 use rand::Rng;
+use itertools::Itertools;
+use itertools::EitherOrBoth::{Both, Left, Right};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StickBreaking {
@@ -74,7 +76,13 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     }
 
     fn posterior_from_suffstat(&self, stat: &SbdSuffStat) -> Self::Posterior {
-        todo!()
+        let pairs = stat.break_pairs();
+        let new_prefix = self.prefix.iter().zip_longest(pairs).map(|pair| match pair {
+            Left(beta) => beta.clone(),
+            Right((a, b)) => Beta::new(self.breaker.alpha() + a as f64, 1.0 + b as f64).unwrap(),
+            Both(beta, (a, b)) => Beta::new(beta.alpha() + a as f64, beta.beta() + b as f64).unwrap(),
+        }).collect();
+        StickBreaking {breaker: self.breaker.clone(), prefix: new_prefix}
     }
 
     fn ln_m_with_cache(
