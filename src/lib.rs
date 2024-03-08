@@ -132,7 +132,6 @@ macro_rules! extract_stat {
                     xs.iter().for_each(|y| stat.observe(y));
                     stat
                 }
-                DataOrSuffStat::None => $stat_type::new(),
             }
         }
     };

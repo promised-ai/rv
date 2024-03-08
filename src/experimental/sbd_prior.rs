@@ -181,7 +181,6 @@ impl ConjugatePrior<usize, Sbd> for Sb {
             DataOrSuffStat::SuffStat(stat) => {
                 sbpost_from_stat(self.alpha, stat)
             }
-            DataOrSuffStat::None => panic!("Need data for posterior"),
         }
     }
 
@@ -197,7 +196,6 @@ impl ConjugatePrior<usize, Sbd> for Sb {
                 sbm_from_stat(self.alpha, &stat)
             }
             DataOrSuffStat::SuffStat(stat) => sbm_from_stat(self.alpha, stat),
-            DataOrSuffStat::None => panic!("Need data for posterior"),
         }
     }
 

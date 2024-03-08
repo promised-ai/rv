@@ -551,7 +551,6 @@ where
             DataOrSuffStat::SuffStat(stat) => {
                 self.posterior_from_suffstat(stat)
             }
-            DataOrSuffStat::None => self.posterior_from_suffstat(&Fx::empty_suffstat()),
         }
     }
 

@@ -41,7 +41,6 @@ impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
                 (stat.n(), stat.k())
             }
             DataOrSuffStat::SuffStat(stat) => (stat.n(), stat.k()),
-            DataOrSuffStat::None => (0, 0),
         };
 
         let a = self.alpha() + k as f64;

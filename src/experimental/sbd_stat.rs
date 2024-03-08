@@ -1,6 +1,5 @@
 use crate::experimental::sbd::Sbd;
 use crate::suffstat_traits::{HasSuffStat, SuffStat};
-use crate::traits::Rv;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 

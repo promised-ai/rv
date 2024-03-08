@@ -216,7 +216,7 @@ mod test {
     #[test]
     fn posterior_of_nothing_is_prior() {
         let prior = NormalInvChiSquared::new_unchecked(1.2, 2.3, 3.4, 4.5);
-        let post = prior.posterior(&DataOrSuffStat::None);
+        let post = prior.posterior(&DataOrSuffStat::from(&vec![]));
         assert_eq!(prior.m(), post.m());
         assert_eq!(prior.k(), post.k());
         assert_eq!(prior.v(), post.v());
@@ -306,7 +306,7 @@ mod test {
 
         let (m, k, v, s2) = (1.0, 2.2, 3.3, 4.4);
         let nix = NormalInvChiSquared::new(m, k, v, s2).unwrap();
-        let ln_pp = nix.ln_pp(&x, &DataOrSuffStat::<f64, Gaussian>::None);
+        let ln_pp = nix.ln_pp(&x, &DataOrSuffStat::<f64, Gaussian>::from(&vec![]));
 
         let mc_est = {
             let ln_fs: Vec<f64> = nix
@@ -332,7 +332,8 @@ mod test {
 
         let (ln_pp, ln_m) = {
             let ys = vec![y];
-            let data = DataOrSuffStat::<f64, Gaussian>::None;
+            let new_vec = Vec::new();
+            let data = DataOrSuffStat::<f64, Gaussian>::from(&new_vec);
             let y_data = DataOrSuffStat::<f64, Gaussian>::from(&ys);
             (nix.ln_pp(&y, &data), nix.ln_m(&y_data))
         };

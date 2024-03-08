@@ -59,7 +59,6 @@ macro_rules! impl_traits {
                     DataOrSuffStat::SuffStat(ref stat) => {
                         (stat.n(), stat.sum())
                     }
-                    DataOrSuffStat::None => (0, 0.0),
                 };
 
                 let a = self.shape() + sum;
@@ -87,7 +86,6 @@ macro_rules! impl_traits {
                         stat
                     }
                     DataOrSuffStat::SuffStat(ref stat) => (*stat).clone(),
-                    DataOrSuffStat::None => PoissonSuffStat::new(),
                 };
 
                 let data_or_suff: DataOrSuffStat<$kind, Poisson> =
@@ -148,7 +146,8 @@ mod tests {
     #[test]
     fn ln_m_no_data() {
         let dist = Gamma::new(1.0, 1.0).unwrap();
-        let data: DataOrSuffStat<u8, Poisson> = DataOrSuffStat::None;
+        let new_vec = Vec::new();
+        let data: DataOrSuffStat<u8, Poisson> = DataOrSuffStat::from(&new_vec);
         assert::close(dist.ln_m(&data), 0.0, TOL);
     }
 
@@ -198,7 +197,7 @@ mod tests {
 
         for i in 0..inputs.len() {
             assert::close(
-                dist.ln_pp(&inputs[i], &DataOrSuffStat::None),
+                dist.ln_pp(&inputs[i], &DataOrSuffStat::from(&vec![])),
                 expected[i],
                 TOL,
             )

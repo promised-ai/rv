@@ -1,6 +1,4 @@
 use crate::experimental::stick_breaking::StickBreaking;
-use crate::prelude::Beta;
-use crate::prelude::UnitPowerLaw;
 use crate::{
     data::UnitPowerLawSuffStat,
     suffstat_traits::{HasSuffStat, SuffStat},

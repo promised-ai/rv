@@ -1,12 +1,10 @@
 use crate::experimental::Sbd;
-use crate::experimental::SbdSuffStat;
 use crate::experimental::StickBreakingSuffStat;
 use crate::experimental::StickSequence;
 use crate::prelude::Beta;
 use crate::prelude::DataOrSuffStat;
 use crate::prelude::UnitPowerLaw;
 use crate::suffstat_traits::HasSuffStat;
-use crate::suffstat_traits::SuffStat;
 use crate::traits::*;
 use rand::Rng;
 
@@ -84,7 +82,6 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
         //     DataOrSuffStat::SuffStat(stat) => {
         //         sbpost_from_stat(self.alpha, stat)
         //     }
-        //     DataOrSuffStat::None => panic!("Need data for posterior"),
         // }
         todo!()
     }
@@ -102,7 +99,6 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
 //                 sbm_from_stat(self.alpha, &stat)
 //             }
 //             DataOrSuffStat::SuffStat(stat) => sbm_from_stat(self.alpha, stat),
-//             DataOrSuffStat::None => panic!("Need data for posterior"),
 //         }
     }
 

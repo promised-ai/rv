@@ -303,7 +303,7 @@ mod test {
         let y: f64 = -0.3;
         let (m, v, a, b) = (0.0, 1.2, 2.3, 3.4);
         let nig = NormalInvGamma::new(m, v, a, b).unwrap();
-        let ln_pp = nig.ln_pp(&y, &DataOrSuffStat::None);
+        let ln_pp = nig.ln_pp(&y, &DataOrSuffStat::from(&vec![]));
         let ln_m = nig.ln_m(&DataOrSuffStat::from(&vec![y]));
         assert::close(ln_pp, ln_m, TOL);
     }
