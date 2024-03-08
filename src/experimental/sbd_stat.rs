@@ -26,7 +26,7 @@ impl SbdSuffStat {
 impl HasSuffStat<usize> for Sbd {
     type Stat = SbdSuffStat;
 
-    fn empty_suffstat(&self) -> Self::Stat {
+    fn empty_suffstat() -> Self::Stat {
         Self::Stat::new()
     }
 

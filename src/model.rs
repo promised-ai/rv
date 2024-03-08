@@ -47,10 +47,10 @@ where
     /// let fx = Bernoulli::uniform();
     /// let model = ConjugateModel::<bool, Bernoulli, Beta>::new(&fx, pr);
     /// ```
-    pub fn new(fx: &Fx, pr: Arc<Pr>) -> Self {
+    pub fn new(_fx: &Fx, pr: Arc<Pr>) -> Self {
         ConjugateModel {
             prior: pr,
-            suffstat: fx.empty_suffstat(),
+            suffstat: Fx::empty_suffstat(),
             _phantom: PhantomData,
         }
     }

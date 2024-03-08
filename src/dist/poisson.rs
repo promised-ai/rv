@@ -230,7 +230,7 @@ macro_rules! impl_traits {
         impl HasSuffStat<$kind> for Poisson {
             type Stat = PoissonSuffStat;
 
-            fn empty_suffstat(&self) -> Self::Stat {
+            fn empty_suffstat() -> Self::Stat {
                 PoissonSuffStat::new()
             }
 

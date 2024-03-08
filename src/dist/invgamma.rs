@@ -263,7 +263,7 @@ macro_rules! impl_traits {
         impl HasSuffStat<$kind> for InvGamma {
             type Stat = InvGammaSuffStat;
 
-            fn empty_suffstat(&self) -> Self::Stat {
+            fn empty_suffstat() -> Self::Stat {
                 InvGammaSuffStat::new()
             }
 

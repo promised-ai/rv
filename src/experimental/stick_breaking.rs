@@ -75,18 +75,18 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     }
 
     fn posterior(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::Posterior {
+        // match x {
+        //     DataOrSuffStat::Data(xs) => {
+        //         let mut stat = SbdSuffStat::new();
+        //         stat.observe_many(xs);
+        //         sbpost_from_stat(self.alpha, &stat)
+        //     }
+        //     DataOrSuffStat::SuffStat(stat) => {
+        //         sbpost_from_stat(self.alpha, stat)
+        //     }
+        //     DataOrSuffStat::None => panic!("Need data for posterior"),
+        // }
         todo!()
-//         match x {
-//             DataOrSuffStat::Data(xs) => {
-//                 let mut stat = SbdSuffStat::new();
-//                 stat.observe_many(xs);
-//                 sbpost_from_stat(self.alpha, &stat)
-//             }
-//             DataOrSuffStat::SuffStat(stat) => {
-//                 sbpost_from_stat(self.alpha, stat)
-//             }
-//             DataOrSuffStat::None => panic!("Need data for posterior"),
-//         }
     }
 
     fn ln_m_with_cache(

@@ -20,10 +20,10 @@ pub struct CategoricalSuffStat {
 
 impl CategoricalSuffStat {
     #[inline]
-    pub fn new(k: usize) -> Self {
+    pub fn new() -> Self {
         CategoricalSuffStat {
             n: 0,
-            counts: vec![0.0; k],
+            counts: vec![0.0],
         }
     }
 
@@ -41,7 +41,7 @@ impl CategoricalSuffStat {
     /// ```
     /// # use rv::data::CategoricalSuffStat;
     /// # use rv::suffstat_traits::SuffStat;
-    /// let mut stat = CategoricalSuffStat::new(3);
+    /// let mut stat = CategoricalSuffStat::new();
     ///
     /// stat.observe(&0_u8);
     /// stat.observe(&1_u8);
@@ -61,18 +61,24 @@ impl CategoricalSuffStat {
     /// ```
     /// # use rv::data::CategoricalSuffStat;
     /// # use rv::suffstat_traits::SuffStat;
-    /// let mut stat = CategoricalSuffStat::new(3);
+    /// let mut stat = CategoricalSuffStat::new();
     ///
     /// stat.observe(&0_u8);
-    /// stat.observe(&1_u8);
-    /// stat.observe(&1_u8);
+    /// stat.observe(&2_u8);
+    /// stat.observe(&2_u8);
     ///
-    /// assert_eq!(*stat.counts(), vec![1.0, 2.0, 0.0]);
+    /// assert_eq!(*stat.counts(), vec![1.0, 0.0, 2.0]);
     /// ```
     #[inline]
     pub fn counts(&self) -> &Vec<f64> {
         &self.counts
     }
+}
+
+impl Default for CategoricalSuffStat {
+    fn default() -> Self {
+        Self::new()  
+    } 
 }
 
 impl<'a, X> From<&'a CategoricalSuffStat> for DataOrSuffStat<'a, X, Categorical>
@@ -110,6 +116,9 @@ impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
     fn observe(&mut self, x: &X) {
         let ix = x.into_usize();
         self.n += 1;
+        if ix >= self.counts.len() {
+            self.counts.resize(ix + 1, 0.0);
+        }
         self.counts[ix] += 1.0;
     }
 
@@ -126,8 +135,7 @@ mod tests {
 
     #[test]
     fn new() {
-        let sf = CategoricalSuffStat::new(4);
-        assert_eq!(sf.counts.len(), 4);
+        let sf = CategoricalSuffStat::new();
         assert_eq!(sf.n, 0);
         assert!(sf.counts.iter().all(|&ct| ct.abs() < 1E-12))
     }

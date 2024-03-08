@@ -279,7 +279,7 @@ impl<X: Booleable> Mode<X> for Bernoulli {
 
 impl<X: Booleable> HasSuffStat<X> for Bernoulli {
     type Stat = BernoulliSuffStat;
-    fn empty_suffstat(&self) -> Self::Stat {
+    fn empty_suffstat() -> Self::Stat {
         BernoulliSuffStat::new()
     }
 

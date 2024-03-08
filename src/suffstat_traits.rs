@@ -2,7 +2,7 @@
 pub trait HasSuffStat<X> {
     type Stat: SuffStat<X>;
 
-    fn empty_suffstat(&self) -> Self::Stat;
+    fn empty_suffstat() -> Self::Stat;
 
     /// Return the log likelihood for the data represented by the sufficient
     /// statistic.

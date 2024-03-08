@@ -1,7 +1,7 @@
 //! Trait definitions
 use crate::data::DataOrSuffStat;
-use crate::suffstat_traits::HasSuffStat;
 use rand::Rng;
+use crate::suffstat_traits::*;  
 
 pub trait Sampleable<X> {
     /// Single draw from the `Rv`
@@ -471,7 +471,7 @@ pub trait KlDivergence {
 ///
 /// let ncats = 10;
 /// let symdir = SymmetricDirichlet::jeffreys(ncats).unwrap();
-/// let mut suffstat = CategoricalSuffStat::new(ncats);
+/// let mut suffstat = CategoricalSuffStat::new();
 /// let mut rng = rand::thread_rng();
 ///
 /// Categorical::new(&vec![1.0, 1.0, 5.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0])
@@ -535,7 +535,25 @@ where
     type LnPpCache;
 
     /// Computes the posterior distribution from the data
-    fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
+    // fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
+
+    fn posterior_from_suffstat(&self, stat: &Fx::Stat) -> Self::Posterior {
+        self.posterior(&DataOrSuffStat::SuffStat(stat))
+    }
+
+    fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior {
+        match x {
+            DataOrSuffStat::Data(xs) => {
+                let mut stat = Fx::empty_suffstat();
+                stat.observe_many(xs);
+                self.posterior_from_suffstat(&stat)
+            }
+            DataOrSuffStat::SuffStat(stat) => {
+                self.posterior_from_suffstat(stat)
+            }
+            DataOrSuffStat::None => self.posterior_from_suffstat(&Fx::empty_suffstat()),
+        }
+    }
 
     /// Compute the cache for the log marginal likelihood.
     fn ln_m_cache(&self) -> Self::LnMCache;

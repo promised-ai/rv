@@ -252,8 +252,8 @@ impl Entropy for Categorical {
 impl<X: CategoricalDatum> HasSuffStat<X> for Categorical {
     type Stat = CategoricalSuffStat;
 
-    fn empty_suffstat(&self) -> Self::Stat {
-        CategoricalSuffStat::new(self.k())
+    fn empty_suffstat() -> Self::Stat {
+        CategoricalSuffStat::new()
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
@@ -461,7 +461,7 @@ mod tests {
     #[test]
     fn ln_f_stat() {
         let data: Vec<u8> = vec![0, 1, 2, 1, 1, 0];
-        let mut stat = CategoricalSuffStat::new(3);
+        let mut stat = CategoricalSuffStat::new();
         stat.observe_many(&data);
 
         let cat = Categorical::new(&[0.3, 0.6, 0.1]).unwrap();
