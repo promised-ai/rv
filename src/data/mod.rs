@@ -214,7 +214,6 @@ where
     pub fn is_suffstat(&self) -> bool {
         matches!(&self, DataOrSuffStat::SuffStat(..))
     }
-
 }
 
 /// Convert a `DataOrSuffStat` into a `Stat`

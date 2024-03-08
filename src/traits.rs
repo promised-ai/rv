@@ -1,7 +1,7 @@
 //! Trait definitions
 use crate::data::DataOrSuffStat;
+use crate::suffstat_traits::*;
 use rand::Rng;
-use crate::suffstat_traits::*;  
 
 pub trait Sampleable<X> {
     /// Single draw from the `Rv`

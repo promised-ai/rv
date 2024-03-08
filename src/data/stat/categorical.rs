@@ -77,8 +77,8 @@ impl CategoricalSuffStat {
 
 impl Default for CategoricalSuffStat {
     fn default() -> Self {
-        Self::new()  
-    } 
+        Self::new()
+    }
 }
 
 impl<'a, X> From<&'a CategoricalSuffStat> for DataOrSuffStat<'a, X, Categorical>

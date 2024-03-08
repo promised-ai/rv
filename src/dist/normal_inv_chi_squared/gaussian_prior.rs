@@ -306,7 +306,8 @@ mod test {
 
         let (m, k, v, s2) = (1.0, 2.2, 3.3, 4.4);
         let nix = NormalInvChiSquared::new(m, k, v, s2).unwrap();
-        let ln_pp = nix.ln_pp(&x, &DataOrSuffStat::<f64, Gaussian>::from(&vec![]));
+        let ln_pp =
+            nix.ln_pp(&x, &DataOrSuffStat::<f64, Gaussian>::from(&vec![]));
 
         let mc_est = {
             let ln_fs: Vec<f64> = nix

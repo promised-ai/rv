@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
 // use super::sticks_stat::StickBreakingSuffStat;
+use crate::prelude::UnitPowerLaw;
 use crate::traits::*;
-use crate::prelude::UnitPowerLaw; 
 
 // We'd like to be able to serialize and deserialize StickSequence, but serde can't handle
 // `Arc` or `RwLock`. So we use `StickSequenceFmt<B>` as an intermediate type.
