@@ -10,15 +10,24 @@ pub struct SbdSuffStat {
     pub counts: Vec<usize>,
 }
 
-impl Default for SbdSuffStat {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl SbdSuffStat {
     pub fn new() -> Self {
         Self { counts: Vec::new() }
+    }
+
+    pub fn break_pairs(&self) -> Vec<(usize, usize)> {
+        let mut s = self.counts.iter().sum();
+        self.counts.iter().map(|&x| {
+            s -= x;
+            (x, s)
+        })
+        .collect() 
+    }
+}
+
+impl Default for SbdSuffStat {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -55,4 +64,44 @@ impl SuffStat<usize> for SbdSuffStat {
         assert!(self.counts[*i] > 0, "No observations of {i} to forget.");
         self.counts[*i] -= 1;
     }
+}
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_break_pairs() {
+        let suff_stat = SbdSuffStat {
+            counts: vec![1, 2, 3],
+        };
+
+        let pairs = suff_stat.break_pairs();
+        assert_eq!(pairs, vec![(1, 5), (2, 3), (3, 0)]);
+    }
+
+    // #[test]
+    // fn test_ln_f_stat() {
+    //     let sbd = Sbd::new();
+    //     let suff_stat = SbdSuffStat {
+    //         counts: vec![1, 2, 3],
+    //     };
+
+    //     let ln_f_stat = sbd.ln_f_stat(&suff_stat);
+    //     assert_eq!(ln_f_stat, 2.1972245773362196); // Replace with the expected value
+    // }
+
+    // #[test]
+    // fn test_observe_and_forget() {
+    //     let mut suff_stat = SbdSuffStat::new();
+
+    //     suff_stat.observe(&1);
+    //     suff_stat.observe(&2);
+    //     suff_stat.observe(&2);
+    //     suff_stat.forget(&2);
+
+    //     assert_eq!(suff_stat.counts, vec![0, 1, 1]);
+    // }
 }
