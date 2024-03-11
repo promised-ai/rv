@@ -25,6 +25,14 @@ impl SbdSuffStat {
     }
 }
 
+impl From<&[usize]> for SbdSuffStat {
+    fn from(data: &[usize]) -> Self {
+        let mut stat = SbdSuffStat::new();
+        stat.observe_many(data);
+        stat
+    }
+}
+
 impl Default for SbdSuffStat {
     fn default() -> Self {
         Self::new()
