@@ -17,11 +17,13 @@ impl SbdSuffStat {
 
     pub fn break_pairs(&self) -> Vec<(usize, usize)> {
         let mut s = self.counts.iter().sum();
-        self.counts.iter().map(|&x| {
-            s -= x;
-            (x, s)
-        })
-        .collect() 
+        self.counts
+            .iter()
+            .map(|&x| {
+                s -= x;
+                (x, s)
+            })
+            .collect()
     }
 }
 
@@ -73,8 +75,6 @@ impl SuffStat<usize> for SbdSuffStat {
         self.counts[*i] -= 1;
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
