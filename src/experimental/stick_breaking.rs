@@ -3,9 +3,10 @@ use crate::experimental::SbdSuffStat;
 use crate::experimental::StickBreakingSuffStat;
 use crate::experimental::StickSequence;
 use crate::prelude::Beta;
+use crate::prelude::BetaBinomial;
 use crate::prelude::DataOrSuffStat;
 use crate::prelude::UnitPowerLaw;
-use crate::suffstat_traits::HasSuffStat;
+use crate::suffstat_traits::*;
 use crate::traits::*;
 use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
@@ -97,6 +98,43 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
             breaker: self.breaker.clone(),
             prefix: new_prefix,
         }
+    }
+
+    fn ln_m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
+        self.m(x).ln()
+    }
+
+    fn m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
+        let pairs = match x {
+            DataOrSuffStat::Data(xs) => {
+                let mut stat = SbdSuffStat::new();
+                stat.observe_many(xs);
+                stat.break_pairs()
+            }
+            DataOrSuffStat::SuffStat(stat) => stat.break_pairs(),
+        };
+        pairs
+            .iter()
+            .zip_longest(self.prefix.iter())
+            .map(|pair| match pair {
+                // If we have counts and a distribution, we use the density for the BetaBinomial
+                Both((a, b), beta) => {
+                    let n = a + b;
+                    BetaBinomial::new(n as u32, beta.alpha(), beta.beta())
+                        .unwrap()
+                        .f(&(*b as u32))
+                }
+                // If we only have counts, we fall back on the UnitPowerLaw from the prior
+                Left((a, b)) => {
+                    let n = a + b;
+                    BetaBinomial::new(n as u32, self.breaker.alpha(), 1.0)
+                        .unwrap()
+                        .f(&(*b as u32))
+                }
+                // If we only have a distribution, there's no data to use, so it's just 1.0
+                Right(_beta) => 1.0,
+            })
+            .product()
     }
 
     fn ln_m_with_cache(
