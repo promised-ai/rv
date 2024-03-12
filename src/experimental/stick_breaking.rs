@@ -105,7 +105,7 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     }
 
     fn m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
-        let pairs = match x {
+        let count_pairs = match x {
             DataOrSuffStat::Data(xs) => {
                 let mut stat = SbdSuffStat::new();
                 stat.observe_many(xs);
@@ -113,26 +113,19 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
             }
             DataOrSuffStat::SuffStat(stat) => stat.break_pairs(),
         };
-        pairs
+        let params = self
+            .prefix
             .iter()
-            .zip_longest(self.prefix.iter())
-            .map(|pair| match pair {
-                // If we have counts and a distribution, we use the density for the BetaBinomial
-                Both((a, b), beta) => {
-                    let n = a + b;
-                    BetaBinomial::new(n as u32, beta.alpha(), beta.beta())
-                        .unwrap()
-                        .f(&(*b as u32))
-                }
-                // If we only have counts, we fall back on the UnitPowerLaw from the prior
-                Left((a, b)) => {
-                    let n = a + b;
-                    BetaBinomial::new(n as u32, self.breaker.alpha(), 1.0)
-                        .unwrap()
-                        .f(&(*b as u32))
-                }
-                // If we only have a distribution, there's no data to use, so it's just 1.0
-                Right(_beta) => 1.0,
+            .map(|b| (b.alpha(), b.beta()))
+            .chain(std::iter::repeat((self.breaker.alpha(), 1.0)));
+        count_pairs
+            .iter()
+            .zip(params)
+            .map(|(counts, params)| {
+                let n = counts.0 + counts.1;
+                BetaBinomial::new(n as u32, params.0, params.1)
+                    .unwrap()
+                    .f(&(counts.1 as u32))
             })
             .product()
     }
