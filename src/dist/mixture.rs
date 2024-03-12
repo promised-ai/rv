@@ -388,6 +388,27 @@ where
     }
 }
 
+impl<X, Fx, Y> MultivariateRv<X, Y> for Mixture<Fx>
+where
+    Fx: MultivariateRv<X, Y>,
+{
+    type Atom = Mixture<Fx::Atom>;
+
+    fn dimensions(&self) -> usize {
+        self.components[0].dimensions()
+    }
+
+    fn marginal(&self, index: usize) -> Option<Self::Atom> {
+        let components: Vec<Fx::Atom> = self
+            .components
+            .iter()
+            .map(|c| c.marginal(index))
+            .collect::<Option<Vec<Fx::Atom>>>()?;
+
+        Some(Mixture::new_unchecked(self.weights().to_vec(), components))
+    }
+}
+
 // XXX: Not quite sure how this should work. I'd like to have mixtures of
 // things with different support.
 impl<X, Fx> Support<X> for Mixture<Fx>

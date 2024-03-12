@@ -651,3 +651,15 @@ where
 pub trait QuadBounds {
     fn quad_bounds(&self) -> (f64, f64);
 }
+
+/// Multivariate Random Variables
+pub trait MultivariateRv<X, Y>: Rv<X> {
+    /// The type of a one dimensional marginal for this `Rv`.
+    type Atom: Rv<Y>;
+
+    /// Dimensionality
+    fn dimensions(&self) -> usize;
+
+    /// Return the marginal distribution for the dimension indexed by `index`.
+    fn marginal(&self, index: usize) -> Option<Self::Atom>;
+}

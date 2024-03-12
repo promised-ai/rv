@@ -10,7 +10,10 @@ use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dyn};
 use rand::Rng;
 use std::fmt;
+use std::ops::Index;
 use std::sync::OnceLock;
+
+use super::Gaussian;
 
 /// Cache for MvGaussian Internals
 #[derive(Clone, Debug)]
@@ -519,6 +522,26 @@ impl fmt::Display for MvGaussianError {
                 nrows, ncols
             ),
         }
+    }
+}
+
+impl MultivariateRv<DVector<f64>, f64> for MvGaussian {
+    type Atom = super::Gaussian;
+
+    fn marginal(&self, index: usize) -> Option<Self::Atom> {
+        if index > self.mu.shape().0 {
+            None
+        } else {
+            let mu = self.mu.index(index);
+            let s2 = self.cov.index((index, index));
+            let sigma = s2.sqrt();
+
+            Some(Gaussian::new_unchecked(*mu, sigma))
+        }
+    }
+
+    fn dimensions(&self) -> usize {
+        self.mu.shape().0
     }
 }
 
