@@ -3,7 +3,8 @@ name: 'Check CITATION.cff for correct format'
 on:
   workflow_dispatch:
   push:
-    branch: master
+    branches:
+      - master
 
 jobs:
     Validate-CITATION-cff:
@@ -26,7 +27,7 @@ jobs:
             - name: Verify CITATION.cff version field
               run: |
                 CITATION_VERSION=$(cffconvert -f schema.org | jq -r .version)
-                RV_VERSION=$(tomlq -r .package.version lace/Cargo.toml)
+                RV_VERSION=$(tomlq -r .package.version Cargo.toml)
                 test "$CITATION_VERSION" = "$RV_VERSION"
 
             - name: Verify CITATION.cff date field
