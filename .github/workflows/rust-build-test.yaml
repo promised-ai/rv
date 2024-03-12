@@ -84,12 +84,6 @@ jobs:
         with:
           workspaces: . -> target
     
-      - name: Regen Examples
-        working-directory: cli
-        env:
-          RUSTFLAGS: -C debuginfo=0
-        run: cargo run -- regen-examples
-
       - name: Run tests
         env:
           RUSTFLAGS: -C debuginfo=0
