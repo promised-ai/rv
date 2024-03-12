@@ -6,9 +6,6 @@ on:
       - master
   workflow_dispatch:
   pull_request:
-    paths:
-      - '**'
-      - '.github/workflows/rust-build-test.yaml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -39,7 +36,6 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
-    defaults:
 
     steps:
       - uses: actions/checkout@v4
