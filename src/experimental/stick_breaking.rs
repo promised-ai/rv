@@ -135,15 +135,7 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
         _cache: &Self::LnMCache,
         x: &DataOrSuffStat<usize, Sbd>,
     ) -> f64 {
-        todo!()
-        //         match x {
-        //             DataOrSuffStat::Data(xs) => {
-        //                 let mut stat = SbdSuffStat::new();
-        //                 stat.observe_many(xs);
-        //                 sbm_from_stat(self.alpha, &stat)
-        //             }
-        //             DataOrSuffStat::SuffStat(stat) => sbm_from_stat(self.alpha, stat),
-        //         }
+        self.ln_m(x)
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &usize) -> f64 {
