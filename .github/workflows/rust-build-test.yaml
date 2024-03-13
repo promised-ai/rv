@@ -83,7 +83,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: . -> target
-    
+
       - name: Run tests
         env:
           RUSTFLAGS: -C debuginfo=0
@@ -116,7 +116,7 @@ jobs:
         run: cargo install cargo-semver-checks --locked
 
       - name: Check for semver-incompatibilities
-        run: cargo semver-checks check-release 
+        run: cargo semver-checks check-release --manifest-path branch/Cargo.toml --baseline-root master/ --verbose
 
   compile-benchmarks:
     runs-on: ubuntu-latest
@@ -131,7 +131,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: -no-run
+          args: --no-run
 
   release:
     name: release
