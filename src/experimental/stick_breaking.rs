@@ -49,31 +49,12 @@ impl Sampleable<Sbd> for StickBreaking {
 impl ConjugatePrior<usize, Sbd> for StickBreaking {
     type Posterior = StickBreaking;
     type LnMCache = ();
-    type LnPpCache = ();
+    type LnPpCache = Self::Posterior;
 
     fn ln_m_cache(&self) -> Self::LnMCache {}
 
     fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::LnPpCache {
-        todo!()
-        //         let post = self.posterior(x);
-        //         // we'll need the alpha for computing 1 / (1 + alpha), which is the
-        //         // expected likelihood of a new class
-        //         let alpha = post.dir.alphas().last().unwrap();
-        //         // Need to norm the alphas to probabilities
-        //         let ln_norm = post.dir.alphas().iter().sum::<f64>().ln();
-        //         let ln_weights = post
-        //             .iter()
-        //             .map(|(&x, &ix)| (x, post.dir.alphas[ix].ln() - ln_norm))
-        //             .collect();
-
-        //         // // ln (1/(1 + alpha))
-        //         // let ln_f_new = (1.0 + alpha).recip().ln() - ln_norm;
-        //         let ln_f_new = (alpha / (1.0 + alpha)).ln() - ln_norm;
-
-        //         SbCache {
-        //             ln_weights,
-        //             ln_f_new,
-        //         }
+        self.posterior(x)
     }
 
     fn posterior_from_suffstat(&self, stat: &SbdSuffStat) -> Self::Posterior {
@@ -139,8 +120,11 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &usize) -> f64 {
-        todo!()
-        //         // FIXME: I feel like this isn't quite right
-        //         cache.ln_weights.get(y).copied().unwrap_or(cache.ln_f_new)
+        cache.ln_m(&DataOrSuffStat::Data(&[*y]))
+    }
+            
+    fn pp(&self, y: &usize, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
+        let post = self.posterior(x);
+        post.m(&DataOrSuffStat::Data(&[*y]))
     }
 }
