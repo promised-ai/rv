@@ -589,6 +589,10 @@ where
         self.ln_m(x).exp()
     }
 
+    fn pp_with_cache(&self, cache: &Self::LnPpCache, y: &X) -> f64 {
+        self.ln_pp_with_cache(cache, y).exp()
+    }
+
     /// Posterior Predictive distribution
     fn pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64 {
         self.ln_pp(y, x).exp()
