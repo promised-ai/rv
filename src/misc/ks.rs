@@ -14,6 +14,7 @@ use num::Integer;
 /// ```rust
 /// use rv::prelude::*;
 /// use rv::misc::ks_test;
+/// use rand::SeedableRng;
 ///
 /// let gauss = Gaussian::standard();
 /// let laplace = Laplace::new(0.0, 1.0).unwrap();
@@ -22,7 +23,7 @@ use num::Integer;
 /// let laplace_cdf = |x: f64| laplace.cdf(&x);
 ///
 /// // Generate some samples from the Gaussian
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rngs::SmallRng::seed_from_u64(0x1234);
 /// let xs = gauss.sample(1000, &mut rng);
 ///
 /// // Check the the samples came from the one that generated them
