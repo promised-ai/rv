@@ -3,7 +3,7 @@ name = "rv"
 version = "0.16.4"
 authors = ["Baxter Eaves", "Michael Schmidt"]
 description = "Random variables"
-repository = "https://gitlab.com/baxe/rv"
+repository = "https://github.com/promised-ai/rv"
 readme = "README.md"
 license = "MIT"
 keywords = ["Probability", "Statistics", "Bayesian", "Machine-learning"]
@@ -13,7 +13,7 @@ include = ["README.md", "src/**/*", "benches/*", "Cargo.toml"]
 rust-version = "1.72"
 
 [badges]
-gitlab = { repository = "baxe/rv", tag = "v0.16.0" }
+github = { repository = "promised-ai/rv", tag = "v0.16.0" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
