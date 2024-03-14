@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.16.5] - 2024-03-14
+- Moved repository to GitHub.
+
 ## [0.16.4] - 2024-01-31
 - Bump min rust version to 1.72
 - Fix bug in `dist::Beta` that sometimes resulted in invalid cache setting
@@ -170,6 +173,7 @@
     Simpson's rule, which handles multimodal distributions better.
 
 
+[0.16.5]: https://github.com/promise-ai/rv/compare/v0.16.4...v0.16.5
 [0.16.4]: https://github.com/promise-ai/rv/compare/v0.16.3...v0.16.4
 [0.16.3]: https://github.com/promise-ai/rv/compare/v0.16.2...v0.16.3
 [0.16.2]: https://github.com/promise-ai/rv/compare/v0.16.1...v0.16.2
