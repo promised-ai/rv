@@ -38,8 +38,8 @@ fn posterior_from_stat(
 
 impl ConjugatePrior<f64, Gaussian> for NormalGamma {
     type Posterior = Self;
-    type LnMCache = f64;
-    type LnPpCache = (GaussianSuffStat, f64);
+    type MCache = f64;
+    type PpCache = (GaussianSuffStat, f64);
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
         extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
@@ -48,13 +48,13 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
     }
 
     #[inline]
-    fn ln_m_cache(&self) -> Self::LnMCache {
+    fn ln_m_cache(&self) -> Self::MCache {
         ln_z(self.r(), self.s, self.v)
     }
 
     fn ln_m_with_cache(
         &self,
-        cache: &Self::LnMCache,
+        cache: &Self::MCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
         extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
@@ -68,14 +68,14 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
     fn ln_pp_cache(
         &self,
         x: &DataOrSuffStat<f64, Gaussian>,
-    ) -> Self::LnPpCache {
+    ) -> Self::PpCache {
         let stat = extract_stat(x, GaussianSuffStat::new);
         let post_n = posterior_from_stat(self, &stat);
         let lnz_n = ln_z(post_n.r, post_n.s, post_n.v);
         (stat, lnz_n)
     }
 
-    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &f64) -> f64 {
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
         let mut stat = cache.0.clone();
         let lnz_n = cache.1;
 

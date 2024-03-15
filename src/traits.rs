@@ -529,10 +529,10 @@ where
 {
     /// Type of the posterior distribution
     type Posterior: Sampleable<Fx>;
-    /// Type of the `ln_m` cache
-    type LnMCache;
-    /// Type of the `ln_pp` cache
-    type LnPpCache;
+    /// Type of the cache for the marginal likelihood
+    type MCache;
+    /// Type of the cache for the posterior predictive
+    type PpCache;
 
     /// Computes the posterior distribution from the data
     // fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
@@ -555,12 +555,12 @@ where
     }
 
     /// Compute the cache for the log marginal likelihood.
-    fn ln_m_cache(&self) -> Self::LnMCache;
+    fn ln_m_cache(&self) -> Self::MCache;
 
     /// Log marginal likelihood with supplied cache.
     fn ln_m_with_cache(
         &self,
-        cache: &Self::LnMCache,
+        cache: &Self::MCache,
         x: &DataOrSuffStat<X, Fx>,
     ) -> f64;
 
@@ -573,10 +573,10 @@ where
     /// Compute the cache for the Log posterior predictive of y given x.
     ///
     /// The cache should encompass all information about `x`.
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<X, Fx>) -> Self::LnPpCache;
+    fn ln_pp_cache(&self, x: &DataOrSuffStat<X, Fx>) -> Self::PpCache;
 
     /// Log posterior predictive of y given x with supplied ln(norm)
-    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &X) -> f64;
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &X) -> f64;
 
     /// Log posterior predictive of y given x
     fn ln_pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64 {
@@ -589,7 +589,7 @@ where
         self.ln_m(x).exp()
     }
 
-    fn pp_with_cache(&self, cache: &Self::LnPpCache, y: &X) -> f64 {
+    fn pp_with_cache(&self, cache: &Self::PpCache, y: &X) -> f64 {
         self.ln_pp_with_cache(cache, y).exp()
     }
 

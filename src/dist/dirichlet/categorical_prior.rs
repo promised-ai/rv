@@ -23,8 +23,8 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     for SymmetricDirichlet
 {
     type Posterior = Dirichlet;
-    type LnMCache = f64;
-    type LnPpCache = (Vec<f64>, f64);
+    type MCache = f64;
+    type PpCache = (Vec<f64>, f64);
 
     fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
         extract_stat_then(
@@ -40,7 +40,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     }
 
     #[inline]
-    fn ln_m_cache(&self) -> Self::LnMCache {
+    fn ln_m_cache(&self) -> Self::MCache {
         let sum_alpha = self.alpha() * self.k() as f64;
         let a = ln_gammafn(sum_alpha);
         let d = ln_gammafn(self.alpha()) * self.k() as f64;
@@ -49,7 +49,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
 
     fn ln_m_with_cache(
         &self,
-        cache: &Self::LnMCache,
+        cache: &Self::MCache,
         x: &CategoricalData<X>,
     ) -> f64 {
         let sum_alpha = self.alpha() * self.k() as f64;
@@ -71,13 +71,13 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     }
 
     #[inline]
-    fn ln_pp_cache(&self, x: &CategoricalData<X>) -> Self::LnPpCache {
+    fn ln_pp_cache(&self, x: &CategoricalData<X>) -> Self::PpCache {
         let post = self.posterior(x);
         let norm = post.alphas().iter().fold(0.0, |acc, &a| acc + a);
         (post.alphas, norm.ln())
     }
 
-    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &X) -> f64 {
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &X) -> f64 {
         let ix = y.into_usize();
         cache.0[ix].ln() - cache.1
     }
@@ -98,8 +98,8 @@ impl Sampleable<Categorical> for Dirichlet {
 
 impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     type Posterior = Self;
-    type LnMCache = (f64, f64);
-    type LnPpCache = (Vec<f64>, f64);
+    type MCache = (f64, f64);
+    type PpCache = (Vec<f64>, f64);
 
     fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
         extract_stat_then(
@@ -119,7 +119,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     }
 
     #[inline]
-    fn ln_m_cache(&self) -> Self::LnMCache {
+    fn ln_m_cache(&self) -> Self::MCache {
         let sum_alpha = self.alphas().iter().fold(0.0, |acc, &a| acc + a);
         let a = ln_gammafn(sum_alpha);
         let d = self
@@ -131,7 +131,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
 
     fn ln_m_with_cache(
         &self,
-        cache: &Self::LnMCache,
+        cache: &Self::MCache,
         x: &CategoricalData<X>,
     ) -> f64 {
         let (sum_alpha, ln_norm) = cache;
@@ -153,13 +153,13 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     }
 
     #[inline]
-    fn ln_pp_cache(&self, x: &CategoricalData<X>) -> Self::LnPpCache {
+    fn ln_pp_cache(&self, x: &CategoricalData<X>) -> Self::PpCache {
         let post = self.posterior(x);
         let norm = post.alphas().iter().fold(0.0, |acc, &a| acc + a);
         (post.alphas, norm.ln())
     }
 
-    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &X) -> f64 {
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &X) -> f64 {
         let ix = y.into_usize();
         cache.0[ix].ln() - cache.1
     }
