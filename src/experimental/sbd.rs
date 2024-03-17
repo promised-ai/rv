@@ -9,22 +9,59 @@ use crate::traits::*;
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
+/// A "Stick-breaking discrete" distribution parameterized by a StickSequence.
 pub struct Sbd {
     pub sticks: StickSequence,
 }
 
+/// Struct representing the Sbd (Sticks-based distribution) type.
+/// Sbd is used to generate random numbers based on a given StickSequence.
 impl Sbd {
+    /// Creates a new instance of Sbd with the specified StickSequence.
+    ///
+    /// # Arguments
+    ///
+    /// * `sticks` - The StickSequence used for generating random numbers.
+    ///
+    /// # Returns
+    ///
+    /// A new instance of Sbd.
     pub fn new(sticks: StickSequence) -> Sbd {
         Self { sticks }
     }
 
-    pub fn invccdf(&self, u: f64) -> usize {
+    /// Calculates the inverse complementary cumulative distribution function
+    /// (invccdf) of the Sbd. Sbd is based around the ccdf instead of the cdf
+    /// because this allows for more precision in the tails.
+    ///
+    /// # Arguments
+    ///
+    /// * `p` - The value for which to calculate the invccdf.
+    ///
+    /// # Returns
+    ///
+    /// The index of the first element in the StickSequence whose value is less
+    /// than `u`.
+    pub fn invccdf(&self, p: f64) -> usize {
         self.sticks.extendmap_ccdf(
-            |ccdf| ccdf.last().unwrap() < &u,
-            |ccdf| ccdf.iter().position(|q| *q < u).unwrap() - 1,
+            |ccdf| ccdf.last().unwrap() < &p,
+            |ccdf| ccdf.iter().position(|q| *q < p).unwrap() - 1,
         )
     }
 
+    /// Calculates the inverse cumulative distribution function (invccdf) of the
+    /// Sbd for multiple values, which are assumed to be already sorted. The
+    /// returned vector contains the indices of the StickSequence elements whose
+    /// values are less than the corresponding values in `ps`.
+    ///
+    /// # Arguments
+    ///
+    /// * `ps` - The values for which to calculate the invccdf.
+    ///
+    /// # Returns
+    ///
+    /// A vector containing the indices of the StickSequence elements whose
+    /// values are less than the corresponding values in `ps`.
     fn multi_invccdf_sorted(&self, ps: &[f64]) -> Vec<usize> {
         let n = ps.len();
         self.sticks.extendmap_ccdf(
@@ -51,17 +88,52 @@ impl Sbd {
     }
 }
 
+/// Implementation of the `Support` trait for `Sbd`.
 impl Support<usize> for Sbd {
+    /// Checks if the given value is supported by `Sbd`.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The value to be checked.
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the value is greater than or equal to zero, `false` otherwise.
     fn supports(&self, x: &usize) -> bool {
         x.ge(&0)
     }
 }
 
+/// Implementation of the `Cdf` trait for `Sbd`.
 impl Cdf<usize> for Sbd {
+    /// Calculates the survival function (SF) for a given value `x`.
+    ///
+    /// The survival function is defined as 1 minus the cumulative distribution function (CDF).
+    /// It represents the probability that a random variable is greater than `x`.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The value for which to calculate the survival function.
+    ///
+    /// # Returns
+    ///
+    /// The calculated survival function value as a `f64`.
     fn sf(&self, x: &usize) -> f64 {
         self.sticks.ccdf(x + 1)
     }
 
+    /// Calculates the cumulative distribution function (CDF) for a given value `x`.
+    ///
+    /// The cumulative distribution function (CDF) represents the probability that a random variable
+    /// is less than or equal to `x`.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The value for which to calculate the cumulative distribution function.
+    ///
+    /// # Returns
+    ///
+    /// The calculated cumulative distribution function value as a `f64`.
     fn cdf(&self, x: &usize) -> f64 {
         1.0 - self.sf(x)
     }
@@ -92,7 +164,41 @@ impl Mode<usize> for Sbd {
     }
 }
 
-// Normalizing a cumulative sum of Exp(1) random variables yields sorted uniforms
+/// Generate a vector of sorted uniform random variables.
+/// 
+/// # Arguments
+///     
+/// * `n` - The number of random variables to generate.
+/// 
+/// * `rng` - A mutable reference to the random number generator.
+/// 
+/// # Returns
+/// 
+/// A vector of sorted uniform random variables.
+/// 
+/// # Example
+/// 
+/// ```
+/// use rand::thread_rng;
+///    
+/// let mut rng = thread_rng();
+/// let n = 10000;
+/// let xs = sorted_uniforms(n, &mut rng);
+/// assert!(xs.len() == n);
+/// 
+/// // Result is sorted and in the unit interval
+/// assert!(&0.0 < xs.first().unwrap());
+/// assert!(xs.last().unwrap() < &1.0);
+/// assert!(xs.windows(2).all(|w| w[0] <= w[1]));
+/// 
+/// // Mean is 1/2
+/// let mean = xs.iter().sum::<f64>() / n as f64;
+/// assert!(mean > 0.49 && mean < 0.51);
+/// 
+/// // Variance is 1/12
+/// let var = xs.iter().map(|x| (x - 0.5).powi(2)).sum::<f64>() / n as f64;
+/// assert!(var > 0.08 && var < 0.09);
+/// ```
 fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
     let mut xs: Vec<_> = (0..n)
         .map(|_| -rng.gen::<f64>().ln())
@@ -173,59 +279,3 @@ mod tests {
         )
     }
 }
-
-// impl ConjugatePrior<usize, Sbd> for UnitPowerLaw {
-//     type Posterior = UnitPowerLaw;
-//     type LnMCache = StickSequence;
-//     type LnPpCache = StickSequence;
-
-//     // fn posterior(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::Posterior {
-//     //     let mut sticks = self.sticks.clone();
-//     //     x.suff_stat().counts.iter().for_each(|&n| {
-//     //         sticks.observe(n);
-//     //     });
-//     //     Self { sticks }
-//     // }
-
-//     // fn ln_m_cache(&self) -> Self::LnMCache {
-//     //     self.sticks.clone()
-//     // }
-
-//     // fn ln_m_with_cache(&self, cache: &Self::LnMCache, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
-//     //     let mut result = 0.0;
-//     //     for (n, &count) in x.data_or_suff_stat().counts.iter().enumerate() {
-//     //         result += cache.ccdf(n + 1) * count as f64;
-//     //     }
-//     //     result
-//     // }
-
-//     // fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::LnPpCache {
-//     //     self.sticks.clone()
-//     // }
-
-//     // fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &usize) -> f64 {
-//     //     cache.ccdf(y + 1)
-//     // }
-
-//     // /// The log marginal likelihood
-//     // fn ln_m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
-//     //     let cache = self.ln_m_cache();
-//     //     self.ln_m_with_cache(&cache, x)
-//     // }
-
-//     // /// Log posterior predictive of y given x
-//     // fn ln_pp(&self, y: &usize, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
-//     //     let cache = self.ln_pp_cache(x);
-//     //     self.ln_pp_with_cache(&cache, y)
-//     // }
-
-//     // /// Marginal likelihood of x
-//     // fn m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
-//     //     self.ln_m(x).exp()
-//     // }
-
-//     // /// Posterior Predictive distribution
-//     // fn pp(&self, y: &usize, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
-//     //     self.ln_pp(y, x).exp()
-//     // }
-// }
