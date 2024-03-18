@@ -1,13 +1,3 @@
-/// This module contains the implementation of the `StickBreaking` struct and its associated traits.
-/// The `StickBreaking` struct represents a stick-breaking process, which is a probability distribution over sequences of real numbers.
-/// It is used in various statistical models and inference algorithms.
-/// The `StickBreaking` struct has methods for calculating the log-density, drawing samples, and performing conjugate prior updates.
-/// It also implements the `HasDensity`, `Sampleable`, and `ConjugatePrior` traits for compatibility with other parts of the codebase.
-/// The module also defines the `StickBreakingSuffStat`, `StickSequence`, `Sbd`, and `SbdSuffStat` structs, as well as several other helper structs and traits.
-/// These structs and traits are used internally by the `StickBreaking` struct and are not meant to be used directly by external code.
-pub mod stick_breaking {
-    // ... code ...
-}
 use crate::experimental::Sbd;
 use crate::experimental::SbdSuffStat;
 use crate::experimental::StickBreakingSuffStat;
