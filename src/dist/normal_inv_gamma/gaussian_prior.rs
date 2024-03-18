@@ -48,7 +48,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
     type Posterior = Self;
     type MCache = f64;
     type PpCache = (GaussianSuffStat, f64);
-    // type LnPpCache = NormalInvGamma;
+    // type PpCache = NormalInvGamma;
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
         extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
