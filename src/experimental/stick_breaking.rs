@@ -40,6 +40,16 @@ impl StickBreaking {
     /// # Returns
     ///
     /// A new instance of `StickBreaking`.
+    /// 
+    /// # Example
+    /// ```
+    /// use rv::prelude::*;
+    /// use rv::experimental::StickBreaking;
+    /// 
+    /// let alpha = 5.0;
+    /// let breaker = UnitPowerLaw::new(alpha).unwrap();
+    /// let stick_breaking = StickBreaking::new(breaker);
+    /// ```
     pub fn new(breaker: UnitPowerLaw) -> Self {
         let prefix = Vec::new();
         Self { breaker, prefix }
