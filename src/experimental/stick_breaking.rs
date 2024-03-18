@@ -40,12 +40,12 @@ impl StickBreaking {
     /// # Returns
     ///
     /// A new instance of `StickBreaking`.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use rv::prelude::*;
     /// use rv::experimental::StickBreaking;
-    /// 
+    ///
     /// let alpha = 5.0;
     /// let breaker = UnitPowerLaw::new(alpha).unwrap();
     /// let stick_breaking = StickBreaking::new(breaker);
@@ -190,7 +190,7 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &usize) -> f64 {
         cache.ln_m(&DataOrSuffStat::Data(&[*y]))
     }
-            
+
     /// Computes the predictive probability.
     fn pp(&self, y: &usize, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
         let post = self.posterior(x);

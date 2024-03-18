@@ -76,10 +76,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
     }
 
     #[inline]
-    fn ln_pp_cache(
-        &self,
-        x: &DataOrSuffStat<f64, Gaussian>,
-    ) -> Self::PpCache {
+    fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
         let stat = extract_stat(x, GaussianSuffStat::new);
         let post_n = posterior_from_stat(self, &stat);
         let lnz_n = ln_z(post_n.v, post_n.a, post_n.b);

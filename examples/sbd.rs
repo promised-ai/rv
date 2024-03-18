@@ -2,9 +2,9 @@ use rv::experimental::Sbd;
 use rv::experimental::SbdSuffStat;
 use rv::experimental::StickBreaking;
 use rv::experimental::StickSequence;
+use rv::prelude::DataOrSuffStat;
 use rv::prelude::UnitPowerLaw;
 use rv::traits::*;
-use rv::prelude::DataOrSuffStat;
 
 fn main() {
     // Instantiate a stick-breaking process
@@ -36,5 +36,4 @@ fn main() {
     let cache = sbp.ln_pp_cache(&DataOrSuffStat::SuffStat(&stat));
     let sum: f64 = (0..99).map(|y| sbp.pp_with_cache(&cache, &y)).sum();
     println!("P(posterior predictive < 100) {}", sum);
-
 }

@@ -83,11 +83,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         (post, zn)
     }
 
-    fn ln_pp_with_cache(
-        &self,
-        cache: &Self::PpCache,
-        y: &DVector<f64>,
-    ) -> f64 {
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &DVector<f64>) -> f64 {
         let post = &cache.0;
         let zn = cache.1;
 
