@@ -46,8 +46,8 @@ macro_rules! impl_traits {
     ($kind: ty) => {
         impl ConjugatePrior<$kind, Poisson> for Gamma {
             type Posterior = Self;
-            type LnMCache = f64;
-            type LnPpCache = (f64, f64, f64);
+            type MCache = f64;
+            type PpCache = (f64, f64, f64);
 
             fn posterior(&self, x: &DataOrSuffStat<$kind, Poisson>) -> Self {
                 let (n, sum) = match x {
@@ -67,7 +67,7 @@ macro_rules! impl_traits {
             }
 
             #[inline]
-            fn ln_m_cache(&self) -> Self::LnMCache {
+            fn ln_m_cache(&self) -> Self::MCache {
                 let z0 = self
                     .shape()
                     .mul_add(-self.ln_rate(), self.ln_gamma_shape());
@@ -76,7 +76,7 @@ macro_rules! impl_traits {
 
             fn ln_m_with_cache(
                 &self,
-                cache: &Self::LnMCache,
+                cache: &Self::MCache,
                 x: &DataOrSuffStat<$kind, Poisson>,
             ) -> f64 {
                 let stat: PoissonSuffStat = match x {
@@ -103,7 +103,7 @@ macro_rules! impl_traits {
             fn ln_pp_cache(
                 &self,
                 x: &DataOrSuffStat<$kind, Poisson>,
-            ) -> Self::LnPpCache {
+            ) -> Self::PpCache {
                 let post = self.posterior(x);
                 let r = post.shape();
                 let p = 1.0 / (1.0 + post.rate());
@@ -112,7 +112,7 @@ macro_rules! impl_traits {
 
             fn ln_pp_with_cache(
                 &self,
-                cache: &Self::LnPpCache,
+                cache: &Self::PpCache,
                 y: &$kind,
             ) -> f64 {
                 let (r, p, ln_p) = cache;

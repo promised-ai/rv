@@ -144,12 +144,12 @@ pub struct SbCache {
 
 impl ConjugatePrior<usize, Sbd> for Sb {
     type Posterior = SbPosterior;
-    type LnMCache = ();
-    type LnPpCache = SbCache;
+    type MCache = ();
+    type PpCache = SbCache;
 
-    fn ln_m_cache(&self) -> Self::LnMCache {}
+    fn ln_m_cache(&self) -> Self::MCache {}
 
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::LnPpCache {
+    fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::PpCache {
         let post = self.posterior(x);
         // we'll need the alpha for computing 1 / (1 + alpha), which is the
         // expected likelihood of a new class
@@ -186,7 +186,7 @@ impl ConjugatePrior<usize, Sbd> for Sb {
 
     fn ln_m_with_cache(
         &self,
-        _cache: &Self::LnMCache,
+        _cache: &Self::MCache,
         x: &DataOrSuffStat<usize, Sbd>,
     ) -> f64 {
         match x {
@@ -199,7 +199,7 @@ impl ConjugatePrior<usize, Sbd> for Sb {
         }
     }
 
-    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &usize) -> f64 {
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &usize) -> f64 {
         // FIXME: I feel like this isn't quite right
         cache.ln_weights.get(y).copied().unwrap_or(cache.ln_f_new)
     }
