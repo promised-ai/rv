@@ -9,18 +9,18 @@ use crate::prelude::UnitPowerLaw;
 use crate::traits::*;
 
 // We'd like to be able to serialize and deserialize StickSequence, but serde can't handle
-// `Arc` or `RwLock`. So we use `StickSequenceFmt<B>` as an intermediate type.
+// `Arc` or `RwLock`. So we use `StickSequenceFmt` as an intermediate type.
 #[cfg(feature = "serde1")]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
-struct StickSequenceFmt<B> {
-    breaker: B,
+struct StickSequenceFmt {
+    breaker: UnitPowerLaw,
     inner: _Inner,
 }
 
 #[cfg(feature = "serde1")]
-impl From<StickSequenceFmt<B>> for StickSequence {
-    fn from(fmt: StickSequenceFmt<B>) -> Self {
+impl From<StickSequenceFmt> for StickSequence {
+    fn from(fmt: StickSequenceFmt) -> Self {
         Self {
             breaker: fmt.breaker,
             inner: Arc::new(RwLock::new(fmt.inner)),
@@ -29,7 +29,7 @@ impl From<StickSequenceFmt<B>> for StickSequence {
 }
 
 #[cfg(feature = "serde1")]
-impl From<StickSequence> for StickSequenceFmt<B> {
+impl From<StickSequence> for StickSequenceFmt {
     fn from(sticks: StickSequence) -> Self {
         Self {
             breaker: sticks.breaker,
