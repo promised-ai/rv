@@ -78,8 +78,8 @@ impl _Inner {
     }
 }
 
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]  
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case", from="StickSequenceFmt", into="StickSequenceFmt"))]  
 #[derive(Clone, Debug)]
 pub struct StickSequence {
     pub breaker: UnitPowerLaw,
