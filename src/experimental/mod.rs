@@ -1,8 +1,8 @@
-mod sbd;
-mod sbd_stat;
-mod stick_breaking;
-mod stick_breaking_stat;
-mod stick_sequence;
+pub mod sbd;
+pub mod sbd_stat;
+pub mod stick_breaking;
+pub mod stick_breaking_stat;
+pub mod stick_sequence;
 
 pub use sbd::Sbd;
 pub use sbd_stat::SbdSuffStat;
