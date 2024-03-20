@@ -180,6 +180,7 @@ impl Mode<usize> for Sbd {
 ///
 /// ```
 /// use rand::thread_rng;
+/// use rv::experimental::sbd::sorted_uniforms;
 ///    
 /// let mut rng = thread_rng();
 /// let n = 10000;
@@ -199,7 +200,7 @@ impl Mode<usize> for Sbd {
 /// let var = xs.iter().map(|x| (x - 0.5).powi(2)).sum::<f64>() / n as f64;
 /// assert!(var > 0.08 && var < 0.09);
 /// ```
-fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
+pub fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
     let mut xs: Vec<_> = (0..n)
         .map(|_| -rng.gen::<f64>().ln())
         .scan(0.0, |state, x| {
@@ -246,27 +247,6 @@ mod tests {
     use crate::prelude::UnitPowerLaw;
     use assert::close;
     use rand::thread_rng;
-
-    #[test]
-    fn test_sorted_uniforms() {
-        let mut rng = thread_rng();
-        let n = 10000;
-        let xs = sorted_uniforms(n, &mut rng);
-        assert!(xs.len() == n);
-
-        // Result is sorted and in the unit interval
-        assert!(&0.0 < xs.first().unwrap());
-        assert!(xs.last().unwrap() < &1.0);
-        assert!(xs.windows(2).all(|w| w[0] <= w[1]));
-
-        // Mean is 1/2
-        let mean = xs.iter().sum::<f64>() / n as f64;
-        close(mean, 0.5, 1e-2);
-
-        // Variance is 1/12
-        let var = xs.iter().map(|x| (x - 0.5).powi(2)).sum::<f64>() / n as f64;
-        close(var, 1.0 / 12.0, 1e-2);
-    }
 
     #[test]
     fn test_multi_invccdf_sorted() {
