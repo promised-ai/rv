@@ -1,6 +1,6 @@
 //! Trait definitions
-use crate::data::DataOrSuffStat;
-use crate::suffstat_traits::*;
+pub use crate::data::DataOrSuffStat;
+pub use crate::suffstat_traits::*;
 use rand::Rng;
 
 pub trait Sampleable<X> {
