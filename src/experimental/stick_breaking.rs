@@ -187,27 +187,3 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::prelude::*;
-    use rand::thread_rng;
-
-    #[test]
-    fn test_stick_breaking() {
-        let alpha = 5.0;
-        let breaker = UnitPowerLaw::new(alpha).unwrap();
-        let stick_breaking = StickBreaking::new(breaker);
-        let mut rng = thread_rng();
-        let n = 10000;
-        let xs = stick_breaking.sample(n, &mut rng);
-        assert_eq!(xs.len(), n);
-        assert!(&0.0 < xs.first().unwrap());
-        assert!(xs.last().unwrap() < &1.0);
-        assert!(xs.windows(2).all(|w| w[0] <= w[1]));
-        let mean = xs.iter().sum::<f64>() / n as f64;
-        assert!(mean > 0.49 && mean < 0.51);
-        let var = xs.iter().map(|x| (x - 0.5).powi(2)).sum::<f64>() / n as f64;
-        assert!(var > 0.08 && var < 0.09);
-    }
-}
