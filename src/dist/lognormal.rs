@@ -59,7 +59,7 @@ impl LogNormal {
         LogNormal { mu, sigma }
     }
 
-    /// LogNorma(0, 1)
+    /// LogNormal(0, 1)
     ///
     /// # Example
     ///
