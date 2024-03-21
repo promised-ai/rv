@@ -476,8 +476,8 @@ impl Entropy for MvGaussian {
 
 impl HasSuffStat<DVector<f64>> for MvGaussian {
     type Stat = MvGaussianSuffStat;
-    fn empty_suffstat(&self) -> Self::Stat {
-        MvGaussianSuffStat::new(self.mu.len())
+    fn empty_suffstat() -> Self::Stat {
+        MvGaussianSuffStat::new()
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {

@@ -15,11 +15,11 @@ pub struct MvGaussianSuffStat {
 
 impl MvGaussianSuffStat {
     #[inline]
-    pub fn new(dims: usize) -> Self {
+    pub fn new() -> Self {
         MvGaussianSuffStat {
             n: 0,
-            sum_x: DVector::zeros(dims),
-            sum_x_sq: DMatrix::zeros(dims, dims),
+            sum_x: DVector::zeros(0),
+            sum_x_sq: DMatrix::zeros(0, 0),
         }
     }
 
