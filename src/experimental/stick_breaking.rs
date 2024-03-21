@@ -186,4 +186,3 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
         post.m(&DataOrSuffStat::Data(&[*y]))
     }
 }
-
