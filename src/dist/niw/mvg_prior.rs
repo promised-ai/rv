@@ -33,7 +33,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         let nf = x.n() as f64;
         extract_stat_then(
             x,
-            || MvGaussianSuffStat::new(),
+            MvGaussianSuffStat::new,
             |stat: MvGaussianSuffStat| {
                 let xbar = stat.sum_x() / stat.n() as f64;
                 let diff = &xbar - self.mu();
@@ -105,6 +105,8 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
 mod tests {
     use nalgebra::{dmatrix, dvector};
 
+    use crate::prelude::HasSuffStat;
+
     use super::*;
 
     const TOL: f64 = 1E-12;
@@ -120,7 +122,7 @@ mod tests {
         let x2 = DVector::<f64>::from_column_slice(&x2v);
         let x3 = DVector::<f64>::from_column_slice(&x3v);
 
-        let mut stat = MvGaussianSuffStat::new(1);
+        let mut stat = MvGaussian::empty_suffstat();
 
         stat.observe(&x0);
         stat.observe(&x1);
@@ -175,7 +177,7 @@ mod tests {
             .map(|i| dvector![i * 2.0, i.mul_add(2.0, 1.0)])
             .collect();
 
-        let mut suff_stat = MvGaussianSuffStat::new(2);
+        let mut suff_stat = MvGaussian::empty_suffstat();
         suff_stat.observe_many(&data);
 
         let posterior = niw.posterior(&MvgData::SuffStat(&suff_stat));

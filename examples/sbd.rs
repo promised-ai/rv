@@ -2,7 +2,6 @@ use rv::experimental::Sbd;
 use rv::experimental::SbdSuffStat;
 use rv::experimental::StickBreaking;
 use rv::experimental::StickSequence;
-use rv::prelude::DataOrSuffStat;
 use rv::prelude::UnitPowerLaw;
 use rv::traits::*;
 

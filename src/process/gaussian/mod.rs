@@ -153,7 +153,7 @@ where
         indicies: &[Self::Index],
     ) -> Self::SampleFunction {
         let n = indicies.len();
-        let m = indicies.get(0).map(|i| i.len()).unwrap_or(0);
+        let m = indicies.first().map(|i| i.len()).unwrap_or(0);
 
         let indicies: DMatrix<f64> = DMatrix::from_iterator(
             n,

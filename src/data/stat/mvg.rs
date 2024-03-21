@@ -13,6 +13,12 @@ pub struct MvGaussianSuffStat {
     sum_x_sq: DMatrix<f64>,
 }
 
+impl Default for MvGaussianSuffStat {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MvGaussianSuffStat {
     #[inline]
     pub fn new() -> Self {

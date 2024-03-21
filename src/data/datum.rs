@@ -74,7 +74,7 @@ where
             <Self as Sampleable<<Self as RvDatum>::Support>>::sample_stream(
                 self, rng,
             )
-            .map(|x| x.try_into().unwrap());
+            .map(|x| x.into());
         Box::new(iter)
     }
 }

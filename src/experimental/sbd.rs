@@ -245,7 +245,6 @@ impl Sampleable<usize> for Sbd {
 mod tests {
     use super::*;
     use crate::prelude::UnitPowerLaw;
-    use assert::close;
     use rand::thread_rng;
 
     #[test]

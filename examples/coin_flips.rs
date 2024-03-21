@@ -1,8 +1,6 @@
 use rand::Rng;
-use rv::data::DataOrSuffStat;
 use rv::dist::{Bernoulli, Beta};
 use rv::prelude::BernoulliData;
-use rv::suffstat_traits::SuffStat;
 use rv::traits::*;
 use rv::ConjugateModel;
 use std::sync::Arc;
