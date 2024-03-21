@@ -1,7 +1,7 @@
 use rand::Rng;
 use special::Beta as SBeta;
 
-use crate::data::{BernoulliSuffStat, Booleable, DataOrSuffStat};
+use crate::data::{BernoulliSuffStat, Booleable};
 use crate::dist::{Bernoulli, Beta, UnitPowerLaw};
 use crate::suffstat_traits::*;
 use crate::traits::*;

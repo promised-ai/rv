@@ -2,9 +2,7 @@ use std::collections::BTreeMap;
 use std::f64::consts::LN_2;
 
 use crate::consts::*;
-use crate::data::{
-    extract_stat, extract_stat_then, DataOrSuffStat, GaussianSuffStat,
-};
+use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;

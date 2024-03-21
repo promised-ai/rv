@@ -1,4 +1,3 @@
-use crate::data::DataOrSuffStat;
 use crate::suffstat_traits::*;
 use crate::traits::*;
 use rand::Rng;

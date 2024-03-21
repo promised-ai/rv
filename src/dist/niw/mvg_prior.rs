@@ -33,7 +33,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         let nf = x.n() as f64;
         extract_stat_then(
             x,
-            || MvGaussianSuffStat::new(self.ndims()),
+            || MvGaussianSuffStat::new(),
             |stat: MvGaussianSuffStat| {
                 let xbar = stat.sum_x() / stat.n() as f64;
                 let diff = &xbar - self.mu();
@@ -87,7 +87,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         let post = &cache.0;
         let zn = cache.1;
 
-        let mut y_stat = MvGaussianSuffStat::new(self.ndims());
+        let mut y_stat = MvGaussianSuffStat::new();
         y_stat.observe(y);
         let y_packed = DataOrSuffStat::SuffStat(&y_stat);
 

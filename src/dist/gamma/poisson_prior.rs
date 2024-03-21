@@ -2,7 +2,7 @@ use std::f64::EPSILON;
 
 use rand::Rng;
 
-use crate::data::{DataOrSuffStat, PoissonSuffStat};
+use crate::data::PoissonSuffStat;
 use crate::dist::poisson::PoissonError;
 use crate::dist::{Gamma, Poisson};
 use crate::misc::ln_binom;
