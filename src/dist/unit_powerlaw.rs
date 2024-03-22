@@ -260,7 +260,7 @@ macro_rules! impl_traits {
         impl HasSuffStat<$kind> for UnitPowerLaw {
             type Stat = UnitPowerLawSuffStat;
 
-            fn empty_suffstat() -> Self::Stat {
+            fn empty_suffstat(&self) -> Self::Stat {
                 Self::Stat::new()
             }
 

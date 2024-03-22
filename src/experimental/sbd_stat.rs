@@ -44,7 +44,7 @@ impl Default for SbdSuffStat {
 impl HasSuffStat<usize> for Sbd {
     type Stat = SbdSuffStat;
 
-    fn empty_suffstat() -> Self::Stat {
+    fn empty_suffstat(&self) -> Self::Stat {
         Self::Stat::new()
     }
 

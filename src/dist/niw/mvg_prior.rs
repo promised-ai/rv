@@ -33,7 +33,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         let nf = x.n() as f64;
         extract_stat_then(
             x,
-            MvGaussianSuffStat::new,
+            || MvGaussianSuffStat::new(self.ndims()),
             |stat: MvGaussianSuffStat| {
                 let xbar = stat.sum_x() / stat.n() as f64;
                 let diff = &xbar - self.mu();
@@ -87,7 +87,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         let post = &cache.0;
         let zn = cache.1;
 
-        let mut y_stat = MvGaussianSuffStat::new();
+        let mut y_stat = MvGaussianSuffStat::new(self.ndims());
         y_stat.observe(y);
         let y_packed = DataOrSuffStat::SuffStat(&y_stat);
 
@@ -105,8 +105,6 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
 mod tests {
     use nalgebra::{dmatrix, dvector};
 
-    use crate::prelude::HasSuffStat;
-
     use super::*;
 
     const TOL: f64 = 1E-12;
@@ -122,7 +120,7 @@ mod tests {
         let x2 = DVector::<f64>::from_column_slice(&x2v);
         let x3 = DVector::<f64>::from_column_slice(&x3v);
 
-        let mut stat = MvGaussian::empty_suffstat();
+        let mut stat = MvGaussianSuffStat::new(1);
 
         stat.observe(&x0);
         stat.observe(&x1);
@@ -158,7 +156,7 @@ mod tests {
     #[test]
     fn posterior() {
         // This checks this implementation against the one from
-        // Kevin Murphey
+        // Kevin Murphy
         // Found here: https://github.com/probml/probml-utils/blob/983e107875d550957d6c046b5c1af0fbae4badff/probml_utils/dp_mixgauss_utils.py#L206-L225
 
         let niw = NormalInvWishart::new(
@@ -177,7 +175,7 @@ mod tests {
             .map(|i| dvector![i * 2.0, i.mul_add(2.0, 1.0)])
             .collect();
 
-        let mut suff_stat = MvGaussian::empty_suffstat();
+        let mut suff_stat = MvGaussianSuffStat::new(2);
         suff_stat.observe_many(&data);
 
         let posterior = niw.posterior(&MvgData::SuffStat(&suff_stat));

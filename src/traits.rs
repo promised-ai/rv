@@ -541,18 +541,7 @@ where
         self.posterior(&DataOrSuffStat::SuffStat(stat))
     }
 
-    fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior {
-        match x {
-            DataOrSuffStat::Data(xs) => {
-                let mut stat = Fx::empty_suffstat();
-                stat.observe_many(xs);
-                self.posterior_from_suffstat(&stat)
-            }
-            DataOrSuffStat::SuffStat(stat) => {
-                self.posterior_from_suffstat(stat)
-            }
-        }
-    }
+    fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
 
     /// Compute the cache for the log marginal likelihood.
     fn ln_m_cache(&self) -> Self::MCache;

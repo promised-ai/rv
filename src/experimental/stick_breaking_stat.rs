@@ -98,7 +98,7 @@ fn stick_stat_unit_powerlaw(sticks: &[f64]) -> (usize, f64) {
 impl HasSuffStat<&[f64]> for StickBreaking {
     type Stat = StickBreakingSuffStat;
 
-    fn empty_suffstat() -> Self::Stat {
+    fn empty_suffstat(&self) -> Self::Stat {
         Self::Stat::new()
     }
 

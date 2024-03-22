@@ -476,8 +476,8 @@ impl Entropy for MvGaussian {
 
 impl HasSuffStat<DVector<f64>> for MvGaussian {
     type Stat = MvGaussianSuffStat;
-    fn empty_suffstat() -> Self::Stat {
-        MvGaussianSuffStat::new()
+    fn empty_suffstat(&self) -> Self::Stat {
+        MvGaussianSuffStat::new(self.mu.len())
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
@@ -769,7 +769,7 @@ mod tests {
             dmatrix![1.0, 3.0/5.0; 3.0/5.0, 2.0;],
         )
         .unwrap();
-        let mut stat = MvGaussian::empty_suffstat();
+        let mut stat = f.empty_suffstat();
         stat.observe_many(&[
             dvector![1.0, 2.0],
             dvector![3.0, 4.0],
@@ -797,7 +797,7 @@ mod tests {
         for _ in 0..100 {
             let data: Vec<DVector<f64>> = g.sample(11, &mut rng);
 
-            let mut stat = MvGaussian::empty_suffstat();
+            let mut stat = f.empty_suffstat();
             stat.observe_many(&data);
 
             let ln_f_sum: f64 = data.iter().map(|x| f.ln_f(x)).sum();

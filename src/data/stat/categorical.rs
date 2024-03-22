@@ -20,10 +20,10 @@ pub struct CategoricalSuffStat {
 
 impl CategoricalSuffStat {
     #[inline]
-    pub fn new() -> Self {
+    pub fn new(k: usize) -> Self {
         CategoricalSuffStat {
             n: 0,
-            counts: vec![0.0],
+            counts: vec![0.0; k],
         }
     }
 
@@ -75,12 +75,6 @@ impl CategoricalSuffStat {
     }
 }
 
-impl Default for CategoricalSuffStat {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<'a, X> From<&'a CategoricalSuffStat> for DataOrSuffStat<'a, X, Categorical>
 where
     X: CategoricalDatum,
@@ -116,9 +110,6 @@ impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
     fn observe(&mut self, x: &X) {
         let ix = x.into_usize();
         self.n += 1;
-        if ix >= self.counts.len() {
-            self.counts.resize(ix + 1, 0.0);
-        }
         self.counts[ix] += 1.0;
     }
 
@@ -135,7 +126,8 @@ mod tests {
 
     #[test]
     fn new() {
-        let sf = CategoricalSuffStat::new();
+        let sf = CategoricalSuffStat::new(4);
+        assert_eq!(sf.counts.len(), 4);
         assert_eq!(sf.n, 0);
         assert!(sf.counts.iter().all(|&ct| ct.abs() < 1E-12))
     }

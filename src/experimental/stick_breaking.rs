@@ -133,6 +133,18 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
             prefix: new_prefix,
         }
     }
+    fn posterior(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::Posterior {
+        match x {
+            DataOrSuffStat::Data(xs) => {
+                let mut stat = SbdSuffStat::new();
+                stat.observe_many(xs);
+                self.posterior_from_suffstat(&stat)
+            }
+            DataOrSuffStat::SuffStat(stat) => {
+                self.posterior_from_suffstat(stat)
+            }
+        }
+    }
 
     /// Computes the logarithm of the marginal likelihood.
     fn ln_m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
