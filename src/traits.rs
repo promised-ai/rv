@@ -471,7 +471,7 @@ pub trait KlDivergence {
 ///
 /// let ncats = 10;
 /// let symdir = SymmetricDirichlet::jeffreys(ncats).unwrap();
-/// let mut suffstat = CategoricalSuffStat::new();
+/// let mut suffstat = CategoricalSuffStat::new(10);
 /// let mut rng = rand::thread_rng();
 ///
 /// Categorical::new(&vec![1.0, 1.0, 5.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0])
