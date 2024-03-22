@@ -10,7 +10,11 @@ use crate::traits::*;
 use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
 use rand::Rng;
+use serde::Deserialize;
+use serde::Serialize;
 
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
 /// Represents a stick-breaking process.
 pub struct StickBreaking {
