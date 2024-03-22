@@ -8,7 +8,7 @@ use super::StickSequence;
 use crate::traits::*;
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 /// A "Stick-breaking discrete" distribution parameterized by a StickSequence.
 pub struct Sbd {
     pub sticks: StickSequence,
