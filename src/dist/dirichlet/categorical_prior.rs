@@ -340,5 +340,97 @@ mod test {
             let lf = csd.ln_f(&cat);
             assert::close(lf, -0.084_598_117_749_354_22, TOL);
         }
+
+        #[test]
+        fn postpred_with_empty_suffstat_should_be_marginal() {
+            let stat = <Categorical as HasSuffStat<u8>>::empty_suffstat();
+            let xs = vec![1_u8];
+            let dir = SymmetricDirichlet::jeffreys(3).unwrap();
+            let ln_pp = dir.ln_pp(&1_u8, &DataOrSuffStat::SuffStat(&stat));
+            let ln_m = dir.ln_m(&DataOrSuffStat::Data(&xs));
+            assert::close(ln_pp, ln_m, TOL);
+        }
+
+        #[test]
+        fn postpred_with_small_suffstat_smoke() {
+            let mut stat = <Categorical as HasSuffStat<u8>>::empty_suffstat();
+            stat.observe(&0_u8);
+
+            // stat has only observed 0, but will ask for pp of x in valid
+            // support
+            let dir = SymmetricDirichlet::jeffreys(3).unwrap();
+            let _ln_pp = dir.ln_pp(&1_u8, &DataOrSuffStat::SuffStat(&stat));
+        }
+
+        #[test]
+        #[should_panic]
+        fn cannot_compute_marginal_with_oob_stat() {
+            let mut stat = <Categorical as HasSuffStat<u8>>::empty_suffstat();
+            stat.observe(&5_u8);
+
+            // stat has only observed 5, but only has support for {0, 1, 2}
+            let dir = SymmetricDirichlet::jeffreys(3).unwrap();
+            let _ln_m =
+                dir.ln_m(&DataOrSuffStat::<u8, Categorical>::SuffStat(&stat));
+        }
+
+        #[test]
+        #[should_panic]
+        fn cannot_compute_postepred_with_oob_stat() {
+            let mut stat = <Categorical as HasSuffStat<u8>>::empty_suffstat();
+            stat.observe(&5_u8);
+
+            // stat has only observed 5, but only has support for {0, 1, 2}
+            let dir = SymmetricDirichlet::jeffreys(3).unwrap();
+            let _ln_pp = dir.ln_pp(&1_u8, &DataOrSuffStat::SuffStat(&stat));
+        }
+    }
+
+    mod non_symmetric {
+        use super::*;
+
+        #[test]
+        fn postpred_with_empty_suffstat_should_be_marginal() {
+            let stat = <Categorical as HasSuffStat<u8>>::empty_suffstat();
+            let xs = vec![1_u8];
+            let dir = Dirichlet::new(vec![1.0, 2.0, 3.0]).unwrap();
+            let ln_pp = dir.ln_pp(&1_u8, &DataOrSuffStat::SuffStat(&stat));
+            let ln_m = dir.ln_m(&DataOrSuffStat::Data(&xs));
+            assert::close(ln_pp, ln_m, TOL);
+        }
+
+        #[test]
+        fn postpred_with_small_suffstat_smoke() {
+            let mut stat = <Categorical as HasSuffStat<u8>>::empty_suffstat();
+            stat.observe(&0_u8);
+
+            // stat has only observed 0, but will ask for pp of x in valid
+            // support
+            let dir = Dirichlet::new(vec![1.0, 2.0, 3.0]).unwrap();
+            let _ln_pp = dir.ln_pp(&1_u8, &DataOrSuffStat::SuffStat(&stat));
+        }
+
+        #[test]
+        #[should_panic]
+        fn cannot_compute_marginal_with_oob_stat() {
+            let mut stat = <Categorical as HasSuffStat<u8>>::empty_suffstat();
+            stat.observe(&5_u8);
+
+            // stat has only observed 5, but only has support for {0, 1, 2}
+            let dir = Dirichlet::new(vec![1.0, 2.0, 3.0]).unwrap();
+            let _ln_m =
+                dir.ln_m(&DataOrSuffStat::<u8, Categorical>::SuffStat(&stat));
+        }
+
+        #[test]
+        #[should_panic]
+        fn cannot_compute_postepred_with_oob_stat() {
+            let mut stat = <Categorical as HasSuffStat<u8>>::empty_suffstat();
+            stat.observe(&5_u8);
+
+            // stat has only observed 5, but only has support for {0, 1, 2}
+            let dir = Dirichlet::new(vec![1.0, 2.0, 3.0]).unwrap();
+            let _ln_pp = dir.ln_pp(&1_u8, &DataOrSuffStat::SuffStat(&stat));
+        }
     }
 }
