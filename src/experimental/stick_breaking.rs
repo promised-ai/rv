@@ -205,10 +205,10 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
 
 #[cfg(test)]
 mod tests {
+    use crate::experimental::Sbd;
     use crate::experimental::{SbdSuffStat, StickBreaking};
     use crate::prelude::UnitPowerLaw;
-    use crate::experimental::Sbd; 
-    use crate::traits::*;  
+    use crate::traits::*;
 
     #[test]
     fn sb_ln_m_vs_monte_carlo() {
@@ -225,9 +225,7 @@ mod tests {
             let ln_fs: Vec<f64> = sb
                 .sample_stream(&mut rand::thread_rng())
                 .take(n_samples)
-                .map(|sbd: Sbd| {
-                    xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>()
-                })
+                .map(|sbd: Sbd| xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>())
                 .collect();
             logsumexp(&ln_fs) - (n_samples as f64).ln()
         };
@@ -240,7 +238,8 @@ mod tests {
         let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
         let sb_pp = sb.pp(&3, &DataOrSuffStat::Data(&vec![1, 2]));
         let post = sb.posterior(&DataOrSuffStat::Data(&vec![1, 2]));
-        let post_f = post.pp(&3, &DataOrSuffStat::SuffStat(&SbdSuffStat::new()));
+        let post_f =
+            post.pp(&3, &DataOrSuffStat::SuffStat(&SbdSuffStat::new()));
         assert::close(sb_pp, post_f, 1e-10);
     }
 

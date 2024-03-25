@@ -182,8 +182,8 @@ impl StickSequence {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::UnitPowerLaw;
     use crate::experimental::StickSequence;
+    use crate::prelude::UnitPowerLaw;
 
     #[test]
     fn test_stickseq_weights() {
