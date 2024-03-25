@@ -243,4 +243,13 @@ mod tests {
         let post_f = post.pp(&3, &DataOrSuffStat::SuffStat(&SbdSuffStat::new()));
         assert::close(sb_pp, post_f, 1e-10);
     }
+
+    #[test]
+    fn sb_repeated_obs_more_likely() {
+        let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
+        let sb_m = sb.m(&DataOrSuffStat::Data(&vec![1, 2, 2, 2]));
+        let post = sb.posterior(&DataOrSuffStat::Data(&vec![1, 2, 2, 2]));
+        let post_m = post.m(&DataOrSuffStat::Data(&vec![1, 2, 2, 2]));
+        assert!(post_m > sb_m);
+    }
 } // mod tests
