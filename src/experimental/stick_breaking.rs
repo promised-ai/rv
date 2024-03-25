@@ -10,8 +10,9 @@ use crate::traits::*;
 use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
 use rand::Rng;
-use serde::Deserialize;
-use serde::Serialize;
+
+#[cfg(feature = "serde1")]
+use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
