@@ -2,7 +2,6 @@ use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro128Plus;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 
@@ -82,10 +81,6 @@ impl From<Sbd> for SbdFmt {
 #[derive(Clone, Debug, PartialEq)]
 pub struct _Inner {
     remaining_mass: f64,
-    // Given a category, map the category key to the ln_weights index
-    // Note: Some functions rely on the ordered iteration of the BTreeMap
-    lookup: BTreeMap<usize, usize>,
-    rev_lookup: BTreeMap<usize, usize>,
     // the bin weights. the last entry is ln(remaining_mass)
     pub ln_weights: Vec<f64>,
     rng: rand_xoshiro::Xoshiro128Plus,
@@ -123,8 +118,6 @@ impl Sbd {
                 inner: Arc::new(RwLock::new(_Inner {
                     remaining_mass: 1.0,
                     ln_weights: vec![0.0], // ln(1)
-                    lookup: BTreeMap::new(),
-                    rev_lookup: BTreeMap::new(),
                     rng: seed.map_or_else(
                         Xoshiro128Plus::from_entropy,
                         Xoshiro128Plus::seed_from_u64,
@@ -134,26 +127,16 @@ impl Sbd {
         }
     }
 
-    pub fn from_ln_weights_and_lookup(
+    pub fn from_ln_weights(
         ln_weights: Vec<f64>,
-        lookup: BTreeMap<usize, usize>,
         alpha: f64,
         seed: Option<u64>,
     ) -> Result<Self, SbdError> {
         let n_weights = ln_weights.len();
-        let n_entries = lookup.len();
-        if n_weights != n_entries + 1 {
-            return Err(SbdError::InvalidNumberOfWeights {
-                n_weights,
-                n_entries,
-            });
-        }
 
         let inner = _Inner {
             remaining_mass: ln_weights.last().unwrap().exp(),
             ln_weights,
-            rev_lookup: lookup.iter().map(|(a, b)| (*b, *a)).collect(),
-            lookup,
             rng: seed.map_or_else(
                 Xoshiro128Plus::from_entropy,
                 Xoshiro128Plus::seed_from_u64,
@@ -166,9 +149,8 @@ impl Sbd {
         })
     }
 
-    pub fn from_weights_and_lookup(
+    pub fn from_weights(
         weights: &[f64],
-        lookup: BTreeMap<usize, usize>,
         alpha: f64,
         seed: Option<u64>,
     ) -> Result<Self, SbdError> {
@@ -177,7 +159,7 @@ impl Sbd {
             return Err(SbdError::WeightsDoNotSumToOne { sum });
         }
         let ln_weights = weights.iter().map(|w| w.ln()).collect();
-        Self::from_ln_weights_and_lookup(ln_weights, lookup, alpha, seed)
+        Self::from_ln_weights(ln_weights, alpha, seed)
     }
 
     pub fn from_canonical_weights(
@@ -192,8 +174,6 @@ impl Sbd {
             let inner = _Inner {
                 remaining_mass: weights[k],
                 ln_weights: weights.iter().map(|&w| w.ln()).collect(),
-                lookup: (0..k).map(|x| (x, x)).collect(),
-                rev_lookup: (0..k).map(|x| (x, x)).collect(),
                 rng: seed.map_or_else(
                     Xoshiro128Plus::from_entropy,
                     Xoshiro128Plus::seed_from_u64,
@@ -201,8 +181,6 @@ impl Sbd {
             };
 
             assert_eq!(inner.ln_weights.len(), k + 1);
-            assert_eq!(inner.lookup.len(), k);
-            assert_eq!(inner.rev_lookup.len(), k);
 
             Ok(Self {
                 beta: Beta::new_unchecked(1.0, alpha),
@@ -226,30 +204,10 @@ impl Sbd {
             .unwrap()
     }
 
-    fn find_next_category(&self) -> usize {
-        let mut k: usize = 0;
-        self.inner
-            .read()
-            .map(|inner| {
-                inner
-                    .lookup
-                    .keys()
-                    .find(|&&key| {
-                        let pred = key > k;
-                        k += 1;
-                        pred
-                    })
-                    .map(|&key| key - 1)
-                    .unwrap_or(k)
-            })
-            .unwrap()
-    }
-
     fn extend_until_mass_remains(&self, remaining_mass: f64) -> Vec<f64> {
         let mut ln_ws = Vec::new();
         loop {
-            let k = self.find_next_category();
-            let ln_w = self.extend(k);
+            let ln_w = self.extend_once();
             ln_ws.push(ln_w);
             if ln_w < remaining_mass {
                 return ln_ws;
@@ -257,7 +215,7 @@ impl Sbd {
         }
     }
 
-    fn extend(&self, x: usize) -> f64 {
+    fn extend_once(&self) -> f64 {
         let b: f64 = self
             .inner
             .write()
@@ -274,8 +232,6 @@ impl Sbd {
             .write()
             .map(|mut obj| {
                 obj.remaining_mass = rm_mass;
-                assert!(obj.lookup.insert(x, k).is_none());
-                obj.rev_lookup.insert(k, x);
                 obj.ln_weights
                     .last_mut()
                     .map(|last| *last = ln_w)
@@ -287,11 +243,15 @@ impl Sbd {
         ln_w
     }
 
+    fn extend(&self, n: usize) -> f64 {
+        for _ in 0..n - 1 {
+            self.extend_once();
+        }
+        self.extend_once()
+    }
+
     pub fn observed_values(&self) -> Vec<usize> {
-        self.inner
-            .read()
-            .map(|inner| inner.lookup.keys().copied().collect())
-            .unwrap()
+        (0..self.k()).collect()
     }
 }
 
@@ -309,23 +269,20 @@ impl HasSuffStat<usize> for Sbd {
 
 impl Rv<usize> for Sbd {
     fn ln_f(&self, x: &usize) -> f64 {
-        let ix_opt = self
-            .inner
-            .read()
-            .map(|obj| obj.lookup.get(x).copied())
-            .unwrap();
+        let k = self.k();
 
-        match ix_opt {
-            Some(ix) => {
-                self.inner.read().map(|obj| obj.ln_weights[ix]).unwrap()
-            }
-            None => self.extend(*x),
+        if *x < k {
+            self.inner.read().map(|obj| obj.ln_weights[*x]).unwrap()
+        } else {
             // None => {
             //     let alpha = self.alpha();
             //     let rm = self.inner.read().unwrap().remaining_mass;
             //     (rm * alpha / (1.0 + alpha)).ln()
             //     // rm.ln()
             // }
+            // eprintln!("x{x}, k{k}");
+            self.extend(x - k + 1);
+            self.ln_f(x)
         }
     }
 
@@ -336,22 +293,9 @@ impl Rv<usize> for Sbd {
         let k = self.k();
 
         if u < 1.0 - remaining_mass {
-            let x = self
-                .inner
-                .read()
-                .map(|obj| ln_pflip(&obj.ln_weights[..k], 1, false, rng)[0])
-                .unwrap();
-
             self.inner
                 .read()
-                .map(|obj| {
-                    *obj.rev_lookup
-                        .get(&x)
-                        .ok_or_else(|| {
-                            eprintln!("No entry `{}` in lookup: {:?}", x, obj);
-                        })
-                        .unwrap()
-                })
+                .map(|obj| ln_pflip(&obj.ln_weights[..k], 1, false, rng)[0])
                 .unwrap()
         } else {
             let ln_ws = self.extend_until_mass_remains(1.0 - u);
@@ -367,10 +311,7 @@ impl Mode<usize> for Sbd {
         Some(
             self.inner
                 .read()
-                .map(|inner| {
-                    let ix = argmax(&inner.ln_weights[..k])[0];
-                    inner.rev_lookup[&ix]
-                })
+                .map(|inner| argmax(&inner.ln_weights[..k])[0])
                 .unwrap(),
         )
     }
@@ -378,7 +319,6 @@ impl Mode<usize> for Sbd {
 
 #[cfg(test)]
 mod test {
-    use approx::assert_relative_eq;
     use rand::SeedableRng;
     use std::collections::HashMap;
 

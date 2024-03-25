@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SbdSuffStat {
     n: usize,
-    counts: BTreeMap<usize, usize>,
+    counts: Vec<usize>,
 }
 
 impl Default for SbdSuffStat {
@@ -21,11 +21,11 @@ impl SbdSuffStat {
     pub fn new() -> Self {
         Self {
             n: 0,
-            counts: BTreeMap::new(),
+            counts: Vec::new(),
         }
     }
 
-    pub fn counts(&self) -> &BTreeMap<usize, usize> {
+    pub fn counts(&self) -> &Vec<usize> {
         &self.counts
     }
 }
@@ -37,19 +37,18 @@ impl SuffStat<usize> for SbdSuffStat {
 
     fn observe(&mut self, x: &usize) {
         self.n += 1;
-        *self.counts.entry(*x).or_default() += 1;
+        if *x >= self.counts.len() {
+            self.counts.resize(*x + 1, 0)
+        }
+        self.counts[*x] += 1;
     }
 
     fn forget(&mut self, x: &usize) {
         if self.n == 1 {
-            assert!(self.counts.contains_key(x));
-            self.counts = BTreeMap::new();
+            self.counts = Vec::new();
             self.n = 0;
         } else {
-            self.counts.entry(*x).and_modify(|ct| *ct -= 1);
-            if self.counts[x] == 0 {
-                self.counts.remove(x).unwrap();
-            }
+            self.counts[*x] -= 1;
             self.n -= 1;
         }
     }

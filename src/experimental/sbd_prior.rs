@@ -36,7 +36,6 @@ impl Sb {
 #[derive(Clone, Debug)]
 pub struct SbPosterior {
     alpha: f64,
-    lookup: BTreeMap<usize, usize>,
     dir: Dirichlet,
 }
 
@@ -83,38 +82,23 @@ impl Rv<Sbd> for SbPosterior {
 
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Sbd {
         let weights: Vec<f64> = self.dir.draw(rng);
-        Sbd::from_weights_and_lookup(
-            &weights,
-            self.lookup.clone(),
-            self.alpha,
-            Some(rng.gen()),
-        )
-        .unwrap()
+        Sbd::from_weights(&weights, self.alpha, Some(rng.gen())).unwrap()
     }
 }
 
 fn sbpost_from_stat(alpha: f64, stat: &SbdSuffStat) -> SbPosterior {
-    let lookup: BTreeMap<usize, usize> = stat
-        .counts()
-        .keys()
-        .enumerate()
-        .map(|(ix, x)| (*x, ix))
-        .collect();
-
     let dir = {
         let alphas: Vec<f64> = stat
             .counts()
             .iter()
-            .map(|(_, &ct)| ct as f64 + alpha)
+            .map(|&ct| ct as f64 + alpha)
             .chain(std::iter::once(alpha))
             .collect();
 
         Dirichlet::new(alphas).unwrap()
     };
 
-    assert_eq!(lookup.len() + 1, dir.alphas().len());
-
-    SbPosterior { alpha, lookup, dir }
+    SbPosterior { alpha, dir }
 }
 
 fn sbm_from_stat(alpha: f64, stat: &SbdSuffStat) -> f64 {
@@ -124,11 +108,7 @@ fn sbm_from_stat(alpha: f64, stat: &SbdSuffStat) -> f64 {
 
     let stat = CategoricalSuffStat::from_parts_unchecked(
         stat.n(),
-        stat.counts()
-            .values()
-            .map(|&ct| ct as f64)
-            .chain(std::iter::once(0.0))
-            .collect(),
+        stat.counts().iter().map(|&ct| ct as f64).collect(),
     );
 
     let symdir = SymmetricDirichlet::new(alpha, stat.counts().len()).unwrap();
@@ -139,7 +119,7 @@ fn sbm_from_stat(alpha: f64, stat: &SbdSuffStat) -> f64 {
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct SbCache {
-    ln_weights: HashMap<usize, f64>,
+    ln_weights: Vec<f64>,
     ln_f_new: f64,
 }
 
@@ -151,21 +131,53 @@ impl ConjugatePrior<usize, Sbd> for Sb {
     fn ln_m_cache(&self) -> Self::LnMCache {}
 
     fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::LnPpCache {
-        let post = self.posterior(x);
-        // we'll need the alpha for computing 1 / (1 + alpha), which is the
-        // expected likelihood of a new class
-        let alpha = post.dir.alphas().last().unwrap();
-        // Need to norm the alphas to probabilities
-        let ln_norm = post.dir.alphas().iter().sum::<f64>().ln();
-        let ln_weights = post
-            .lookup
-            .iter()
-            .map(|(&x, &ix)| (x, post.dir.alphas[ix].ln() - ln_norm))
-            .collect();
+        let (ln_weights, ln_f_new) = match x {
+            DataOrSuffStat::Data(xs) => {
+                let mut stat = SbdSuffStat::new();
+                stat.observe_many(xs);
+                let p_new = (self.alpha / (1.0 + self.alpha)).ln();
+                let ln_norm = (stat.n() as f64 + self.alpha).ln();
+                let ln_weights = stat
+                    .counts()
+                    .iter()
+                    .map(|&ct| (ct as f64).ln() - ln_norm)
+                    .collect();
+                (ln_weights, p_new - ln_norm)
+            }
+            DataOrSuffStat::SuffStat(stat) => {
+                let ln_norm = (stat.n() as f64 + self.alpha).ln();
+                let p_new = (self.alpha / (1.0 + self.alpha)).ln();
+                let ln_weights = stat
+                    .counts()
+                    .iter()
+                    .map(|&ct| (ct as f64).ln() - ln_norm)
+                    .collect();
+                (ln_weights, p_new - ln_norm)
+            }
+            // FIXME: not right
+            DataOrSuffStat::None => (Vec::new(), self.alpha.ln()),
+        };
+
+        // let post = self.posterior(x);
+        // // we'll need the alpha for computing 1 / (1 + alpha), which is the
+        // // expected likelihood of a new class
+        // let alpha = post.dir.alphas().last().unwrap();
+        // // Need to norm the alphas to probabilities
+
+        // let ln_norm = (post.dir.alphas().iter().sum::<f64>()
+        //     + alpha
+        //     .ln();
+
+        // let ln_weights = post
+        //     .dir
+        //     .alphas()
+        //     .iter()
+        //     .map(|&alpha| alpha.ln() - ln_norm)
+        //     .collect();
 
         // // ln (1/(1 + alpha))
         // let ln_f_new = (1.0 + alpha).recip().ln() - ln_norm;
-        let ln_f_new = (alpha / (1.0 + alpha)).ln() - ln_norm;
+        // let ln_f_new = (alpha / (1.0 + alpha)).ln() - ln_norm;
 
         SbCache {
             ln_weights,
@@ -196,17 +208,39 @@ impl ConjugatePrior<usize, Sbd> for Sb {
             DataOrSuffStat::Data(xs) => {
                 let mut stat = SbdSuffStat::new();
                 stat.observe_many(xs);
-                sbm_from_stat(self.alpha, &stat)
+                // sbm_from_stat(self.alpha, &stat)
+                // crate::misc::lc
+                lcrp(stat.n(), stat.counts(), self.alpha)
             }
-            DataOrSuffStat::SuffStat(stat) => sbm_from_stat(self.alpha, stat),
+            DataOrSuffStat::SuffStat(stat) => {
+                // sbm_from_stat(self.alpha, stat)
+                lcrp(stat.n(), stat.counts(), self.alpha)
+            }
             DataOrSuffStat::None => panic!("Need data for posterior"),
         }
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &usize) -> f64 {
         // FIXME: I feel like this isn't quite right
-        cache.ln_weights.get(y).copied().unwrap_or(cache.ln_f_new)
+        cache.ln_weights.get(*y).copied().unwrap_or(cache.ln_f_new)
     }
+}
+
+use special::Gamma;
+
+pub fn lcrp(n: usize, cts: &[usize], alpha: f64) -> f64 {
+    let k: f64 = cts.len() as f64;
+    let gsum = cts.iter().fold(0.0, |acc, ct| {
+        if *ct > 0 {
+            acc + (*ct as f64).ln_gamma().0
+        } else {
+            acc
+        }
+    });
+    let cpnt_2 = alpha.ln_gamma().0 - (n as f64 + alpha).ln_gamma().0;
+    let ans = gsum + k.mul_add(alpha.ln(), cpnt_2);
+    // eprintln!("{cts:?}, {gsum}, {cpnt_2}, {ans}");
+    ans
 }
 
 #[cfg(test)]
