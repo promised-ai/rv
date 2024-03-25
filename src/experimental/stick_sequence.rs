@@ -144,10 +144,10 @@ impl StickSequence {
     }
 
     pub fn weight(&self, n: usize) -> f64 {
-        self.ensure_breaks(n);
+        self.ensure_breaks(n + 1);
         self.with_inner(|inner| {
             let ccdf = &inner.ccdf;
-            ccdf[n + 1] - ccdf[n]
+            ccdf[n] - ccdf[n + 1]
         })
     }
 

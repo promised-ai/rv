@@ -202,3 +202,36 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
         post.m(&DataOrSuffStat::Data(&[*y]))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::experimental::StickBreaking;
+    use crate::prelude::UnitPowerLaw;
+    use crate::experimental::Sbd; 
+    use crate::traits::*;  
+
+    #[test]
+    fn sb_ln_m_vs_monte_carlo() {
+        use crate::misc::logsumexp;
+
+        let n_samples = 8_000_000;
+        let xs: Vec<usize> = vec![1, 2, 3];
+
+        let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
+        let obs = DataOrSuffStat::Data(&xs);
+        let ln_m = sb.ln_m(&obs);
+
+        let mc_est = {
+            let ln_fs: Vec<f64> = sb
+                .sample_stream(&mut rand::thread_rng())
+                .take(n_samples)
+                .map(|sbd: Sbd| {
+                    xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>()
+                })
+                .collect();
+            logsumexp(&ln_fs) - (n_samples as f64).ln()
+        };
+        // high error tolerance. MC estimation is not the most accurate...
+        assert::close(ln_m, mc_est, 1e-2);
+    }
+} // mod tests
