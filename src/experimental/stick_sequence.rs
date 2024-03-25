@@ -179,3 +179,20 @@ impl StickSequence {
         self.with_inner_mut(|inner| inner.extend_until(&self.breaker, p));
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::prelude::UnitPowerLaw;
+    use crate::experimental::StickSequence;
+
+    #[test]
+    fn test_stickseq_weights() {
+        // test that `weights` gives the same as `weight` for all n
+        let breaker = UnitPowerLaw::new(10.0).unwrap();
+        let sticks = StickSequence::new(breaker, None);
+        let weights = sticks.weights(100);
+        for (n, w) in weights.iter().enumerate().take(100) {
+            assert_eq!(sticks.weight(n), *w);
+        }
+    }
+}
