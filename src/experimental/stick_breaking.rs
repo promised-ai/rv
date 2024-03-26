@@ -262,7 +262,7 @@ mod tests {
         let par: StickSequence = prior.draw(&mut rng);
         let par_data = &par.weights(3)[..];
         let prior_f = prior.f(&par_data);
-        
+
         // Likelihood
         let lik = Sbd::new(par);
         let lik_data = &lik.draw(&mut rng);
@@ -278,5 +278,16 @@ mod tests {
         // Bayes' law
         assert::close(post_f, prior_f * lik_f / ev, 1e-12);
     }
-    
+
+    #[test]
+    fn sb_pp_is_quotient_of_marginals() {
+        // pp(x|y) = m({x, y})/m(x)
+        let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
+        let sb_pp = sb.pp(&1, &DataOrSuffStat::Data(&vec![2]));
+
+        let m_1 = sb.m(&DataOrSuffStat::Data(&vec![1]));
+        let m_1_2 = sb.m(&DataOrSuffStat::Data(&vec![1, 2]));
+
+        assert::close(sb_pp, m_1_2 / m_1, 1e-12);
+    }
 } // mod tests
