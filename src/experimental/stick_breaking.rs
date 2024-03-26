@@ -2,9 +2,7 @@ use crate::experimental::Sbd;
 use crate::experimental::SbdSuffStat;
 use crate::experimental::StickBreakingSuffStat;
 use crate::experimental::StickSequence;
-use crate::prelude::Beta;
-use crate::prelude::BetaBinomial;
-use crate::prelude::UnitPowerLaw;
+use crate::prelude::*;
 use crate::suffstat_traits::*;
 use crate::traits::*;
 use itertools::EitherOrBoth::{Both, Left, Right};
@@ -209,28 +207,28 @@ mod tests {
     use super::*;
 
 
-    // #[test]
-    // fn sb_ln_m_vs_monte_carlo() {
-    //     use crate::misc::logsumexp;
+    #[test]
+    fn sb_ln_m_vs_monte_carlo() {
+        use crate::misc::logsumexp;
 
-    //     let n_samples = 1000;
-    //     let xs: Vec<usize> = vec![1, 2, 3];
+        let n_samples = 1000;
+        let xs: Vec<usize> = vec![1, 2, 3];
 
-    //     let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
-    //     let obs = DataOrSuffStat::Data(&xs);
-    //     let ln_m = sb.ln_m(&obs);
+        let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
+        let obs = DataOrSuffStat::Data(&xs);
+        let ln_m = sb.ln_m(&obs);
 
-    //     let mc_est = {
-    //         let ln_fs: Vec<f64> = sb
-    //             .sample_stream(&mut rand::thread_rng())
-    //             .take(n_samples)
-    //             .map(|sbd: Sbd| xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>())
-    //             .collect();
-    //         logsumexp(&ln_fs) - (n_samples as f64).ln()
-    //     };
-    //     // high error tolerance. MC estimation is not the most accurate...
-    //     assert::close(ln_m, mc_est, 1e-2);
-    // }
+        let mc_est = {
+            let ln_fs: Vec<f64> = sb
+                .sample_stream(&mut rand::thread_rng())
+                .take(n_samples)
+                .map(|sbd: Sbd| xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>())
+                .collect();
+            logsumexp(&ln_fs) - (n_samples as f64).ln()
+        };
+        // high error tolerance. MC estimation is not the most accurate...
+        assert::close(ln_m, mc_est, 1e-2);
+    }
 
     #[test]
     fn sb_pp_posterior() {
@@ -309,8 +307,8 @@ mod tests {
     fn sb_marginal_zero() {
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
         let m_0 = sb.m(&DataOrSuffStat::Data(&vec![0]));
-        let betabin = BetaBinomial::new(1, 3.0, 1.0).unwrap();
-        assert::close(m_0, betabin.f(&0), 1e-12);
+        let bern = Bernoulli::new(3.0 / 4.0).unwrap();
+        assert::close(m_0, bern.f(&0), 1e-12);
     }
 
 
@@ -318,8 +316,8 @@ mod tests {
     fn sb_postpred_zero() {
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
         let pp_0 = sb.pp(&0, &DataOrSuffStat::Data(&vec![0]));
-        let betabin = BetaBinomial::new(1, 3.0, 2.0).unwrap();
-        assert::close(pp_0, betabin.f(&0), 1e-12);
+        let bern = Bernoulli::new(3.0 / 5.0).unwrap();
+        assert::close(pp_0, bern.f(&0), 1e-12);
     }
 
     #[test]
@@ -341,5 +339,33 @@ mod tests {
 
         assert_eq!(post.prefix[0], Beta::new(4.0, 1.0).unwrap());
         assert_eq!(post.prefix[1], Beta::new(3.0, 2.0).unwrap());
+    }
+
+    #[test]
+    fn sb_logposterior_diff() {
+        // Like Bayes Law, but takes a quotient to cancel evidence
+
+        let mut rng = rand::thread_rng();
+        let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
+        let seq1: StickSequence = sb.draw(&mut rng);
+        let seq2: StickSequence = sb.draw(&mut rng);
+
+        let w1 = seq1.weights(2);
+        let w2 = seq2.weights(2);
+
+        let logprior_diff = sb.ln_f(&&w1[..]) - sb.ln_f(&&w2[..]);
+
+        let data = vec![1, 2];
+        let post = sb.posterior(&DataOrSuffStat::Data(&data));
+        let logpost_diff = post.ln_f(&&w1[..]) - post.ln_f(&&w2[..]);
+
+        let sbd1 = Sbd::new(seq1);
+        let sbd2 = Sbd::new(seq2);
+        let mut stat = SbdSuffStat::new();
+        stat.observe_many(&data);
+        let loglik_diff = sbd1.ln_f_stat(&stat) - sbd2.ln_f_stat(&stat);
+
+
+        assert::close(logpost_diff, loglik_diff + logprior_diff, 1e-12);
     }
 } // mod tests
