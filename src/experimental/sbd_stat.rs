@@ -21,7 +21,7 @@ impl SbdSuffStat {
             .iter()
             .map(|&x| {
                 s -= x;
-                (x, s)
+                (s, x)
             })
             .collect()
     }
@@ -53,7 +53,6 @@ impl HasSuffStat<usize> for Sbd {
         let counts = &stat.counts;
         let pairs = weights.iter().zip(counts.iter());
 
-        // This can probably be sped up later if necessary
         pairs.fold(0.0, |acc, (w, c)| (*c as f64).mul_add(w.ln(), acc))
     }
 }
@@ -87,7 +86,7 @@ mod tests {
         };
 
         let pairs = suff_stat.break_pairs();
-        assert_eq!(pairs, vec![(1, 5), (2, 3), (3, 0)]);
+        assert_eq!(pairs, vec![(5, 1), (3, 2), (0, 3)]);
     }
 
     // #[test]
