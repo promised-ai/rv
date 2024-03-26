@@ -170,13 +170,13 @@ impl UnitPowerLaw {
 
     /// Evaluate or fetch cached ln(a*b)
     #[inline]
-    fn alpha_inv(&self) -> f64 {
+    pub fn alpha_inv(&self) -> f64 {
         *self.alpha_inv.get_or_init(|| self.alpha.recip())
     }
 
     /// Evaluate or fetch cached ln(a*b)
     #[inline]
-    fn alpha_ln(&self) -> f64 {
+    pub fn alpha_ln(&self) -> f64 {
         *self.alpha_ln.get_or_init(|| self.alpha.ln())
     }
 }
