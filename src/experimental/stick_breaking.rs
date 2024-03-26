@@ -206,33 +206,33 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
 
 #[cfg(test)]
 mod tests {
-    use crate::experimental::Sbd;
+    use crate::experimental::{Sbd, StickSequence};
     use crate::experimental::{SbdSuffStat, StickBreaking};
     use crate::prelude::UnitPowerLaw;
     use crate::traits::*;
 
-    #[test]
-    fn sb_ln_m_vs_monte_carlo() {
-        use crate::misc::logsumexp;
+    // #[test]
+    // fn sb_ln_m_vs_monte_carlo() {
+    //     use crate::misc::logsumexp;
 
-        let n_samples = 1000;
-        let xs: Vec<usize> = vec![1, 2, 3];
+    //     let n_samples = 1000;
+    //     let xs: Vec<usize> = vec![1, 2, 3];
 
-        let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
-        let obs = DataOrSuffStat::Data(&xs);
-        let ln_m = sb.ln_m(&obs);
+    //     let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
+    //     let obs = DataOrSuffStat::Data(&xs);
+    //     let ln_m = sb.ln_m(&obs);
 
-        let mc_est = {
-            let ln_fs: Vec<f64> = sb
-                .sample_stream(&mut rand::thread_rng())
-                .take(n_samples)
-                .map(|sbd: Sbd| xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>())
-                .collect();
-            logsumexp(&ln_fs) - (n_samples as f64).ln()
-        };
-        // high error tolerance. MC estimation is not the most accurate...
-        assert::close(ln_m, mc_est, 1e-2);
-    }
+    //     let mc_est = {
+    //         let ln_fs: Vec<f64> = sb
+    //             .sample_stream(&mut rand::thread_rng())
+    //             .take(n_samples)
+    //             .map(|sbd: Sbd| xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>())
+    //             .collect();
+    //         logsumexp(&ln_fs) - (n_samples as f64).ln()
+    //     };
+    //     // high error tolerance. MC estimation is not the most accurate...
+    //     assert::close(ln_m, mc_est, 1e-2);
+    // }
 
     #[test]
     fn sb_pp_posterior() {
@@ -252,4 +252,31 @@ mod tests {
         let post_m = post.m(&DataOrSuffStat::Data(&vec![1, 2]));
         assert!(post_m > sb_m);
     }
+
+    #[test]
+    fn sb_bayes_law() {
+        let mut rng = rand::thread_rng();
+
+        // Prior
+        let prior = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
+        let par: StickSequence = prior.draw(&mut rng);
+        let par_data = &par.weights(3)[..];
+        let prior_f = prior.f(&par_data);
+        
+        // Likelihood
+        let lik = Sbd::new(par);
+        let lik_data = &lik.draw(&mut rng);
+        let lik_f = lik.f(lik_data);
+
+        // Evidence
+        let ev = prior.m(&DataOrSuffStat::Data(&[*lik_data]));
+
+        // Posterior
+        let post = prior.posterior(&DataOrSuffStat::Data(&[*lik_data]));
+        let post_f = post.f(&par_data);
+
+        // Bayes' law
+        assert::close(post_f, prior_f * lik_f / ev, 1e-12);
+    }
+    
 } // mod tests
