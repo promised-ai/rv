@@ -297,8 +297,8 @@ mod tests {
     #[test]
     fn sb_pp_posterior() {
         let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
-        let sb_pp = sb.pp(&3, &DataOrSuffStat::Data(&vec![1, 2]));
-        let post = sb.posterior(&DataOrSuffStat::Data(&vec![1, 2]));
+        let sb_pp = sb.pp(&3, &DataOrSuffStat::Data(&[1, 2]));
+        let post = sb.posterior(&DataOrSuffStat::Data(&[1, 2]));
         let post_f =
             post.pp(&3, &DataOrSuffStat::SuffStat(&SbdSuffStat::new()));
         assert::close(sb_pp, post_f, 1e-10);
@@ -307,9 +307,9 @@ mod tests {
     #[test]
     fn sb_repeated_obs_more_likely() {
         let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
-        let sb_m = sb.m(&DataOrSuffStat::Data(&vec![1, 2]));
-        let post = sb.posterior(&DataOrSuffStat::Data(&vec![1, 2]));
-        let post_m = post.m(&DataOrSuffStat::Data(&vec![1, 2]));
+        let sb_m = sb.m(&DataOrSuffStat::Data(&[1, 2]));
+        let post = sb.posterior(&DataOrSuffStat::Data(&[1, 2]));
+        let post_m = post.m(&DataOrSuffStat::Data(&[1, 2]));
         assert!(post_m > sb_m);
     }
 
@@ -345,10 +345,10 @@ mod tests {
     fn sb_pp_is_quotient_of_marginals() {
         // pp(x|y) = m({x, y})/m(x)
         let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
-        let sb_pp = sb.pp(&1, &DataOrSuffStat::Data(&vec![0]));
+        let sb_pp = sb.pp(&1, &DataOrSuffStat::Data(&[0]));
 
-        let m_1 = sb.m(&DataOrSuffStat::Data(&vec![0]));
-        let m_1_2 = sb.m(&DataOrSuffStat::Data(&vec![0, 1]));
+        let m_1 = sb.m(&DataOrSuffStat::Data(&[0]));
+        let m_1_2 = sb.m(&DataOrSuffStat::Data(&[0, 1]));
 
         assert::close(sb_pp, m_1_2 / m_1, 1e-12);
     }
@@ -359,9 +359,9 @@ mod tests {
         let sb_2 = StickBreaking::new(UnitPowerLaw::new(2.0).unwrap());
         let sb_pt5 = StickBreaking::new(UnitPowerLaw::new(0.5).unwrap());
 
-        let m_pt5_10 = sb_pt5.m(&DataOrSuffStat::Data(&vec![10]));
-        let m_2_10 = sb_2.m(&DataOrSuffStat::Data(&vec![10]));
-        let m_5_10 = sb_5.m(&DataOrSuffStat::Data(&vec![10]));
+        let m_pt5_10 = sb_pt5.m(&DataOrSuffStat::Data(&[10]));
+        let m_2_10 = sb_2.m(&DataOrSuffStat::Data(&[10]));
+        let m_5_10 = sb_5.m(&DataOrSuffStat::Data(&[10]));
 
         assert!(m_pt5_10 < m_2_10);
         assert!(m_2_10 < m_5_10);
@@ -370,7 +370,7 @@ mod tests {
     #[test]
     fn sb_marginal_zero() {
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
-        let m_0 = sb.m(&DataOrSuffStat::Data(&vec![0]));
+        let m_0 = sb.m(&DataOrSuffStat::Data(&[0]));
         let bern = Bernoulli::new(3.0 / 4.0).unwrap();
         assert::close(m_0, bern.f(&0), 1e-12);
     }
@@ -378,7 +378,7 @@ mod tests {
     #[test]
     fn sb_postpred_zero() {
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
-        let pp_0 = sb.pp(&0, &DataOrSuffStat::Data(&vec![0]));
+        let pp_0 = sb.pp(&0, &DataOrSuffStat::Data(&[0]));
         let bern = Bernoulli::new(3.0 / 5.0).unwrap();
         assert::close(pp_0, bern.f(&0), 1e-12);
     }
@@ -387,10 +387,10 @@ mod tests {
     fn sb_pp_zero_marginals() {
         // pp(x|y) = m({x, y})/m(x)
         let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
-        let sb_pp = sb.pp(&0, &DataOrSuffStat::Data(&vec![0]));
+        let sb_pp = sb.pp(&0, &DataOrSuffStat::Data(&[0]));
 
-        let m_1 = sb.m(&DataOrSuffStat::Data(&vec![0]));
-        let m_1_2 = sb.m(&DataOrSuffStat::Data(&vec![0, 0]));
+        let m_1 = sb.m(&DataOrSuffStat::Data(&[0]));
+        let m_1_2 = sb.m(&DataOrSuffStat::Data(&[0, 0]));
 
         assert::close(sb_pp, m_1_2 / m_1, 1e-12);
     }
@@ -398,7 +398,7 @@ mod tests {
     #[test]
     fn sb_posterior_obs_one() {
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
-        let post = sb.posterior(&DataOrSuffStat::Data(&vec![1]));
+        let post = sb.posterior(&DataOrSuffStat::Data(&[1]));
 
         assert_eq!(post.break_prefix[0], Beta::new(4.0, 1.0).unwrap());
         assert_eq!(post.break_prefix[1], Beta::new(3.0, 2.0).unwrap());
@@ -418,7 +418,7 @@ mod tests {
 
         let logprior_diff = sb.ln_f(&w1) - sb.ln_f(&w2);
 
-        let data = vec![1, 2];
+        let data = [1, 2];
         let stat = SbdSuffStat::from(&data[..]);
         let post = sb.posterior(&DataOrSuffStat::SuffStat(&stat));
         let logpost_diff = post.ln_f(&w1) - post.ln_f(&w2);
