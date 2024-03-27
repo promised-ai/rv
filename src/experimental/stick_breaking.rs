@@ -206,7 +206,6 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
 mod tests {
     use super::*;
 
-
     #[test]
     fn sb_ln_m_vs_monte_carlo() {
         use crate::misc::logsumexp;
@@ -311,7 +310,6 @@ mod tests {
         assert::close(m_0, bern.f(&0), 1e-12);
     }
 
-
     #[test]
     fn sb_postpred_zero() {
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
@@ -364,7 +362,6 @@ mod tests {
         let mut stat = SbdSuffStat::new();
         stat.observe_many(&data);
         let loglik_diff = sbd1.ln_f_stat(&stat) - sbd2.ln_f_stat(&stat);
-
 
         assert::close(logpost_diff, loglik_diff + logprior_diff, 1e-12);
     }
