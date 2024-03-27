@@ -151,6 +151,8 @@ impl StickSequence {
         })
     }
 
+    /// Returns the weights of the first `n` sticks.
+    /// Note that this includes sticks `0..n-1`, but not `n`.
     pub fn weights(&self, n: usize) -> Vec<f64> {
         self.ensure_breaks(n);
         self.with_inner(|inner| {
@@ -191,7 +193,8 @@ mod tests {
         let breaker = UnitPowerLaw::new(10.0).unwrap();
         let sticks = StickSequence::new(breaker, None);
         let weights = sticks.weights(100);
-        for (n, w) in weights.iter().enumerate().take(100) {
+        assert_eq!(weights.len(), 100);
+        for (n, w) in weights.iter().enumerate() {
             assert_eq!(sticks.weight(n), *w);
         }
     }
