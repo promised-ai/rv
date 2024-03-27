@@ -96,24 +96,21 @@ impl HasDensity<PartialWeights> for StickBreaking {
     ///
     /// The natural logarithm of the density function.
     fn ln_f(&self, w: &PartialWeights) -> f64 {
-        // let pairs = x.break_pairs();
-        // let new_prefix = self
-        //     .prefix
-        //     .iter()
-        //     .zip_longest(pairs)
-        //     .map(|pair| match pair {
-        //         Left(beta) => beta.clone(),
-        //         Right((a, b)) => {
-        //             Beta::new(self.breaker.alpha() + a as f64, 1.0 + b as f64)
-        //                 .unwrap()
-        //         }
-        //         Both(beta, (a, b)) => {
-        //             Beta::new(beta.alpha() + a as f64, beta.beta() + b as f64)
-        //                 .unwrap()
-        //         }
-        //     })
+        let bs = BreakSequence::from(w);
 
-        todo!()
+        self
+            .break_prefix
+            .iter()
+            .zip_longest(bs.0.iter())
+            .map(|pair| match pair {
+                Left(_beta) => 0.0,
+                Right(p) => {
+                    self.break_tail.ln_f(p)
+                }
+                Both(beta, p) => {
+                    beta.ln_f(p)
+                }
+            }).sum()
     }
 }
 
@@ -325,22 +322,22 @@ mod tests {
         let prior = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
         let par: StickSequence = prior.draw(&mut rng);
         let par_data = par.weights(3);
-        let prior_f = prior.f(&par_data);
+        let prior_lnf = prior.ln_f(&par_data);
 
         // Likelihood
         let lik = Sbd::new(par);
         let lik_data: &usize = &0;
-        let lik_f = lik.f(lik_data);
+        let lik_lnf = lik.ln_f(lik_data);
 
         // Evidence
-        let ev = prior.m(&DataOrSuffStat::Data(&[*lik_data]));
+        let ln_ev = prior.ln_m(&DataOrSuffStat::Data(&[*lik_data]));
 
         // Posterior
         let post = prior.posterior(&DataOrSuffStat::Data(&[*lik_data]));
-        let post_f = post.f(&par_data);
+        let post_lnf = post.ln_f(&par_data);
 
         // Bayes' law
-        assert::close(post_f, prior_f * lik_f / ev, 1e-12);
+        assert::close(post_lnf, prior_lnf + lik_lnf - ln_ev, 1e-12);
     }
 
     // FIXME
