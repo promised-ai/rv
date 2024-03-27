@@ -98,19 +98,15 @@ impl HasDensity<PartialWeights> for StickBreaking {
     fn ln_f(&self, w: &PartialWeights) -> f64 {
         let bs = BreakSequence::from(w);
 
-        self
-            .break_prefix
+        self.break_prefix
             .iter()
             .zip_longest(bs.0.iter())
             .map(|pair| match pair {
                 Left(_beta) => 0.0,
-                Right(p) => {
-                    self.break_tail.ln_f(p)
-                }
-                Both(beta, p) => {
-                    beta.ln_f(p)
-                }
-            }).sum()
+                Right(p) => self.break_tail.ln_f(p),
+                Both(beta, p) => beta.ln_f(p),
+            })
+            .sum()
     }
 }
 
