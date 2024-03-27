@@ -25,7 +25,7 @@ fn main() {
         let post = sbp.posterior_from_suffstat(&stat);
 
         // Print the posterior parameters of each Beta distribution.
-        post.prefix.iter().for_each(|p| {
+        post.break_prefix.iter().for_each(|p| {
             let alpha = p.alpha();
             let beta = p.beta();
             let p = alpha / (alpha + beta);

@@ -51,7 +51,7 @@ impl HasSuffStat<usize> for Sbd {
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
         let weights = &self.sticks.weights(stat.counts.len());
         let counts = &stat.counts;
-        let pairs = weights.iter().zip(counts.iter());
+        let pairs = weights.0.iter().zip(counts.iter());
 
         pairs.fold(0.0, |acc, (w, c)| (*c as f64).mul_add(w.ln(), acc))
     }

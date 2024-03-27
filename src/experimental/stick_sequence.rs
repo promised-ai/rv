@@ -7,6 +7,7 @@ use std::sync::{Arc, RwLock};
 // use super::sticks_stat::StickBreakingSuffStat;
 use crate::prelude::UnitPowerLaw;
 use crate::traits::*;
+use crate::experimental::stick_breaking::PartialWeights;
 
 // We'd like to be able to serialize and deserialize StickSequence, but serde can't handle
 // `Arc` or `RwLock`. So we use `StickSequenceFmt` as an intermediate type.
@@ -153,9 +154,9 @@ impl StickSequence {
 
     /// Returns the weights of the first `n` sticks.
     /// Note that this includes sticks `0..n-1`, but not `n`.
-    pub fn weights(&self, n: usize) -> Vec<f64> {
+    pub fn weights(&self, n: usize) -> PartialWeights {
         self.ensure_breaks(n);
-        self.with_inner(|inner| {
+        let w = self.with_inner(|inner| {
             let mut last_p = 1.0;
             inner
                 .ccdf
@@ -167,7 +168,8 @@ impl StickSequence {
                     w
                 })
                 .collect()
-        })
+        });
+        PartialWeights(w)
     }
 
     pub fn breaker(&self) -> UnitPowerLaw {
@@ -193,8 +195,8 @@ mod tests {
         let breaker = UnitPowerLaw::new(10.0).unwrap();
         let sticks = StickSequence::new(breaker, None);
         let weights = sticks.weights(100);
-        assert_eq!(weights.len(), 100);
-        for (n, w) in weights.iter().enumerate() {
+        assert_eq!(weights.0.len(), 100);
+        for (n, w) in weights.0.iter().enumerate() {
             assert_eq!(sticks.weight(n), *w);
         }
     }

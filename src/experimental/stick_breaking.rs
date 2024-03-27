@@ -17,8 +17,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq)]
 /// Represents a stick-breaking process.
 pub struct StickBreaking {
-    pub breaker: UnitPowerLaw,
-    pub prefix: Vec<Beta>,
+    pub break_prefix: Vec<Beta>,
+    pub break_tail: UnitPowerLaw,
 }
 
 /// Implementation of the `StickBreaking` struct.
@@ -39,17 +39,47 @@ impl StickBreaking {
     /// use rv::experimental::StickBreaking;
     ///
     /// let alpha = 5.0;
-    /// let breaker = UnitPowerLaw::new(alpha).unwrap();
-    /// let stick_breaking = StickBreaking::new(breaker);
+    /// let stick_breaking = StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
     /// ```
     pub fn new(breaker: UnitPowerLaw) -> Self {
-        let prefix = Vec::new();
-        Self { breaker, prefix }
+        let break_prefix = Vec::new();
+        Self {  break_prefix, break_tail: breaker}
     }
 }
 
+pub struct PartialWeights(pub Vec<f64>);
+pub struct BreakSequence(pub Vec<f64>);
+
+impl From<&BreakSequence> for PartialWeights {
+    fn from(seq: &BreakSequence) -> Self {
+        let mut total = 1.0;
+        let ws = seq.0.iter().map(|b| {
+            let w = b * total;
+            total *= b;
+            w
+        })
+        .collect();
+        PartialWeights(ws)
+    }
+}
+
+impl From<&PartialWeights> for BreakSequence {
+    fn from(ws: &PartialWeights) -> Self {
+        let mut last_w = 1.0;
+        let bs = ws.0.iter().map(|w| {
+            let b = w /  last_w ;
+            last_w = *w;
+            b
+        })
+        .collect();
+        BreakSequence(bs)
+    }
+}
+
+
+
 /// Implements the `HasDensity` trait for `StickBreaking`.
-impl HasDensity<&[f64]> for StickBreaking {
+impl HasDensity<PartialWeights> for StickBreaking {
     /// Calculates the natural logarithm of the density function for the given input `x`.
     ///
     /// # Arguments
@@ -59,9 +89,37 @@ impl HasDensity<&[f64]> for StickBreaking {
     /// # Returns
     ///
     /// The natural logarithm of the density function.
-    fn ln_f(&self, x: &&[f64]) -> f64 {
-        let stat = StickBreakingSuffStat::from(x);
-        self.ln_f_stat(&stat)
+    fn ln_f(&self, w: &PartialWeights) -> f64 {
+
+        // let pairs = x.break_pairs();
+        // let new_prefix = self
+        //     .prefix
+        //     .iter()
+        //     .zip_longest(pairs)
+        //     .map(|pair| match pair {
+        //         Left(beta) => beta.clone(),
+        //         Right((a, b)) => {
+        //             Beta::new(self.breaker.alpha() + a as f64, 1.0 + b as f64)
+        //                 .unwrap()
+        //         }
+        //         Both(beta, (a, b)) => {
+        //             Beta::new(beta.alpha() + a as f64, beta.beta() + b as f64)
+        //                 .unwrap()
+        //         }
+        //     })
+
+
+
+
+
+
+
+
+
+
+
+
+        todo!()
     }
 }
 
@@ -78,7 +136,8 @@ impl Sampleable<StickSequence> for StickBreaking {
     fn draw<R: Rng>(&self, rng: &mut R) -> StickSequence {
         let seed: u64 = rng.gen();
 
-        StickSequence::new(self.breaker.clone(), Some(seed))
+        // TODO: Account for the `break_prefix`
+        StickSequence::new(self.break_tail.clone(), Some(seed))
     }
 }
 
@@ -116,13 +175,13 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     fn posterior_from_suffstat(&self, stat: &SbdSuffStat) -> Self::Posterior {
         let pairs = stat.break_pairs();
         let new_prefix = self
-            .prefix
+            .break_prefix
             .iter()
             .zip_longest(pairs)
             .map(|pair| match pair {
                 Left(beta) => beta.clone(),
                 Right((a, b)) => {
-                    Beta::new(self.breaker.alpha() + a as f64, 1.0 + b as f64)
+                    Beta::new(self.break_tail.alpha() + a as f64, 1.0 + b as f64)
                         .unwrap()
                 }
                 Both(beta, (a, b)) => {
@@ -132,8 +191,8 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
             })
             .collect();
         StickBreaking {
-            breaker: self.breaker.clone(),
-            prefix: new_prefix,
+            break_prefix: new_prefix,
+            break_tail: self.break_tail.clone(),
         }
     }
     fn posterior(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::Posterior {
@@ -165,10 +224,10 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
             DataOrSuffStat::SuffStat(stat) => stat.break_pairs(),
         };
         let params = self
-            .prefix
+            .break_prefix
             .iter()
             .map(|b| (b.alpha(), b.beta()))
-            .chain(std::iter::repeat((self.breaker.alpha(), 1.0)));
+            .chain(std::iter::repeat((self.break_tail.alpha(), 1.0)));
         count_pairs
             .iter()
             .zip(params)
@@ -202,9 +261,25 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn partial_weights_to_break_sequence() {
+        let ws = PartialWeights(vec![0.4, 0.3, 0.2]);
+        let bs = BreakSequence::from(&ws);
+        assert::close(ws.0, PartialWeights::from(&bs).0, 1e-10);
+    }
+
+    #[test]
+    fn break_sequence_to_partial_weights() {
+        let bs = BreakSequence(vec![0.4, 0.3, 0.2]);
+        let ws = PartialWeights::from(&bs);
+        assert::close(bs.0, BreakSequence::from(&ws).0, 1e-10);
+    }
+
 
     #[test]
     fn sb_ln_m_vs_monte_carlo() {
@@ -256,7 +331,7 @@ mod tests {
         // Prior
         let prior = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
         let par: StickSequence = prior.draw(&mut rng);
-        let par_data = &par.weights(3)[..];
+        let par_data = par.weights(3);
         let prior_f = prior.f(&par_data);
 
         // Likelihood
@@ -335,8 +410,8 @@ mod tests {
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
         let post = sb.posterior(&DataOrSuffStat::Data(&vec![1]));
 
-        assert_eq!(post.prefix[0], Beta::new(4.0, 1.0).unwrap());
-        assert_eq!(post.prefix[1], Beta::new(3.0, 2.0).unwrap());
+        assert_eq!(post.break_prefix[0], Beta::new(4.0, 1.0).unwrap());
+        assert_eq!(post.break_prefix[1], Beta::new(3.0, 2.0).unwrap());
     }
 
     #[test]
@@ -351,16 +426,15 @@ mod tests {
         let w1 = seq1.weights(2);
         let w2 = seq2.weights(2);
 
-        let logprior_diff = sb.ln_f(&&w1[..]) - sb.ln_f(&&w2[..]);
+        let logprior_diff = sb.ln_f(&w1) - sb.ln_f(&w2);
 
         let data = vec![1, 2];
-        let post = sb.posterior(&DataOrSuffStat::Data(&data));
-        let logpost_diff = post.ln_f(&&w1[..]) - post.ln_f(&&w2[..]);
+        let stat = SbdSuffStat::from(&data[..]);
+        let post = sb.posterior(&DataOrSuffStat::SuffStat(&stat));
+        let logpost_diff = post.ln_f(&w1) - post.ln_f(&w2);
 
         let sbd1 = Sbd::new(seq1);
         let sbd2 = Sbd::new(seq2);
-        let mut stat = SbdSuffStat::new();
-        stat.observe_many(&data);
         let loglik_diff = sbd1.ln_f_stat(&stat) - sbd2.ln_f_stat(&stat);
 
         assert::close(logpost_diff, loglik_diff + logprior_diff, 1e-12);
