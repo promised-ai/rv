@@ -1,10 +1,8 @@
-use crate::data::{CategoricalSuffStat, DataOrSuffStat};
+use crate::data::DataOrSuffStat;
 use crate::dist::{Beta, Dirichlet};
-use crate::prelude::{Categorical, SymmetricDirichlet};
 use crate::traits::{ConjugatePrior, Rv, SuffStat};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap};
 
 use super::sbd::Sbd;
 use super::sbd_stat::SbdSuffStat;
@@ -101,26 +99,92 @@ fn sbpost_from_stat(alpha: f64, stat: &SbdSuffStat) -> SbPosterior {
     SbPosterior { alpha, dir }
 }
 
-fn sbm_from_stat(alpha: f64, stat: &SbdSuffStat) -> f64 {
-    if stat.n() == 0 {
-        panic!("SBD Stat is empty {:?}", stat);
-    }
-
-    let stat = CategoricalSuffStat::from_parts_unchecked(
-        stat.n(),
-        stat.counts().iter().map(|&ct| ct as f64).collect(),
-    );
-
-    let symdir = SymmetricDirichlet::new(alpha, stat.counts().len()).unwrap();
-    symdir.ln_m(&DataOrSuffStat::SuffStat::<usize, Categorical>(&stat))
-}
-
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct SbCache {
     ln_weights: Vec<f64>,
     ln_f_new: f64,
+}
+
+impl SbCache {
+    pub fn k(&self) -> usize {
+        self.ln_weights.len()
+    }
+}
+
+fn gks(stat: &SbdSuffStat) -> Vec<f64> {
+    let n = stat.n();
+    let mut acc = n;
+    stat.counts()
+        .iter()
+        .rev()
+        .map(|ct| {
+            let g = acc;
+            acc -= ct;
+            g as f64
+        })
+        .collect()
+}
+
+fn sbm_from_stat(stat: &SbdSuffStat, alpha: f64) -> f64 {
+    let gk = gks(stat);
+    let n = stat.n() as f64;
+    let ln_alpha = alpha.ln();
+
+    // TODO: simply
+    let term_a = Gamma::ln_gamma(alpha).0 - Gamma::ln_gamma(alpha + n).0;
+    // b = sum(log_alpha - np.log(gk + alpha) for gk in gks)
+    let term_b = gk.iter().map(|g| ln_alpha - (g + alpha).ln()).sum::<f64>();
+    // c = sum(loggamma(ct + 1) for ct in counts)
+    let term_c = stat
+        .counts()
+        .iter()
+        .map(|&ct| {
+            if ct > 1 {
+                Gamma::ln_gamma(ct as f64 + 1.0).0
+            } else {
+                0.0
+            }
+        })
+        .sum::<f64>();
+
+    term_a + term_b + term_c
+}
+
+fn sbpp_cache(x: &SbdSuffStat, alpha: f64) -> SbCache {
+    let gk = gks(x);
+    let n = x.n() as f64;
+    let k = gk.len();
+
+    let mut ln_weights = Vec::with_capacity(k);
+
+    let term_a = -(n + alpha).ln();
+
+    for y in 0..k {
+        let term_b = ((x.counts()[y] + 1) as f64).ln();
+        let term_c = gk
+            .iter()
+            .skip(y + 1)
+            .map(|&g| ((g + alpha) / (g + alpha + 1.0)).ln())
+            .sum::<f64>();
+
+        ln_weights.push(term_a + term_b + term_c)
+    }
+
+    let ln_f_new = {
+        let term_b = gk
+            .iter()
+            .map(|&g| ((g + alpha) / (g + alpha + 1.0)).ln())
+            .sum::<f64>();
+
+        term_a + term_b + alpha.ln() - (1.0 + alpha).ln()
+    };
+
+    SbCache {
+        ln_weights,
+        ln_f_new,
+    }
 }
 
 impl ConjugatePrior<usize, Sbd> for Sb {
@@ -131,57 +195,17 @@ impl ConjugatePrior<usize, Sbd> for Sb {
     fn ln_m_cache(&self) -> Self::LnMCache {}
 
     fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::LnPpCache {
-        let (ln_weights, ln_f_new) = match x {
+        match x {
             DataOrSuffStat::Data(xs) => {
                 let mut stat = SbdSuffStat::new();
                 stat.observe_many(xs);
-                let p_new = (self.alpha / (1.0 + self.alpha)).ln();
-                let ln_norm = (stat.n() as f64 + self.alpha).ln();
-                let ln_weights = stat
-                    .counts()
-                    .iter()
-                    .map(|&ct| (ct as f64).ln() - ln_norm)
-                    .collect();
-                (ln_weights, p_new - ln_norm)
+                sbpp_cache(&stat, self.alpha)
             }
-            DataOrSuffStat::SuffStat(stat) => {
-                let ln_norm = (stat.n() as f64 + self.alpha).ln();
-                let p_new = (self.alpha / (1.0 + self.alpha)).ln();
-                let ln_weights = stat
-                    .counts()
-                    .iter()
-                    .map(|&ct| (ct as f64).ln() - ln_norm)
-                    .collect();
-                (ln_weights, p_new - ln_norm)
-            }
-            // FIXME: not right
-            DataOrSuffStat::None => (Vec::new(), self.alpha.ln()),
-        };
-
-        // let post = self.posterior(x);
-        // // we'll need the alpha for computing 1 / (1 + alpha), which is the
-        // // expected likelihood of a new class
-        // let alpha = post.dir.alphas().last().unwrap();
-        // // Need to norm the alphas to probabilities
-
-        // let ln_norm = (post.dir.alphas().iter().sum::<f64>()
-        //     + alpha
-        //     .ln();
-
-        // let ln_weights = post
-        //     .dir
-        //     .alphas()
-        //     .iter()
-        //     .map(|&alpha| alpha.ln() - ln_norm)
-        //     .collect();
-
-        // // ln (1/(1 + alpha))
-        // let ln_f_new = (1.0 + alpha).recip().ln() - ln_norm;
-        // let ln_f_new = (alpha / (1.0 + alpha)).ln() - ln_norm;
-
-        SbCache {
-            ln_weights,
-            ln_f_new,
+            DataOrSuffStat::SuffStat(ref stat) => sbpp_cache(stat, self.alpha),
+            DataOrSuffStat::None => SbCache {
+                ln_weights: Vec::new(),
+                ln_f_new: 0.0,
+            },
         }
     }
 
@@ -208,40 +232,23 @@ impl ConjugatePrior<usize, Sbd> for Sb {
             DataOrSuffStat::Data(xs) => {
                 let mut stat = SbdSuffStat::new();
                 stat.observe_many(xs);
-                // sbm_from_stat(self.alpha, &stat)
-                // crate::misc::lc
-                lcrp(stat.n(), stat.counts(), self.alpha)
+                sbm_from_stat(&stat, self.alpha)
             }
-            DataOrSuffStat::SuffStat(stat) => {
-                // sbm_from_stat(self.alpha, stat)
-                lcrp(stat.n(), stat.counts(), self.alpha)
-            }
-            DataOrSuffStat::None => panic!("Need data for posterior"),
+            DataOrSuffStat::SuffStat(stat) => sbm_from_stat(&stat, self.alpha),
+            DataOrSuffStat::None => panic!("Need data for ln_m"),
         }
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &usize) -> f64 {
-        // FIXME: I feel like this isn't quite right
-        cache.ln_weights.get(*y).copied().unwrap_or(cache.ln_f_new)
+        if *y >= cache.k() {
+            cache.ln_f_new
+        } else {
+            cache.ln_weights[*y]
+        }
     }
 }
 
 use special::Gamma;
-
-pub fn lcrp(n: usize, cts: &[usize], alpha: f64) -> f64 {
-    let k: f64 = cts.len() as f64;
-    let gsum = cts.iter().fold(0.0, |acc, ct| {
-        if *ct > 0 {
-            acc + (*ct as f64).ln_gamma().0
-        } else {
-            acc
-        }
-    });
-    let cpnt_2 = alpha.ln_gamma().0 - (n as f64 + alpha).ln_gamma().0;
-    let ans = gsum + k.mul_add(alpha.ln(), cpnt_2);
-    // eprintln!("{cts:?}, {gsum}, {cpnt_2}, {ans}");
-    ans
-}
 
 #[cfg(test)]
 mod tests {
