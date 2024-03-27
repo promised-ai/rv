@@ -43,7 +43,10 @@ impl StickBreaking {
     /// ```
     pub fn new(breaker: UnitPowerLaw) -> Self {
         let break_prefix = Vec::new();
-        Self {  break_prefix, break_tail: breaker}
+        Self {
+            break_prefix,
+            break_tail: breaker,
+        }
     }
 }
 
@@ -53,12 +56,15 @@ pub struct BreakSequence(pub Vec<f64>);
 impl From<&BreakSequence> for PartialWeights {
     fn from(seq: &BreakSequence) -> Self {
         let mut total = 1.0;
-        let ws = seq.0.iter().map(|b| {
-            let w = b * total;
-            total *= b;
-            w
-        })
-        .collect();
+        let ws = seq
+            .0
+            .iter()
+            .map(|b| {
+                let w = b * total;
+                total *= b;
+                w
+            })
+            .collect();
         PartialWeights(ws)
     }
 }
@@ -66,17 +72,17 @@ impl From<&BreakSequence> for PartialWeights {
 impl From<&PartialWeights> for BreakSequence {
     fn from(ws: &PartialWeights) -> Self {
         let mut last_w = 1.0;
-        let bs = ws.0.iter().map(|w| {
-            let b = w /  last_w ;
-            last_w = *w;
-            b
-        })
-        .collect();
+        let bs =
+            ws.0.iter()
+                .map(|w| {
+                    let b = w / last_w;
+                    last_w = *w;
+                    b
+                })
+                .collect();
         BreakSequence(bs)
     }
 }
-
-
 
 /// Implements the `HasDensity` trait for `StickBreaking`.
 impl HasDensity<PartialWeights> for StickBreaking {
@@ -90,7 +96,6 @@ impl HasDensity<PartialWeights> for StickBreaking {
     ///
     /// The natural logarithm of the density function.
     fn ln_f(&self, w: &PartialWeights) -> f64 {
-
         // let pairs = x.break_pairs();
         // let new_prefix = self
         //     .prefix
@@ -107,17 +112,6 @@ impl HasDensity<PartialWeights> for StickBreaking {
         //                 .unwrap()
         //         }
         //     })
-
-
-
-
-
-
-
-
-
-
-
 
         todo!()
     }
@@ -180,10 +174,11 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
             .zip_longest(pairs)
             .map(|pair| match pair {
                 Left(beta) => beta.clone(),
-                Right((a, b)) => {
-                    Beta::new(self.break_tail.alpha() + a as f64, 1.0 + b as f64)
-                        .unwrap()
-                }
+                Right((a, b)) => Beta::new(
+                    self.break_tail.alpha() + a as f64,
+                    1.0 + b as f64,
+                )
+                .unwrap(),
                 Both(beta, (a, b)) => {
                     Beta::new(beta.alpha() + a as f64, beta.beta() + b as f64)
                         .unwrap()
@@ -261,7 +256,6 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -279,7 +273,6 @@ mod tests {
         let ws = PartialWeights::from(&bs);
         assert::close(bs.0, BreakSequence::from(&ws).0, 1e-10);
     }
-
 
     #[test]
     fn sb_ln_m_vs_monte_carlo() {
