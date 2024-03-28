@@ -54,14 +54,14 @@ pub struct PartialWeights(pub Vec<f64>);
 pub struct BreakSequence(pub Vec<f64>);
 
 impl From<&BreakSequence> for PartialWeights {
-    fn from(seq: &BreakSequence) -> Self {
-        let mut total = 1.0;
-        let ws = seq
+    fn from(bs: &BreakSequence) -> Self {
+        let mut remaining = 1.0;
+        let ws = bs
             .0
             .iter()
             .map(|b| {
-                let w = b * total;
-                total *= b;
+                let w = (1.0 - b) * remaining;
+                remaining -= w;
                 w
             })
             .collect();
@@ -71,12 +71,12 @@ impl From<&BreakSequence> for PartialWeights {
 
 impl From<&PartialWeights> for BreakSequence {
     fn from(ws: &PartialWeights) -> Self {
-        let mut last_w = 1.0;
+        let mut remaining = 1.0;
         let bs =
             ws.0.iter()
                 .map(|w| {
-                    let b = w / last_w;
-                    last_w = *w;
+                    let b = 1.0 - (w / remaining);
+                    remaining -= w;
                     b
                 })
                 .collect();
@@ -97,7 +97,6 @@ impl HasDensity<PartialWeights> for StickBreaking {
     /// The natural logarithm of the density function.
     fn ln_f(&self, w: &PartialWeights) -> f64 {
         let bs = BreakSequence::from(w);
-
         self.break_prefix
             .iter()
             .zip_longest(bs.0.iter())
@@ -255,16 +254,17 @@ mod tests {
 
     #[test]
     fn partial_weights_to_break_sequence() {
-        let ws = PartialWeights(vec![0.4, 0.3, 0.2]);
+        let ws = PartialWeights(vec![0.1, 0.2, 0.3]);
         let bs = BreakSequence::from(&ws);
         assert::close(ws.0, PartialWeights::from(&bs).0, 1e-10);
     }
 
     #[test]
     fn break_sequence_to_partial_weights() {
-        let bs = BreakSequence(vec![0.4, 0.3, 0.2]);
+        let bs = BreakSequence(vec![0.99, 0.99, 0.99]);
         let ws = PartialWeights::from(&bs);
-        assert::close(bs.0, BreakSequence::from(&ws).0, 1e-10);
+        let bs2 = BreakSequence::from(&ws);
+        assert::close(bs.0, bs2.0, 1e-10);
     }
 
     #[test]
