@@ -56,15 +56,14 @@ pub struct BreakSequence(pub Vec<f64>);
 impl From<&BreakSequence> for PartialWeights {
     fn from(bs: &BreakSequence) -> Self {
         let mut remaining = 1.0;
-        let ws = bs
-            .0
-            .iter()
-            .map(|b| {
-                let w = (1.0 - b) * remaining;
-                remaining -= w;
-                w
-            })
-            .collect();
+        let ws =
+            bs.0.iter()
+                .map(|b| {
+                    let w = (1.0 - b) * remaining;
+                    remaining -= w;
+                    w
+                })
+                .collect();
         PartialWeights(ws)
     }
 }
