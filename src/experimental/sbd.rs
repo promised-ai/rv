@@ -132,8 +132,6 @@ impl Sbd {
         alpha: f64,
         seed: Option<u64>,
     ) -> Result<Self, SbdError> {
-        let n_weights = ln_weights.len();
-
         let inner = _Inner {
             remaining_mass: ln_weights.last().unwrap().exp(),
             ln_weights,
@@ -226,7 +224,6 @@ impl Sbd {
         let rm_mass = rm_mass - w;
 
         let ln_w = w.ln();
-        let k = self.k();
 
         self.inner
             .write()
@@ -253,6 +250,13 @@ impl Sbd {
     pub fn observed_values(&self) -> Vec<usize> {
         (0..self.k()).collect()
     }
+
+    pub fn observed_weights(&self) -> Vec<f64> {
+        self.inner
+            .read()
+            .map(|obj| obj.ln_weights.iter().map(|ln_w| ln_w.exp()).collect())
+            .unwrap()
+    }
 }
 
 impl HasSuffStat<usize> for Sbd {
@@ -274,13 +278,6 @@ impl Rv<usize> for Sbd {
         if *x < k {
             self.inner.read().map(|obj| obj.ln_weights[*x]).unwrap()
         } else {
-            // None => {
-            //     let alpha = self.alpha();
-            //     let rm = self.inner.read().unwrap().remaining_mass;
-            //     (rm * alpha / (1.0 + alpha)).ln()
-            //     // rm.ln()
-            // }
-            // eprintln!("x{x}, k{k}");
             self.extend(x - k + 1);
             self.ln_f(x)
         }
@@ -393,5 +390,15 @@ mod test {
         sbd.ln_f(&0);
         sbd.ln_f(&0);
         assert_eq!(sbd.k(), 2);
+    }
+
+    #[test]
+    fn sbd_ln_f_values() {
+        let sbd =
+            Sbd::from_weights(&[0.3, 0.2, 0.1, 0.15, 0.25], 0.8, None).unwrap();
+        assert::close(sbd.ln_f(&0), 0.3_f64.ln(), 1e-14);
+        assert::close(sbd.ln_f(&1), 0.2_f64.ln(), 1e-14);
+        assert::close(sbd.ln_f(&2), 0.1_f64.ln(), 1e-14);
+        assert::close(sbd.ln_f(&3), 0.15_f64.ln(), 1e-14);
     }
 }

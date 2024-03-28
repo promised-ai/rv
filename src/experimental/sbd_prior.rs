@@ -39,32 +39,24 @@ pub struct SbPosterior {
 
 impl Rv<Sbd> for Sb {
     fn ln_f(&self, x: &Sbd) -> f64 {
-        // let k = x.k() + 1;
-        // let symdir = SymmetricDirichlet::new_unchecked(self.alpha, k);
-        // x.inner
-        //     .read()
-        //     .map(|obj| symdir.ln_f(&obj.ln_weights))
-        //     .unwrap()
-        //
         let k = x.k();
         if k == 0 {
-            return 1.0;
+            return 0.0;
         }
 
+        let weights = x.observed_weights();
         let beta = Beta::new_unchecked(1.0, self.alpha);
-        x.inner
-            .read()
-            .map(|inner| {
-                inner.ln_weights.iter().take(k).map(|&lnw| lnw.exp()).fold(
-                    (1.0, 0.0),
-                    |(rm_mass, ln_f), w| {
-                        let ln_f_b = beta.ln_f(&(w / rm_mass));
-                        (rm_mass - w, ln_f + ln_f_b)
-                    },
-                )
+        let mut total_mass = 1.0;
+        weights
+            .iter()
+            .take(k)
+            .map(|w| {
+                let x = w / total_mass;
+                let ln_f = beta.ln_f(&x);
+                total_mass -= w;
+                ln_f
             })
-            .unwrap()
-            .1
+            .sum::<f64>()
     }
 
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Sbd {
@@ -74,8 +66,24 @@ impl Rv<Sbd> for Sb {
 }
 
 impl Rv<Sbd> for SbPosterior {
-    fn ln_f(&self, _x: &Sbd) -> f64 {
-        unimplemented!()
+    fn ln_f(&self, x: &Sbd) -> f64 {
+        let weights = x.observed_weights();
+        let k = self.dir.k();
+        let mut total_mass = 1.0;
+        self.dir
+            .alphas
+            .iter()
+            .take(k - 1)
+            .zip(weights.iter())
+            .map(|(&alpha, &w)| {
+                let beta = Beta::new_unchecked(1.0, alpha);
+                let ln_f = beta.ln_f(&(w / total_mass));
+                // let g = crate::dist::Gamma::new_unchecked(alpha, 1.0);
+                // let ln_f = g.ln_f(&(1.0 - (w / total_mass)));
+                total_mass -= w;
+                ln_f
+            })
+            .sum::<f64>()
     }
 
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Sbd {
@@ -116,9 +124,9 @@ impl SbCache {
 fn gks(stat: &SbdSuffStat) -> Vec<f64> {
     let n = stat.n();
     let mut acc = n;
+
     stat.counts()
         .iter()
-        .rev()
         .map(|ct| {
             let g = acc;
             acc -= ct;
@@ -132,7 +140,11 @@ fn sbm_from_stat(stat: &SbdSuffStat, alpha: f64) -> f64 {
     let n = stat.n() as f64;
     let ln_alpha = alpha.ln();
 
-    // TODO: simply
+    assert_eq!(gk.len(), stat.counts().len());
+    // assert_eq!(stat.n(), stat.counts().iter().sum::<usize>());
+
+    // TODO: simplify
+    // a = loggamma(alpha) - loggamma(alpha + n)
     let term_a = Gamma::ln_gamma(alpha).0 - Gamma::ln_gamma(alpha + n).0;
     // b = sum(log_alpha - np.log(gk + alpha) for gk in gks)
     let term_b = gk.iter().map(|g| ln_alpha - (g + alpha).ln()).sum::<f64>();
@@ -140,13 +152,7 @@ fn sbm_from_stat(stat: &SbdSuffStat, alpha: f64) -> f64 {
     let term_c = stat
         .counts()
         .iter()
-        .map(|&ct| {
-            if ct > 1 {
-                Gamma::ln_gamma(ct as f64 + 1.0).0
-            } else {
-                0.0
-            }
-        })
+        .map(|&ct| Gamma::ln_gamma(ct as f64 + 1.0).0)
         .sum::<f64>();
 
     term_a + term_b + term_c
@@ -165,7 +171,7 @@ fn sbpp_cache(x: &SbdSuffStat, alpha: f64) -> SbCache {
         let term_b = ((x.counts()[y] + 1) as f64).ln();
         let term_c = gk
             .iter()
-            .skip(y + 1)
+            .take(y + 1)
             .map(|&g| ((g + alpha) / (g + alpha + 1.0)).ln())
             .sum::<f64>();
 
@@ -253,6 +259,8 @@ use special::Gamma;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::data::CategoricalSuffStat;
+    use crate::dist::{Categorical, SymmetricDirichlet};
 
     #[test]
     fn rv_sbd_smoke() {
@@ -284,27 +292,6 @@ mod tests {
         let sbd = post.draw(&mut rng);
 
         assert_eq!(sbd.k(), 10);
-
-        eprintln!("POST: {:?}\n", post);
-        eprintln!("SBD: {:?}", sbd);
-    }
-
-    #[test]
-    fn sbd_posterior_smoke_2() {
-        let mut rng = rand::thread_rng();
-        let alpha = 0.5;
-        let prior = Sb::new(alpha, None);
-        let cat = Categorical::new(&[0.2, 0.5, 0.1, 0.2]).unwrap();
-        let xs: Vec<usize> = cat.sample(1_000, &mut rng);
-
-        let mut stat = SbdSuffStat::new();
-        xs.iter().for_each(|&x| stat.observe(&(x * 2)));
-
-        let mut rng = rand::thread_rng();
-        let post = prior.posterior(&DataOrSuffStat::SuffStat(&stat));
-        let sbd = post.draw(&mut rng);
-
-        assert_eq!(sbd.k(), 4);
 
         eprintln!("POST: {:?}\n", post);
         eprintln!("SBD: {:?}", sbd);
@@ -358,106 +345,6 @@ mod tests {
     }
 
     #[test]
-    fn posterior_predictive() {
-        let data: Vec<usize> = vec![0, 3, 3, 3, 3, 3, 4, 4, 4, 6];
-
-        let mut st = SbdSuffStat::new();
-        st.observe_many(&data);
-
-        let stat = DataOrSuffStat::SuffStat(&st);
-
-        let prior = Sb::new(0.1, None);
-
-        let ln_pp_0 =
-            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &0, &stat);
-        let ln_pp_1 =
-            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &1, &stat);
-        let ln_pp_2 =
-            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &2, &stat);
-        let ln_pp_3 =
-            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &3, &stat);
-        let ln_pp_4 =
-            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &4, &stat);
-        let ln_pp_5 =
-            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &5, &stat);
-        let ln_pp_6 =
-            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &6, &stat);
-        let ln_pp_7 =
-            <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(&prior, &7, &stat);
-
-        assert!(ln_pp_0 < ln_pp_4);
-        assert::close(ln_pp_0, ln_pp_6, 1e-10);
-        assert!(ln_pp_4 < ln_pp_3);
-        assert!(ln_pp_1 < ln_pp_0);
-        assert::close(ln_pp_1, ln_pp_2, 1e-10);
-        assert::close(ln_pp_1, ln_pp_5, 1e-10);
-        assert::close(ln_pp_1, ln_pp_7, 1e-10);
-
-        let sum = ln_pp_0.exp() + ln_pp_3.exp() + ln_pp_4.exp() + ln_pp_6.exp();
-        eprintln!("{sum}");
-    }
-
-    #[test]
-    fn sbd_vs_canonical_cat_logm_should_be_same() {
-        let alpha = 1.2;
-        let data: Vec<usize> = vec![0, 1, 1, 1, 1, 1, 2, 2, 2, 3];
-
-        let mut sbd_stat = SbdSuffStat::new();
-        sbd_stat.observe_many(&data);
-
-        let mut cat_stat = CategoricalSuffStat::new(5);
-        cat_stat.observe_many(&data);
-
-        let sb = Sb::new(alpha, None);
-        let dir = SymmetricDirichlet::new(alpha, 5).unwrap();
-
-        let logm_sbd = <Sb as ConjugatePrior<usize, Sbd>>::ln_m(
-            &sb,
-            &DataOrSuffStat::SuffStat(&sbd_stat),
-        );
-        let logm_cat =
-            <SymmetricDirichlet as ConjugatePrior<usize, Categorical>>::ln_m(
-                &dir,
-                &DataOrSuffStat::SuffStat(&cat_stat),
-            );
-
-        eprintln!("SBD vs CAT: {logm_sbd}, {logm_cat}");
-        assert::close(logm_sbd, logm_cat, 1e-10);
-    }
-
-    #[test]
-    fn sbd_vs_canonical_cat_logpp_should_be_same() {
-        let alpha = 1.2;
-        let data: Vec<usize> = vec![0, 1, 1, 1, 1, 1, 2, 2, 2, 3];
-
-        let mut sbd_stat = SbdSuffStat::new();
-        sbd_stat.observe_many(&data);
-
-        let mut cat_stat = CategoricalSuffStat::new(5);
-        cat_stat.observe_many(&data);
-
-        let sb = Sb::new(alpha, None);
-        let dir = SymmetricDirichlet::new(alpha, 5).unwrap();
-
-        for x in 0_usize..4 {
-            let logpp_sbd = <Sb as ConjugatePrior<usize, Sbd>>::ln_pp(
-                &sb,
-                &x,
-                &DataOrSuffStat::SuffStat(&sbd_stat),
-            );
-            let logpp_cat = <SymmetricDirichlet as ConjugatePrior<
-                usize,
-                Categorical,
-            >>::ln_pp(
-                &dir, &x, &DataOrSuffStat::SuffStat(&cat_stat)
-            );
-
-            eprintln!("SBD vs CAT (ln_pp {x}): {logpp_sbd}, {logpp_cat}");
-            assert::close(logpp_sbd, logpp_cat, 1e-10);
-        }
-    }
-
-    #[test]
     fn sbd_vs_canonical_cat_posterior() {
         let alpha = 1.2;
         let data: Vec<usize> = vec![0, 1, 1, 1, 1, 1, 2, 2, 2, 3];
@@ -484,5 +371,132 @@ mod tests {
         for (w1, w2) in sbd_post.dir.alphas.iter().zip(cat_post.alphas.iter()) {
             assert::close(*w1, *w2, 1e-10);
         }
+    }
+
+    #[test]
+    fn predictive_quotient_observed() {
+        let alpha = 0.82;
+        let data: Vec<usize> = vec![0, 1, 1, 1, 1, 1, 2, 2, 2, 3];
+
+        let mut x = SbdSuffStat::new();
+        x.observe_many(&data);
+
+        let sb = Sb::new(alpha, None);
+
+        let pp_0 = sb.pp(&0_usize, &DataOrSuffStat::SuffStat(&x));
+        let pp_1 = sb.pp(&1_usize, &DataOrSuffStat::SuffStat(&x));
+        let pp_2 = sb.pp(&2_usize, &DataOrSuffStat::SuffStat(&x));
+        let pp_3 = sb.pp(&3_usize, &DataOrSuffStat::SuffStat(&x));
+
+        let m = sb.m(&DataOrSuffStat::SuffStat(&x));
+
+        fn m_x(x: usize, sb: &Sb, stat: &SbdSuffStat) -> f64 {
+            let mut stat_cpy = stat.clone();
+            stat_cpy.observe(&x);
+            sb.m(&DataOrSuffStat::SuffStat(&stat_cpy))
+        }
+
+        let m_0 = m_x(0, &sb, &x);
+        let m_1 = m_x(1, &sb, &x);
+        let m_2 = m_x(2, &sb, &x);
+        let m_3 = m_x(3, &sb, &x);
+
+        assert::close(m_0 / m, pp_0, 1e-12);
+        assert::close(m_1 / m, pp_1, 1e-12);
+        assert::close(m_2 / m, pp_2, 1e-12);
+        assert::close(m_3 / m, pp_3, 1e-12);
+    }
+
+    #[test]
+    fn gks_values() {
+        let data: Vec<usize> = vec![0, 0, 0, 1, 1, 2, 3, 3];
+
+        let mut stat = SbdSuffStat::new();
+        stat.observe_many(&data);
+
+        let gk = gks(&stat);
+
+        assert_eq!(gk.len(), 4);
+        assert_eq!(gk[0], 8.0);
+        assert_eq!(gk[1], 5.0);
+        assert_eq!(gk[2], 3.0);
+        assert_eq!(gk[3], 2.0);
+    }
+
+    #[test]
+    fn sbd_marginal_values() {
+        let alpha = 0.8;
+        let data: Vec<usize> = vec![0, 0, 0, 1, 1, 2, 3, 3];
+
+        let mut stat = SbdSuffStat::new();
+        stat.observe_many(&data);
+
+        let x = DataOrSuffStat::SuffStat(&stat);
+
+        let sb = Sb::new(alpha, None);
+
+        let ln_m = sb.ln_m(&x);
+
+        assert::close(ln_m, -14.038534276704162, 1e-10);
+    }
+
+    #[test]
+    fn sbd_predictive_values() {
+        let alpha = 0.8;
+        let data: Vec<usize> = vec![0, 0, 0, 1, 1, 2, 3, 3];
+
+        let mut stat = SbdSuffStat::new();
+        stat.observe_many(&data);
+
+        let x = DataOrSuffStat::SuffStat(&stat);
+
+        let sb = Sb::new(alpha, None);
+
+        assert::close(sb.ln_pp(&0, &x), -0.8960880245566358, 1e-12);
+        assert::close(sb.ln_pp(&1, &x), -1.342834791638104, 1e-12);
+        assert::close(sb.ln_pp(&2, &x), -1.9819147509277737, 1e-12);
+        assert::close(sb.ln_pp(&3, &x), -1.8818312923707912, 1e-12);
+        assert::close(sb.ln_pp(&4, &x), -3.7913737972552295, 1e-12);
+        assert::close(sb.ln_pp(&5, &x), -3.7913737972552295, 1e-12);
+    }
+
+    #[test]
+    fn sbd_bayes_law() {
+        let alpha = 3.0;
+        let data: Vec<usize> = vec![0, 0, 0, 1, 1, 2, 3, 3];
+        let weights: Vec<f64> = vec![0.5, 0.2, 0.1, 0.1, 0.05, 0.05];
+
+        let mut stat = SbdSuffStat::new();
+        stat.observe_many(&data);
+
+        let x = DataOrSuffStat::SuffStat(&stat);
+
+        let sb = Sb::new(alpha, None);
+        let posterior = sb.posterior(&x);
+        let sbd: Sbd = Sbd::from_weights(&weights, alpha, None).unwrap();
+
+        let ln_post = posterior.ln_f(&sbd);
+        let ln_like = data.iter().map(|x_i| sbd.ln_f(x_i)).sum::<f64>();
+        let ln_prior = sb.ln_f(&sbd);
+        let ln_m = sb.ln_m(&x);
+
+        eprintln!("ln_like: {ln_like}");
+        eprintln!("ln_prior: {ln_prior}");
+        eprintln!("ln_marg: {ln_m}");
+        eprintln!("ln_post: {ln_post}");
+        eprintln!("ln_like + ln_prior - ln_m : {}", ln_like + ln_prior - ln_m);
+
+        assert::close(ln_post, ln_like + ln_prior - ln_m, 1e-10);
+    }
+
+    #[test]
+    fn sbd_prior_values() {
+        let alpha = 0.8;
+        let weights = vec![0.4, 0.1, 0.2, 0.1, 0.2];
+        let sbd = Sbd::from_weights(&weights, alpha, None).unwrap();
+        let sb = Sb::new(alpha, None);
+        let ln_prior = sb.ln_f(&sbd);
+
+        assert::close(ln_prior, -0.5706866227700182, 1e-10);
     }
 }
