@@ -109,6 +109,13 @@ impl StickSequence {
         }
     }
 
+    pub fn push_to_ccdf(&self, p: f64) {
+        self.with_inner_mut(|inner| {
+            assert!(p < *inner.ccdf.last().unwrap());
+            inner.ccdf.push(p);
+        });
+    }
+
     pub fn extendmap_ccdf<P, F, Ans>(&self, pred: P, f: F) -> Ans
     where
         P: Fn(&Vec<f64>) -> bool,
@@ -132,7 +139,7 @@ impl StickSequence {
         self.inner.write().map(|mut inner| f(&mut inner)).unwrap()
     }
 
-    fn ensure_breaks(&self, n: usize) {
+    pub fn ensure_breaks(&self, n: usize) {
         self.extend_until(|inner| inner.ccdf.len() > n);
     }
 
