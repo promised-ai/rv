@@ -20,6 +20,24 @@ pub struct Categorical {
     ln_weights: Vec<f64>,
 }
 
+pub struct CategoricalParameters {
+    pub ln_weights: Vec<f64>,
+}
+
+impl Parameterized for Categorical {
+    type Parameters = CategoricalParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            ln_weights: self.ln_weights(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.ln_weights)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -311,7 +329,7 @@ mod tests {
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!([categorical] Categorical::uniform(3));
+    test_basic_impls!(u8, Categorical, Categorical::uniform(3));
 
     #[test]
     fn from_ln_weights_with_zero_weight_should_work() {

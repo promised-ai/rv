@@ -30,7 +30,8 @@ use std::sync::OnceLock;
 /// assert::close(x, y, 1E-10);
 /// ```
 ///
-/// Kumaraswamy(a, 1) is equivalent to Beta(a, 1)  and Kumaraswamy(1, b) is equivalent to Beta(1, b)
+/// Kumaraswamy(a, 1) is equivalent to Beta(a, 1)  and Kumaraswamy(1, b) is
+/// equivalent to Beta(1, b)
 ///
 /// ```
 /// # use rv::prelude::*;
@@ -52,6 +53,26 @@ pub struct Kumaraswamy {
     #[cfg_attr(feature = "serde1", serde(skip))]
     /// Cached log(a*b)
     ab_ln: OnceLock<f64>,
+}
+
+pub struct KumaraswamyParameters {
+    pub a: f64,
+    pub b: f64,
+}
+
+impl Parameterized for Kumaraswamy {
+    type Parameters = KumaraswamyParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            a: self.a(),
+            b: self.b(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.a, params.b)
+    }
 }
 
 impl PartialEq for Kumaraswamy {
@@ -446,7 +467,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Kumaraswamy::centered(1.2).unwrap());
+    test_basic_impls!(f64, Kumaraswamy, Kumaraswamy::centered(1.2).unwrap());
 
     #[test]
     fn cdf_uniform_midpoint() {
@@ -455,7 +476,7 @@ mod tests {
     }
 
     #[test]
-    fn draw_should_resturn_values_within_0_to_1() {
+    fn draw_should_return_values_within_0_to_1() {
         let mut rng = rand::thread_rng();
         let kuma = Kumaraswamy::default();
         for _ in 0..100 {

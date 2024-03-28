@@ -44,6 +44,24 @@ enum Pos {
     Absent(usize),
 }
 
+pub struct EmpiricalParameters {
+    pub xs: Vec<f64>,
+}
+
+impl Parameterized for Empirical {
+    type Parameters = EmpiricalParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            xs: self.xs.clone(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new(params.xs)
+    }
+}
+
 impl Empirical {
     /// Create a new Empirical distribution with the given observed values
     pub fn new(mut xs: Vec<f64>) -> Self {

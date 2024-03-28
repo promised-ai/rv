@@ -31,6 +31,24 @@ pub struct Exponential {
     rate: f64,
 }
 
+impl Default for Exponential {
+    fn default() -> Self {
+        Self::new_unchecked(1.0)
+    }
+}
+
+impl Parameterized for Exponential {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.rate()
+    }
+
+    fn from_params(rate: Self::Parameters) -> Self {
+        Self::new_unchecked(rate)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -255,7 +273,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Exponential::new(1.0).unwrap());
+    test_basic_impls!(f64, Exponential);
 
     #[test]
     fn new() {

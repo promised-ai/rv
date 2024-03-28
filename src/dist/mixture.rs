@@ -41,6 +41,33 @@ pub struct Mixture<Fx> {
     ln_weights: OnceLock<Vec<f64>>,
 }
 
+pub struct MixtureParameters<Fx: Parameterized> {
+    pub component_params: Vec<Fx::Parameters>,
+    pub weights: Vec<f64>,
+}
+
+impl<Fx: Parameterized> Parameterized for Mixture<Fx> {
+    type Parameters = MixtureParameters<Fx>;
+
+    fn emit_params(&self) -> Self::Parameters {
+        let component_params = self
+            .components()
+            .iter()
+            .map(|cpnt| cpnt.emit_params())
+            .collect();
+
+        Self::Parameters {
+            component_params,
+            weights: self.weights().clone(),
+        }
+    }
+
+    fn from_params(mut params: Self::Parameters) -> Self {
+        let components = params.drain(..).map(|p| Fx::from_params(p)).collect();
+        Self::new_unchecked(params.weights, components)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]

@@ -28,6 +28,18 @@ pub struct ChiSquared {
     k: f64,
 }
 
+impl Parameterized for ChiSquared {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.k()
+    }
+
+    fn from_params(k: Self::Parameters) -> Self {
+        Self::new_unchecked(k)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -221,7 +233,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] ChiSquared::new(3.2).unwrap());
+    test_basic_impls!(f64, ChiSquared, ChiSquared::new(3.2).unwrap());
 
     #[test]
     fn new() {

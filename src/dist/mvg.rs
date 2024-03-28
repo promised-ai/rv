@@ -104,6 +104,12 @@ pub struct MvGaussian {
     cache: OnceLock<MvgCache>,
 }
 
+pub struct MvGaussianParameters {
+    pub mu: DVector<f64>,
+    // Covariance Matrix
+    pub cov: DMatrix<f64>,
+}
+
 #[allow(dead_code)]
 #[cfg(feature = "serde1")]
 fn default_cache_none() -> OnceLock<MvgCache> {

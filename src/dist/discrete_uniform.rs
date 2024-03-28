@@ -30,6 +30,26 @@ pub enum DiscreteUniformError {
     InvalidInterval,
 }
 
+struct DiscreteUniformParameters<T: DuParam> {
+    pub a: T,
+    pub b: T,
+}
+
+impl<T: DuParam> Parameterized for DiscreteUniform<T> {
+    type Parameters = DiscreteUniformParameters<T>;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            a: self.a(),
+            b: self.b(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.a, params.b)
+    }
+}
+
 impl<T: DuParam> DiscreteUniform<T> {
     /// Create a new discreet uniform distribution
     ///
@@ -253,7 +273,11 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([count] DiscreteUniform::new(0_u32, 10_u32).unwrap());
+    test_basic_impls!(
+        u32,
+        DiscreteUniform<u32>,
+        DiscreteUniform::new(0_u32, 10_u32).unwrap()
+    );
 
     #[test]
     fn new() {

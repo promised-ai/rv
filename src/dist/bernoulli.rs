@@ -40,6 +40,18 @@ pub struct Bernoulli {
     p: f64,
 }
 
+impl Parameterized for Bernoulli {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.p()
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -373,7 +385,7 @@ mod tests {
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!([binary] Bernoulli::default());
+    test_basic_impls!(bool, Bernoulli, Bernoulli::default());
 
     #[test]
     fn new() {
@@ -658,7 +670,7 @@ mod tests {
     }
 
     #[test]
-    fn unifrom_entropy() {
+    fn uniform_entropy() {
         let b = Bernoulli::uniform();
         assert::close(b.entropy(), f64::consts::LN_2, TOL);
     }

@@ -9,30 +9,20 @@ use std::collections::BTreeMap;
 // often happens in ln_f is called
 #[macro_export]
 macro_rules! test_basic_impls {
-    ([continuous] $fx: expr) => {
-        test_basic_impls!($fx, 0.5_f64, impls);
+    ($X:ty, $Fx:ty) => {
+        test_basic_impls!($X, $Fx, <$Fx>::default());
     };
-    ([categorical] $fx: expr) => {
-        test_basic_impls!($fx, 0_usize, impls);
-    };
-    ([count] $fx: expr) => {
-        test_basic_impls!($fx, 3_u32, impls);
-    };
-    ([binary] $fx: expr) => {
-        test_basic_impls!($fx, true, impls);
-    };
-    ($fx: expr, $x: expr) => {
-        test_basic_impls!($fx, $x, impls);
-    };
-    ($fx: expr, $x: expr, $mod: ident) => {
-        mod $mod {
+    ($X:ty, $Fx:ty, $fx:expr) => {
+        mod rv_impl {
             use super::*;
 
             #[test]
             fn should_impl_debug_clone_and_partialeq() {
+                let mut rng = rand::thread_rng();
                 // make the expression a thing. If we don't do this, calling $fx
                 // reconstructs the distribution which means we don't do caching
                 let fx = $fx;
+                let x: $X = fx.draw(&mut rng);
 
                 // clone a copy of fn before any computation of cached values is
                 // done
@@ -40,15 +30,36 @@ macro_rules! test_basic_impls {
                 assert_eq!($fx, fx2);
 
                 // Computing ln_f normally initializes all cached values
-                let y1 = fx.ln_f(&$x);
-                let y2 = fx.ln_f(&$x);
+                let y1 = fx.ln_f(&x);
+                let y2 = fx.ln_f(&x);
                 assert!((y1 - y2).abs() < std::f64::EPSILON);
 
-                // check the fx == fx2 despite fx having its cached values initalized
+                // check the fx == fx2 despite fx having its cached values
+                // initialized
                 assert_eq!(fx2, fx);
 
                 // Make sure Debug is implemented for fx
                 let _s1 = format!("{:?}", fx);
+            }
+
+            #[test]
+            fn should_impl_parameterized() {
+                use $crate::traits::Parameterized;
+
+                let mut rng = rand::thread_rng();
+
+                let fx_1 = $fx;
+                let params = fx_1.emit_params();
+                let fx_2 = <$Fx>::from_params(params);
+
+                for _ in 0..100 {
+                    let x: $X = fx_1.draw(&mut rng);
+
+                    let ln_f_1 = fx_1.ln_f(&x);
+                    let ln_f_2 = fx_2.ln_f(&x);
+
+                    assert::close(ln_f_1, ln_f_2, 1e-14);
+                }
             }
         }
     };

@@ -19,9 +19,12 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
     diff <= rtol.mul_add(y.abs(), atol)
 }
 
-/// Kolmogorov-Smirnov distribution where the number of samples, $N$, is assumed to be large
-/// This is the distribution of $\sqrt{N} D_n$ where $D_n = \sup_x |F_n(x) - F(x)|$ where $F$
-/// is the true CDF and $F_n$ the emperical CDF.
+/// Kolmogorov-Smirnov distribution where the number of samples, $N$, is
+/// assumed to be large.
+///
+/// This is the distribution of $\sqrt{N} D_n$ where
+/// $D_n = \sup_x |F_n(x) - F(x)|$ where $F$ is the true CDF and $F_n$ the
+/// empirical CDF.
 ///
 /// # Example
 ///
@@ -40,6 +43,18 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct KsTwoAsymptotic {}
+
+impl Parameterized for KsTwoAsymptotic {
+    type Parameters = ();
+
+    fn emit_params(&self) -> Self::Parameters {
+        ()
+    }
+
+    fn from_params(_params: Self::Parameters) -> Self {
+        Self {}
+    }
+}
 
 struct CdfPdf {
     cdf: f64,

@@ -3,6 +3,14 @@ pub use crate::data::DataOrSuffStat;
 pub use crate::suffstat_traits::*;
 use rand::Rng;
 
+pub trait Parameterized {
+    type Parameters;
+
+    fn emit_params(&self) -> Self::Parameters;
+
+    fn from_params(params: Self::Parameters) -> Self;
+}
+
 pub trait Sampleable<X> {
     /// Single draw from the `Rv`
     ///
@@ -119,9 +127,9 @@ pub trait HasDensity<X> {
 /// Contains the minimal functionality that a random object must have to be
 /// useful: a function defining the un-normalized density/mass at a point,
 /// and functions to draw samples from the distribution.
-pub trait Rv<X>: Sampleable<X> + HasDensity<X> {}
+pub trait Rv<X>: Sampleable<X> + HasDensity<X> + Parameterized {}
 
-impl<X, T> Rv<X> for T where T: Sampleable<X> + HasDensity<X> {}
+impl<X, T> Rv<X> for T where T: Sampleable<X> + HasDensity<X> + Parameterized {}
 
 /// Stochastic process
 ///

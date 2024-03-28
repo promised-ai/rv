@@ -51,6 +51,26 @@ pub struct Binomial {
     p: f64,
 }
 
+pub struct BinomialParameters {
+    pub n: u64,
+    pub p: f64,
+}
+
+impl Parameterized for Binomial {
+    type Parameters = BinomialParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            n: self.n(),
+            p: self.p(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.n, params.p)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -345,7 +365,7 @@ mod tests {
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!([count] Binomial::uniform(10));
+    test_basic_impls!(u32, Binomial, Binomial::uniform(10));
 
     #[test]
     fn new() {

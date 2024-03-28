@@ -32,6 +32,24 @@ pub struct Gev {
     shape: f64,
 }
 
+pub struct GevParameters {
+    pub loc: f64,
+    pub scale: f64,
+    pub shape: f64,
+}
+
+impl Parameterized for Gev {
+    type Parameters = GevParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            loc: self.loc(),
+            scale: self.scale(),
+            shape: self.shape(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]

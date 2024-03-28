@@ -21,6 +21,26 @@ pub struct LogNormal {
     sigma: f64,
 }
 
+pub struct LogNormalParameters {
+    pub mu: f64,
+    pub sigma: f64,
+}
+
+impl Parameterized for LogNormal {
+    type Parameters = LogNormalParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu: self.mu(),
+            sigma: self.sigma(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu, params.sigma)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -337,7 +357,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!([continuous] LogNormal::default());
+    test_basic_impls!(f64, LogNormal);
 
     #[test]
     fn new() {

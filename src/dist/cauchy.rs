@@ -33,6 +33,26 @@ pub struct Cauchy {
     scale: f64,
 }
 
+pub struct CauchyParameters {
+    pub loc: f64,
+    pub scale: f64,
+}
+
+impl Parameterized for Cauchy {
+    type Parameters = CauchyParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            loc: self.loc(),
+            scale: self.scale(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.loc, params.scale)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -291,7 +311,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Cauchy::default());
+    test_basic_impls!(f64, Cauchy);
 
     #[test]
     fn ln_pdf_loc_zero() {

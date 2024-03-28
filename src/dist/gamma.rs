@@ -37,6 +37,26 @@ pub struct Gamma {
     ln_rate: OnceLock<f64>,
 }
 
+pub struct GammaParameters {
+    pub shape: f64,
+    pub rate: f64,
+}
+
+impl Parameterized for Gamma {
+    type Parameters = GammaParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            shape: self.shape(),
+            rate: self.rate(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.shape, params.rate)
+    }
+}
+
 impl PartialEq for Gamma {
     fn eq(&self, other: &Gamma) -> bool {
         self.shape == other.shape && self.rate == other.rate
@@ -347,7 +367,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Gamma::default());
+    test_basic_impls!(f64, Gamma, Gamma::new_unchecked(1.0, 2.0));
 
     #[test]
     fn new() {
@@ -381,7 +401,7 @@ mod tests {
     }
 
     #[test]
-    fn ln_pdf_hight_value() {
+    fn ln_pdf_high_value() {
         let gam = Gamma::new(1.2, 3.4).unwrap();
         assert::close(
             gam.ln_pdf(&0.352_941_176_470_588_26_f64),

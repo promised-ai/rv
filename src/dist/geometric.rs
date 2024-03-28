@@ -1,4 +1,4 @@
-//! Possion distribution on unisgned integers
+//! Possion distribution on unsigned integers
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -37,6 +37,18 @@ pub struct Geometric {
     // ln_(1-p)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_1mp: OnceLock<f64>,
+}
+
+impl Parameterized for Geometric {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.p()
+    }
+
+    fn from_params(p: Self::Parameters) -> Self {
+        Self::new_unchecked(p)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -314,7 +326,7 @@ mod tests {
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!([count] Geometric::default());
+    test_basic_impls!(u32, Geometric);
 
     #[test]
     fn new() {

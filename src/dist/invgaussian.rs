@@ -28,6 +28,22 @@ pub struct InvGaussian {
     ln_lambda: OnceLock<f64>,
 }
 
+pub struct InvGaussianParameters {
+    pub mu: f64,
+    pub lambda: f64,
+}
+
+impl Parameterized for InvGaussian {
+    type Parameters = InvGaussianParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu: self.mu(),
+            lambda: self.lambda(),
+        }
+    }
+}
+
 impl PartialEq for InvGaussian {
     fn eq(&self, other: &InvGaussian) -> bool {
         self.mu == other.mu && self.lambda == other.lambda
@@ -51,7 +67,7 @@ pub enum InvGaussianError {
 impl InvGaussian {
     /// Create a new Inverse Gaussian distribution
     ///
-    /// # Aruments
+    /// # Arguments
     /// - mu: mean > 0
     /// - lambda: shape > 0
     ///
@@ -218,12 +234,6 @@ impl InvGaussian {
         self.lambda = lambda;
     }
 
-    /// Return (mu, lambda)
-    #[inline]
-    pub fn params(&self) -> (f64, f64) {
-        (self.mu, self.lambda)
-    }
-
     #[inline]
     fn ln_lambda(&self) -> f64 {
         *self.ln_lambda.get_or_init(|| self.lambda.ln())
@@ -242,7 +252,7 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl HasDensity<$kind> for InvGaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
-                let (mu, lambda) = self.params();
+                let InvGaussianParameters { mu, lambda } = self.emit_params();
                 let xf = f64::from(*x);
                 let z = self.ln_lambda() - xf.ln().mul_add(3.0, LN_2PI);
                 let err = xf - mu;
@@ -254,7 +264,7 @@ macro_rules! impl_traits {
         impl Sampleable<$kind> for InvGaussian {
             // https://en.wikipedia.org/wiki/Inverse_Gaussian_distribution#Sampling_from_an_inverse-Gaussian_distribution
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let (mu, lambda) = self.params();
+                let InvGaussianParameters { mu, lambda } = self.emit_params();
                 let g = Normal::new(0.0, 1.0).unwrap();
                 let v: f64 = rng.sample(g);
                 let y = v * v;
@@ -287,7 +297,7 @@ macro_rules! impl_traits {
         impl Cdf<$kind> for InvGaussian {
             fn cdf(&self, x: &$kind) -> f64 {
                 let xf = f64::from(*x);
-                let (mu, lambda) = self.params();
+                let InvGaussianParameters { mu, lambda } = self.emit_params();
                 let gauss = crate::dist::Gaussian::standard();
                 let z = (lambda / xf).sqrt();
                 let a = z * (xf / mu - 1.0);
@@ -305,7 +315,7 @@ macro_rules! impl_traits {
 
         impl Mode<$kind> for InvGaussian {
             fn mode(&self) -> Option<$kind> {
-                let (mu, lambda) = self.params();
+                let InvGaussianParameters { mu, lambda } = self.emit_params();
                 let a = (1.0 + 0.25 * 9.0 * mu * mu / (lambda * lambda)).sqrt();
                 let b = 0.5 * 3.0 * mu / lambda;
                 let mode = mu * (a - b);
@@ -384,8 +394,14 @@ mod tests {
     const N_TRIES: usize = 10;
     const KS_PVAL: f64 = 0.2;
 
+    crate::test_basic_impls!(
+        f64,
+        InvGaussian,
+        InvGaussian::new(1.0, 2.3).unwrap()
+    );
+
     #[test]
-    fn mode_is_higest_point() {
+    fn mode_is_highest_point() {
         let mut rng = rand::thread_rng();
         let mu_prior = crate::dist::InvGamma::new_unchecked(2.0, 2.0);
         let lambda_prior = crate::dist::InvGamma::new_unchecked(2.0, 2.0);
