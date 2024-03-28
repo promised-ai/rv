@@ -2,7 +2,7 @@ use criterion::BatchSize;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use rv::dist::Gev;
-use rv::traits::Rv;
+use rv::traits::*;
 
 fn bench_gev_draw_0(c: &mut Criterion) {
     let gev = Gev::new(0.0, 1.0, 0.0).unwrap();

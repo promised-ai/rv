@@ -162,7 +162,7 @@ impl Kumaraswamy {
     ///
     /// ```rust
     /// # use rv::dist::Kumaraswamy;
-    /// # use rv::traits::{Rv, Cdf, Median};
+    /// # use rv::traits::*;
     /// // Bowl-shaped
     /// let kuma_1 = Kumaraswamy::centered(0.5).unwrap();
     /// let median_1: f64 = kuma_1.median().unwrap();
@@ -182,7 +182,7 @@ impl Kumaraswamy {
     ///
     /// ```rust
     /// # use rv::dist::Kumaraswamy;
-    /// # use rv::traits::{Rv, Cdf};
+    /// # use rv::traits::*;
     /// fn absolute_error(a: f64, b: f64) -> f64 {
     ///     (a - b).abs()
     /// }
@@ -332,7 +332,7 @@ fn invcdf(p: f64, a: f64, b: f64) -> f64 {
 
 macro_rules! impl_kumaraswamy {
     ($kind: ty) => {
-        impl Rv<$kind> for Kumaraswamy {
+        impl HasDensity<$kind> for Kumaraswamy {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let xf = *x as f64;
                 let a = self.a;
@@ -342,7 +342,9 @@ macro_rules! impl_kumaraswamy {
                     (a - 1.0).mul_add(xf.ln(), self.ab_ln()),
                 )
             }
+        }
 
+        impl Sampleable<$kind> for Kumaraswamy {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let p: f64 = rng.gen();
                 invcdf(p, self.a, self.b) as $kind

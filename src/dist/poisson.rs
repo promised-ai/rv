@@ -5,6 +5,7 @@ use crate::consts::LN_2PI_E;
 use crate::data::PoissonSuffStat;
 use crate::impl_display;
 use crate::misc::ln_fact;
+use crate::suffstat_traits::*;
 use crate::traits::*;
 use rand::Rng;
 use rand_distr::Poisson as RPossion;
@@ -185,12 +186,14 @@ impl_display!(Poisson);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Poisson {
+        impl HasDensity<$kind> for Poisson {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let kf = *x as f64;
                 kf.mul_add(self.ln_rate(), -self.rate) - ln_fact(*x as usize)
             }
+        }
 
+        impl Sampleable<$kind> for Poisson {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let pois = RPossion::new(self.rate).unwrap();
                 let x: u64 = rng.sample(pois) as u64;

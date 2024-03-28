@@ -1,12 +1,11 @@
 use std::collections::BTreeMap;
 
 use crate::consts::HALF_LN_2PI;
-use crate::data::{
-    extract_stat, extract_stat_then, DataOrSuffStat, GaussianSuffStat,
-};
+use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalInvGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
+use crate::suffstat_traits::*;
 use crate::test::GewekeTestable;
 use crate::traits::*;
 
@@ -45,9 +44,9 @@ fn posterior_from_stat(
 
 impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
     type Posterior = Self;
-    type LnMCache = f64;
-    type LnPpCache = (GaussianSuffStat, f64);
-    // type LnPpCache = NormalInvGamma;
+    type MCache = f64;
+    type PpCache = (GaussianSuffStat, f64);
+    // type PpCache = NormalInvGamma;
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
         extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
@@ -56,13 +55,13 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
     }
 
     #[inline]
-    fn ln_m_cache(&self) -> Self::LnMCache {
+    fn ln_m_cache(&self) -> Self::MCache {
         ln_z(self.v, self.a, self.b)
     }
 
     fn ln_m_with_cache(
         &self,
-        cache: &Self::LnMCache,
+        cache: &Self::MCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
         extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
@@ -75,17 +74,14 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
     }
 
     #[inline]
-    fn ln_pp_cache(
-        &self,
-        x: &DataOrSuffStat<f64, Gaussian>,
-    ) -> Self::LnPpCache {
+    fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
         let stat = extract_stat(x, GaussianSuffStat::new);
         let post_n = posterior_from_stat(self, &stat);
         let lnz_n = ln_z(post_n.v, post_n.a, post_n.b);
         (stat, lnz_n)
     }
 
-    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &f64) -> f64 {
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
         let mut stat = cache.0.clone();
         let lnz_n = cache.1;
 
@@ -142,7 +138,7 @@ mod test {
     }
 
     fn post_params(
-        xs: &Vec<f64>,
+        xs: &[f64],
         m: f64,
         v: f64,
         a: f64,
@@ -172,7 +168,7 @@ mod test {
     // examples/dpgmm.rs) words with the NormalInvGamma prior, then we should be
     // good to go.
     fn alternate_ln_marginal(
-        xs: &Vec<f64>,
+        xs: &[f64],
         m: f64,
         v: f64,
         a: f64,
@@ -302,7 +298,7 @@ mod test {
         let y: f64 = -0.3;
         let (m, v, a, b) = (0.0, 1.2, 2.3, 3.4);
         let nig = NormalInvGamma::new(m, v, a, b).unwrap();
-        let ln_pp = nig.ln_pp(&y, &DataOrSuffStat::None);
+        let ln_pp = nig.ln_pp(&y, &DataOrSuffStat::from(&vec![]));
         let ln_m = nig.ln_m(&DataOrSuffStat::from(&vec![y]));
         assert::close(ln_pp, ln_m, TOL);
     }

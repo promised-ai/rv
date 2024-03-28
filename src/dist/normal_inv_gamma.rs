@@ -9,7 +9,7 @@ mod gaussian_prior;
 
 use crate::dist::{Gaussian, InvGamma};
 use crate::impl_display;
-use crate::traits::Rv;
+use crate::traits::*;
 use rand::Rng;
 use std::fmt;
 
@@ -313,7 +313,7 @@ impl From<&NormalInvGamma> for String {
 
 impl_display!(NormalInvGamma);
 
-impl Rv<Gaussian> for NormalInvGamma {
+impl HasDensity<Gaussian> for NormalInvGamma {
     fn ln_f(&self, x: &Gaussian) -> f64 {
         // TODO: could cache the gamma and Gaussian distributions
         let mu = x.mu();
@@ -324,7 +324,9 @@ impl Rv<Gaussian> for NormalInvGamma {
         let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&mu);
         lnf_sigma + lnf_mu
     }
+}
 
+impl Sampleable<Gaussian> for NormalInvGamma {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
         // NOTE: The parameter errors in this fn shouldn't happen if the prior
         // parameters are valid.

@@ -310,7 +310,7 @@ impl From<&NormalGamma> for String {
 
 impl_display!(NormalGamma);
 
-impl Rv<Gaussian> for NormalGamma {
+impl HasDensity<Gaussian> for NormalGamma {
     fn ln_f(&self, x: &Gaussian) -> f64 {
         // TODO: could cache the gamma and Gaussian distributions
         let rho = (x.sigma() * x.sigma()).recip();
@@ -320,7 +320,9 @@ impl Rv<Gaussian> for NormalGamma {
         let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&x.mu());
         lnf_rho + lnf_mu
     }
+}
 
+impl Sampleable<Gaussian> for NormalGamma {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
         // NOTE: The parameter errors in this fn shouldn't happen if the prior
         // parameters are valid.

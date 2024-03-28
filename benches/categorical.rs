@@ -2,7 +2,7 @@ use criterion::BatchSize;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use rv::dist::Categorical;
-use rv::traits::Rv;
+use rv::traits::*;
 
 fn bench_cat_draw(c: &mut Criterion) {
     let mut group = c.benchmark_group("Categorical draw compare");

@@ -3,7 +3,6 @@ use rand::distributions::Open01;
 use rand::Rng;
 use special::Gamma;
 use std::cmp::Ordering;
-use std::cmp::PartialOrd;
 use std::fmt::Debug;
 use std::ops::AddAssign;
 
@@ -669,15 +668,15 @@ mod tests {
         let inf = std::f64::INFINITY;
         let weights = vec![
             -inf,
-            -210.14873879197316,
-            -818.1043044601643,
-            -1269.0480185226445,
-            -2916.862476271387,
+            -210.148_738_791_973_16,
+            -818.104_304_460_164_3,
+            -1_269.048_018_522_644_5,
+            -2_916.862_476_271_387,
             -inf,
         ];
 
         let lse = logsumexp(&weights);
-        assert::close(lse, -210.14873879197316, TOL);
+        assert::close(lse, -210.148_738_791_973_16, TOL);
     }
 
     #[test]

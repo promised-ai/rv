@@ -12,6 +12,7 @@ use std::sync::OnceLock;
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
 use crate::impl_display;
+use crate::suffstat_traits::*;
 use crate::traits::*;
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
@@ -255,12 +256,14 @@ impl_display!(Gaussian);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Gaussian {
+        impl HasDensity<$kind> for Gaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k = (f64::from(*x) - self.mu) / self.sigma;
                 (0.5 * k).mul_add(-k, -self.ln_sigma()) - HALF_LN_2PI
             }
+        }
 
+        impl Sampleable<$kind> for Gaussian {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let g = Normal::new(self.mu, self.sigma).unwrap();
                 rng.sample(g) as $kind

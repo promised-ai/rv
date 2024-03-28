@@ -53,7 +53,7 @@ pub fn mardia(xs: &[DVector<f64>]) -> (f64, f64) {
 mod test {
     use super::*;
     use crate::dist::MvGaussian;
-    use crate::traits::Rv;
+    use crate::traits::*;
 
     const MARDIA_PVAL: f64 = 0.05;
     const NTRIES: usize = 5;

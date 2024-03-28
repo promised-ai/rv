@@ -99,7 +99,7 @@ where
     }
 }
 
-impl<X, T> Rv<X> for DiscreteUniform<T>
+impl<X, T> HasDensity<X> for DiscreteUniform<T>
 where
     T: DuParam + SampleUniform + Copy,
     X: Integer + From<T>,
@@ -111,7 +111,13 @@ where
             f64::NEG_INFINITY
         }
     }
+}
 
+impl<X, T> Sampleable<X> for DiscreteUniform<T>
+where
+    T: DuParam + SampleUniform + Copy,
+    X: Integer + From<T>,
+{
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
         let d = rand::distributions::Uniform::new_inclusive(self.a, self.b);
         X::from(rng.sample(d))

@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::BetaSuffStat;
 use crate::impl_display;
+use crate::suffstat_traits::*;
 use crate::traits::*;
 use rand::Rng;
 use special::Beta as _;
@@ -29,7 +30,7 @@ pub mod bernoulli_prior;
 ///
 /// // The posterior predictive probability that a coin will come up heads given
 /// // no new observations.
-/// let p_prior_heads = beta.pp(&true, &DataOrSuffStat::None); // 0.5
+/// let p_prior_heads = beta.pp(&true, &DataOrSuffStat::from(&vec![])); // 0.5
 /// assert!((p_prior_heads - 0.5).abs() < 1E-12);
 ///
 /// // Five Bernoulli trials. We flipped a coin five times and it came up head
@@ -293,14 +294,16 @@ impl_display!(Beta);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Beta {
+        impl HasDensity<$kind> for Beta {
             fn ln_f(&self, x: &$kind) -> f64 {
                 (self.alpha - 1.0).mul_add(
                     f64::from(*x).ln(),
                     (self.beta - 1.0) * (1.0 - f64::from(*x)).ln(),
                 ) - self.ln_beta_ab()
             }
+        }
 
+        impl Sampleable<$kind> for Beta {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let b = rand_distr::Beta::new(self.alpha, self.beta).unwrap();
                 rng.sample(b) as $kind
@@ -446,7 +449,6 @@ mod tests {
     use super::*;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;

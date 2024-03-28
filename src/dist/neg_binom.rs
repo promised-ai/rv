@@ -212,13 +212,15 @@ impl NegBinomial {
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for NegBinomial {
+        impl HasDensity<$kind> for NegBinomial {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let xf = (*x) as f64;
                 ln_binom(xf + self.r - 1.0, self.r - 1.0)
                     + xf.mul_add(self.ln_1mp(), self.r_ln_p())
             }
+        }
 
+        impl Sampleable<$kind> for NegBinomial {
             fn draw<R: Rng>(&self, mut rng: &mut R) -> $kind {
                 let q = 1.0 - self.p;
                 let scale = q / (1.0 - q);

@@ -2,38 +2,38 @@ use rand::Rng;
 use special::Beta as SBeta;
 
 use crate::data::{BernoulliSuffStat, Booleable};
-use crate::dist::{Bernoulli, Beta};
+use crate::dist::{Bernoulli, Beta, UnitPowerLaw};
 use crate::suffstat_traits::*;
 use crate::traits::*;
 
-impl HasDensity<Bernoulli> for Beta {
+impl HasDensity<Bernoulli> for UnitPowerLaw {
     fn ln_f(&self, x: &Bernoulli) -> f64 {
         self.ln_f(&x.p())
     }
 }
 
-impl Sampleable<Bernoulli> for Beta {
+impl Sampleable<Bernoulli> for UnitPowerLaw {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Bernoulli {
         let p: f64 = self.draw(&mut rng);
         Bernoulli::new(p).expect("Failed to draw valid weight")
     }
 }
 
-impl Support<Bernoulli> for Beta {
+impl Support<Bernoulli> for UnitPowerLaw {
     fn supports(&self, x: &Bernoulli) -> bool {
         0.0 < x.p() && x.p() < 1.0
     }
 }
 
-impl ContinuousDistr<Bernoulli> for Beta {}
+impl ContinuousDistr<Bernoulli> for UnitPowerLaw {}
 
-impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
-    type Posterior = Self;
+impl<X: Booleable> ConjugatePrior<X, Bernoulli> for UnitPowerLaw {
+    type Posterior = Beta;
     type MCache = f64;
     type PpCache = (f64, f64);
 
     #[allow(clippy::many_single_char_names)]
-    fn posterior(&self, x: &DataOrSuffStat<X, Bernoulli>) -> Self {
+    fn posterior(&self, x: &DataOrSuffStat<X, Bernoulli>) -> Beta {
         let (n, k) = match x {
             DataOrSuffStat::Data(xs) => {
                 let mut stat = BernoulliSuffStat::new();
@@ -44,14 +44,14 @@ impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
         };
 
         let a = self.alpha() + k as f64;
-        let b = self.beta() + (n - k) as f64;
+        let b = (1 + (n - k)) as f64;
 
         Beta::new(a, b).expect("Invalid posterior parameters")
     }
 
     #[inline]
     fn ln_m_cache(&self) -> Self::MCache {
-        self.alpha().ln_beta(self.beta())
+        -self.alpha_ln()
     }
 
     fn ln_m_with_cache(
@@ -92,7 +92,7 @@ mod tests {
         let data = vec![false, true, false, true, true];
         let xs = DataOrSuffStat::Data::<bool, Bernoulli>(&data);
 
-        let posterior = Beta::new(1.0, 1.0).unwrap().posterior(&xs);
+        let posterior = UnitPowerLaw::new(1.0).unwrap().posterior(&xs);
 
         assert::close(posterior.alpha(), 4.0, TOL);
         assert::close(posterior.beta(), 3.0, TOL);
@@ -103,34 +103,9 @@ mod tests {
         let data: Vec<u16> = vec![0, 1, 0, 1, 1];
         let xs = DataOrSuffStat::Data::<u16, Bernoulli>(&data);
 
-        let posterior = Beta::new(1.0, 1.0).unwrap().posterior(&xs);
+        let posterior = UnitPowerLaw::new(1.0).unwrap().posterior(&xs);
 
         assert::close(posterior.alpha(), 4.0, TOL);
         assert::close(posterior.beta(), 3.0, TOL);
-    }
-
-    #[test]
-    fn bern_bayes_law() {
-        let mut rng = rand::thread_rng();
-
-        // Prior
-        let prior = Beta::new(5.0, 2.0).unwrap();
-        let par: f64 = prior.draw(&mut rng);
-        let prior_f = prior.f(&par);
-
-        // Likelihood
-        let lik = Bernoulli::new(par).unwrap();
-        let lik_data: bool = lik.draw(&mut rng);
-        let lik_f = lik.f(&lik_data);
-
-        // Evidence
-        let ev = prior.m(&DataOrSuffStat::Data(&[lik_data]));
-
-        // Posterior
-        let post = prior.posterior(&DataOrSuffStat::Data(&[lik_data]));
-        let post_f = post.f(&par);
-
-        // Bayes' law
-        assert::close(post_f, prior_f * lik_f / ev, 1e-12);
     }
 }

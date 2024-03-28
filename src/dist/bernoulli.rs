@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{BernoulliSuffStat, Booleable};
 use crate::impl_display;
+use crate::suffstat_traits::*;
 use crate::traits::*;
 use rand::Rng;
 use std::f64;
@@ -58,7 +59,7 @@ impl Bernoulli {
     ///
     /// ```rust
     /// # use rv::dist::Bernoulli;
-    /// # use rv::traits::Rv;
+    /// # use rv::traits::*;
     /// # let mut rng = rand::thread_rng();
     /// let b = Bernoulli::new(0.5).unwrap();
     ///
@@ -200,7 +201,7 @@ impl From<&Bernoulli> for String {
 
 impl_display!(Bernoulli);
 
-impl<X: Booleable> Rv<X> for Bernoulli {
+impl<X: Booleable> HasDensity<X> for Bernoulli {
     fn f(&self, x: &X) -> f64 {
         let val: bool = x.into_bool();
         if val {
@@ -214,7 +215,9 @@ impl<X: Booleable> Rv<X> for Bernoulli {
         // TODO: this is really slow, we should cache ln(p) and ln(q)
         self.f(x).ln()
     }
+}
 
+impl<X: Booleable> Sampleable<X> for Bernoulli {
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
         let u = rand_distr::Open01;
         let x: f64 = rng.sample(u);
@@ -365,7 +368,6 @@ mod tests {
     use super::*;
     use crate::misc::x2_test;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;

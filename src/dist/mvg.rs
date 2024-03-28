@@ -5,6 +5,7 @@ use crate::consts::HALF_LN_2PI_E;
 use crate::consts::LN_2PI;
 use crate::data::MvGaussianSuffStat;
 use crate::impl_display;
+use crate::suffstat_traits::*;
 use crate::traits::*;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dyn};
@@ -395,7 +396,7 @@ impl From<&MvGaussian> for String {
 
 impl_display!(MvGaussian);
 
-impl Rv<DVector<f64>> for MvGaussian {
+impl HasDensity<DVector<f64>> for MvGaussian {
     fn ln_f(&self, x: &DVector<f64>) -> f64 {
         let diff = x - &self.mu;
         let det_sqrt: f64 = self
@@ -411,7 +412,9 @@ impl Rv<DVector<f64>> for MvGaussian {
         let term: f64 = (diff.transpose() * inv * &diff)[0];
         -0.5 * (det.ln() + (diff.nrows() as f64).mul_add(LN_2PI, term))
     }
+}
 
+impl Sampleable<DVector<f64>> for MvGaussian {
     fn draw<R: Rng>(&self, rng: &mut R) -> DVector<f64> {
         let dims = self.mu.len();
         let norm = rand_distr::StandardNormal;

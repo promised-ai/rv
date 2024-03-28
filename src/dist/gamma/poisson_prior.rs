@@ -2,20 +2,23 @@ use std::f64::EPSILON;
 
 use rand::Rng;
 
-use crate::data::{DataOrSuffStat, PoissonSuffStat};
+use crate::data::PoissonSuffStat;
 use crate::dist::poisson::PoissonError;
 use crate::dist::{Gamma, Poisson};
 use crate::misc::ln_binom;
+use crate::suffstat_traits::*;
 use crate::traits::*;
 
-impl Rv<Poisson> for Gamma {
+impl HasDensity<Poisson> for Gamma {
     fn ln_f(&self, x: &Poisson) -> f64 {
         match x.mean() {
             Some(mean) => self.ln_f(&mean),
             None => std::f64::NEG_INFINITY,
         }
     }
+}
 
+impl Sampleable<Poisson> for Gamma {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Poisson {
         let mean: f64 = self.draw(&mut rng);
         match Poisson::new(mean) {
@@ -43,8 +46,8 @@ macro_rules! impl_traits {
     ($kind: ty) => {
         impl ConjugatePrior<$kind, Poisson> for Gamma {
             type Posterior = Self;
-            type LnMCache = f64;
-            type LnPpCache = (f64, f64, f64);
+            type MCache = f64;
+            type PpCache = (f64, f64, f64);
 
             fn posterior(&self, x: &DataOrSuffStat<$kind, Poisson>) -> Self {
                 let (n, sum) = match x {
@@ -56,7 +59,6 @@ macro_rules! impl_traits {
                     DataOrSuffStat::SuffStat(ref stat) => {
                         (stat.n(), stat.sum())
                     }
-                    DataOrSuffStat::None => (0, 0.0),
                 };
 
                 let a = self.shape() + sum;
@@ -65,7 +67,7 @@ macro_rules! impl_traits {
             }
 
             #[inline]
-            fn ln_m_cache(&self) -> Self::LnMCache {
+            fn ln_m_cache(&self) -> Self::MCache {
                 let z0 = self
                     .shape()
                     .mul_add(-self.ln_rate(), self.ln_gamma_shape());
@@ -74,7 +76,7 @@ macro_rules! impl_traits {
 
             fn ln_m_with_cache(
                 &self,
-                cache: &Self::LnMCache,
+                cache: &Self::MCache,
                 x: &DataOrSuffStat<$kind, Poisson>,
             ) -> f64 {
                 let stat: PoissonSuffStat = match x {
@@ -84,7 +86,6 @@ macro_rules! impl_traits {
                         stat
                     }
                     DataOrSuffStat::SuffStat(ref stat) => (*stat).clone(),
-                    DataOrSuffStat::None => PoissonSuffStat::new(),
                 };
 
                 let data_or_suff: DataOrSuffStat<$kind, Poisson> =
@@ -102,7 +103,7 @@ macro_rules! impl_traits {
             fn ln_pp_cache(
                 &self,
                 x: &DataOrSuffStat<$kind, Poisson>,
-            ) -> Self::LnPpCache {
+            ) -> Self::PpCache {
                 let post = self.posterior(x);
                 let r = post.shape();
                 let p = 1.0 / (1.0 + post.rate());
@@ -111,7 +112,7 @@ macro_rules! impl_traits {
 
             fn ln_pp_with_cache(
                 &self,
-                cache: &Self::LnPpCache,
+                cache: &Self::PpCache,
                 y: &$kind,
             ) -> f64 {
                 let (r, p, ln_p) = cache;
@@ -145,7 +146,8 @@ mod tests {
     #[test]
     fn ln_m_no_data() {
         let dist = Gamma::new(1.0, 1.0).unwrap();
-        let data: DataOrSuffStat<u8, Poisson> = DataOrSuffStat::None;
+        let new_vec = Vec::new();
+        let data: DataOrSuffStat<u8, Poisson> = DataOrSuffStat::from(&new_vec);
         assert::close(dist.ln_m(&data), 0.0, TOL);
     }
 
@@ -195,7 +197,7 @@ mod tests {
 
         for i in 0..inputs.len() {
             assert::close(
-                dist.ln_pp(&inputs[i], &DataOrSuffStat::None),
+                dist.ln_pp(&inputs[i], &DataOrSuffStat::from(&vec![])),
                 expected[i],
                 TOL,
             )
@@ -229,7 +231,8 @@ mod tests {
     fn cannot_draw_zero_rate() {
         let mut rng = rand::thread_rng();
         let dist = Gamma::new(1.0, 1e-10).unwrap();
-        let stream = <Gamma as Rv<Poisson>>::sample_stream(&dist, &mut rng);
+        let stream =
+            <Gamma as Sampleable<Poisson>>::sample_stream(&dist, &mut rng);
         assert!(stream.take(10_000).all(|pois| pois.rate() > 0.0));
     }
 }

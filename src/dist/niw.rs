@@ -242,7 +242,7 @@ impl_display!(NormalInvWishart);
 
 // TODO: We might be able to make things faster by storing the InvWishart
 // because each time we create it, it clones and validates the parameters.
-impl Rv<MvGaussian> for NormalInvWishart {
+impl HasDensity<MvGaussian> for NormalInvWishart {
     fn ln_f(&self, x: &MvGaussian) -> f64 {
         let m = self.mu.clone();
         let sigma = x.cov().clone() / self.k;
@@ -251,7 +251,9 @@ impl Rv<MvGaussian> for NormalInvWishart {
         let iw = InvWishart::new_unchecked(self.scale.clone(), self.df);
         mvg.ln_f(x.mu()) + iw.ln_f(x.cov())
     }
+}
 
+impl Sampleable<MvGaussian> for NormalInvWishart {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> MvGaussian {
         let iw = InvWishart::new_unchecked(self.scale.clone(), self.df);
         let sigma: DMatrix<f64> = iw.draw(&mut rng);

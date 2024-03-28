@@ -5,12 +5,15 @@ use serde::{Deserialize, Serialize};
 use crate::data::UnitPowerLawSuffStat;
 use crate::impl_display;
 use crate::prelude::Beta;
+use crate::suffstat_traits::*;
 use crate::traits::*;
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;
 use std::fmt;
 use std::sync::OnceLock;
+
+pub mod bernoulli_prior;
 
 /// UnitPowerLaw(α) over x in (0, 1).
 ///
@@ -167,13 +170,13 @@ impl UnitPowerLaw {
 
     /// Evaluate or fetch cached ln(a*b)
     #[inline]
-    fn alpha_inv(&self) -> f64 {
+    pub fn alpha_inv(&self) -> f64 {
         *self.alpha_inv.get_or_init(|| self.alpha.recip())
     }
 
     /// Evaluate or fetch cached ln(a*b)
     #[inline]
-    fn alpha_ln(&self) -> f64 {
+    pub fn alpha_ln(&self) -> f64 {
         *self.alpha_ln.get_or_init(|| self.alpha.ln())
     }
 }
@@ -200,11 +203,13 @@ impl_display!(UnitPowerLaw);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for UnitPowerLaw {
+        impl HasDensity<$kind> for UnitPowerLaw {
             fn ln_f(&self, x: &$kind) -> f64 {
                 (*x as f64).ln().mul_add(self.alpha - 1.0, self.alpha_ln())
             }
+        }
 
+        impl Sampleable<$kind> for UnitPowerLaw {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 self.invcdf(rng.gen::<f64>())
             }
@@ -330,7 +335,6 @@ mod tests {
     use super::*;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;

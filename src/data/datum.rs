@@ -3,8 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "arraydist")]
 use crate::nalgebra::{DMatrix, DVector};
-use crate::traits::Rv;
-use std::convert::TryInto;
+use crate::traits::*;
 
 /// Represents any Datum/Value, X, for which Rv<X> may be implemented on a
 /// `Distribution`.
@@ -40,22 +39,28 @@ where
     type Support: From<Datum> + Into<Datum>;
 }
 
-impl<Fx> Rv<Datum> for Fx
+impl<Fx> HasDensity<Datum> for Fx
 where
     Fx: RvDatum,
 {
     fn ln_f(&self, x: &Datum) -> f64 {
         let y = <Self as RvDatum>::Support::from(x.clone());
-        <Self as Rv<<Self as RvDatum>::Support>>::ln_f(self, &y)
+        <Self as HasDensity<<Self as RvDatum>::Support>>::ln_f(self, &y)
     }
+}
 
+impl<Fx> Sampleable<Datum> for Fx
+where
+    Fx: RvDatum,
+{
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Datum {
-        let x = <Self as Rv<<Self as RvDatum>::Support>>::draw(self, rng);
+        let x =
+            <Self as Sampleable<<Self as RvDatum>::Support>>::draw(self, rng);
         x.into()
     }
 
     fn sample<R: rand::Rng>(&self, n: usize, rng: &mut R) -> Vec<Datum> {
-        <Self as Rv<<Self as RvDatum>::Support>>::sample(self, n, rng)
+        <Self as Sampleable<<Self as RvDatum>::Support>>::sample(self, n, rng)
             .drain(..)
             .map(|x| x.into())
             .collect()
@@ -66,8 +71,10 @@ where
         rng: &'r mut R,
     ) -> Box<dyn Iterator<Item = Datum> + 'r> {
         let iter =
-            <Self as Rv<<Self as RvDatum>::Support>>::sample_stream(self, rng)
-                .map(|x| x.try_into().unwrap());
+            <Self as Sampleable<<Self as RvDatum>::Support>>::sample_stream(
+                self, rng,
+            )
+            .map(|x| x.into());
         Box::new(iter)
     }
 }

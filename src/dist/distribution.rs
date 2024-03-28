@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::data::Datum;
-use crate::traits::Rv;
+use crate::traits::*;
 
 /// Represents any distribution
 #[non_exhaustive]
@@ -45,7 +45,7 @@ pub enum Distribution {
     InvWishart(super::InvWishart),
 }
 
-impl Rv<Datum> for Distribution {
+impl HasDensity<Datum> for Distribution {
     fn f(&self, x: &Datum) -> f64 {
         match self {
             Distribution::Bernoulli(inner) => inner.f(x),
@@ -123,7 +123,9 @@ impl Rv<Datum> for Distribution {
             Distribution::InvWishart(inner) => inner.ln_f(x),
         }
     }
+}
 
+impl Sampleable<Datum> for Distribution {
     fn draw<R: rand::Rng>(&self, rng: &mut R) -> Datum {
         match self {
             Distribution::Bernoulli(inner) => inner.draw(rng),
@@ -247,7 +249,7 @@ impl Rv<Datum> for Distribution {
     }
 }
 
-impl Rv<Datum> for super::Mixture<Vec<Distribution>> {
+impl HasDensity<Datum> for super::Mixture<Vec<Distribution>> {
     fn ln_f(&self, x: &Datum) -> f64 {
         if let Datum::Compound(xs) = x {
             assert_eq!(xs.len(), self.components()[0].len());
@@ -268,7 +270,9 @@ impl Rv<Datum> for super::Mixture<Vec<Distribution>> {
             panic!("Mixture of Vec<Dist> accepts Datum::Compound")
         }
     }
+}
 
+impl Sampleable<Datum> for super::Mixture<Vec<Distribution>> {
     fn sample<R: rand::Rng>(&self, n: usize, rng: &mut R) -> Vec<Datum> {
         let cpnt_ixs = crate::misc::pflip(self.weights(), n, rng);
         cpnt_ixs

@@ -1,43 +1,9 @@
 //! Trait definitions
-use crate::data::DataOrSuffStat;
+pub use crate::data::DataOrSuffStat;
+pub use crate::suffstat_traits::*;
 use rand::Rng;
 
-/// Random variable
-///
-/// Contains the minimal functionality that a random object must have to be
-/// useful: a function defining the un-normalized density/mass at a point,
-/// and functions to draw samples from the distribution.
-pub trait Rv<X> {
-    /// Probability function
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use rv::dist::Gaussian;
-    /// use rv::traits::Rv;
-    ///
-    /// let g = Gaussian::standard();
-    /// assert!(g.f(&0.0_f64) > g.f(&0.1_f64));
-    /// assert!(g.f(&0.0_f64) > g.f(&-0.1_f64));
-    /// ```
-    fn f(&self, x: &X) -> f64 {
-        self.ln_f(x).exp()
-    }
-
-    /// Probability function
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use rv::dist::Gaussian;
-    /// use rv::traits::Rv;
-    ///
-    /// let g = Gaussian::standard();
-    /// assert!(g.ln_f(&0.0_f64) > g.ln_f(&0.1_f64));
-    /// assert!(g.ln_f(&0.0_f64) > g.ln_f(&-0.1_f64));
-    /// ```
-    fn ln_f(&self, x: &X) -> f64;
-
+pub trait Sampleable<X> {
     /// Single draw from the `Rv`
     ///
     /// # Example
@@ -46,7 +12,7 @@ pub trait Rv<X> {
     ///
     /// ```
     /// use rv::dist::Bernoulli;
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     ///
     /// let b = Bernoulli::uniform();
     /// let mut rng = rand::thread_rng();
@@ -62,7 +28,7 @@ pub trait Rv<X> {
     ///
     /// ```
     /// use rv::dist::Bernoulli;
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     ///
     /// let b = Bernoulli::uniform();
     /// let mut rng = rand::thread_rng();
@@ -75,7 +41,7 @@ pub trait Rv<X> {
     ///
     /// ```
     /// use rv::dist::Gaussian;
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     ///
     /// let gauss = Gaussian::standard();
     /// let mut rng = rand::thread_rng();
@@ -94,7 +60,7 @@ pub trait Rv<X> {
     /// Estimate the mean of a Gamma distribution
     ///
     /// ```
-    /// use rv::traits::Rv;
+    /// use rv::traits::*;
     /// use rv::dist::Gamma;
     ///
     /// let mut rng = rand::thread_rng();
@@ -102,7 +68,7 @@ pub trait Rv<X> {
     /// let gamma = Gamma::new(2.0, 1.0).unwrap();
     ///
     /// let n = 1_000_000_usize;
-    /// let mean = <Gamma as Rv<f64>>::sample_stream(&gamma, &mut rng)
+    /// let mean = <Gamma as Sampleable<f64>>::sample_stream(&gamma, &mut rng)
     ///     .take(n)
     ///     .sum::<f64>() / n as f64;;
     ///
@@ -115,6 +81,53 @@ pub trait Rv<X> {
         Box::new(std::iter::repeat_with(move || self.draw(&mut rng)))
     }
 }
+
+pub trait HasDensity<X> {
+    /// Probability function
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rv::dist::Gaussian;
+    /// use rv::traits::*;
+    ///
+    /// let g = Gaussian::standard();
+    /// assert!(g.f(&0.0_f64) > g.f(&0.1_f64));
+    /// assert!(g.f(&0.0_f64) > g.f(&-0.1_f64));
+    /// ```
+    fn f(&self, x: &X) -> f64 {
+        self.ln_f(x).exp()
+    }
+
+    /// Probability function
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rv::dist::Gaussian;
+    /// use rv::traits::*;
+    ///
+    /// let g = Gaussian::standard();
+    /// assert!(g.ln_f(&0.0_f64) > g.ln_f(&0.1_f64));
+    /// assert!(g.ln_f(&0.0_f64) > g.ln_f(&-0.1_f64));
+    /// ```
+    fn ln_f(&self, x: &X) -> f64;
+}
+
+/// Random variable
+///
+/// Contains the minimal functionality that a random object must have to be
+/// useful: a function defining the un-normalized density/mass at a point,
+/// and functions to draw samples from the distribution.
+pub trait Rv<X>: Sampleable<X> + HasDensity<X> {}
+
+impl<X, T> Rv<X> for T where T: Sampleable<X> + HasDensity<X> {}
+
+/// Stochastic process
+///
+pub trait Process<S, O>: Sampleable<S> + HasDensity<O> {}
+
+impl<S, O, T> Process<S, O> for T where T: Sampleable<S> + HasDensity<O> {}
 
 /// Identifies the support of the Rv
 pub trait Support<X> {
@@ -140,7 +153,7 @@ pub trait Support<X> {
 ///
 /// This trait uses the `Rv<X>` and `Support<X>` implementations to implement
 /// itself.
-pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
+pub trait ContinuousDistr<X>: HasDensity<X> + Support<X> {
     /// The value of the Probability Density Function (PDF) at `x`
     ///
     /// # Example
@@ -217,7 +230,7 @@ pub trait ContinuousDistr<X>: Rv<X> + Support<X> {
 }
 
 /// Has a cumulative distribution function (CDF)
-pub trait Cdf<X>: Rv<X> {
+pub trait Cdf<X>: HasDensity<X> {
     /// The value of the Cumulative Density Function at `x`
     ///
     /// # Example
@@ -241,7 +254,7 @@ pub trait Cdf<X>: Rv<X> {
 }
 
 /// Has an inverse-CDF / quantile function
-pub trait InverseCdf<X>: Rv<X> + Support<X> {
+pub trait InverseCdf<X>: HasDensity<X> + Support<X> {
     /// The value of the `x` at the given probability in the CDF
     ///
     /// # Example
@@ -424,89 +437,6 @@ pub trait KlDivergence {
     }
 }
 
-/// The data for this distribution can be summarized by a statistic
-pub trait HasSuffStat<X>: Rv<X> {
-    type Stat: SuffStat<X>;
-    fn empty_suffstat(&self) -> Self::Stat;
-
-    /// Return the log likelihood for the data represented by the sufficient
-    /// statistic.
-    fn ln_f_stat(&self, stat: &Self::Stat) -> f64;
-}
-
-/// Is a [sufficient statistic](https://en.wikipedia.org/wiki/Sufficient_statistic) for a
-/// distribution.
-///
-/// # Examples
-///
-/// Basic suffstat useage.
-///
-/// ```
-/// use rv::data::BernoulliSuffStat;
-/// use rv::traits::SuffStat;
-///
-/// // Bernoulli sufficient statistics are the number of observations, n, and
-/// // the number of successes, k.
-/// let mut stat = BernoulliSuffStat::new();
-///
-/// assert!(stat.n() == 0 && stat.k() == 0);
-///
-/// stat.observe(&true);  // observe `true`
-/// assert!(stat.n() == 1 && stat.k() == 1);
-///
-/// stat.observe(&false);  // observe `false`
-/// assert!(stat.n() == 2 && stat.k() == 1);
-///
-/// stat.forget_many(&vec![false, true]);  // forget `true` and `false`
-/// assert!(stat.n() == 0 && stat.k() == 0);
-/// ```
-///
-/// Conjugate analysis of coin flips using Bernoulli with a Beta prior on the
-/// success probability.
-///
-/// ```
-/// use rv::traits::SuffStat;
-/// use rv::traits::ConjugatePrior;
-/// use rv::data::BernoulliSuffStat;
-/// use rv::dist::{Bernoulli, Beta};
-///
-/// let flips = vec![true, false, false];
-///
-/// // Pack the data into a sufficient statistic that holds the number of
-/// // trials and the number of successes
-/// let mut stat = BernoulliSuffStat::new();
-/// stat.observe_many(&flips);
-///
-/// let prior = Beta::jeffreys();
-///
-/// // If we observe more false than true, the posterior predictive
-/// // probability of true decreases.
-/// let pp_no_obs = prior.pp(&true, &(&BernoulliSuffStat::new()).into());
-/// let pp_obs = prior.pp(&true, &(&flips).into());
-///
-/// assert!(pp_obs < pp_no_obs);
-/// ```
-pub trait SuffStat<X> {
-    /// Returns the number of observations
-    fn n(&self) -> usize;
-
-    /// Assimilate the datum `x` into the statistic
-    fn observe(&mut self, x: &X);
-
-    /// Remove the datum `x` from the statistic
-    fn forget(&mut self, x: &X);
-
-    /// Assimilate several observations
-    fn observe_many(&mut self, xs: &[X]) {
-        xs.iter().for_each(|x| self.observe(x));
-    }
-
-    /// Forget several observations
-    fn forget_many(&mut self, xs: &[X]) {
-        xs.iter().for_each(|x| self.forget(x));
-    }
-}
-
 /// A prior on `Fx` that induces a posterior that is the same form as the prior
 ///
 /// # Example
@@ -533,14 +463,15 @@ pub trait SuffStat<X> {
 ///
 /// ```
 /// # use rv::traits::ConjugatePrior;
-/// use rv::traits::{Rv, SuffStat};
+/// use rv::traits::*;
+/// use rv::suffstat_traits::SuffStat;
 /// use rv::dist::{Categorical, SymmetricDirichlet};
 /// use rv::data::{CategoricalSuffStat, DataOrSuffStat};
 /// use std::time::Instant;
 ///
 /// let ncats = 10;
 /// let symdir = SymmetricDirichlet::jeffreys(ncats).unwrap();
-/// let mut suffstat = CategoricalSuffStat::new(ncats);
+/// let mut suffstat = CategoricalSuffStat::new(10);
 /// let mut rng = rand::thread_rng();
 ///
 /// Categorical::new(&vec![1.0, 1.0, 5.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0])
@@ -590,29 +521,35 @@ pub trait SuffStat<X> {
 /// };
 ///
 /// // Using cache improves runtime
-/// assert!(t_no_cache.as_nanos() >  t_cache.as_nanos());
+/// assert!(t_no_cache.as_nanos() > t_cache.as_nanos());
 /// ```
-pub trait ConjugatePrior<X, Fx>: Rv<Fx>
+pub trait ConjugatePrior<X, Fx>: Sampleable<Fx>
 where
-    Fx: Rv<X> + HasSuffStat<X>,
+    Fx: HasDensity<X> + HasSuffStat<X>,
 {
     /// Type of the posterior distribution
-    type Posterior: Rv<Fx>;
-    /// Type of the `ln_m` cache
-    type LnMCache;
-    /// Type of the `ln_pp` cache
-    type LnPpCache;
+    type Posterior: Sampleable<Fx>;
+    /// Type of the cache for the marginal likelihood
+    type MCache;
+    /// Type of the cache for the posterior predictive
+    type PpCache;
 
     /// Computes the posterior distribution from the data
+    // fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
+
+    fn posterior_from_suffstat(&self, stat: &Fx::Stat) -> Self::Posterior {
+        self.posterior(&DataOrSuffStat::SuffStat(stat))
+    }
+
     fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
 
     /// Compute the cache for the log marginal likelihood.
-    fn ln_m_cache(&self) -> Self::LnMCache;
+    fn ln_m_cache(&self) -> Self::MCache;
 
     /// Log marginal likelihood with supplied cache.
     fn ln_m_with_cache(
         &self,
-        cache: &Self::LnMCache,
+        cache: &Self::MCache,
         x: &DataOrSuffStat<X, Fx>,
     ) -> f64;
 
@@ -625,10 +562,10 @@ where
     /// Compute the cache for the Log posterior predictive of y given x.
     ///
     /// The cache should encompass all information about `x`.
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<X, Fx>) -> Self::LnPpCache;
+    fn ln_pp_cache(&self, x: &DataOrSuffStat<X, Fx>) -> Self::PpCache;
 
     /// Log posterior predictive of y given x with supplied ln(norm)
-    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &X) -> f64;
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &X) -> f64;
 
     /// Log posterior predictive of y given x
     fn ln_pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64 {
@@ -639,6 +576,10 @@ where
     /// Marginal likelihood of x
     fn m(&self, x: &DataOrSuffStat<X, Fx>) -> f64 {
         self.ln_m(x).exp()
+    }
+
+    fn pp_with_cache(&self, cache: &Self::PpCache, y: &X) -> f64 {
+        self.ln_pp_with_cache(cache, y).exp()
     }
 
     /// Posterior Predictive distribution

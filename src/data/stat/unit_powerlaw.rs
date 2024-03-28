@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::DataOrSuffStat;
 use crate::dist::UnitPowerLaw;
-use crate::traits::SuffStat;
+use crate::suffstat_traits::SuffStat;
 
 /// Inverse Gamma sufficient statistic.
 #[derive(Debug, Clone, PartialEq)]
@@ -11,9 +11,9 @@ use crate::traits::SuffStat;
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct UnitPowerLawSuffStat {
     /// Number of observations
-    n: usize,
+    pub n: usize,
     /// sum of `ln(x)`
-    sum_ln_x: f64,
+    pub sum_ln_x: f64,
 }
 
 impl UnitPowerLawSuffStat {

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::data::CategoricalDatum;
 use crate::data::DataOrSuffStat;
 use crate::dist::Categorical;
-use crate::traits::SuffStat;
+use crate::suffstat_traits::SuffStat;
 
 /// Categorical distribution sufficient statistic.
 ///
@@ -40,8 +40,8 @@ impl CategoricalSuffStat {
     ///
     /// ```
     /// # use rv::data::CategoricalSuffStat;
-    /// # use rv::traits::SuffStat;
-    /// let mut stat = CategoricalSuffStat::new(3);
+    /// # use rv::suffstat_traits::SuffStat;
+    /// let mut stat = CategoricalSuffStat::new(2);
     ///
     /// stat.observe(&0_u8);
     /// stat.observe(&1_u8);
@@ -60,14 +60,14 @@ impl CategoricalSuffStat {
     ///
     /// ```
     /// # use rv::data::CategoricalSuffStat;
-    /// # use rv::traits::SuffStat;
+    /// # use rv::suffstat_traits::SuffStat;
     /// let mut stat = CategoricalSuffStat::new(3);
     ///
     /// stat.observe(&0_u8);
-    /// stat.observe(&1_u8);
-    /// stat.observe(&1_u8);
+    /// stat.observe(&2_u8);
+    /// stat.observe(&2_u8);
     ///
-    /// assert_eq!(*stat.counts(), vec![1.0, 2.0, 0.0]);
+    /// assert_eq!(*stat.counts(), vec![1.0, 0.0, 2.0]);
     /// ```
     #[inline]
     pub fn counts(&self) -> &Vec<f64> {

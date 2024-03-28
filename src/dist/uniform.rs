@@ -168,7 +168,7 @@ impl_display!(Uniform);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Uniform {
+        impl HasDensity<$kind> for Uniform {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let xf = f64::from(*x);
                 if self.a <= xf && xf <= self.b {
@@ -178,7 +178,9 @@ macro_rules! impl_traits {
                     f64::NEG_INFINITY
                 }
             }
+        }
 
+        impl Sampleable<$kind> for Uniform {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let u = rand_distr::Uniform::new(self.a, self.b);
                 rng.sample(u) as $kind

@@ -1,5 +1,4 @@
 use rand::Rng;
-use rv::data::DataOrSuffStat;
 use rv::dist::{Bernoulli, Beta};
 use rv::prelude::BernoulliData;
 use rv::traits::*;

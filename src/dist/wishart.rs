@@ -137,7 +137,7 @@ impl InvWishart {
     }
 }
 
-impl Rv<DMatrix<f64>> for InvWishart {
+impl HasDensity<DMatrix<f64>> for InvWishart {
     fn ln_f(&self, x: &DMatrix<f64>) -> f64 {
         let p = self.inv_scale.nrows();
         let pf = p as f64;
@@ -154,7 +154,9 @@ impl Rv<DMatrix<f64>> for InvWishart {
 
         det_s - denom + det_x + numer
     }
+}
 
+impl Sampleable<DMatrix<f64>> for InvWishart {
     // XXX: The complexity of this is O(df * dims^2). There is a O(dims^2)
     // algorithm, but it's more complicated to implement, so standby.
     // See https://www.math.wustl.edu/~sawyer/hmhandouts/Wishart.pdf  for more
@@ -331,7 +333,7 @@ mod tests {
         ];
         let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
         let iw = InvWishart::new(inv_scale, 5).unwrap();
-        for x in <InvWishart as crate::traits::Rv<DMatrix<f64>>>::sample::<
+        for x in <InvWishart as crate::traits::Sampleable<DMatrix<f64>>>::sample::<
             rand::rngs::ThreadRng,
         >(&iw, 100, &mut rng)
         {

@@ -229,7 +229,7 @@ impl_display!(Gamma);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Gamma {
+        impl HasDensity<$kind> for Gamma {
             fn ln_f(&self, x: &$kind) -> f64 {
                 self.shape.mul_add(self.ln_rate(), -self.ln_gamma_shape())
                     + (self.shape - 1.0).mul_add(
@@ -237,7 +237,9 @@ macro_rules! impl_traits {
                         -(self.rate * f64::from(*x)),
                     )
             }
+        }
 
+        impl Sampleable<$kind> for Gamma {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let g = rand_distr::Gamma::new(self.shape, 1.0 / self.rate)
                     .unwrap();

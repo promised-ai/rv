@@ -93,11 +93,14 @@ doctest!("../README.md");
 pub mod consts;
 pub mod data;
 pub mod dist;
+#[cfg(feature = "experimental")]
+pub mod experimental;
 pub mod misc;
 mod model;
 pub mod prelude;
 #[cfg(feature = "process")]
 pub mod process;
+pub mod suffstat_traits;
 pub mod test;
 pub mod traits;
 
@@ -129,7 +132,6 @@ macro_rules! extract_stat {
                     xs.iter().for_each(|y| stat.observe(y));
                     stat
                 }
-                DataOrSuffStat::None => $stat_type::new(),
             }
         }
     };

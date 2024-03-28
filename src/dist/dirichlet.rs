@@ -193,7 +193,7 @@ impl From<&SymmetricDirichlet> for String {
 
 impl_display!(SymmetricDirichlet);
 
-impl Rv<Vec<f64>> for SymmetricDirichlet {
+impl Sampleable<Vec<f64>> for SymmetricDirichlet {
     fn draw<R: Rng>(&self, rng: &mut R) -> Vec<f64> {
         let g = RGamma::new(self.alpha, 1.0).unwrap();
         let mut xs: Vec<f64> = (0..self.k).map(|_| rng.sample(g)).collect();
@@ -201,7 +201,9 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
         xs.iter_mut().for_each(|x| *x /= z);
         xs
     }
+}
 
+impl HasDensity<Vec<f64>> for SymmetricDirichlet {
     fn ln_f(&self, x: &Vec<f64>) -> f64 {
         let kf = self.k as f64;
         let sum_ln_gamma = self.ln_gamma_alpha() * kf;
@@ -288,7 +290,7 @@ impl Dirichlet {
     ///
     /// ```
     /// # use rv::dist::{Dirichlet, SymmetricDirichlet};
-    /// # use rv::traits::Rv;
+    /// # use rv::traits::*;
     /// let dir = Dirichlet::symmetric(1.0, 4).unwrap();
     /// assert_eq!(*dir.alphas(), vec![1.0, 1.0, 1.0, 1.0]);
     ///
@@ -324,7 +326,7 @@ impl Dirichlet {
     /// ```
     /// # use rv::dist::Dirichlet;
     /// # use rv::dist::SymmetricDirichlet;
-    /// # use rv::traits::Rv;
+    /// # use rv::traits::*;
     /// let dir = Dirichlet::jeffreys(3).unwrap();
     /// assert_eq!(*dir.alphas(), vec![0.5, 0.5, 0.5]);
     ///
@@ -376,7 +378,7 @@ impl Support<Vec<f64>> for SymmetricDirichlet {
     }
 }
 
-impl Rv<Vec<f64>> for Dirichlet {
+impl Sampleable<Vec<f64>> for Dirichlet {
     fn draw<R: Rng>(&self, rng: &mut R) -> Vec<f64> {
         let gammas: Vec<RGamma<f64>> = self
             .alphas
@@ -388,7 +390,9 @@ impl Rv<Vec<f64>> for Dirichlet {
         xs.iter_mut().for_each(|x| *x /= z);
         xs
     }
+}
 
+impl HasDensity<Vec<f64>> for Dirichlet {
     fn ln_f(&self, x: &Vec<f64>) -> f64 {
         // XXX: could cache all ln_gamma(alpha)
         let sum_ln_gamma: f64 = self

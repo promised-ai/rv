@@ -197,12 +197,14 @@ fn laplace_partial_draw(u: f64) -> f64 {
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Laplace {
+        impl HasDensity<$kind> for Laplace {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(b)
                 -(f64::from(*x) - self.mu).abs() / self.b - self.b.ln() - LN_2
             }
+        }
 
+        impl Sampleable<$kind> for Laplace {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let u = rng.sample(rand_distr::OpenClosed01);
                 self.b.mul_add(-laplace_partial_draw(u), self.mu) as $kind

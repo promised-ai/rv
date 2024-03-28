@@ -222,7 +222,7 @@ impl_display!(Skellam);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Skellam {
+        impl HasDensity<$kind> for Skellam {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let kf = f64::from(*x);
                 let mut cache = self.bessel_iv_cache.borrow_mut();
@@ -239,7 +239,9 @@ macro_rules! impl_traits {
                 -(self.mu_1 + self.mu_2)
                     + (kf / 2.0).mul_add((self.mu_1 / self.mu_2).ln(), bf)
             }
+        }
 
+        impl Sampleable<$kind> for Skellam {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let pois_1 = Poisson::new_unchecked(self.mu_1);
                 let pois_2 = Poisson::new_unchecked(self.mu_2);
