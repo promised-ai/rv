@@ -23,7 +23,9 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
     out += "[";
     let n = xs.len();
     xs.iter().enumerate().for_each(|(i, x)| {
-        let to_push = if i < max_entries - 1 {
+        let to_push = if i == n - 1 {
+            format!("{:?}]", x)
+        } else if i < max_entries - 1 {
             format!("{:?}, ", x)
         } else if i == (max_entries - 1) && n > max_entries {
             String::from("... , ")
@@ -37,7 +39,7 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
     out
 }
 
-/// Natural logarithm of binomial coefficent, ln nCk
+/// Natural logarithm of binomial coefficient, ln nCk
 ///
 /// # Example
 ///

@@ -44,8 +44,6 @@ macro_rules! test_basic_impls {
 
             #[test]
             fn should_impl_parameterized() {
-                use $crate::traits::Parameterized;
-
                 let mut rng = rand::thread_rng();
 
                 let fx_1 = $fx;
@@ -327,6 +325,182 @@ macro_rules! gaussian_prior_geweke_testable {
                 stats.insert(String::from("x_mse"), mse);
 
                 stats
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! test_conjugate_prior {
+    ($X: ty, $Fx: ty, $Pr: ident, $prior: expr) => {
+        test_conjugate_prior!(
+            $X,
+            $Fx,
+            $Pr,
+            $prior,
+            mctol = 1e-3,
+            n = 1_000_000
+        );
+    };
+    ($X: ty, $Fx: ty, $Pr: ident, $prior: expr, n=$n: expr) => {
+        test_conjugate_prior!($X, $Fx, $Pr, $prior, mctol = 1e-3, n = $n);
+    };
+    ($X: ty, $Fx: ty, $Pr: ident, $prior: expr, mctol=$tol: expr) => {
+        test_conjugate_prior!(
+            $X,
+            $Fx,
+            $Pr,
+            $prior,
+            mctol = $tol,
+            n = 1_000_000
+        );
+    };
+    ($X: ty, $Fx: ty, $Pr: ident, $prior: expr, mctol=$tol: expr, n=$n: expr) => {
+        mod conjugate_prior {
+            use super::*;
+
+            fn random_xs(
+                fx: &$Fx,
+                n: usize,
+                mut rng: &mut impl rand::Rng,
+            ) -> <$Fx as $crate::traits::HasSuffStat<$X>>::Stat {
+                let mut stat =
+                    <$Fx as $crate::traits::HasSuffStat<$X>>::empty_suffstat(
+                        &fx,
+                    );
+                let xs: Vec<$X> = fx.sample(n, &mut rng);
+                stat.observe_many(&xs);
+                stat
+            }
+
+            #[test]
+            fn ln_p_is_ratio_of_ln_m() {
+                // test that p(y|x) = p(y, x) / p(x)
+                // If this doesn't work, one of two things could be wrong:
+                // 1. prior.ln_m is wrong
+                // 2. prior.ln_pp is wrong
+                let mut rng = rand::thread_rng();
+
+                let pr = $prior;
+                let fx: $Fx = pr.draw(&mut rng);
+
+                let mut stat = random_xs(&fx, 3, &mut rng);
+
+                let y: $X = fx.draw(&mut rng);
+
+                let ln_pp = <$Pr as ConjugatePrior<$X, $Fx>>::ln_pp(
+                    &pr,
+                    &y,
+                    &DataOrSuffStat::SuffStat(&stat),
+                );
+                let ln_m_lower = <$Pr as ConjugatePrior<$X, $Fx>>::ln_m(
+                    &pr,
+                    &DataOrSuffStat::SuffStat(&stat),
+                );
+
+                stat.observe(&y);
+
+                let ln_m_upper = <$Pr as ConjugatePrior<$X, $Fx>>::ln_m(
+                    &pr,
+                    &DataOrSuffStat::SuffStat(&stat),
+                );
+
+                assert::close(ln_pp, ln_m_upper - ln_m_lower, 1e-12);
+            }
+
+            #[test]
+            fn bayes_law() {
+                // test that p(θ|x) == p(x|θ)p(θ)/p(x)
+                // If this doesn't work, one of the following is wrong
+                // 1. prior.posterior.ln_f(fx)
+                // 2. fx.ln_f(x)
+                // 3. prior.ln_f(fx)
+                // 4. prior.ln_m(x)
+                let mut rng = rand::thread_rng();
+
+                let pr = $prior;
+                let fx: $Fx = pr.draw(&mut rng);
+                let stat = random_xs(&fx, 3, &mut rng);
+
+                let ln_like =
+                    <$Fx as $crate::traits::HasSuffStat<$X>>::ln_f_stat(
+                        &fx, &stat,
+                    );
+                let ln_prior = pr.ln_f(&fx);
+                let ln_m = <$Pr as ConjugatePrior<$X, $Fx>>::ln_m(
+                    &pr,
+                    &DataOrSuffStat::SuffStat(&stat),
+                );
+
+                let posterior = <$Pr as ConjugatePrior<$X, $Fx>>::posterior(
+                    &pr,
+                    &DataOrSuffStat::SuffStat(&stat),
+                );
+                let ln_post = posterior.ln_f(&fx);
+
+                eprintln!("bayes_law stat: {:?}", stat);
+                eprintln!("bayes_law prior: {pr}");
+                eprintln!("bayes_law fx: {fx}");
+                eprintln!("bayes_law ln_like: {ln_like}");
+                eprintln!("bayes_law ln_prior: {ln_prior}");
+                eprintln!("bayes_law ln_m: {ln_m}");
+                eprintln!("bayes_law ln_post: {ln_post}");
+
+                assert::close(ln_post, ln_like + ln_prior - ln_m, 1e-12);
+            }
+
+            #[test]
+            fn monte_carlo_ln_m() {
+                // tests that the Monte Carlo estimate of the evidence converges
+                // to m(x)
+                // If this doesn't work one of three things could be wrong:
+                // 1. prior.draw (from sample_stream) is wrong
+                // 2. fx.ln_f_stat is wrong
+                // 3. prior.m is wrong
+                let n_tries = 5;
+                let mut rng = rand::thread_rng();
+
+                let pr = $prior;
+
+                let stat = random_xs(&pr.draw(&mut rng), 3, &mut rng);
+
+                let m = <$Pr as ConjugatePrior<$X, $Fx>>::m(
+                    &pr,
+                    &DataOrSuffStat::SuffStat(&stat),
+                );
+
+                let mut min_err = ::std::f64::INFINITY;
+
+                for _ in 0..n_tries {
+                    let stream =
+                        <$Pr as $crate::traits::Sampleable<$Fx>>::sample_stream(
+                            &pr, &mut rng,
+                        );
+                    let est = stream
+                        .take($n)
+                        .map(|fx| {
+                            <$Fx as $crate::traits::HasSuffStat<$X>>::ln_f_stat(
+                                &fx, &stat,
+                            )
+                            .exp()
+                        })
+                        .sum::<f64>()
+                        / ($n as f64);
+
+                    let err = (est - m).abs();
+                    let close_enough = err < $tol;
+
+                    if err < min_err {
+                        min_err = err;
+                    }
+
+                    if close_enough {
+                        return;
+                    }
+                }
+                panic!(
+                    "MC estimate of M failed under {pr}. Min err: {min_err}"
+                );
             }
         }
     };

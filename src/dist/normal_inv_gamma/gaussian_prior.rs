@@ -101,8 +101,16 @@ mod test {
     use super::*;
     use crate::consts::LN_2PI;
     use crate::dist::normal_inv_gamma::NormalInvGammaParameters;
+    use crate::test_conjugate_prior;
 
     const TOL: f64 = 1E-12;
+
+    test_conjugate_prior!(
+        f64,
+        Gaussian,
+        NormalInvGamma,
+        NormalInvGamma::new(0.1, 1.2, 0.5, 1.8).unwrap()
+    );
 
     #[test]
     fn geweke() {

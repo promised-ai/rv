@@ -89,8 +89,16 @@ gaussian_prior_geweke_testable!(NormalGamma, Gaussian);
 mod tests {
     use super::*;
     use crate::data::GaussianData;
+    use crate::test_conjugate_prior;
 
     const TOL: f64 = 1E-12;
+
+    test_conjugate_prior!(
+        f64,
+        Gaussian,
+        NormalGamma,
+        NormalGamma::new(0.1, 1.2, 0.5, 1.8).unwrap()
+    );
 
     #[test]
     fn geweke() {

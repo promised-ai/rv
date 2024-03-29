@@ -169,13 +169,34 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
 mod test {
     use super::*;
     use crate::data::DataOrSuffStat;
+    use crate::test_conjugate_prior;
 
     const TOL: f64 = 1E-12;
 
     type CategoricalData<'a, X> = DataOrSuffStat<'a, X, Categorical>;
 
+    mod dir {
+        use super::*;
+
+        test_conjugate_prior!(
+            u8,
+            Categorical,
+            Dirichlet,
+            Dirichlet::new(vec![1.0, 2.0]).unwrap(),
+            n = 1_000_000
+        );
+    }
+
     mod symmetric {
         use super::*;
+
+        test_conjugate_prior!(
+            u8,
+            Categorical,
+            SymmetricDirichlet,
+            SymmetricDirichlet::jeffreys(2).unwrap(),
+            n = 1_000_000
+        );
 
         #[test]
         fn marginal_likelihood_u8_1() {
