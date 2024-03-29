@@ -21,6 +21,26 @@ pub struct InvWishart {
     df: usize,
 }
 
+pub struct InvWishartParameters {
+    pub inv_scale: DMatrix<f64>,
+    pub df: usize,
+}
+
+impl Parameterized for InvWishart {
+    type Parameters = InvWishartParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            inv_scale: self.inv_scale().clone_owned(),
+            df: self.df(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.inv_scale, params.df)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -248,7 +268,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!(InvWishart::identity(3), DMatrix::identity(3, 3));
+    test_basic_impls!(DMatrix<f64>, InvWishart, InvWishart::identity(3));
 
     #[test]
     fn new_should_reject_df_too_low() {

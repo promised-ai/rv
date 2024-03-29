@@ -30,7 +30,7 @@ pub enum DiscreteUniformError {
     InvalidInterval,
 }
 
-struct DiscreteUniformParameters<T: DuParam> {
+pub struct DiscreteUniformParameters<T: DuParam> {
     pub a: T,
     pub b: T,
 }

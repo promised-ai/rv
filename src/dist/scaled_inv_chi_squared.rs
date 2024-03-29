@@ -36,6 +36,26 @@ pub struct ScaledInvChiSquared {
     ln_f_const: OnceLock<f64>,
 }
 
+pub struct ScaledInvChiSquaredParameters {
+    pub v: f64,
+    pub t2: f64,
+}
+
+impl Parameterized for ScaledInvChiSquared {
+    type Parameters = ScaledInvChiSquaredParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            v: self.v(),
+            t2: self.t2(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.v, params.t2)
+    }
+}
+
 impl PartialEq for ScaledInvChiSquared {
     fn eq(&self, other: &ScaledInvChiSquared) -> bool {
         self.v == other.v
@@ -355,7 +375,11 @@ mod test {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] ScaledInvChiSquared::new(3.2, 1.4).unwrap());
+    test_basic_impls!(
+        f64,
+        ScaledInvChiSquared,
+        ScaledInvChiSquared::new(3.2, 1.4).unwrap()
+    );
 
     #[test]
     fn new() {

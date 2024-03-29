@@ -27,6 +27,26 @@ pub struct Pareto {
     scale: f64,
 }
 
+pub struct ParetoParameters {
+    pub shape: f64,
+    pub scale: f64,
+}
+
+impl Parameterized for Pareto {
+    type Parameters = ParetoParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            shape: self.shape(),
+            scale: self.scale(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.shape, params.scale)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -325,7 +345,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Pareto::new(1.0, 0.2).unwrap());
+    test_basic_impls!(f64, Pareto, Pareto::new(1.0, 0.2).unwrap());
 
     #[test]
     fn new() {

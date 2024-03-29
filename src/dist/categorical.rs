@@ -29,7 +29,7 @@ impl Parameterized for Categorical {
 
     fn emit_params(&self) -> Self::Parameters {
         Self::Parameters {
-            ln_weights: self.ln_weights(),
+            ln_weights: self.ln_weights().clone(),
         }
     }
 

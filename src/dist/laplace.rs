@@ -49,7 +49,7 @@ impl Parameterized for Laplace {
     }
 
     fn from_params(params: Self::Parameters) -> Self {
-        Self::new_unchecked(params.a, params.b)
+        Self::new_unchecked(params.mu, params.b)
     }
 }
 

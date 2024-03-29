@@ -25,7 +25,7 @@ fn posterior_from_stat(
 ) -> NormalInvGamma {
     let n = stat.n() as f64;
 
-    let (m, v, a, b) = nig.params();
+    let super::NormalInvGammaParameters { m, v, a, b } = nig.emit_params();
 
     let v_inv = v.recip();
 
@@ -100,6 +100,7 @@ gaussian_prior_geweke_testable!(NormalInvGamma, Gaussian);
 mod test {
     use super::*;
     use crate::consts::LN_2PI;
+    use crate::dist::normal_inv_gamma::NormalInvGammaParameters;
 
     const TOL: f64 = 1E-12;
 
@@ -122,7 +123,7 @@ mod test {
     // Random reference I found using the same source
     // https://github.com/JuliaStats/ConjugatePriors.jl/blob/master/src/normalinversegamma.jl
     fn ln_f_ref(gauss: &Gaussian, nig: &NormalInvGamma) -> f64 {
-        let (m, v, a, b) = nig.params();
+        let NormalInvGammaParameters { m, v, a, b } = nig.emit_params();
         let mu = gauss.mu();
         let sigma = gauss.sigma();
         let sig2 = sigma * sigma;

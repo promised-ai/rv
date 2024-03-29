@@ -269,7 +269,7 @@ impl Parameterized for Dirichlet {
 
     fn emit_params(&self) -> Self::Parameters {
         Self::Parameters {
-            alphas: self.alphas(),
+            alphas: self.alphas().clone(),
         }
     }
 
@@ -506,7 +506,7 @@ mod tests {
     mod dir {
         use super::*;
 
-        test_basic_impls!(f64, Dirichlet, Dirichlet::jeffreys(4).unwrap());
+        test_basic_impls!(Vec<f64>, Dirichlet, Dirichlet::jeffreys(4).unwrap());
 
         #[test]
         fn properly_sized_points_on_simplex_should_be_in_support() {
@@ -586,8 +586,9 @@ mod tests {
         use super::*;
 
         test_basic_impls!(
-            SymmetricDirichlet::jeffreys(4).unwrap(),
-            vec![0.25_f64; 4]
+            Vec<f64>,
+            SymmetricDirichlet,
+            SymmetricDirichlet::jeffreys(4).unwrap()
         );
 
         #[test]

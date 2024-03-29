@@ -127,9 +127,9 @@ pub trait HasDensity<X> {
 /// Contains the minimal functionality that a random object must have to be
 /// useful: a function defining the un-normalized density/mass at a point,
 /// and functions to draw samples from the distribution.
-pub trait Rv<X>: Sampleable<X> + HasDensity<X> + Parameterized {}
+pub trait Rv<X>: Sampleable<X> + HasDensity<X> {}
 
-impl<X, T> Rv<X> for T where T: Sampleable<X> + HasDensity<X> + Parameterized {}
+impl<X, T> Rv<X> for T where T: Sampleable<X> + HasDensity<X> {}
 
 /// Stochastic process
 ///

@@ -48,6 +48,10 @@ impl Parameterized for Gev {
             shape: self.shape(),
         }
     }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.loc, params.scale, params.shape)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -424,7 +428,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Gev::new(0.0, 1.0, 2.0).unwrap());
+    test_basic_impls!(f64, Gev, Gev::new(0.0, 1.0, 2.0).unwrap());
 
     #[test]
     fn new() {

@@ -42,6 +42,18 @@ pub struct UnitPowerLaw {
     alpha_ln: OnceLock<f64>,
 }
 
+impl Parameterized for UnitPowerLaw {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.alpha()
+    }
+
+    fn from_params(alpha: Self::Parameters) -> Self {
+        Self::new_unchecked(alpha)
+    }
+}
+
 impl PartialEq for UnitPowerLaw {
     fn eq(&self, other: &UnitPowerLaw) -> bool {
         self.alpha == other.alpha
@@ -340,7 +352,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] UnitPowerLaw::new(1.5).unwrap());
+    test_basic_impls!(f64, UnitPowerLaw, UnitPowerLaw::new(1.5).unwrap());
 
     #[test]
     fn new() {
@@ -417,7 +429,7 @@ mod tests {
     }
 
     #[test]
-    fn draw_should_resturn_values_within_0_to_1() {
+    fn draw_should_return_values_within_0_to_1() {
         let mut rng = rand::thread_rng();
         let powlaw = UnitPowerLaw::new(2.0).unwrap();
         for _ in 0..100 {

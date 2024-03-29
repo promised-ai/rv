@@ -63,7 +63,11 @@ impl<Fx: Parameterized> Parameterized for Mixture<Fx> {
     }
 
     fn from_params(mut params: Self::Parameters) -> Self {
-        let components = params.drain(..).map(|p| Fx::from_params(p)).collect();
+        let components = params
+            .component_params
+            .drain(..)
+            .map(|p| Fx::from_params(p))
+            .collect();
         Self::new_unchecked(params.weights, components)
     }
 }

@@ -9,7 +9,7 @@ use rand::Rng;
 use std::f64::consts::PI;
 use std::fmt;
 
-/// [VonMises distirbution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
+/// [VonMises distribution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
 /// on the circular interval (0, 2π]
 ///
 /// # Example
@@ -38,6 +38,26 @@ pub struct VonMises {
     k: f64,
     // bessel:i0(k), save some cycles
     i0_k: f64,
+}
+
+pub struct VonMisesParameters {
+    pub mu: f64,
+    pub k: f64,
+}
+
+impl Parameterized for VonMises {
+    type Parameters = VonMisesParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu: self.mu(),
+            k: self.k(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu, params.k)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -357,7 +377,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] VonMises::default());
+    test_basic_impls!(f64, VonMises);
 
     #[test]
     fn new_should_allow_mu_in_0_2pi() {

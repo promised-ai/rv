@@ -74,6 +74,18 @@ pub struct Poisson {
     ln_rate: OnceLock<f64>,
 }
 
+impl Parameterized for Poisson {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.rate()
+    }
+
+    fn from_params(rate: Self::Parameters) -> Self {
+        Self::new_unchecked(rate)
+    }
+}
+
 impl PartialEq for Poisson {
     fn eq(&self, other: &Poisson) -> bool {
         self.rate == other.rate
@@ -352,7 +364,7 @@ mod tests {
             .sum()
     }
 
-    test_basic_impls!([count] Poisson::new(0.5).unwrap());
+    test_basic_impls!(u32, Poisson, Poisson::new(0.5).unwrap());
 
     #[test]
     fn new() {

@@ -42,6 +42,10 @@ impl Parameterized for InvGaussian {
             lambda: self.lambda(),
         }
     }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu, params.lambda)
+    }
 }
 
 impl PartialEq for InvGaussian {

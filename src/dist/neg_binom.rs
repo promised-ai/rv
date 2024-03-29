@@ -47,6 +47,26 @@ pub struct NegBinomial {
     r_ln_p: OnceLock<f64>,
 }
 
+pub struct NegBinomialParameters {
+    pub r: f64,
+    pub p: f64,
+}
+
+impl Parameterized for NegBinomial {
+    type Parameters = NegBinomialParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            r: self.r(),
+            p: self.p(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.r, params.p)
+    }
+}
+
 impl PartialEq for NegBinomial {
     fn eq(&self, other: &NegBinomial) -> bool {
         self.r == other.r && self.p == other.p
@@ -318,7 +338,7 @@ mod tests {
 
     const TOL: f64 = 1E-10;
 
-    test_basic_impls!([count] NegBinomial::new(2.1, 0.6).unwrap());
+    test_basic_impls!(u32, NegBinomial, NegBinomial::new(2.1, 0.6).unwrap());
 
     #[test]
     fn new_with_good_params() {
