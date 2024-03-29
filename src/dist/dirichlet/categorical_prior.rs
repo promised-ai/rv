@@ -145,7 +145,8 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
                     .alphas()
                     .iter()
                     .zip(stat.counts().iter())
-                    .fold(0.0, |acc, (&a, &ct)| ln_gammafn(acc + (a + ct)));
+                    .map(|(&a, &ct)| ln_gammafn(a + ct))
+                    .sum::<f64>();
 
                 -b + c + ln_norm
             },
