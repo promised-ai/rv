@@ -48,6 +48,11 @@ impl StickBreaking {
             break_tail: breaker,
         }
     }
+
+    pub fn from_alpha(alpha: f64) -> Result<Self, UnitPowerLawError> {
+        let breaker = UnitPowerLaw::new(alpha)?;
+        Ok(Self::new(breaker))
+    }
 }
 
 pub struct PartialWeights(pub Vec<f64>);
@@ -56,15 +61,14 @@ pub struct BreakSequence(pub Vec<f64>);
 impl From<&BreakSequence> for PartialWeights {
     fn from(bs: &BreakSequence) -> Self {
         let mut remaining = 1.0;
-        let ws = bs
-            .0
-            .iter()
-            .map(|b| {
-                let w = (1.0 - b) * remaining;
-                remaining -= w;
-                w
-            })
-            .collect();
+        let ws =
+            bs.0.iter()
+                .map(|b| {
+                    let w = (1.0 - b) * remaining;
+                    remaining -= w;
+                    w
+                })
+                .collect();
         PartialWeights(ws)
     }
 }
@@ -251,6 +255,15 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // FIXME: impl things that need to be impl'd
+    // use crate::test_conjugate_prior;
+    // test_conjugate_prior!(
+    //     usize,
+    //     Sbd,
+    //     StickBreaking,
+    //     StickBreaking::from_alpha(1.2).unwrap()
+    // );
 
     #[test]
     fn partial_weights_to_break_sequence() {
