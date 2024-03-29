@@ -207,18 +207,13 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
         };
         let alpha = self.break_tail.alpha();
         let alpha_ln = self.break_tail.alpha_ln();
-        let params = self
-            .break_prefix
-            .iter()
-            .map(|b| (b.alpha(), b.beta()));
+        let params = self.break_prefix.iter().map(|b| (b.alpha(), b.beta()));
         count_pairs
             .iter()
             .map(|(y, n)| (*y as f64, *n as f64))
             .zip_longest(params)
             .map(|pair| match pair {
-                Left((yes, no)) => {
-                    alpha_ln + (yes + alpha).ln_beta(no + 1.0)
-                }
+                Left((yes, no)) => alpha_ln + (yes + alpha).ln_beta(no + 1.0),
                 Right((_a, _b)) => 0.0,
                 Both((yes, no), (a, b)) => {
                     (yes + a).ln_beta(no + b) - a.ln_beta(b)
@@ -227,7 +222,6 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
             .sum()
     }
 
-   
     /// Computes the logarithm of the marginal likelihood with cache.
     fn ln_m_with_cache(
         &self,
