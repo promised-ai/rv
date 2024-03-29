@@ -60,8 +60,11 @@ impl From<&BreakSequence> for PartialWeights {
         let ws =
             bs.0.iter()
                 .map(|b| {
+                    debug_assert!(0.0 <= *b && *b <= 1.0);
                     let w = (1.0 - b) * remaining;
+                    debug_assert!(0.0 <= w && w <= 1.0);
                     remaining -= w;
+                    debug_assert!(0.0 <= remaining && remaining <= 1.0);
                     w
                 })
                 .collect();
@@ -75,8 +78,11 @@ impl From<&PartialWeights> for BreakSequence {
         let bs =
             ws.0.iter()
                 .map(|w| {
+                    debug_assert!(0.0 <= *w && *w <= 1.0);
                     let b = 1.0 - (w / remaining);
+                    debug_assert!(0.0 <= b && b <= 1.0);
                     remaining -= w;
+                    debug_assert!(0.0 <= remaining && remaining <= 1.0);
                     b
                 })
                 .collect();
