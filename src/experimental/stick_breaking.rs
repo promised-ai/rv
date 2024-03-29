@@ -8,6 +8,7 @@ use crate::traits::*;
 use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
 use rand::Rng;
+use special::Beta as BetaFn;
 
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -196,11 +197,6 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
 
     /// Computes the logarithm of the marginal likelihood.
     fn ln_m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
-        self.m(x).ln()
-    }
-
-    /// Computes the marginal likelihood.
-    fn m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
         let count_pairs = match x {
             DataOrSuffStat::Data(xs) => {
                 let mut stat = SbdSuffStat::new();
@@ -209,23 +205,29 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
             }
             DataOrSuffStat::SuffStat(stat) => stat.break_pairs(),
         };
+        let alpha = self.break_tail.alpha();
+        let alpha_ln = self.break_tail.alpha_ln();
         let params = self
             .break_prefix
             .iter()
-            .map(|b| (b.alpha(), b.beta()))
-            .chain(std::iter::repeat((self.break_tail.alpha(), 1.0)));
+            .map(|b| (b.alpha(), b.beta()));
         count_pairs
             .iter()
-            .zip(params)
-            .map(|(counts, params)| {
-                let n = counts.0 + counts.1;
-                BetaBinomial::new(n as u32, params.0, params.1)
-                    .unwrap()
-                    .f(&(counts.0 as u32))
+            .map(|(y, n)| (*y as f64, *n as f64))
+            .zip_longest(params)
+            .map(|pair| match pair {
+                Left((yes, no)) => {
+                    alpha_ln + (yes + alpha).ln_beta(no + 1.0)
+                }
+                Right((_a, _b)) => 0.0,
+                Both((yes, no), (a, b)) => {
+                    (yes + a).ln_beta(no + b) - a.ln_beta(b)
+                }
             })
-            .product()
+            .sum()
     }
 
+   
     /// Computes the logarithm of the marginal likelihood with cache.
     fn ln_m_with_cache(
         &self,
@@ -270,7 +272,7 @@ mod tests {
     fn sb_ln_m_vs_monte_carlo() {
         use crate::misc::logsumexp;
 
-        let n_samples = 1000;
+        let n_samples = 1_000_000;
         let xs: Vec<usize> = vec![1, 2, 3];
 
         let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
@@ -321,7 +323,7 @@ mod tests {
 
         // Likelihood
         let lik = Sbd::new(par);
-        let lik_data: &usize = &0;
+        let lik_data: &usize = &7;
         let lik_lnf = lik.ln_f(lik_data);
 
         // Evidence
