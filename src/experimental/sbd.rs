@@ -62,7 +62,7 @@ impl Sbd {
     ///
     /// A vector containing the indices of the StickSequence elements whose
     /// values are less than the corresponding values in `ps`.
-    fn multi_invccdf_sorted(&self, ps: &[f64]) -> Vec<usize> {
+    pub fn multi_invccdf_sorted(&self, ps: &[f64]) -> Vec<usize> {
         let n = ps.len();
         self.sticks.extendmap_ccdf(
             // Note that ccdf is decreasing, but xs is increasing
