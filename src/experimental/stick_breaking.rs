@@ -318,12 +318,12 @@ mod tests {
         // Prior
         let prior = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
         let par: StickSequence = prior.draw(&mut rng);
-        let par_data = par.weights(3);
+        let par_data = par.weights(4);
         let prior_lnf = prior.ln_f(&par_data);
 
         // Likelihood
         let lik = Sbd::new(par);
-        let lik_data: &usize = &7;
+        let lik_data: &usize = &8;
         let lik_lnf = lik.ln_f(lik_data);
 
         // Evidence
@@ -395,10 +395,11 @@ mod tests {
     #[test]
     fn sb_posterior_obs_one() {
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
-        let post = sb.posterior(&DataOrSuffStat::Data(&[1]));
+        let post = sb.posterior(&DataOrSuffStat::Data(&[2]));
 
         assert_eq!(post.break_prefix[0], Beta::new(4.0, 1.0).unwrap());
-        assert_eq!(post.break_prefix[1], Beta::new(3.0, 2.0).unwrap());
+        assert_eq!(post.break_prefix[1], Beta::new(4.0, 1.0).unwrap());
+        assert_eq!(post.break_prefix[2], Beta::new(3.0, 2.0).unwrap());
     }
 
     #[test]
@@ -425,5 +426,62 @@ mod tests {
         let loglik_diff = sbd1.ln_f_stat(&stat) - sbd2.ln_f_stat(&stat);
 
         assert::close(logpost_diff, loglik_diff + logprior_diff, 1e-12);
+    }
+
+    #[test]
+    fn sb_posterior_rejection_sampling() {
+        use crate::experimental::sbd::sorted_uniforms;
+
+        let mut rng = rand::thread_rng();
+        let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
+
+        let num_samples = 1_000;
+        let count_per_sample = 1_000;
+        let n = num_samples * count_per_sample;
+
+        // Our computed posterior
+        let data = [10];
+        let post = sb.posterior(&DataOrSuffStat::Data(&data[..]));
+
+        // An approximation using rejection sampling
+        let mut approx_post = Vec::new();
+        while approx_post.len() < num_samples {
+            let seq: StickSequence = sb.draw(&mut rng);
+            let sbd = Sbd::new(seq.clone());
+            if sbd.draw(&mut rng) == 10 {
+                approx_post.push(seq);
+            }
+        }
+
+        let mut samples: Vec<usize> = Vec::new();
+        for seq in approx_post {
+            let sbd = Sbd::new(seq);
+            let unifs = sorted_uniforms(count_per_sample, &mut rng);
+            let stat = SbdSuffStat::from( &sbd.multi_invccdf_sorted(&unifs)[..]);
+
+            if samples.len() < stat.counts.len() {
+                samples.resize(stat.counts.len(), 0);
+            }
+
+            for (j, c) in stat.counts.iter().enumerate() {
+                samples[j] += c;
+            }
+        }
+
+        let dof = (samples.len() - 1) as f64;
+
+        let expected_counts = (0..).map(|j| {
+            post.m(&DataOrSuffStat::Data(&[j])) * n as f64
+        });
+
+        let ts = samples.iter().zip(expected_counts).map(|(o, e)| {((*o as f64) - e).powi(2) / e});
+        let t: &f64 = &ts.clone().sum();
+        let p = ChiSquared::new(dof).unwrap().sf(t);
+
+        // ts.enumerate().for_each(|(n, t)| println!("n: {}\t t: {}", n, t));
+        // println!("t = {}\t p = {}", t, p);
+
+        assert!(p > 0.01);
+
     }
 } // mod tests
