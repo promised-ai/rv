@@ -304,9 +304,9 @@ mod tests {
     #[test]
     fn sb_repeated_obs_more_likely() {
         let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
-        let sb_m = sb.m(&DataOrSuffStat::Data(&[1, 2]));
-        let post = sb.posterior(&DataOrSuffStat::Data(&[1, 2]));
-        let post_m = post.m(&DataOrSuffStat::Data(&[1, 2]));
+        let sb_m = sb.ln_m(&DataOrSuffStat::Data(&[10]));
+        let post = sb.posterior(&DataOrSuffStat::Data(&[10]));
+        let post_m = post.ln_m(&DataOrSuffStat::Data(&[10]));
         assert!(post_m > sb_m);
     }
 
