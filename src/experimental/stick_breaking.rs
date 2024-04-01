@@ -188,6 +188,7 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
             break_tail: self.break_tail.clone(),
         }
     }
+
     fn posterior(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::Posterior {
         match x {
             DataOrSuffStat::Data(xs) => {
@@ -216,12 +217,15 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
         let params = self.break_prefix.iter().map(|b| (b.alpha(), b.beta()));
         count_pairs
             .iter()
-            .map(|(y, n)| (*y as f64, *n as f64))
             .zip_longest(params)
             .map(|pair| match pair {
-                Left((yes, no)) => alpha_ln + (yes + alpha).ln_beta(no + 1.0),
+                Left((yes, no)) => {
+                    let (yes, no) = (*yes as f64, *no as f64);
+                    (yes + alpha).ln_beta(no + 1.0) - alpha.ln_beta(1.0)
+                }
                 Right((_a, _b)) => 0.0,
                 Both((yes, no), (a, b)) => {
+                    let (yes, no) = (*yes as f64, *no as f64);
                     (yes + a).ln_beta(no + b) - a.ln_beta(b)
                 }
             })
