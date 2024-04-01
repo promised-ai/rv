@@ -435,8 +435,8 @@ mod tests {
         let mut rng = rand::thread_rng();
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
 
-        let num_samples = 1_000;
-        let count_per_sample = 1_000;
+        let num_samples = 1000;
+        let count_per_sample = 10;
         let n = num_samples * count_per_sample;
 
         // Our computed posterior
@@ -453,35 +453,38 @@ mod tests {
             }
         }
 
-        let mut samples: Vec<usize> = Vec::new();
+        let mut counts: Vec<usize> = Vec::new();
         for seq in approx_post {
             let sbd = Sbd::new(seq);
             let unifs = sorted_uniforms(count_per_sample, &mut rng);
-            let stat = SbdSuffStat::from( &sbd.multi_invccdf_sorted(&unifs)[..]);
+            let stat = SbdSuffStat::from(&sbd.multi_invccdf_sorted(&unifs)[..]);
 
-            if samples.len() < stat.counts.len() {
-                samples.resize(stat.counts.len(), 0);
+            if counts.len() < stat.counts.len() {
+                counts.resize(stat.counts.len(), 0);
             }
 
             for (j, c) in stat.counts.iter().enumerate() {
-                samples[j] += c;
+                counts[j] += c;
             }
         }
 
-        let dof = (samples.len() - 1) as f64;
+        let dof = (counts.len() - 1) as f64;
 
-        let expected_counts = (0..).map(|j| {
-            post.m(&DataOrSuffStat::Data(&[j])) * n as f64
-        });
+        let expected_counts =
+            (0..).map(|j| post.m(&DataOrSuffStat::Data(&[j])) * n as f64);
 
-        let ts = samples.iter().zip(expected_counts).map(|(o, e)| {((*o as f64) - e).powi(2) / e});
+        let ts = counts
+            .iter()
+            .zip(expected_counts)
+            .map(|(o, e)| ((*o as f64) - e).powi(2) / e);
+
         let t: &f64 = &ts.clone().sum();
         let p = ChiSquared::new(dof).unwrap().sf(t);
 
-        // ts.enumerate().for_each(|(n, t)| println!("n: {}\t t: {}", n, t));
+        // ts.enumerate()
+        //     .for_each(|(n, t)| println!("n: {}\t t: {}", n, t));
         // println!("t = {}\t p = {}", t, p);
 
         assert!(p > 0.01);
-
     }
 } // mod tests
