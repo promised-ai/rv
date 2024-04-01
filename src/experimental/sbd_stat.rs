@@ -101,15 +101,15 @@ mod tests {
     //     assert_eq!(ln_f_stat, 2.1972245773362196); // Replace with the expected value
     // }
 
-    // #[test]
-    // fn test_observe_and_forget() {
-    //     let mut suff_stat = SbdSuffStat::new();
+    #[test]
+    fn test_observe_and_forget() {
+        let mut suff_stat = SbdSuffStat::new();
 
-    //     suff_stat.observe(&1);
-    //     suff_stat.observe(&2);
-    //     suff_stat.observe(&2);
-    //     suff_stat.forget(&2);
+        suff_stat.observe(&1);
+        suff_stat.observe(&2);
+        suff_stat.observe(&2);
+        suff_stat.forget(&2);
 
-    //     assert_eq!(suff_stat.counts, vec![0, 1, 1]);
-    // }
+        assert_eq!(suff_stat.counts, vec![0, 1, 1]);
+    }
 }
