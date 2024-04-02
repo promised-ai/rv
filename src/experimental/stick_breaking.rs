@@ -217,7 +217,6 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
             DataOrSuffStat::SuffStat(stat) => stat.break_pairs(),
         };
         let alpha = self.break_tail.alpha();
-        let alpha_ln = self.break_tail.alpha_ln();
         let params = self.break_prefix.iter().map(|b| (b.alpha(), b.beta()));
         count_pairs
             .iter()
@@ -225,6 +224,8 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
             .map(|pair| match pair {
                 Left((yes, no)) => {
                     let (yes, no) = (*yes as f64, *no as f64);
+
+                    // TODO: Simplify this after everything is working
                     (yes + alpha).ln_beta(no + 1.0) - alpha.ln_beta(1.0)
                 }
                 Right((_a, _b)) => 0.0,
