@@ -128,8 +128,12 @@ impl Sampleable<StickSequence> for StickBreaking {
     fn draw<R: Rng>(&self, rng: &mut R) -> StickSequence {
         let seed: u64 = rng.gen();
 
-        // TODO: Account for the `break_prefix`
-        StickSequence::new(self.break_tail.clone(), Some(seed))
+        let seq = StickSequence::new(self.break_tail.clone(), Some(seed));
+        for beta in &self.break_prefix {
+            let p = beta.draw(rng);
+            seq.push_break(p);
+        }
+        seq
     }
 }
 
