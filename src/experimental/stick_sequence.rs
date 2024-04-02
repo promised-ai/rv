@@ -109,6 +109,14 @@ impl StickSequence {
         }
     }
 
+    pub fn push_break(&self, p: f64) {
+        self.with_inner_mut(|inner| {
+            let remaining_mass = *inner.ccdf.last().unwrap();
+            let new_remaining_mass = remaining_mass * p;
+            inner.ccdf.push(new_remaining_mass);
+        });
+    }
+
     pub fn push_to_ccdf(&self, p: f64) {
         self.with_inner_mut(|inner| {
             assert!(p < *inner.ccdf.last().unwrap());
