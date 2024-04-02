@@ -54,7 +54,8 @@ impl HasSuffStat<usize> for Sbd {
             .0
             .iter()
             .zip(stat.counts.iter())
-            .fold(0.0, |acc, (w, c)| (*c as f64).mul_add(w.ln(), acc))
+            .map(|(w, c)| (*c as f64) * w.ln())
+            .sum()
     }
 }
 
