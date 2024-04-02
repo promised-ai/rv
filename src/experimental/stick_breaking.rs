@@ -494,6 +494,6 @@ mod tests {
         //     .for_each(|(n, t)| println!("n: {}\t t: {}", n, t));
         // println!("t = {}\t p = {}", t, p);
 
-        assert!(p > 0.01);
+        assert!(p > 0.01, "p-value = {}", p);
     }
 } // mod tests
