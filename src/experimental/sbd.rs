@@ -248,6 +248,27 @@ mod tests {
     use rand::thread_rng;
 
     #[test]
+    fn test_sorted_uniforms() {
+        let mut rng = thread_rng();
+        let n = 10000;
+        let xs = sorted_uniforms(n, &mut rng);
+        assert_eq!(xs.len(), n);
+
+        // Result is sorted and in the unit interval
+        assert!(&0.0 < xs.first().unwrap());
+        assert!(xs.last().unwrap() < &1.0);
+        assert!(xs.windows(2).all(|w| w[0] <= w[1]));
+
+        // Mean is 1/2
+        let mean = xs.iter().sum::<f64>() / n as f64;
+        assert!((0.49..0.51).contains(&mean));
+
+        // Variance is 1/12
+        let var = xs.iter().map(|x| (x - 0.5).powi(2)).sum::<f64>() / n as f64;
+        assert!((0.08..0.09).contains(&var))
+    }
+
+    #[test]
     fn test_multi_invccdf_sorted() {
         let sticks = StickSequence::new(UnitPowerLaw::new(10.0).unwrap(), None);
         let sbd = Sbd::new(sticks);
