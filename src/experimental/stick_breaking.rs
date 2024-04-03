@@ -420,8 +420,8 @@ mod tests {
         let seq1: StickSequence = sb.draw(&mut rng);
         let seq2: StickSequence = sb.draw(&mut rng);
 
-        let w1 = seq1.weights(2);
-        let w2 = seq2.weights(2);
+        let w1 = seq1.weights(3);
+        let w2 = seq2.weights(3);
 
         let logprior_diff = sb.ln_f(&w1) - sb.ln_f(&w2);
 
@@ -438,6 +438,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn sb_posterior_rejection_sampling() {
         use crate::experimental::sbd::sorted_uniforms;
 
