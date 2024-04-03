@@ -465,7 +465,9 @@ mod tests {
         let mut counts: Vec<usize> = Vec::new();
         for seq in approx_post {
             let sbd = Sbd::new(seq);
-            let data = (0..count_per_sample).map(|_| sbd.draw(&mut rng)).collect::<Vec<_>>();
+            let data = (0..count_per_sample)
+                .map(|_| sbd.draw(&mut rng))
+                .collect::<Vec<_>>();
             // let unifs = sorted_uniforms(count_per_sample, &mut rng);
             let stat = SbdSuffStat::from(&data[..]);
 
@@ -480,10 +482,19 @@ mod tests {
 
         let dof = (counts.len() - 2) as f64;
 
-        let break_pairs = SbdSuffStat{ counts: counts.clone()}.break_pairs();
+        let break_pairs = SbdSuffStat {
+            counts: counts.clone(),
+        }
+        .break_pairs();
 
         for (n, (a, b)) in break_pairs.iter().enumerate() {
-            println!("n: {}\t({}, {})\t {}", n, a, b, (*a as f64) / (*a + *b) as f64);
+            println!(
+                "n: {}\t({}, {})\t {}",
+                n,
+                a,
+                b,
+                (*a as f64) / (*a + *b) as f64
+            );
         }
 
         let expected_counts =
@@ -496,7 +507,6 @@ mod tests {
 
         let t: &f64 = &ts.clone().sum();
         let p = ChiSquared::new(dof).unwrap().sf(t);
-
 
         assert!(p > 0.001, "p-value = {}", p);
     }
