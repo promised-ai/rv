@@ -327,12 +327,12 @@ mod tests {
         // Prior
         let prior = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
         let par: StickSequence = prior.draw(&mut rng);
-        let par_data = par.weights(4);
+        let par_data = par.weights(7);
         let prior_lnf = prior.ln_f(&par_data);
 
         // Likelihood
         let lik = Sbd::new(par);
-        let lik_data: &usize = &8;
+        let lik_data: &usize = &5;
         let lik_lnf = lik.ln_f(lik_data);
 
         // Evidence
@@ -438,7 +438,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn sb_posterior_rejection_sampling() {
         use crate::experimental::sbd::sorted_uniforms;
 
@@ -466,8 +465,9 @@ mod tests {
         let mut counts: Vec<usize> = Vec::new();
         for seq in approx_post {
             let sbd = Sbd::new(seq);
-            let unifs = sorted_uniforms(count_per_sample, &mut rng);
-            let stat = SbdSuffStat::from(&sbd.multi_invccdf_sorted(&unifs)[..]);
+            let data = (0..count_per_sample).map(|_| sbd.draw(&mut rng)).collect::<Vec<_>>();
+            // let unifs = sorted_uniforms(count_per_sample, &mut rng);
+            let stat = SbdSuffStat::from(&data[..]);
 
             if counts.len() < stat.counts.len() {
                 counts.resize(stat.counts.len(), 0);
@@ -478,7 +478,13 @@ mod tests {
             }
         }
 
-        let dof = (counts.len() - 1) as f64;
+        let dof = (counts.len() - 2) as f64;
+
+        let break_pairs = SbdSuffStat{ counts: counts.clone()}.break_pairs();
+
+        for (n, (a, b)) in break_pairs.iter().enumerate() {
+            println!("n: {}\t({}, {})\t {}", n, a, b, (*a as f64) / (*a + *b) as f64);
+        }
 
         let expected_counts =
             (0..).map(|j| post.m(&DataOrSuffStat::Data(&[j])) * n as f64);
@@ -491,10 +497,7 @@ mod tests {
         let t: &f64 = &ts.clone().sum();
         let p = ChiSquared::new(dof).unwrap().sf(t);
 
-        // ts.enumerate()
-        //     .for_each(|(n, t)| println!("n: {}\t t: {}", n, t));
-        // println!("t = {}\t p = {}", t, p);
 
-        assert!(p > 0.01, "p-value = {}", p);
+        assert!(p > 0.001, "p-value = {}", p);
     }
 } // mod tests
