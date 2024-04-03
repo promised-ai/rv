@@ -319,7 +319,6 @@ mod tests {
         assert!(post_m > sb_m);
     }
 
-    // FIXME
     #[test]
     fn sb_bayes_law() {
         let mut rng = rand::thread_rng();
@@ -346,7 +345,6 @@ mod tests {
         assert::close(post_lnf, prior_lnf + lik_lnf - ln_ev, 1e-12);
     }
 
-    // FIXME
     #[test]
     fn sb_pp_is_quotient_of_marginals() {
         // pp(x|y) = m({x, y})/m(x)
@@ -480,6 +478,8 @@ mod tests {
             }
         }
 
+        // This would be counts.len() - 1, but the current implementation has a
+        // trailing zero we need to ignore
         let dof = (counts.len() - 2) as f64;
 
         let break_pairs = SbdSuffStat {
