@@ -99,8 +99,8 @@ impl Support<usize> for Sbd {
     /// # Returns
     ///
     /// Returns `true` if the value is greater than or equal to zero, `false` otherwise.
-    fn supports(&self, x: &usize) -> bool {
-        x.ge(&0)
+    fn supports(&self, _: &usize) -> bool {
+        true
     }
 }
 
