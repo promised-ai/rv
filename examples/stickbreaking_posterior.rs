@@ -1,9 +1,9 @@
 use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
 use peroxide::statistics::stat::Statistics;
+use rv::experimental::stick_breaking::BreakSequence;
 use rv::experimental::*;
 use rv::prelude::*;
-use rv::experimental::stick_breaking::BreakSequence;     
 use rv::traits::*;
 
 fn main() {
@@ -27,13 +27,15 @@ fn main() {
         }
     }
 
-
     let mut counts: Vec<Vec<f64>> = vec![];
     for j in 0..20 {
-        counts.push(approx.iter().map(|breaks: &Vec<f64>| *breaks.get(j).unwrap()).collect())
-    };
-
-
+        counts.push(
+            approx
+                .iter()
+                .map(|breaks: &Vec<f64>| *breaks.get(j).unwrap())
+                .collect(),
+        )
+    }
 
     let break_dists: Vec<Beta> = (0..19)
         .map(|n| {
@@ -57,5 +59,4 @@ fn main() {
             break_dists[n].variance().unwrap(),
         );
     });
-
 }
