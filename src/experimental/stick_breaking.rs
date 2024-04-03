@@ -437,8 +437,6 @@ mod tests {
 
     #[test]
     fn sb_posterior_rejection_sampling() {
-        use crate::experimental::sbd::sorted_uniforms;
-
         let mut rng = rand::thread_rng();
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
 
