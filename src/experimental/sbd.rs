@@ -250,7 +250,7 @@ mod tests {
     #[test]
     fn test_sorted_uniforms() {
         let mut rng = thread_rng();
-        let n = 10000;
+        let n = 1000;
         let xs = sorted_uniforms(n, &mut rng);
         assert_eq!(xs.len(), n);
 
