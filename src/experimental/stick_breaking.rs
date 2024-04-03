@@ -260,21 +260,29 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
 
 #[cfg(test)]
 mod tests {
+    use proptest::prelude::*;
+
     use super::*;
 
-    #[test]
-    fn partial_weights_to_break_sequence() {
-        let ws = PartialWeights(vec![0.1, 0.2, 0.3]);
-        let bs = BreakSequence::from(&ws);
-        assert::close(ws.0, PartialWeights::from(&bs).0, 1e-10);
+    proptest! {
+        #[test]
+        fn partial_weights_to_break_sequence(v in prop::collection::vec(0.0..=1.0, 1..100), m in 0.0..=1.0) {
+            // we want the sum of ws to be in the range [0, 1]
+            let multiplier: f64 = m / v.iter().sum::<f64>();
+            let ws = PartialWeights(v.iter().map(|w| w * multiplier).collect());
+            let bs = BreakSequence::from(&ws);
+            assert::close(ws.0, PartialWeights::from(&bs).0, 1e-10);
+        }
     }
 
-    #[test]
-    fn break_sequence_to_partial_weights() {
-        let bs = BreakSequence(vec![0.99, 0.99, 0.99]);
-        let ws = PartialWeights::from(&bs);
-        let bs2 = BreakSequence::from(&ws);
-        assert::close(bs.0, bs2.0, 1e-10);
+    proptest! {
+        #[test]
+        fn break_sequence_to_partial_weights(v in prop::collection::vec(0.0..=1.0, 1..100)) {
+            let bs = BreakSequence(v);
+            let ws = PartialWeights::from(&bs);
+            let bs2 = BreakSequence::from(&ws);
+            assert::close(bs.0, bs2.0, 1e-10);
+        }
     }
 
     #[test]
