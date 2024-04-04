@@ -1,5 +1,5 @@
-use crate::experimental::Sbd;
-use crate::experimental::SbdSuffStat;
+use crate::experimental::StickBreakingDiscrete;
+use crate::experimental::StickBreakingDiscreteSuffStat;
 // use crate::experimental::StickBreakingSuffStat;
 use crate::experimental::StickSequence;
 use crate::prelude::*;
@@ -138,7 +138,7 @@ impl Sampleable<StickSequence> for StickBreaking {
 }
 
 /// Implements the `Sampleable` trait for `StickBreaking`.
-impl Sampleable<Sbd> for StickBreaking {
+impl Sampleable<StickBreakingDiscrete> for StickBreaking {
     /// Draws a sample from the `StickBreaking` distribution.
     ///
     /// # Arguments
@@ -148,13 +148,13 @@ impl Sampleable<Sbd> for StickBreaking {
     /// # Returns
     ///
     /// A sample from the `StickBreaking` distribution.
-    fn draw<R: Rng>(&self, rng: &mut R) -> Sbd {
-        Sbd::new(self.draw(rng))
+    fn draw<R: Rng>(&self, rng: &mut R) -> StickBreakingDiscrete {
+        StickBreakingDiscrete::new(self.draw(rng))
     }
 }
 
 /// Implementation of the `ConjugatePrior` trait for the `StickBreaking` struct.
-impl ConjugatePrior<usize, Sbd> for StickBreaking {
+impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
     type Posterior = StickBreaking;
     type MCache = ();
     type PpCache = Self::Posterior;
@@ -163,12 +163,12 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     fn ln_m_cache(&self) -> Self::MCache {}
 
     /// Computes the logarithm of the predictive probability cache.
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::PpCache {
+    fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, StickBreakingDiscrete>) -> Self::PpCache {
         self.posterior(x)
     }
 
     /// Computes the posterior distribution from the sufficient statistic.
-    fn posterior_from_suffstat(&self, stat: &SbdSuffStat) -> Self::Posterior {
+    fn posterior_from_suffstat(&self, stat: &StickBreakingDiscreteSuffStat) -> Self::Posterior {
         let pairs = stat.break_pairs();
         let new_prefix = self
             .break_prefix
@@ -193,10 +193,10 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
         }
     }
 
-    fn posterior(&self, x: &DataOrSuffStat<usize, Sbd>) -> Self::Posterior {
+    fn posterior(&self, x: &DataOrSuffStat<usize, StickBreakingDiscrete>) -> Self::Posterior {
         match x {
             DataOrSuffStat::Data(xs) => {
-                let mut stat = SbdSuffStat::new();
+                let mut stat = StickBreakingDiscreteSuffStat::new();
                 stat.observe_many(xs);
                 self.posterior_from_suffstat(&stat)
             }
@@ -207,10 +207,10 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     }
 
     /// Computes the logarithm of the marginal likelihood.
-    fn ln_m(&self, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
+    fn ln_m(&self, x: &DataOrSuffStat<usize, StickBreakingDiscrete>) -> f64 {
         let count_pairs = match x {
             DataOrSuffStat::Data(xs) => {
-                let mut stat = SbdSuffStat::new();
+                let mut stat = StickBreakingDiscreteSuffStat::new();
                 stat.observe_many(xs);
                 stat.break_pairs()
             }
@@ -241,7 +241,7 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     fn ln_m_with_cache(
         &self,
         _cache: &Self::MCache,
-        x: &DataOrSuffStat<usize, Sbd>,
+        x: &DataOrSuffStat<usize, StickBreakingDiscrete>,
     ) -> f64 {
         self.ln_m(x)
     }
@@ -252,7 +252,7 @@ impl ConjugatePrior<usize, Sbd> for StickBreaking {
     }
 
     /// Computes the predictive probability.
-    fn pp(&self, y: &usize, x: &DataOrSuffStat<usize, Sbd>) -> f64 {
+    fn pp(&self, y: &usize, x: &DataOrSuffStat<usize, StickBreakingDiscrete>) -> f64 {
         let post = self.posterior(x);
         post.m(&DataOrSuffStat::Data(&[*y]))
     }
@@ -300,7 +300,7 @@ mod tests {
             let ln_fs: Vec<f64> = sb
                 .sample_stream(&mut rand::thread_rng())
                 .take(n_samples)
-                .map(|sbd: Sbd| xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>())
+                .map(|sbd: StickBreakingDiscrete| xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>())
                 .collect();
             logsumexp(&ln_fs) - (n_samples as f64).ln()
         };
@@ -314,7 +314,7 @@ mod tests {
         let sb_pp = sb.pp(&3, &DataOrSuffStat::Data(&[1, 2]));
         let post = sb.posterior(&DataOrSuffStat::Data(&[1, 2]));
         let post_f =
-            post.pp(&3, &DataOrSuffStat::SuffStat(&SbdSuffStat::new()));
+            post.pp(&3, &DataOrSuffStat::SuffStat(&StickBreakingDiscreteSuffStat::new()));
         assert::close(sb_pp, post_f, 1e-10);
     }
 
@@ -338,7 +338,7 @@ mod tests {
         let prior_lnf = prior.ln_f(&par_data);
 
         // Likelihood
-        let lik = Sbd::new(par);
+        let lik = StickBreakingDiscrete::new(par);
         let lik_data: &usize = &5;
         let lik_lnf = lik.ln_f(lik_data);
 
@@ -432,12 +432,12 @@ mod tests {
         let logprior_diff = sb.ln_f(&w1) - sb.ln_f(&w2);
 
         let data = [1, 2];
-        let stat = SbdSuffStat::from(&data[..]);
+        let stat = StickBreakingDiscreteSuffStat::from(&data[..]);
         let post = sb.posterior(&DataOrSuffStat::SuffStat(&stat));
         let logpost_diff = post.ln_f(&w1) - post.ln_f(&w2);
 
-        let sbd1 = Sbd::new(seq1);
-        let sbd2 = Sbd::new(seq2);
+        let sbd1 = StickBreakingDiscrete::new(seq1);
+        let sbd2 = StickBreakingDiscrete::new(seq2);
         let loglik_diff = sbd1.ln_f_stat(&stat) - sbd2.ln_f_stat(&stat);
 
         assert::close(logpost_diff, loglik_diff + logprior_diff, 1e-12);
@@ -455,11 +455,11 @@ mod tests {
         let post = sb.posterior(&DataOrSuffStat::Data(&data[..]));
 
         // An approximation using rejection sampling
-        let mut stat = SbdSuffStat::new();
+        let mut stat = StickBreakingDiscreteSuffStat::new();
         let mut n = 0;
         while n < num_samples {
             let seq: StickSequence = sb.draw(&mut rng);
-            let sbd = Sbd::new(seq.clone());
+            let sbd = StickBreakingDiscrete::new(seq.clone());
             if sbd.draw(&mut rng) == 10 {
                 stat.observe(&sbd.draw(&mut rng));
                 n += 1;

@@ -21,7 +21,7 @@ fn main() {
     let mut approx: Vec<Vec<f64>> = Vec::new();
     while approx.len() < num_samples {
         let seq: StickSequence = sb.draw(&mut rng);
-        let sbd = Sbd::new(seq.clone());
+        let sbd = StickBreakingDiscrete::new(seq.clone());
         if sbd.draw(&mut rng) == 10 {
             approx.push(BreakSequence::from(&seq.weights(20)).0);
         }

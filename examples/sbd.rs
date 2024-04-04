@@ -1,5 +1,5 @@
 #[cfg(feature = "experimental")]
-use rv::experimental::{Sbd, SbdSuffStat, StickBreaking, StickSequence};
+use rv::experimental::{StickBreakingDiscrete, StickBreakingDiscreteSuffStat, StickBreaking, StickSequence};
 use rv::prelude::UnitPowerLaw;
 use rv::traits::*;
 
@@ -14,12 +14,12 @@ fn main() {
         let sticks: StickSequence = sbp.draw(&mut rand::thread_rng());
 
         // Use the StickSequence to instantiate a stick-breaking discrete distribution
-        let sbd = Sbd::new(sticks.clone());
+        let sbd = StickBreakingDiscrete::new(sticks.clone());
 
-        // Now sample from the Sbd and find its sufficient statistic
+        // Now sample from the StickBreakingDiscrete and find its sufficient statistic
         let n = 10000;
         let xs = sbd.sample(n, &mut rand::thread_rng());
-        let stat = SbdSuffStat::from(&xs[..]);
+        let stat = StickBreakingDiscreteSuffStat::from(&xs[..]);
 
         // Use the sufficient statistic to find the posterior
         let post = sbp.posterior_from_suffstat(&stat);

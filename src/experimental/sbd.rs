@@ -10,14 +10,12 @@ use crate::traits::*;
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 /// A "Stick-breaking discrete" distribution parameterized by a StickSequence.
-pub struct Sbd {
+pub struct StickBreakingDiscrete {
     pub sticks: StickSequence,
 }
 
-/// Struct representing the Sbd (Sticks-based distribution) type.
-/// Sbd is used to generate random numbers based on a given StickSequence.
-impl Sbd {
-    /// Creates a new instance of Sbd with the specified StickSequence.
+impl StickBreakingDiscrete {
+    /// Creates a new instance of StickBreakingDiscrete with the specified StickSequence.
     ///
     /// # Arguments
     ///
@@ -25,13 +23,13 @@ impl Sbd {
     ///
     /// # Returns
     ///
-    /// A new instance of Sbd.
-    pub fn new(sticks: StickSequence) -> Sbd {
+    /// A new instance of StickBreakingDiscrete.
+    pub fn new(sticks: StickSequence) -> StickBreakingDiscrete {
         Self { sticks }
     }
 
     /// Calculates the inverse complementary cumulative distribution function
-    /// (invccdf) of the Sbd. Sbd is based around the ccdf instead of the cdf
+    /// (invccdf) of the StickBreakingDiscrete. StickBreakingDiscrete is based around the ccdf instead of the cdf
     /// because this allows for more precision in the tails.
     ///
     /// # Arguments
@@ -50,7 +48,7 @@ impl Sbd {
     }
 
     /// Calculates the inverse cumulative distribution function (invccdf) of the
-    /// Sbd for multiple values, which are assumed to be already sorted. The
+    /// StickBreakingDiscrete for multiple values, which are assumed to be already sorted. The
     /// returned vector contains the indices of the StickSequence elements whose
     /// values are less than the corresponding values in `ps`.
     ///
@@ -88,9 +86,9 @@ impl Sbd {
     }
 }
 
-/// Implementation of the `Support` trait for `Sbd`.
-impl Support<usize> for Sbd {
-    /// Checks if the given value is supported by `Sbd`.
+/// Implementation of the `Support` trait for `StickBreakingDiscrete`.
+impl Support<usize> for StickBreakingDiscrete {
+    /// Checks if the given value is supported by `StickBreakingDiscrete`.
     ///
     /// # Arguments
     ///
@@ -104,8 +102,8 @@ impl Support<usize> for Sbd {
     }
 }
 
-/// Implementation of the `Cdf` trait for `Sbd`.
-impl Cdf<usize> for Sbd {
+/// Implementation of the `Cdf` trait for `StickBreakingDiscrete`.
+impl Cdf<usize> for StickBreakingDiscrete {
     /// Calculates the survival function (SF) for a given value `x`.
     ///
     /// The survival function is defined as 1 minus the cumulative distribution function (CDF).
@@ -139,15 +137,15 @@ impl Cdf<usize> for Sbd {
     }
 }
 
-impl InverseCdf<usize> for Sbd {
+impl InverseCdf<usize> for StickBreakingDiscrete {
     fn invcdf(&self, p: f64) -> usize {
         self.invccdf(1.0 - p)
     }
 }
 
-impl DiscreteDistr<usize> for Sbd {}
+impl DiscreteDistr<usize> for StickBreakingDiscrete {}
 
-impl Mode<usize> for Sbd {
+impl Mode<usize> for StickBreakingDiscrete {
     fn mode(&self) -> Option<usize> {
         let w0 = self.sticks.weight(0);
         // Once the unallocated mass is less than that of first stick, the
@@ -213,7 +211,7 @@ pub fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
     xs
 }
 
-impl HasDensity<usize> for Sbd {
+impl HasDensity<usize> for StickBreakingDiscrete {
     fn f(&self, n: &usize) -> f64 {
         let sticks = &self.sticks;
         sticks.weight(*n)
@@ -224,7 +222,7 @@ impl HasDensity<usize> for Sbd {
     }
 }
 
-impl Sampleable<usize> for Sbd {
+impl Sampleable<usize> for StickBreakingDiscrete {
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
         let u: f64 = rng.gen();
         self.invccdf(u)
@@ -271,7 +269,7 @@ mod tests {
     #[test]
     fn test_multi_invccdf_sorted() {
         let sticks = StickSequence::new(UnitPowerLaw::new(10.0).unwrap(), None);
-        let sbd = Sbd::new(sticks);
+        let sbd = StickBreakingDiscrete::new(sticks);
         let ps = sorted_uniforms(5, &mut thread_rng());
         assert_eq!(
             sbd.multi_invccdf_sorted(&ps),
