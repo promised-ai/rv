@@ -242,7 +242,7 @@ impl Sampleable<usize> for StickBreakingDiscrete {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::prelude::UnitPowerLaw;
+    use crate::prelude::*;
     use rand::thread_rng;
 
     #[test]
@@ -257,13 +257,39 @@ mod tests {
         assert!(xs.last().unwrap() < &1.0);
         assert!(xs.windows(2).all(|w| w[0] <= w[1]));
 
-        // Mean is 1/2
-        let mean = xs.iter().sum::<f64>() / n as f64;
-        assert!((0.49..0.51).contains(&mean));
+        // t will aggregate our chi-squared test statistic
+        let mut t = 0.0;
 
-        // Variance is 1/12
-        let var = xs.iter().map(|x| (x - 0.5).powi(2)).sum::<f64>() / n as f64;
-        assert!((0.08..0.09).contains(&var))
+        {
+            // We'll build a histogram and count the bin populations, aggregating
+            // the chi-squared statistic as we go
+            let mut next_bin = 0.01;
+            let mut bin_pop = 0;
+
+            for x in xs.iter() {
+                bin_pop += 1;
+                if *x > next_bin {
+                    let obs = bin_pop as f64;
+                    let exp = n as f64 / 100.0;
+                    t += (obs - exp).powi(2) / exp;
+                    bin_pop = 0;
+                    next_bin += 0.01;
+                }
+            }
+
+            // The last bin
+            let obs = bin_pop as f64;
+            let exp = n as f64 / 100.0;
+            t += (obs - exp).powi(2) / exp;
+        }
+
+        let alpha = 0.001;
+
+        // dof = number of bins minus one
+        let chi2 = ChiSquared::new(99.0).unwrap();
+        let p = chi2.cdf(&t);
+        assert!(alpha / 2.0 < p);
+        assert!(p < 1.0 - alpha / 2.0);
     }
 
     #[test]
