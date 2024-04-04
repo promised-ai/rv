@@ -287,9 +287,8 @@ mod tests {
 
         // dof = number of bins minus one
         let chi2 = ChiSquared::new(99.0).unwrap();
-        let p = chi2.cdf(&t);
-        assert!(alpha / 2.0 < p);
-        assert!(p < 1.0 - alpha / 2.0);
+        let p = chi2.sf(&t);
+        assert!(p > alpha);
     }
 
     #[test]
