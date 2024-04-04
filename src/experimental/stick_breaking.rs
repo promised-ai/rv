@@ -449,62 +449,31 @@ mod tests {
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
 
         let num_samples = 1000;
-        let count_per_sample = 10;
-        let n = num_samples * count_per_sample;
 
         // Our computed posterior
         let data = [10];
         let post = sb.posterior(&DataOrSuffStat::Data(&data[..]));
 
         // An approximation using rejection sampling
-        let mut approx_post = Vec::new();
-        while approx_post.len() < num_samples {
+        let mut stat = SbdSuffStat::new();
+        let mut n = 0;
+        while n < num_samples {
             let seq: StickSequence = sb.draw(&mut rng);
             let sbd = Sbd::new(seq.clone());
             if sbd.draw(&mut rng) == 10 {
-                approx_post.push(seq);
+                stat.observe(&sbd.draw(&mut rng));
+                n += 1;
             }
         }
 
-        let mut counts: Vec<usize> = Vec::new();
-        for seq in approx_post {
-            let sbd = Sbd::new(seq);
-            let data = (0..count_per_sample)
-                .map(|_| sbd.draw(&mut rng))
-                .collect::<Vec<_>>();
-            // let unifs = sorted_uniforms(count_per_sample, &mut rng);
-            let stat = SbdSuffStat::from(&data[..]);
-
-            if counts.len() < stat.counts.len() {
-                counts.resize(stat.counts.len(), 0);
-            }
-
-            for (j, c) in stat.counts.iter().enumerate() {
-                counts[j] += c;
-            }
-        }
+        let counts = stat.counts;
 
         // This would be counts.len() - 1, but the current implementation has a
         // trailing zero we need to ignore
         let dof = (counts.len() - 2) as f64;
 
-        let break_pairs = SbdSuffStat {
-            counts: counts.clone(),
-        }
-        .break_pairs();
-
-        for (n, (a, b)) in break_pairs.iter().enumerate() {
-            println!(
-                "n: {}\t({}, {})\t {}",
-                n,
-                a,
-                b,
-                (*a as f64) / (*a + *b) as f64
-            );
-        }
-
-        let expected_counts =
-            (0..).map(|j| post.m(&DataOrSuffStat::Data(&[j])) * n as f64);
+        let expected_counts = (0..)
+            .map(|j| post.m(&DataOrSuffStat::Data(&[j])) * num_samples as f64);
 
         let ts = counts
             .iter()
