@@ -163,12 +163,18 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
     fn ln_m_cache(&self) -> Self::MCache {}
 
     /// Computes the logarithm of the predictive probability cache.
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<usize, StickBreakingDiscrete>) -> Self::PpCache {
+    fn ln_pp_cache(
+        &self,
+        x: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+    ) -> Self::PpCache {
         self.posterior(x)
     }
 
     /// Computes the posterior distribution from the sufficient statistic.
-    fn posterior_from_suffstat(&self, stat: &StickBreakingDiscreteSuffStat) -> Self::Posterior {
+    fn posterior_from_suffstat(
+        &self,
+        stat: &StickBreakingDiscreteSuffStat,
+    ) -> Self::Posterior {
         let pairs = stat.break_pairs();
         let new_prefix = self
             .break_prefix
@@ -193,7 +199,10 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
         }
     }
 
-    fn posterior(&self, x: &DataOrSuffStat<usize, StickBreakingDiscrete>) -> Self::Posterior {
+    fn posterior(
+        &self,
+        x: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+    ) -> Self::Posterior {
         match x {
             DataOrSuffStat::Data(xs) => {
                 let mut stat = StickBreakingDiscreteSuffStat::new();
@@ -252,7 +261,11 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
     }
 
     /// Computes the predictive probability.
-    fn pp(&self, y: &usize, x: &DataOrSuffStat<usize, StickBreakingDiscrete>) -> f64 {
+    fn pp(
+        &self,
+        y: &usize,
+        x: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+    ) -> f64 {
         let post = self.posterior(x);
         post.m(&DataOrSuffStat::Data(&[*y]))
     }
@@ -300,7 +313,9 @@ mod tests {
             let ln_fs: Vec<f64> = sb
                 .sample_stream(&mut rand::thread_rng())
                 .take(n_samples)
-                .map(|sbd: StickBreakingDiscrete| xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>())
+                .map(|sbd: StickBreakingDiscrete| {
+                    xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>()
+                })
                 .collect();
             logsumexp(&ln_fs) - (n_samples as f64).ln()
         };
@@ -313,8 +328,10 @@ mod tests {
         let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
         let sb_pp = sb.pp(&3, &DataOrSuffStat::Data(&[1, 2]));
         let post = sb.posterior(&DataOrSuffStat::Data(&[1, 2]));
-        let post_f =
-            post.pp(&3, &DataOrSuffStat::SuffStat(&StickBreakingDiscreteSuffStat::new()));
+        let post_f = post.pp(
+            &3,
+            &DataOrSuffStat::SuffStat(&StickBreakingDiscreteSuffStat::new()),
+        );
         assert::close(sb_pp, post_f, 1e-10);
     }
 
