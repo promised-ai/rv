@@ -117,6 +117,9 @@ mod tests {
 
     #[test]
     fn test_new_is_default() {
-        assert!(StickBreakingDiscreteSuffStat::new() == StickBreakingDiscreteSuffStat::default());
+        assert!(
+            StickBreakingDiscreteSuffStat::new()
+                == StickBreakingDiscreteSuffStat::default()
+        );
     }
 }
