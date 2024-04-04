@@ -1,10 +1,7 @@
-use itertools::EitherOrBoth::{Both, Left, Right};
-use itertools::Itertools;
 use peroxide::statistics::stat::Statistics;
 use rv::experimental::stick_breaking::BreakSequence;
 use rv::experimental::*;
 use rv::prelude::*;
-use rv::traits::*;
 
 fn main() {
     let mut rng = rand::thread_rng();
