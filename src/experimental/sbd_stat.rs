@@ -112,5 +112,11 @@ mod tests {
         suff_stat.forget(&2);
 
         assert_eq!(suff_stat.counts, vec![0, 1, 1]);
+        assert_eq!(suff_stat.n(), 2);
+    }
+
+    #[test]
+    fn test_new_is_default() {
+        assert!(StickBreakingDiscreteSuffStat::new() == StickBreakingDiscreteSuffStat::default());
     }
 }
