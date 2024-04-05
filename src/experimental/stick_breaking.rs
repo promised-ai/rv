@@ -59,6 +59,10 @@ impl StickBreaking {
             .map(Either::Left)
             .chain(std::iter::repeat(Either::Right(&self.break_tail)))
     }
+
+    pub fn alpha(&self) -> f64 {
+        self.break_tail.alpha()
+    }
 }
 
 pub struct PartialWeights(pub Vec<f64>);
