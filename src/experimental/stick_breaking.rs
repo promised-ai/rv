@@ -116,14 +116,11 @@ impl HasDensity<PartialWeights> for StickBreaking {
     ///
     /// The natural logarithm of the density function.
     fn ln_f(&self, w: &PartialWeights) -> f64 {
-        let bs = BreakSequence::from(w);
-        self.break_prefix
-            .iter()
-            .zip_longest(bs.0.iter())
-            .map(|pair| match pair {
-                Left(_beta) => 0.0,
-                Right(p) => self.break_tail.ln_f(p),
-                Both(beta, p) => beta.ln_f(p),
+        self.break_dists()
+            .zip(BreakSequence::from(w).0.iter())
+            .map(|(b, p)| match b {
+                Either::Left(beta) => beta.ln_f(p),
+                Either::Right(unit_powlaw) => unit_powlaw.ln_f(p),
             })
             .sum()
     }
