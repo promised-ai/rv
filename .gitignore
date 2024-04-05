@@ -5,3 +5,4 @@
 .vim
 .helix
 *.zip
+lcov.info
