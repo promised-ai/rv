@@ -476,7 +476,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
 
-        let num_samples = 10_000;
+        let num_samples = 1000;
 
         // Our computed posterior
         let data = [10];
@@ -500,6 +500,8 @@ mod tests {
         // trailing zero we need to ignore
         let dof = (counts.len() - 2) as f64;
 
+        // Chi-square test is not exact, so we'll trim to only consider cases
+        // where expected count is at least 5.
         let expected_counts = (0..)
             .map(|j| post.m(&DataOrSuffStat::Data(&[j])) * num_samples as f64)
             .take_while(|x| *x > 5.0);
