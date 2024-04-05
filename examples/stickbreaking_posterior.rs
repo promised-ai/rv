@@ -1,3 +1,7 @@
+use rv::prelude::*;      
+use itertools::Either;     
+use peroxide::statistics::stat::Statistics;      
+
 #[cfg(feature = "experimental")]
 use rv::experimental::{stick_breaking::BreakSequence, *};
 
