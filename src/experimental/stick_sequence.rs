@@ -159,6 +159,10 @@ impl StickSequence {
         })
     }
 
+    pub fn num_weights_unstable(&self) -> usize {
+        self.with_inner(|inner| inner.ccdf.len() - 1)
+    }
+
     pub fn weight(&self, n: usize) -> f64 {
         self.ensure_breaks(n + 1);
         self.with_inner(|inner| {
