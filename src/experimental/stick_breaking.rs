@@ -476,7 +476,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
 
-        let num_samples = 1000;
+        let num_samples = 10_000;
 
         // Our computed posterior
         let data = [10];
