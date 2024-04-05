@@ -90,8 +90,8 @@ impl _Inner {
 )]
 #[derive(Clone, Debug)]
 pub struct StickSequence {
-    pub breaker: UnitPowerLaw,
-    pub inner: Arc<RwLock<_Inner>>,
+    breaker: UnitPowerLaw,
+    inner: Arc<RwLock<_Inner>>,
 }
 
 // TODO: Extend to equal length, then check for equality

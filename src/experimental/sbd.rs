@@ -11,7 +11,7 @@ use crate::traits::*;
 #[derive(Clone, Debug, PartialEq)]
 /// A "Stick-breaking discrete" distribution parameterized by a StickSequence.
 pub struct StickBreakingDiscrete {
-    pub sticks: StickSequence,
+    sticks: StickSequence,
 }
 
 impl StickBreakingDiscrete {
@@ -45,6 +45,10 @@ impl StickBreakingDiscrete {
             |ccdf| ccdf.last().unwrap() < &p,
             |ccdf| ccdf.iter().position(|q| *q < p).unwrap() - 1,
         )
+    }
+
+    pub fn stick_sequence(&self) -> &StickSequence {
+        &self.sticks
     }
 
     /// Calculates the inverse cumulative distribution function (invccdf) of the

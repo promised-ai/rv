@@ -1,3 +1,4 @@
+use itertools::Either;
 #[cfg(feature = "experimental")]
 use rv::experimental::{
     StickBreaking, StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
@@ -27,13 +28,18 @@ fn main() {
         // Use the sufficient statistic to find the posterior
         let post = sbp.posterior_from_suffstat(&stat);
 
+        let mut break_iter = post.break_dists();
+
         // Print the posterior parameters of each Beta distribution.
-        post.break_prefix.iter().for_each(|p| {
-            let alpha = p.alpha();
-            let beta = p.beta();
-            let p = alpha / (alpha + beta);
-            println!("alpha: {}\t beta: {}\t mean: {}", alpha, beta, p);
-        });
+        while let Some(Either::Left(p)) = break_iter.next() {
+            let mean: f64 = p.mean().unwrap();
+            println!(
+                "alpha: {}\t beta: {}\t mean: {}",
+                p.alpha(),
+                p.beta(),
+                mean
+            );
+        }
 
         let cache = sbp.ln_pp_cache(&DataOrSuffStat::SuffStat(&stat));
         let sum: f64 = (0..99).map(|y| sbp.pp_with_cache(&cache, &y)).sum();

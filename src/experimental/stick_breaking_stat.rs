@@ -11,9 +11,9 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct StickBreakingSuffStat {
-    pub n: usize,
-    pub num_breaks: usize,
-    pub sum_log_q: f64,
+    n: usize,
+    num_breaks: usize,
+    sum_log_q: f64,
 }
 
 impl Default for StickBreakingSuffStat {

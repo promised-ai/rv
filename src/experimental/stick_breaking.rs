@@ -5,6 +5,7 @@ use crate::experimental::StickSequence;
 use crate::prelude::*;
 use crate::suffstat_traits::*;
 use crate::traits::*;
+use itertools::Either;
 use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
 use rand::Rng;
@@ -18,8 +19,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq)]
 /// Represents a stick-breaking process.
 pub struct StickBreaking {
-    pub break_prefix: Vec<Beta>,
-    pub break_tail: UnitPowerLaw,
+    break_prefix: Vec<Beta>,
+    break_tail: UnitPowerLaw,
 }
 
 /// Implementation of the `StickBreaking` struct.
@@ -48,6 +49,15 @@ impl StickBreaking {
             break_prefix,
             break_tail: breaker,
         }
+    }
+
+    pub fn break_dists(
+        &self,
+    ) -> impl Iterator<Item = Either<&Beta, &UnitPowerLaw>> {
+        self.break_prefix
+            .iter()
+            .map(Either::Left)
+            .chain(std::iter::repeat(Either::Right(&self.break_tail)))
     }
 }
 
@@ -483,7 +493,7 @@ mod tests {
             }
         }
 
-        let counts = stat.counts;
+        let counts = stat.counts();
 
         // This would be counts.len() - 1, but the current implementation has a
         // trailing zero we need to ignore
