@@ -215,4 +215,23 @@ mod tests {
             assert_eq!(sticks.weight(n), *w);
         }
     }
+
+    #[test]
+    fn test_push_to_ccdf() {
+        let breaker = UnitPowerLaw::new(10.0).unwrap();
+        let sticks = StickSequence::new(breaker, None);
+        sticks.push_to_ccdf(0.9);
+        sticks.push_to_ccdf(0.8);
+        assert_eq!(sticks.ccdf(1), 0.9);
+        assert_eq!(sticks.ccdf(2), 0.8);
+    }
+
+    #[test]
+    fn test_push_break() {
+        let breaker = UnitPowerLaw::new(10.0).unwrap();
+        let sticks = StickSequence::new(breaker, None);
+        sticks.push_break(0.9);
+        sticks.push_break(0.8);
+        assert::close(sticks.weights(2).0, vec![0.1, 0.9 - 0.9 * 0.8], 1e-10);
+    }
 }
