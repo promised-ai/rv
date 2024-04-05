@@ -1,11 +1,8 @@
-use itertools::Either;
 #[cfg(feature = "experimental")]
 use rv::experimental::{
     StickBreaking, StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
     StickSequence,
 };
-use rv::prelude::UnitPowerLaw;
-use rv::traits::*;
 
 fn main() {
     #[cfg(feature = "experimental")]
