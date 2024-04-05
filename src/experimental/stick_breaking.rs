@@ -501,7 +501,8 @@ mod tests {
         let dof = (counts.len() - 2) as f64;
 
         let expected_counts = (0..)
-            .map(|j| post.m(&DataOrSuffStat::Data(&[j])) * num_samples as f64);
+            .map(|j| post.m(&DataOrSuffStat::Data(&[j])) * num_samples as f64)
+            .take_while(|x| *x > 5.0);
 
         let ts = counts
             .iter()
