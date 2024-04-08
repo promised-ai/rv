@@ -155,7 +155,7 @@ impl Gaussian {
     /// # let mut gauss = Gaussian::new(2.0, 1.5).unwrap();
     /// assert!(gauss.set_mu(1.3).is_ok());
     /// assert!(gauss.set_mu(f64::NEG_INFINITY).is_err());
-    /// assert!(gauss.set_mu(std::f64::INFINITY).is_err());
+    /// assert!(gauss.set_mu(f64::INFINITY).is_err());
     /// assert!(gauss.set_mu(f64::NAN).is_err());
     /// ```
     #[inline]
@@ -210,7 +210,7 @@ impl Gaussian {
     /// assert!(gauss.set_sigma(2.3).is_ok());
     /// assert!(gauss.set_sigma(0.0).is_err());
     /// assert!(gauss.set_sigma(-1.0).is_err());
-    /// assert!(gauss.set_sigma(std::f64::INFINITY).is_err());
+    /// assert!(gauss.set_sigma(f64::INFINITY).is_err());
     /// assert!(gauss.set_sigma(f64::NEG_INFINITY).is_err());
     /// assert!(gauss.set_sigma(f64::NAN).is_err());
     /// ```

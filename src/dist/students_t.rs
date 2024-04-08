@@ -80,7 +80,7 @@ impl StudentsT {
     /// assert!(t.set_v(-1.0).is_err());
     ///
     ///
-    /// assert!(t.set_v(std::f64::INFINITY).is_err());
+    /// assert!(t.set_v(f64::INFINITY).is_err());
     /// assert!(t.set_v(f64::NEG_INFINITY).is_err());
     /// assert!(t.set_v(f64::NAN).is_err());
     /// ```

@@ -113,7 +113,7 @@ impl Crp {
     /// assert!(crp.set_alpha(0.5).is_ok());
     /// assert!(crp.set_alpha(0.0).is_err());
     /// assert!(crp.set_alpha(-1.0).is_err());
-    /// assert!(crp.set_alpha(std::f64::INFINITY).is_err());
+    /// assert!(crp.set_alpha(f64::INFINITY).is_err());
     /// assert!(crp.set_alpha(f64::NEG_INFINITY).is_err());
     /// assert!(crp.set_alpha(f64::NAN).is_err());
     /// ```

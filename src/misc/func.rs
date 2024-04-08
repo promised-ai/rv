@@ -665,7 +665,7 @@ mod tests {
 
     #[test]
     fn logsumexp_leading_neginf() {
-        let inf = std::f64::INFINITY;
+        let inf = f64::INFINITY;
         let weights = vec![
             -inf,
             -210.148_738_791_973_16,

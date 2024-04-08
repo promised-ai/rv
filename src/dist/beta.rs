@@ -191,7 +191,7 @@ impl Beta {
     /// assert!(beta.set_alpha(0.1).is_ok());
     /// assert!(beta.set_alpha(0.0).is_err());
     /// assert!(beta.set_alpha(-1.0).is_err());
-    /// assert!(beta.set_alpha(std::f64::INFINITY).is_err());
+    /// assert!(beta.set_alpha(f64::INFINITY).is_err());
     /// assert!(beta.set_alpha(f64::NAN).is_err());
     /// ```
     #[inline]
@@ -247,7 +247,7 @@ impl Beta {
     /// assert!(beta.set_beta(0.1).is_ok());
     /// assert!(beta.set_beta(0.0).is_err());
     /// assert!(beta.set_beta(-1.0).is_err());
-    /// assert!(beta.set_beta(std::f64::INFINITY).is_err());
+    /// assert!(beta.set_beta(f64::INFINITY).is_err());
     /// assert!(beta.set_beta(f64::NAN).is_err());
     /// ```
     #[inline]

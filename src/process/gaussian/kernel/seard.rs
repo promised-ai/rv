@@ -36,7 +36,7 @@ impl SEardKernel {
                     .iter()
                     .min_by(|a, b| a.partial_cmp(b).unwrap())
                     .unwrap(),
-                bounds: (0.0, std::f64::INFINITY),
+                bounds: (0.0, f64::INFINITY),
             })
         }
     }

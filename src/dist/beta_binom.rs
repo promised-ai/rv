@@ -192,7 +192,7 @@ impl BetaBinomial {
     /// assert!(bb.set_alpha(0.1).is_ok());
     /// assert!(bb.set_alpha(0.0).is_err());
     /// assert!(bb.set_alpha(-1.0).is_err());
-    /// assert!(bb.set_alpha(std::f64::INFINITY).is_err());
+    /// assert!(bb.set_alpha(f64::INFINITY).is_err());
     /// assert!(bb.set_alpha(f64::NAN).is_err());
     /// ```
     #[inline]
@@ -248,7 +248,7 @@ impl BetaBinomial {
     /// assert!(bb.set_beta(0.1).is_ok());
     /// assert!(bb.set_beta(0.0).is_err());
     /// assert!(bb.set_beta(-1.0).is_err());
-    /// assert!(bb.set_beta(std::f64::INFINITY).is_err());
+    /// assert!(bb.set_beta(f64::INFINITY).is_err());
     /// assert!(bb.set_beta(f64::NAN).is_err());
     /// ```
     #[inline]

@@ -129,7 +129,7 @@ impl ScaledInvChiSquared {
     /// assert!(ix2.set_v(0.0).is_err());
     /// assert!(ix2.set_v(-1.0).is_err());
     /// assert!(ix2.set_v(f64::NAN).is_err());
-    /// assert!(ix2.set_v(std::f64::INFINITY).is_err());
+    /// assert!(ix2.set_v(f64::INFINITY).is_err());
     /// ```
     #[inline]
     pub fn set_v(&mut self, v: f64) -> Result<(), ScaledInvChiSquaredError> {
@@ -185,7 +185,7 @@ impl ScaledInvChiSquared {
     /// assert!(ix2.set_t2(0.0).is_err());
     /// assert!(ix2.set_t2(-1.0).is_err());
     /// assert!(ix2.set_t2(f64::NAN).is_err());
-    /// assert!(ix2.set_t2(std::f64::INFINITY).is_err());
+    /// assert!(ix2.set_t2(f64::INFINITY).is_err());
     /// ```
     #[inline]
     pub fn set_t2(&mut self, t2: f64) -> Result<(), ScaledInvChiSquaredError> {

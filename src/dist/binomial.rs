@@ -195,7 +195,7 @@ impl Binomial {
     /// assert!(binom.set_p(1.0).is_ok());
     /// assert!(binom.set_p(-1.0).is_err());
     /// assert!(binom.set_p(1.1).is_err());
-    /// assert!(binom.set_p(std::f64::INFINITY).is_err());
+    /// assert!(binom.set_p(f64::INFINITY).is_err());
     /// assert!(binom.set_p(f64::NEG_INFINITY).is_err());
     /// assert!(binom.set_p(f64::NAN).is_err());
     /// ```

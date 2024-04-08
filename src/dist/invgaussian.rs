@@ -138,7 +138,7 @@ impl InvGaussian {
     /// assert!(ig.set_mu(0.0).is_err());
     /// assert!(ig.set_mu(-1.0).is_err());
     /// assert!(ig.set_mu(f64::NEG_INFINITY).is_err());
-    /// assert!(ig.set_mu(std::f64::INFINITY).is_err());
+    /// assert!(ig.set_mu(f64::INFINITY).is_err());
     /// assert!(ig.set_mu(f64::NAN).is_err());
     /// ```
     #[inline]
@@ -195,7 +195,7 @@ impl InvGaussian {
     /// assert!(ig.set_lambda(2.3).is_ok());
     /// assert!(ig.set_lambda(0.0).is_err());
     /// assert!(ig.set_lambda(-1.0).is_err());
-    /// assert!(ig.set_lambda(std::f64::INFINITY).is_err());
+    /// assert!(ig.set_lambda(f64::INFINITY).is_err());
     /// assert!(ig.set_lambda(f64::NEG_INFINITY).is_err());
     /// assert!(ig.set_lambda(f64::NAN).is_err());
     /// ```

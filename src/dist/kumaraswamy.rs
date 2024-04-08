@@ -253,7 +253,7 @@ impl Kumaraswamy {
     /// # let mut kuma = Kumaraswamy::new(1.0, 5.0).unwrap();
     /// assert!(kuma.set_a(2.3).is_ok());
     /// assert!(kuma.set_a(0.0).is_err());
-    /// assert!(kuma.set_a(std::f64::INFINITY).is_err());
+    /// assert!(kuma.set_a(f64::INFINITY).is_err());
     /// assert!(kuma.set_a(f64::NEG_INFINITY).is_err());
     /// assert!(kuma.set_a(f64::NAN).is_err());
     /// ```
@@ -295,7 +295,7 @@ impl Kumaraswamy {
     /// # let mut kuma = Kumaraswamy::new(1.0, 5.0).unwrap();
     /// assert!(kuma.set_b(2.3).is_ok());
     /// assert!(kuma.set_b(0.0).is_err());
-    /// assert!(kuma.set_b(std::f64::INFINITY).is_err());
+    /// assert!(kuma.set_b(f64::INFINITY).is_err());
     /// assert!(kuma.set_b(f64::NEG_INFINITY).is_err());
     /// assert!(kuma.set_b(f64::NAN).is_err());
     /// ```

@@ -145,7 +145,7 @@ impl UnitPowerLaw {
     /// assert!(powlaw.set_alpha(0.1).is_ok());
     /// assert!(powlaw.set_alpha(0.0).is_err());
     /// assert!(powlaw.set_alpha(-1.0).is_err());
-    /// assert!(powlaw.set_alpha(std::f64::INFINITY).is_err());
+    /// assert!(powlaw.set_alpha(f64::INFINITY).is_err());
     /// assert!(powlaw.set_alpha(f64::NAN).is_err());
     /// ```
     #[inline]

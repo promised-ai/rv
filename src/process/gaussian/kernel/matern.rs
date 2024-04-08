@@ -35,13 +35,13 @@ impl MaternKernel {
             Err(KernelError::ParameterOutOfBounds {
                 name: "nu".to_string(),
                 given: nu,
-                bounds: (0.0, std::f64::INFINITY),
+                bounds: (0.0, f64::INFINITY),
             })
         } else if length_scale <= 0.0 {
             Err(KernelError::ParameterOutOfBounds {
                 name: "length_scale".to_string(),
                 given: length_scale,
-                bounds: (0.0, std::f64::INFINITY),
+                bounds: (0.0, f64::INFINITY),
             })
         } else {
             Ok(Self { nu, length_scale })

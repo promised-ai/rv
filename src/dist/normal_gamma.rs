@@ -110,7 +110,7 @@ impl NormalGamma {
     /// # use rv::dist::NormalGamma;
     /// # let mut ng = NormalGamma::new(0.0, 1.2, 2.3, 3.4).unwrap();
     /// assert!(ng.set_m(-1.1).is_ok());
-    /// assert!(ng.set_m(std::f64::INFINITY).is_err());
+    /// assert!(ng.set_m(f64::INFINITY).is_err());
     /// assert!(ng.set_m(f64::NEG_INFINITY).is_err());
     /// assert!(ng.set_m(f64::NAN).is_err());
     /// ```
@@ -162,7 +162,7 @@ impl NormalGamma {
     /// assert!(ng.set_r(-1.0).is_err());
     ///
     ///
-    /// assert!(ng.set_r(std::f64::INFINITY).is_err());
+    /// assert!(ng.set_r(f64::INFINITY).is_err());
     /// assert!(ng.set_r(f64::NEG_INFINITY).is_err());
     /// assert!(ng.set_r(f64::NAN).is_err());
     /// ```
@@ -216,7 +216,7 @@ impl NormalGamma {
     /// assert!(ng.set_s(-1.0).is_err());
     ///
     ///
-    /// assert!(ng.set_s(std::f64::INFINITY).is_err());
+    /// assert!(ng.set_s(f64::INFINITY).is_err());
     /// assert!(ng.set_s(f64::NEG_INFINITY).is_err());
     /// assert!(ng.set_s(f64::NAN).is_err());
     /// ```
@@ -270,7 +270,7 @@ impl NormalGamma {
     /// assert!(ng.set_v(-1.0).is_err());
     ///
     ///
-    /// assert!(ng.set_v(std::f64::INFINITY).is_err());
+    /// assert!(ng.set_v(f64::INFINITY).is_err());
     /// assert!(ng.set_v(f64::NEG_INFINITY).is_err());
     /// assert!(ng.set_v(f64::NAN).is_err());
     /// ```

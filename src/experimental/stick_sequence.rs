@@ -236,6 +236,6 @@ mod tests {
         let sticks = StickSequence::new(breaker, None);
         sticks.push_break(0.9);
         sticks.push_break(0.8);
-        assert::close(sticks.weights(2).0, vec![0.1, 0.9 - 0.9 * 0.8], 1e-10);
+        assert::close(sticks.weights(2).0, vec![0.1, 0.18], 1e-10);
     }
 }

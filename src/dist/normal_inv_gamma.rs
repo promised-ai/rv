@@ -119,7 +119,7 @@ impl NormalInvGamma {
     /// # use rv::dist::NormalInvGamma;
     /// # let mut nig = NormalInvGamma::new(0.0, 1.2, 2.3, 3.4).unwrap();
     /// assert!(nig.set_m(-1.1).is_ok());
-    /// assert!(nig.set_m(std::f64::INFINITY).is_err());
+    /// assert!(nig.set_m(f64::INFINITY).is_err());
     /// assert!(nig.set_m(f64::NEG_INFINITY).is_err());
     /// assert!(nig.set_m(f64::NAN).is_err());
     /// ```
@@ -171,7 +171,7 @@ impl NormalInvGamma {
     /// assert!(nig.set_v(-1.0).is_err());
     ///
     ///
-    /// assert!(nig.set_v(std::f64::INFINITY).is_err());
+    /// assert!(nig.set_v(f64::INFINITY).is_err());
     /// assert!(nig.set_v(f64::NEG_INFINITY).is_err());
     /// assert!(nig.set_v(f64::NAN).is_err());
     /// ```
@@ -225,7 +225,7 @@ impl NormalInvGamma {
     /// assert!(nig.set_a(-1.0).is_err());
     ///
     ///
-    /// assert!(nig.set_a(std::f64::INFINITY).is_err());
+    /// assert!(nig.set_a(f64::INFINITY).is_err());
     /// assert!(nig.set_a(f64::NEG_INFINITY).is_err());
     /// assert!(nig.set_a(f64::NAN).is_err());
     /// ```
@@ -279,7 +279,7 @@ impl NormalInvGamma {
     /// assert!(nig.set_b(-1.0).is_err());
     ///
     ///
-    /// assert!(nig.set_b(std::f64::INFINITY).is_err());
+    /// assert!(nig.set_b(f64::INFINITY).is_err());
     /// assert!(nig.set_b(f64::NEG_INFINITY).is_err());
     /// assert!(nig.set_b(f64::NAN).is_err());
     /// ```

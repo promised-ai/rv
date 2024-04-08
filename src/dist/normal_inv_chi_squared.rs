@@ -145,7 +145,7 @@ impl NormalInvChiSquared {
     /// # use rv::dist::NormalInvChiSquared;
     /// # let mut nix = NormalInvChiSquared::new(0.0, 1.2, 2.3, 3.4).unwrap();
     /// assert!(nix.set_m(-1.1).is_ok());
-    /// assert!(nix.set_m(std::f64::INFINITY).is_err());
+    /// assert!(nix.set_m(f64::INFINITY).is_err());
     /// assert!(nix.set_m(f64::NEG_INFINITY).is_err());
     /// assert!(nix.set_m(f64::NAN).is_err());
     /// ```
@@ -197,7 +197,7 @@ impl NormalInvChiSquared {
     /// assert!(nix.set_k(-1.0).is_err());
     ///
     ///
-    /// assert!(nix.set_k(std::f64::INFINITY).is_err());
+    /// assert!(nix.set_k(f64::INFINITY).is_err());
     /// assert!(nix.set_k(f64::NEG_INFINITY).is_err());
     /// assert!(nix.set_k(f64::NAN).is_err());
     /// ```
@@ -251,7 +251,7 @@ impl NormalInvChiSquared {
     /// assert!(nix.set_v(-1.0).is_err());
     ///
     ///
-    /// assert!(nix.set_v(std::f64::INFINITY).is_err());
+    /// assert!(nix.set_v(f64::INFINITY).is_err());
     /// assert!(nix.set_v(f64::NEG_INFINITY).is_err());
     /// assert!(nix.set_v(f64::NAN).is_err());
     /// ```
@@ -307,7 +307,7 @@ impl NormalInvChiSquared {
     /// assert!(nix.set_s2(-1.0).is_err());
     ///
     ///
-    /// assert!(nix.set_s2(std::f64::INFINITY).is_err());
+    /// assert!(nix.set_s2(f64::INFINITY).is_err());
     /// assert!(nix.set_s2(f64::NEG_INFINITY).is_err());
     /// assert!(nix.set_s2(f64::NAN).is_err());
     /// ```

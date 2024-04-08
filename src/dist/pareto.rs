@@ -98,7 +98,7 @@ impl Pareto {
     /// assert!(pareto.set_shape(1.1).is_ok());
     /// assert!(pareto.set_shape(0.0).is_err());
     /// assert!(pareto.set_shape(-1.0).is_err());
-    /// assert!(pareto.set_shape(std::f64::INFINITY).is_err());
+    /// assert!(pareto.set_shape(f64::INFINITY).is_err());
     /// assert!(pareto.set_shape(f64::NEG_INFINITY).is_err());
     /// assert!(pareto.set_shape(f64::NAN).is_err());
     /// ```
@@ -155,7 +155,7 @@ impl Pareto {
     /// assert!(pareto.set_scale(1.1).is_ok());
     /// assert!(pareto.set_scale(0.0).is_err());
     /// assert!(pareto.set_scale(-1.0).is_err());
-    /// assert!(pareto.set_scale(std::f64::INFINITY).is_err());
+    /// assert!(pareto.set_scale(f64::INFINITY).is_err());
     /// assert!(pareto.set_scale(f64::NEG_INFINITY).is_err());
     /// assert!(pareto.set_scale(f64::NAN).is_err());
     /// ```

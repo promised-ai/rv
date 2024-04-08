@@ -114,7 +114,7 @@ impl NegBinomial {
     /// // r must be >= 1.0
     /// assert!(nbin.set_r(0.99).is_err());
     ///
-    /// assert!(nbin.set_r(std::f64::INFINITY).is_err());
+    /// assert!(nbin.set_r(f64::INFINITY).is_err());
     /// assert!(nbin.set_r(f64::NEG_INFINITY).is_err());
     /// assert!(nbin.set_r(f64::NAN).is_err());
     /// ```
@@ -175,7 +175,7 @@ impl NegBinomial {
     /// // Too high, not in [0, 1]
     /// assert!(nbin.set_p(-1.1).is_err());
     ///
-    /// assert!(nbin.set_p(std::f64::INFINITY).is_err());
+    /// assert!(nbin.set_p(f64::INFINITY).is_err());
     /// assert!(nbin.set_p(f64::NEG_INFINITY).is_err());
     /// assert!(nbin.set_p(f64::NAN).is_err());
     /// ```
@@ -582,7 +582,7 @@ mod tests {
 
         // How many bins do we need?
         let k: usize = (0..100)
-            .position(|x| nbin.pmf(&(x as u32)) < std::f64::EPSILON)
+            .position(|x| nbin.pmf(&(x as u32)) < f64::EPSILON)
             .unwrap_or(99)
             + 1;
 
@@ -614,7 +614,7 @@ mod tests {
 
         // How many bins do we need?
         let k: usize = (0..100)
-            .position(|x| nbin.pmf(&(x as u32)) < std::f64::EPSILON)
+            .position(|x| nbin.pmf(&(x as u32)) < f64::EPSILON)
             .unwrap_or(99)
             + 1;
 

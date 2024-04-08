@@ -98,7 +98,7 @@ impl Laplace {
     /// # use rv::dist::Laplace;
     /// # let mut laplace = Laplace::new(-1.0, 2.0).unwrap();
     /// assert!(laplace.set_mu(0.0).is_ok());
-    /// assert!(laplace.set_mu(std::f64::INFINITY).is_err());
+    /// assert!(laplace.set_mu(f64::INFINITY).is_err());
     /// assert!(laplace.set_mu(f64::NEG_INFINITY).is_err());
     /// assert!(laplace.set_mu(f64::NAN).is_err());
     /// ```
@@ -151,7 +151,7 @@ impl Laplace {
     /// # let mut laplace = Laplace::new(-1.0, 2.0).unwrap();
     /// assert!(laplace.set_b(2.3).is_ok());
     /// assert!(laplace.set_b(0.0).is_err());
-    /// assert!(laplace.set_b(std::f64::INFINITY).is_err());
+    /// assert!(laplace.set_b(f64::INFINITY).is_err());
     /// assert!(laplace.set_b(f64::NEG_INFINITY).is_err());
     /// assert!(laplace.set_b(f64::NAN).is_err());
     /// ```

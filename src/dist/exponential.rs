@@ -99,7 +99,7 @@ impl Exponential {
     /// assert!(expon.set_rate(0.1).is_ok());
     /// assert!(expon.set_rate(0.0).is_err());
     /// assert!(expon.set_rate(-1.0).is_err());
-    /// assert!(expon.set_rate(std::f64::INFINITY).is_err());
+    /// assert!(expon.set_rate(f64::INFINITY).is_err());
     /// assert!(expon.set_rate(f64::NEG_INFINITY).is_err());
     /// assert!(expon.set_rate(f64::NAN).is_err());
     /// ```
