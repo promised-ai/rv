@@ -98,16 +98,15 @@ pub fn logsumexp(xs: &[f64]) -> f64 {
         xs[0]
     } else {
         let (alpha, r) =
-            xs.iter()
-                .fold((f64::NEG_INFINITY, 0.0), |(alpha, r), &x| {
-                    if x == f64::NEG_INFINITY {
-                        (alpha, r)
-                    } else if x <= alpha {
-                        (alpha, r + (x - alpha).exp())
-                    } else {
-                        (x, r.mul_add((alpha - x).exp(), 1.0))
-                    }
-                });
+            xs.iter().fold((f64::NEG_INFINITY, 0.0), |(alpha, r), &x| {
+                if x == f64::NEG_INFINITY {
+                    (alpha, r)
+                } else if x <= alpha {
+                    (alpha, r + (x - alpha).exp())
+                } else {
+                    (x, r.mul_add((alpha - x).exp(), 1.0))
+                }
+            });
 
         r.ln() + alpha
     }

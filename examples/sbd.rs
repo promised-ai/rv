@@ -3,7 +3,7 @@ use peroxide::statistics::stat::Statistics;
 use rv::prelude::*;
 
 #[cfg(feature = "experimental")]
-use rv::experimental::{
+use rv::experimental::stick_breaking::{
     StickBreaking, StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
     StickSequence,
 };

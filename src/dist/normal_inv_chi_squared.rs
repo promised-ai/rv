@@ -362,11 +362,7 @@ impl Sampleable<Gaussian> for NormalInvChiSquared {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
         let var: f64 = self.scaled_inv_x2().draw(&mut rng);
 
-        let sigma = if var <= 0.0 {
-            f64::EPSILON
-        } else {
-            var.sqrt()
-        };
+        let sigma = if var <= 0.0 { f64::EPSILON } else { var.sqrt() };
 
         let post_sigma: f64 = sigma / self.k.sqrt();
         let mu: f64 = Gaussian::new(self.m, post_sigma)

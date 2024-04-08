@@ -237,10 +237,13 @@ impl KsTwoAsymptotic {
                 if x >= a && x <= b {
                     if within_tol(x, x0, f64::EPSILON, f64::EPSILON * 2.0) {
                         break;
-                    } else if (x - a).abs() < f64::EPSILON || (x - b).abs() < f64::EPSILON
+                    } else if (x - a).abs() < f64::EPSILON
+                        || (x - b).abs() < f64::EPSILON
                     {
                         x = (a + b) / 2.0;
-                        if (x - a).abs() > f64::EPSILON || (x - b).abs() < f64::EPSILON {
+                        if (x - a).abs() > f64::EPSILON
+                            || (x - b).abs() < f64::EPSILON
+                        {
                             break;
                         }
                     }

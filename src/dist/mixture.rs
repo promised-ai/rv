@@ -787,7 +787,8 @@ where
             match (&state, (mode, std)) {
                 ((Some(m1), s1), (Some(m2), s2)) => {
                     if (m2 - *m1)
-                        > s1.unwrap_or(f64::INFINITY).min(s2.unwrap_or(f64::INFINITY))
+                        > s1.unwrap_or(f64::INFINITY)
+                            .min(s2.unwrap_or(f64::INFINITY))
                     {
                         state = (mode, std);
                         Some(m2)

@@ -337,11 +337,7 @@ impl Sampleable<Gaussian> for NormalInvGamma {
             .unwrap()
             .draw(&mut rng);
 
-        let sigma = if var <= 0.0 {
-            f64::EPSILON
-        } else {
-            var.sqrt()
-        };
+        let sigma = if var <= 0.0 { f64::EPSILON } else { var.sqrt() };
 
         let post_sigma: f64 = self.v.sqrt() * sigma;
         let mu: f64 = Gaussian::new(self.m, post_sigma)

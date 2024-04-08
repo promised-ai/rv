@@ -1,7 +1,7 @@
-use crate::experimental::StickBreakingDiscrete;
-use crate::experimental::StickBreakingDiscreteSuffStat;
-// use crate::experimental::StickBreakingSuffStat;
-use crate::experimental::StickSequence;
+use crate::experimental::stick_breaking::StickBreakingDiscrete;
+use crate::experimental::stick_breaking::StickBreakingDiscreteSuffStat;
+// use crate::experimental::stick_breaking::StickBreakingSuffStat;
+use crate::experimental::stick_breaking::StickSequence;
 use crate::prelude::*;
 use crate::suffstat_traits::*;
 use crate::traits::*;
@@ -49,6 +49,14 @@ impl StickBreaking {
             break_prefix,
             break_tail: breaker,
         }
+    }
+
+    pub fn break_prefix(&self) -> &Vec<Beta> {
+        &self.break_prefix
+    }
+
+    pub fn break_tail(&self) -> &UnitPowerLaw {
+        &self.break_tail
     }
 
     pub fn break_dists(
