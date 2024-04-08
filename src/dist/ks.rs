@@ -8,10 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
-use std::f64::{
-    consts::{PI, SQRT_2},
-    EPSILON,
-};
+use std::f64::consts::{PI, SQRT_2};
 
 #[inline]
 fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
@@ -97,7 +94,7 @@ impl KsTwoAsymptotic {
             }
 
             CdfPdf {
-                cdf: p.max(0.0).min(1.0),
+                cdf: p.clamp(0.0, 1.0),
                 pdf: d.max(0.0),
             }
         } else {
@@ -133,7 +130,7 @@ impl KsTwoAsymptotic {
             p *= 2.0 * v;
             d *= 8.0 * v * x;
             p = p.max(0.0);
-            let cdf = (1.0 - p).max(0.0).min(1.0);
+            let cdf = (1.0 - p).clamp(0.0, 1.0);
             let pdf = d.max(0.0);
             CdfPdf { cdf, pdf }
         }
@@ -145,13 +142,13 @@ impl KsTwoAsymptotic {
     #[allow(clippy::many_single_char_names)]
     fn inverse(sf: f64, cdf: f64) -> f64 {
         if !(sf >= 0.0 && cdf >= 0.0 && sf <= 1.0 && cdf <= 1.0)
-            || (1.0 - cdf - sf).abs() > 4.0 * EPSILON
+            || (1.0 - cdf - sf).abs() > 4.0 * f64::EPSILON
         {
-            std::f64::NAN
+            f64::NAN
         } else if cdf == 0.0 {
             0.0
         } else if sf == 0.0 {
-            std::f64::INFINITY
+            f64::INFINITY
         } else {
             let mut x: f64;
             let mut a: f64;
@@ -177,7 +174,7 @@ impl KsTwoAsymptotic {
                         * (-(logcdf + b.ln() - log_sqrt_2pi)).sqrt());
                 x = (a + b) / 2.0;
             } else {
-                const JITTERB: f64 = EPSILON * 256.0;
+                const JITTERB: f64 = f64::EPSILON * 256.0;
                 let pba = sf / (2.0 * (1.0 - (-4.0_f64).exp()));
                 let pbb = sf * (1.0 - JITTERB) / 2.0;
 
@@ -230,7 +227,7 @@ impl KsTwoAsymptotic {
                 }
 
                 let dfdx = -c.pdf;
-                if dfdx.abs() <= EPSILON {
+                if dfdx.abs() <= f64::EPSILON {
                     x = (a + b) / 2.0;
                 } else {
                     let t = df / dfdx;
@@ -238,18 +235,18 @@ impl KsTwoAsymptotic {
                 }
 
                 if x >= a && x <= b {
-                    if within_tol(x, x0, EPSILON, EPSILON * 2.0) {
+                    if within_tol(x, x0, f64::EPSILON, f64::EPSILON * 2.0) {
                         break;
-                    } else if (x - a).abs() < EPSILON || (x - b).abs() < EPSILON
+                    } else if (x - a).abs() < f64::EPSILON || (x - b).abs() < f64::EPSILON
                     {
                         x = (a + b) / 2.0;
-                        if (x - a).abs() > EPSILON || (x - b).abs() < EPSILON {
+                        if (x - a).abs() > f64::EPSILON || (x - b).abs() < f64::EPSILON {
                             break;
                         }
                     }
                 } else {
                     x = (a + b) / 2.0;
-                    if within_tol(x, x0, EPSILON, EPSILON * 2.0) {
+                    if within_tol(x, x0, f64::EPSILON, f64::EPSILON * 2.0) {
                         break;
                     }
                 }

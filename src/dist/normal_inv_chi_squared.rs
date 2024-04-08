@@ -146,8 +146,8 @@ impl NormalInvChiSquared {
     /// # let mut nix = NormalInvChiSquared::new(0.0, 1.2, 2.3, 3.4).unwrap();
     /// assert!(nix.set_m(-1.1).is_ok());
     /// assert!(nix.set_m(std::f64::INFINITY).is_err());
-    /// assert!(nix.set_m(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nix.set_m(std::f64::NAN).is_err());
+    /// assert!(nix.set_m(f64::NEG_INFINITY).is_err());
+    /// assert!(nix.set_m(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_m(&mut self, m: f64) -> Result<(), NormalInvChiSquaredError> {
@@ -198,8 +198,8 @@ impl NormalInvChiSquared {
     ///
     ///
     /// assert!(nix.set_k(std::f64::INFINITY).is_err());
-    /// assert!(nix.set_k(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nix.set_k(std::f64::NAN).is_err());
+    /// assert!(nix.set_k(f64::NEG_INFINITY).is_err());
+    /// assert!(nix.set_k(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_k(&mut self, k: f64) -> Result<(), NormalInvChiSquaredError> {
@@ -252,8 +252,8 @@ impl NormalInvChiSquared {
     ///
     ///
     /// assert!(nix.set_v(std::f64::INFINITY).is_err());
-    /// assert!(nix.set_v(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nix.set_v(std::f64::NAN).is_err());
+    /// assert!(nix.set_v(f64::NEG_INFINITY).is_err());
+    /// assert!(nix.set_v(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_v(&mut self, v: f64) -> Result<(), NormalInvChiSquaredError> {
@@ -308,8 +308,8 @@ impl NormalInvChiSquared {
     ///
     ///
     /// assert!(nix.set_s2(std::f64::INFINITY).is_err());
-    /// assert!(nix.set_s2(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nix.set_s2(std::f64::NAN).is_err());
+    /// assert!(nix.set_s2(f64::NEG_INFINITY).is_err());
+    /// assert!(nix.set_s2(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_s2(&mut self, s2: f64) -> Result<(), NormalInvChiSquaredError> {
@@ -363,7 +363,7 @@ impl Sampleable<Gaussian> for NormalInvChiSquared {
         let var: f64 = self.scaled_inv_x2().draw(&mut rng);
 
         let sigma = if var <= 0.0 {
-            std::f64::EPSILON
+            f64::EPSILON
         } else {
             var.sqrt()
         };

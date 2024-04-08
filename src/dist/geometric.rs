@@ -116,8 +116,8 @@ impl Geometric {
     /// assert!(geom.set_p(-1.0).is_err());
     /// assert!(geom.set_p(1.1).is_err());
     /// assert!(geom.set_p(std::f64::INFINITY).is_err());
-    /// assert!(geom.set_p(std::f64::NEG_INFINITY).is_err());
-    /// assert!(geom.set_p(std::f64::NAN).is_err());
+    /// assert!(geom.set_p(f64::NEG_INFINITY).is_err());
+    /// assert!(geom.set_p(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_p(&mut self, p: f64) -> Result<(), GeometricError> {

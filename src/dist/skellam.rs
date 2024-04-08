@@ -121,8 +121,8 @@ impl Skellam {
     /// assert!(skel.set_mu_1(0.0).is_err());
     /// assert!(skel.set_mu_1(-1.0).is_err());
     /// assert!(skel.set_mu_1(std::f64::INFINITY).is_err());
-    /// assert!(skel.set_mu_1(std::f64::NEG_INFINITY).is_err());
-    /// assert!(skel.set_mu_1(std::f64::NAN).is_err());
+    /// assert!(skel.set_mu_1(f64::NEG_INFINITY).is_err());
+    /// assert!(skel.set_mu_1(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_mu_1(&mut self, mu_1: f64) -> Result<(), SkellamError> {
@@ -178,8 +178,8 @@ impl Skellam {
     /// assert!(skel.set_mu_2(0.0).is_err());
     /// assert!(skel.set_mu_2(-1.0).is_err());
     /// assert!(skel.set_mu_2(std::f64::INFINITY).is_err());
-    /// assert!(skel.set_mu_2(std::f64::NEG_INFINITY).is_err());
-    /// assert!(skel.set_mu_2(std::f64::NAN).is_err());
+    /// assert!(skel.set_mu_2(f64::NEG_INFINITY).is_err());
+    /// assert!(skel.set_mu_2(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_mu_2(&mut self, mu_2: f64) -> Result<(), SkellamError> {

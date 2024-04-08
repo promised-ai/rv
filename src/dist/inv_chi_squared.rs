@@ -111,7 +111,7 @@ impl InvChiSquared {
     /// assert!(ix2.set_v(2.2).is_ok());
     /// assert!(ix2.set_v(0.0).is_err());
     /// assert!(ix2.set_v(-1.0).is_err());
-    /// assert!(ix2.set_v(std::f64::NAN).is_err());
+    /// assert!(ix2.set_v(f64::NAN).is_err());
     /// assert!(ix2.set_v(std::f64::INFINITY).is_err());
     /// ```
     #[inline]

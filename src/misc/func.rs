@@ -99,8 +99,8 @@ pub fn logsumexp(xs: &[f64]) -> f64 {
     } else {
         let (alpha, r) =
             xs.iter()
-                .fold((std::f64::NEG_INFINITY, 0.0), |(alpha, r), &x| {
-                    if x == std::f64::NEG_INFINITY {
+                .fold((f64::NEG_INFINITY, 0.0), |(alpha, r), &x| {
+                    if x == f64::NEG_INFINITY {
                         (alpha, r)
                     } else if x <= alpha {
                         (alpha, r + (x - alpha).exp())
@@ -218,7 +218,7 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 ///
 /// ```rust
 /// # use rv::misc::ln_pflip;
-/// use std::f64::NEG_INFINITY;
+/// use f64::NEG_INFINITY;
 /// use std::f64::consts::LN_2;
 ///
 /// let ln_weights: Vec<f64> = vec![-LN_2, NEG_INFINITY, -LN_2];
@@ -723,9 +723,8 @@ mod tests {
     #[test]
     fn ln_pflip_works_with_zero_weights() {
         use std::f64::consts::LN_2;
-        use std::f64::NEG_INFINITY;
 
-        let ln_weights: Vec<f64> = vec![-LN_2, NEG_INFINITY, -LN_2];
+        let ln_weights: Vec<f64> = vec![-LN_2, f64::NEG_INFINITY, -LN_2];
 
         let xs = ln_pflip(&ln_weights, 100, true, &mut rand::thread_rng());
 

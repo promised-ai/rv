@@ -139,8 +139,8 @@ impl SymmetricDirichlet {
     /// assert!(symdir.set_alpha(0.0).is_err());
     /// assert!(symdir.set_alpha(-1.0).is_err());
     /// assert!(symdir.set_alpha(std::f64::INFINITY).is_err());
-    /// assert!(symdir.set_alpha(std::f64::NEG_INFINITY).is_err());
-    /// assert!(symdir.set_alpha(std::f64::NAN).is_err());
+    /// assert!(symdir.set_alpha(f64::NEG_INFINITY).is_err());
+    /// assert!(symdir.set_alpha(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_alpha(

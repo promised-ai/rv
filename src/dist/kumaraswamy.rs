@@ -254,8 +254,8 @@ impl Kumaraswamy {
     /// assert!(kuma.set_a(2.3).is_ok());
     /// assert!(kuma.set_a(0.0).is_err());
     /// assert!(kuma.set_a(std::f64::INFINITY).is_err());
-    /// assert!(kuma.set_a(std::f64::NEG_INFINITY).is_err());
-    /// assert!(kuma.set_a(std::f64::NAN).is_err());
+    /// assert!(kuma.set_a(f64::NEG_INFINITY).is_err());
+    /// assert!(kuma.set_a(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_a(&mut self, a: f64) -> Result<(), KumaraswamyError> {
@@ -296,8 +296,8 @@ impl Kumaraswamy {
     /// assert!(kuma.set_b(2.3).is_ok());
     /// assert!(kuma.set_b(0.0).is_err());
     /// assert!(kuma.set_b(std::f64::INFINITY).is_err());
-    /// assert!(kuma.set_b(std::f64::NEG_INFINITY).is_err());
-    /// assert!(kuma.set_b(std::f64::NAN).is_err());
+    /// assert!(kuma.set_b(f64::NEG_INFINITY).is_err());
+    /// assert!(kuma.set_b(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_b(&mut self, b: f64) -> Result<(), KumaraswamyError> {

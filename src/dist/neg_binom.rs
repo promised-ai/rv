@@ -115,8 +115,8 @@ impl NegBinomial {
     /// assert!(nbin.set_r(0.99).is_err());
     ///
     /// assert!(nbin.set_r(std::f64::INFINITY).is_err());
-    /// assert!(nbin.set_r(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nbin.set_r(std::f64::NAN).is_err());
+    /// assert!(nbin.set_r(f64::NEG_INFINITY).is_err());
+    /// assert!(nbin.set_r(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_r(&mut self, r: f64) -> Result<(), NegBinomialError> {
@@ -176,8 +176,8 @@ impl NegBinomial {
     /// assert!(nbin.set_p(-1.1).is_err());
     ///
     /// assert!(nbin.set_p(std::f64::INFINITY).is_err());
-    /// assert!(nbin.set_p(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nbin.set_p(std::f64::NAN).is_err());
+    /// assert!(nbin.set_p(f64::NEG_INFINITY).is_err());
+    /// assert!(nbin.set_p(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_p(&mut self, p: f64) -> Result<(), NegBinomialError> {

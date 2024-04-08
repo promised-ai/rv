@@ -102,8 +102,8 @@ impl Cauchy {
     /// # let mut c = Cauchy::new(0.1, 1.0).unwrap();
     /// assert!(c.set_loc(2.0).is_ok());
     /// assert!(c.set_loc(std::f64::INFINITY).is_err());
-    /// assert!(c.set_loc(std::f64::NEG_INFINITY).is_err());
-    /// assert!(c.set_loc(std::f64::NAN).is_err());
+    /// assert!(c.set_loc(f64::NEG_INFINITY).is_err());
+    /// assert!(c.set_loc(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_loc(&mut self, loc: f64) -> Result<(), CauchyError> {
@@ -154,7 +154,7 @@ impl Cauchy {
     /// # let mut c = Cauchy::new(0.1, 1.0).unwrap();
     /// assert!(c.set_scale(0.0).is_err());
     /// assert!(c.set_scale(-1.0).is_err());
-    /// assert!(c.set_scale(std::f64::NAN).is_err());
+    /// assert!(c.set_scale(f64::NAN).is_err());
     /// assert!(c.set_scale(std::f64::INFINITY).is_err());
     /// ```
     #[inline]

@@ -120,8 +120,8 @@ impl NormalInvGamma {
     /// # let mut nig = NormalInvGamma::new(0.0, 1.2, 2.3, 3.4).unwrap();
     /// assert!(nig.set_m(-1.1).is_ok());
     /// assert!(nig.set_m(std::f64::INFINITY).is_err());
-    /// assert!(nig.set_m(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nig.set_m(std::f64::NAN).is_err());
+    /// assert!(nig.set_m(f64::NEG_INFINITY).is_err());
+    /// assert!(nig.set_m(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_m(&mut self, m: f64) -> Result<(), NormalInvGammaError> {
@@ -172,8 +172,8 @@ impl NormalInvGamma {
     ///
     ///
     /// assert!(nig.set_v(std::f64::INFINITY).is_err());
-    /// assert!(nig.set_v(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nig.set_v(std::f64::NAN).is_err());
+    /// assert!(nig.set_v(f64::NEG_INFINITY).is_err());
+    /// assert!(nig.set_v(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_v(&mut self, v: f64) -> Result<(), NormalInvGammaError> {
@@ -226,8 +226,8 @@ impl NormalInvGamma {
     ///
     ///
     /// assert!(nig.set_a(std::f64::INFINITY).is_err());
-    /// assert!(nig.set_a(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nig.set_a(std::f64::NAN).is_err());
+    /// assert!(nig.set_a(f64::NEG_INFINITY).is_err());
+    /// assert!(nig.set_a(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_a(&mut self, a: f64) -> Result<(), NormalInvGammaError> {
@@ -280,8 +280,8 @@ impl NormalInvGamma {
     ///
     ///
     /// assert!(nig.set_b(std::f64::INFINITY).is_err());
-    /// assert!(nig.set_b(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nig.set_b(std::f64::NAN).is_err());
+    /// assert!(nig.set_b(f64::NEG_INFINITY).is_err());
+    /// assert!(nig.set_b(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_b(&mut self, b: f64) -> Result<(), NormalInvGammaError> {
@@ -338,7 +338,7 @@ impl Sampleable<Gaussian> for NormalInvGamma {
             .draw(&mut rng);
 
         let sigma = if var <= 0.0 {
-            std::f64::EPSILON
+            f64::EPSILON
         } else {
             var.sqrt()
         };

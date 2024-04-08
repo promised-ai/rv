@@ -128,7 +128,7 @@ impl ScaledInvChiSquared {
     /// assert!(ix2.set_v(2.2).is_ok());
     /// assert!(ix2.set_v(0.0).is_err());
     /// assert!(ix2.set_v(-1.0).is_err());
-    /// assert!(ix2.set_v(std::f64::NAN).is_err());
+    /// assert!(ix2.set_v(f64::NAN).is_err());
     /// assert!(ix2.set_v(std::f64::INFINITY).is_err());
     /// ```
     #[inline]
@@ -184,7 +184,7 @@ impl ScaledInvChiSquared {
     /// assert!(ix2.set_t2(2.2).is_ok());
     /// assert!(ix2.set_t2(0.0).is_err());
     /// assert!(ix2.set_t2(-1.0).is_err());
-    /// assert!(ix2.set_t2(std::f64::NAN).is_err());
+    /// assert!(ix2.set_t2(f64::NAN).is_err());
     /// assert!(ix2.set_t2(std::f64::INFINITY).is_err());
     /// ```
     #[inline]

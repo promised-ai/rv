@@ -111,8 +111,8 @@ impl NormalGamma {
     /// # let mut ng = NormalGamma::new(0.0, 1.2, 2.3, 3.4).unwrap();
     /// assert!(ng.set_m(-1.1).is_ok());
     /// assert!(ng.set_m(std::f64::INFINITY).is_err());
-    /// assert!(ng.set_m(std::f64::NEG_INFINITY).is_err());
-    /// assert!(ng.set_m(std::f64::NAN).is_err());
+    /// assert!(ng.set_m(f64::NEG_INFINITY).is_err());
+    /// assert!(ng.set_m(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_m(&mut self, m: f64) -> Result<(), NormalGammaError> {
@@ -163,8 +163,8 @@ impl NormalGamma {
     ///
     ///
     /// assert!(ng.set_r(std::f64::INFINITY).is_err());
-    /// assert!(ng.set_r(std::f64::NEG_INFINITY).is_err());
-    /// assert!(ng.set_r(std::f64::NAN).is_err());
+    /// assert!(ng.set_r(f64::NEG_INFINITY).is_err());
+    /// assert!(ng.set_r(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_r(&mut self, r: f64) -> Result<(), NormalGammaError> {
@@ -217,8 +217,8 @@ impl NormalGamma {
     ///
     ///
     /// assert!(ng.set_s(std::f64::INFINITY).is_err());
-    /// assert!(ng.set_s(std::f64::NEG_INFINITY).is_err());
-    /// assert!(ng.set_s(std::f64::NAN).is_err());
+    /// assert!(ng.set_s(f64::NEG_INFINITY).is_err());
+    /// assert!(ng.set_s(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_s(&mut self, s: f64) -> Result<(), NormalGammaError> {
@@ -271,8 +271,8 @@ impl NormalGamma {
     ///
     ///
     /// assert!(ng.set_v(std::f64::INFINITY).is_err());
-    /// assert!(ng.set_v(std::f64::NEG_INFINITY).is_err());
-    /// assert!(ng.set_v(std::f64::NAN).is_err());
+    /// assert!(ng.set_v(f64::NEG_INFINITY).is_err());
+    /// assert!(ng.set_v(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_v(&mut self, v: f64) -> Result<(), NormalGammaError> {
@@ -341,7 +341,7 @@ impl Sampleable<Gaussian> for NormalGamma {
             .draw(&mut rng);
 
         let sigma = if rho.is_infinite() {
-            std::f64::EPSILON
+            f64::EPSILON
         } else {
             rho.recip().sqrt()
         };

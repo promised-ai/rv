@@ -118,9 +118,9 @@ impl VonMises {
     /// assert!(vm.set_mu(0.0 - 0.001).is_err());
     /// assert!(vm.set_mu(2.0 * std::f64::consts::PI + 0.001).is_err());
     ///
-    /// assert!(vm.set_mu(std::f64::NEG_INFINITY).is_err());
+    /// assert!(vm.set_mu(f64::NEG_INFINITY).is_err());
     /// assert!(vm.set_mu(std::f64::INFINITY).is_err());
-    /// assert!(vm.set_mu(std::f64::NAN).is_err());
+    /// assert!(vm.set_mu(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), VonMisesError> {
@@ -183,8 +183,8 @@ impl VonMises {
     /// assert!(vm.set_k(-1.0).is_err());
     ///
     /// assert!(vm.set_k(std::f64::INFINITY).is_err());
-    /// assert!(vm.set_k(std::f64::NEG_INFINITY).is_err());
-    /// assert!(vm.set_k(std::f64::NAN).is_err());
+    /// assert!(vm.set_k(f64::NEG_INFINITY).is_err());
+    /// assert!(vm.set_k(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_k(&mut self, k: f64) -> Result<(), VonMisesError> {
