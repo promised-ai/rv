@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
 // use super::sticks_stat::StickBreakingSuffStat;
-use crate::experimental::stick_breaking::PartialWeights;
+use crate::experimental::stick_breaking::stick_breaking::PartialWeights;
 use crate::prelude::UnitPowerLaw;
 use crate::traits::*;
 
@@ -205,7 +205,7 @@ impl StickSequence {
 
 #[cfg(test)]
 mod tests {
-    use crate::experimental::StickSequence;
+    use crate::experimental::stick_breaking::StickSequence;
     use crate::prelude::UnitPowerLaw;
 
     #[test]
