@@ -38,7 +38,7 @@ impl StickBreaking {
     /// # Example
     /// ```
     /// use rv::prelude::*;
-    /// use rv::experimental::StickBreaking;
+    /// use rv::experimental::stick_breaking::StickBreaking;
     ///
     /// let alpha = 5.0;
     /// let stick_breaking = StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
