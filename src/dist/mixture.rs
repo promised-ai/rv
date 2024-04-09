@@ -808,8 +808,6 @@ fn continuous_mixture_quad_points<Fx>(mm: &Mixture<Fx>) -> Vec<f64>
 where
     Fx: Mode<f64> + Variance<f64>,
 {
-    use std::f64::INFINITY;
-
     let mut state = (None, None);
 
     mm.components()
@@ -820,7 +818,8 @@ where
             match (&state, (mode, std)) {
                 ((Some(m1), s1), (Some(m2), s2)) => {
                     if (m2 - *m1)
-                        > s1.unwrap_or(INFINITY).min(s2.unwrap_or(INFINITY))
+                        > s1.unwrap_or(f64::INFINITY)
+                            .min(s2.unwrap_or(f64::INFINITY))
                     {
                         state = (mode, std);
                         Some(m2)
@@ -938,7 +937,7 @@ macro_rules! ds_discrete_quad_bounds {
     };
 }
 
-ds_discrete_quad_bounds!(Mixture<Poisson>, u32, 0, u32::max_value());
+ds_discrete_quad_bounds!(Mixture<Poisson>, u32, 0, u32::MAX);
 
 #[cfg(test)]
 mod tests {

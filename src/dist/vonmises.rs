@@ -138,9 +138,9 @@ impl VonMises {
     /// assert!(vm.set_mu(0.0 - 0.001).is_err());
     /// assert!(vm.set_mu(2.0 * std::f64::consts::PI + 0.001).is_err());
     ///
-    /// assert!(vm.set_mu(std::f64::NEG_INFINITY).is_err());
-    /// assert!(vm.set_mu(std::f64::INFINITY).is_err());
-    /// assert!(vm.set_mu(std::f64::NAN).is_err());
+    /// assert!(vm.set_mu(f64::NEG_INFINITY).is_err());
+    /// assert!(vm.set_mu(f64::INFINITY).is_err());
+    /// assert!(vm.set_mu(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), VonMisesError> {
@@ -202,9 +202,9 @@ impl VonMises {
     /// assert!(vm.set_k(0.0).is_err());
     /// assert!(vm.set_k(-1.0).is_err());
     ///
-    /// assert!(vm.set_k(std::f64::INFINITY).is_err());
-    /// assert!(vm.set_k(std::f64::NEG_INFINITY).is_err());
-    /// assert!(vm.set_k(std::f64::NAN).is_err());
+    /// assert!(vm.set_k(f64::INFINITY).is_err());
+    /// assert!(vm.set_k(f64::NEG_INFINITY).is_err());
+    /// assert!(vm.set_k(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_k(&mut self, k: f64) -> Result<(), VonMisesError> {
@@ -371,7 +371,6 @@ mod tests {
     use super::*;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
-    use std::f64::EPSILON;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
@@ -389,7 +388,7 @@ mod tests {
     #[test]
     fn new_should_not_allow_mu_outside_0_2pi() {
         assert!(VonMises::new(-PI, 1.0).is_err());
-        assert!(VonMises::new(-EPSILON, 1.0).is_err());
+        assert!(VonMises::new(-f64::EPSILON, 1.0).is_err());
         assert!(VonMises::new(2.0_f64.mul_add(PI, 0.001), 1.0).is_err());
         assert!(VonMises::new(100.0, 1.0).is_err());
     }

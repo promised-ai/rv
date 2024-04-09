@@ -226,13 +226,13 @@ pub trait ContinuousDistr<X>: HasDensity<X> + Support<X> {
     ///
     /// let expon = Exponential::new(1.0).unwrap();
     /// let f = expon.ln_pdf(&-1.0_f64);
-    /// assert_eq!(f, std::f64::NEG_INFINITY);
+    /// assert_eq!(f, f64::NEG_INFINITY);
     /// ```
     fn ln_pdf(&self, x: &X) -> f64 {
         if self.supports(x) {
             self.ln_f(x)
         } else {
-            std::f64::NEG_INFINITY
+            f64::NEG_INFINITY
         }
     }
 }
@@ -355,7 +355,7 @@ pub trait DiscreteDistr<X>: Rv<X> + Support<X> {
         if self.supports(x) {
             self.ln_f(x)
         } else {
-            std::f64::NEG_INFINITY
+            f64::NEG_INFINITY
         }
     }
 }
@@ -496,7 +496,7 @@ pub trait KlDivergence {
 ///     let t_start = Instant::now();
 ///     let cache = symdir.ln_pp_cache(&stat);
 ///     // Argmax
-///     let k_max = (0..ncats).fold((0, std::f64::NEG_INFINITY), |(ix, f), y| {
+///     let k_max = (0..ncats).fold((0, f64::NEG_INFINITY), |(ix, f), y| {
 ///             let f_r = symdir.ln_pp_with_cache(&cache, &y);
 ///             if f_r > f {
 ///                 (y, f_r)
@@ -514,7 +514,7 @@ pub trait KlDivergence {
 /// let t_no_cache = {
 ///     let t_start = Instant::now();
 ///     // Argmax
-///     let k_max = (0..ncats).fold((0, std::f64::NEG_INFINITY), |(ix, f), y| {
+///     let k_max = (0..ncats).fold((0, f64::NEG_INFINITY), |(ix, f), y| {
 ///             let f_r = symdir.ln_pp(&y, &stat);
 ///             if f_r > f {
 ///                 (y, f_r)

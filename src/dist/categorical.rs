@@ -137,7 +137,7 @@ impl Categorical {
             .enumerate()
             .try_for_each(|(ix, &weight)| {
                 // Manually check for -Inf
-                if weight.is_finite() || weight == std::f64::NEG_INFINITY {
+                if weight.is_finite() || weight == f64::NEG_INFINITY {
                     Ok(())
                 } else {
                     // Catch Inf and NaN
@@ -323,7 +323,6 @@ mod tests {
     use crate::misc::x2_test;
     use crate::test_basic_impls;
     use std::f64::consts::LN_2;
-    use std::f64::NEG_INFINITY;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
@@ -333,7 +332,7 @@ mod tests {
 
     #[test]
     fn from_ln_weights_with_zero_weight_should_work() {
-        let ln_weights: Vec<f64> = vec![-LN_2, NEG_INFINITY, -LN_2];
+        let ln_weights: Vec<f64> = vec![-LN_2, f64::NEG_INFINITY, -LN_2];
         let res = Categorical::from_ln_weights(ln_weights);
         assert!(res.is_ok());
     }

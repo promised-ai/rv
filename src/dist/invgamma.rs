@@ -125,9 +125,9 @@ impl InvGamma {
     /// assert!(ig.set_shape(1.1).is_ok());
     /// assert!(ig.set_shape(0.0).is_err());
     /// assert!(ig.set_shape(-1.0).is_err());
-    /// assert!(ig.set_shape(std::f64::INFINITY).is_err());
-    /// assert!(ig.set_shape(std::f64::NEG_INFINITY).is_err());
-    /// assert!(ig.set_shape(std::f64::NAN).is_err());
+    /// assert!(ig.set_shape(f64::INFINITY).is_err());
+    /// assert!(ig.set_shape(f64::NEG_INFINITY).is_err());
+    /// assert!(ig.set_shape(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_shape(&mut self, shape: f64) -> Result<(), InvGammaError> {
@@ -182,9 +182,9 @@ impl InvGamma {
     /// assert!(ig.set_scale(1.1).is_ok());
     /// assert!(ig.set_scale(0.0).is_err());
     /// assert!(ig.set_scale(-1.0).is_err());
-    /// assert!(ig.set_scale(std::f64::INFINITY).is_err());
-    /// assert!(ig.set_scale(std::f64::NEG_INFINITY).is_err());
-    /// assert!(ig.set_scale(std::f64::NAN).is_err());
+    /// assert!(ig.set_scale(f64::INFINITY).is_err());
+    /// assert!(ig.set_scale(f64::NEG_INFINITY).is_err());
+    /// assert!(ig.set_scale(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_scale(&mut self, scale: f64) -> Result<(), InvGammaError> {

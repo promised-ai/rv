@@ -129,9 +129,9 @@ impl LogNormal {
     /// # use rv::dist::LogNormal;
     /// # let mut lognormal = LogNormal::new(2.0, 1.5).unwrap();
     /// assert!(lognormal.set_mu(1.3).is_ok());
-    /// assert!(lognormal.set_mu(std::f64::NEG_INFINITY).is_err());
-    /// assert!(lognormal.set_mu(std::f64::INFINITY).is_err());
-    /// assert!(lognormal.set_mu(std::f64::NAN).is_err());
+    /// assert!(lognormal.set_mu(f64::NEG_INFINITY).is_err());
+    /// assert!(lognormal.set_mu(f64::INFINITY).is_err());
+    /// assert!(lognormal.set_mu(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), LogNormalError> {
@@ -184,9 +184,9 @@ impl LogNormal {
     /// assert!(lognormal.set_sigma(2.3).is_ok());
     /// assert!(lognormal.set_sigma(0.0).is_err());
     /// assert!(lognormal.set_sigma(-1.0).is_err());
-    /// assert!(lognormal.set_sigma(std::f64::INFINITY).is_err());
-    /// assert!(lognormal.set_sigma(std::f64::NEG_INFINITY).is_err());
-    /// assert!(lognormal.set_sigma(std::f64::NAN).is_err());
+    /// assert!(lognormal.set_sigma(f64::INFINITY).is_err());
+    /// assert!(lognormal.set_sigma(f64::NEG_INFINITY).is_err());
+    /// assert!(lognormal.set_sigma(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_sigma(&mut self, sigma: f64) -> Result<(), LogNormalError> {

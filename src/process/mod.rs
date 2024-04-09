@@ -84,7 +84,7 @@ where
         let random_params =
             (0..random_reinits).map(|_| self.random_params(rng));
 
-        let mut best_cost = std::f64::INFINITY;
+        let mut best_cost = f64::INFINITY;
         let mut successes = 0;
         let mut last_err = None;
 

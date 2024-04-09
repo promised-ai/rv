@@ -31,6 +31,7 @@ peroxide = { version = "0.32.1" }
 num-traits = "0.2.17"
 rand_xoshiro = { version = "0.6", optional = true, features=["serde1"]}
 itertools = "0.12.1"
+proptest = "1.4.0"
 
 [dev-dependencies]
 assert = "0.7"
@@ -50,6 +51,9 @@ experimental = ["rand_xoshiro"]
 
 [package.metadata.docs.rs]
 all-features = true
+
+[profile.test.package.proptest]
+opt-level = 3
 
 # Benchmarks
 # ==========

@@ -107,8 +107,8 @@ impl ChiSquared {
     /// assert!(x2.set_k(2.2).is_ok());
     /// assert!(x2.set_k(0.0).is_err());
     /// assert!(x2.set_k(-1.0).is_err());
-    /// assert!(x2.set_k(std::f64::NAN).is_err());
-    /// assert!(x2.set_k(std::f64::INFINITY).is_err());
+    /// assert!(x2.set_k(f64::NAN).is_err());
+    /// assert!(x2.set_k(f64::INFINITY).is_err());
     /// ```
     #[inline]
     pub fn set_k(&mut self, k: f64) -> Result<(), ChiSquaredError> {

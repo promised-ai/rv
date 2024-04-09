@@ -21,7 +21,7 @@ impl ConstantKernel {
             Err(KernelError::ParameterOutOfBounds {
                 name: "value".to_string(),
                 given: value,
-                bounds: (0.0, std::f64::INFINITY),
+                bounds: (0.0, f64::INFINITY),
             })
         } else {
             Ok(Self { scale: value })

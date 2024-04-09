@@ -23,7 +23,7 @@ impl WhiteKernel {
             return Err(KernelError::ParameterOutOfBounds {
                 name: "noise_level".to_string(),
                 given: noise_level,
-                bounds: (0.0, std::f64::INFINITY),
+                bounds: (0.0, f64::INFINITY),
             });
         }
         Ok(Self { noise_level })

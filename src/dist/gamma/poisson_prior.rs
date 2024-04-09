@@ -1,5 +1,3 @@
-use std::f64::EPSILON;
-
 use rand::Rng;
 
 use crate::data::PoissonSuffStat;
@@ -13,7 +11,7 @@ impl HasDensity<Poisson> for Gamma {
     fn ln_f(&self, x: &Poisson) -> f64 {
         match x.mean() {
             Some(mean) => self.ln_f(&mean),
-            None => std::f64::NEG_INFINITY,
+            None => f64::NEG_INFINITY,
         }
     }
 }
@@ -24,7 +22,7 @@ impl Sampleable<Poisson> for Gamma {
         match Poisson::new(mean) {
             Ok(pois) => pois,
             Err(PoissonError::RateTooLow { .. }) => {
-                Poisson::new_unchecked(EPSILON)
+                Poisson::new_unchecked(f64::EPSILON)
             }
             Err(err) => panic!("Failed to draw Possion: {}", err),
         }

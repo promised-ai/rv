@@ -162,7 +162,7 @@ where
         .iter()
         .zip(cdf_y.iter())
         .map(|(cx, cy)| (cx - cy))
-        .fold((std::f64::MAX, std::f64::MIN), |(min, max), z| {
+        .fold((f64::MAX, f64::MIN), |(min, max), z| {
             let new_min = min.min(z);
             let new_max = max.max(z);
             (new_min, new_max)
@@ -191,7 +191,7 @@ where
             }
         }
         KsMode::Exact => {
-            if n_x_g > std::f64::MAX / n_y_g {
+            if n_x_g > f64::MAX / n_y_g {
                 return Err(KsError::TooLongForExact);
             }
             KsMode::Exact

@@ -1,7 +1,12 @@
+use itertools::Either;
+use peroxide::statistics::stat::Statistics;
+use rv::prelude::*;
+
 #[cfg(feature = "experimental")]
-use rv::experimental::{Sbd, SbdSuffStat, StickBreaking, StickSequence};
-use rv::prelude::UnitPowerLaw;
-use rv::traits::*;
+use rv::experimental::stick_breaking::{
+    StickBreaking, StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
+    StickSequence,
+};
 
 fn main() {
     #[cfg(feature = "experimental")]
@@ -14,23 +19,28 @@ fn main() {
         let sticks: StickSequence = sbp.draw(&mut rand::thread_rng());
 
         // Use the StickSequence to instantiate a stick-breaking discrete distribution
-        let sbd = Sbd::new(sticks.clone());
+        let sbd = StickBreakingDiscrete::new(sticks.clone());
 
-        // Now sample from the Sbd and find its sufficient statistic
+        // Now sample from the StickBreakingDiscrete and find its sufficient statistic
         let n = 10000;
         let xs = sbd.sample(n, &mut rand::thread_rng());
-        let stat = SbdSuffStat::from(&xs[..]);
+        let stat = StickBreakingDiscreteSuffStat::from(&xs[..]);
 
         // Use the sufficient statistic to find the posterior
         let post = sbp.posterior_from_suffstat(&stat);
 
+        let mut break_iter = post.break_dists();
+
         // Print the posterior parameters of each Beta distribution.
-        post.break_prefix.iter().for_each(|p| {
-            let alpha = p.alpha();
-            let beta = p.beta();
-            let p = alpha / (alpha + beta);
-            println!("alpha: {}\t beta: {}\t mean: {}", alpha, beta, p);
-        });
+        while let Some(Either::Left(p)) = break_iter.next() {
+            let mean: f64 = p.mean().unwrap();
+            println!(
+                "alpha: {}\t beta: {}\t mean: {}",
+                p.alpha(),
+                p.beta(),
+                mean
+            );
+        }
 
         let cache = sbp.ln_pp_cache(&DataOrSuffStat::SuffStat(&stat));
         let sum: f64 = (0..99).map(|y| sbp.pp_with_cache(&cache, &y)).sum();

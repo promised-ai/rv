@@ -1,4 +1,4 @@
-use crate::experimental::sbd::Sbd;
+use crate::experimental::stick_breaking::sbd::StickBreakingDiscrete;
 use crate::suffstat_traits::{HasSuffStat, SuffStat};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -6,11 +6,11 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
-pub struct SbdSuffStat {
-    pub counts: Vec<usize>,
+pub struct StickBreakingDiscreteSuffStat {
+    counts: Vec<usize>,
 }
 
-impl SbdSuffStat {
+impl StickBreakingDiscreteSuffStat {
     pub fn new() -> Self {
         Self { counts: Vec::new() }
     }
@@ -25,40 +25,45 @@ impl SbdSuffStat {
             })
             .collect()
     }
+
+    pub fn counts(&self) -> &Vec<usize> {
+        &self.counts
+    }
 }
 
-impl From<&[usize]> for SbdSuffStat {
+impl From<&[usize]> for StickBreakingDiscreteSuffStat {
     fn from(data: &[usize]) -> Self {
-        let mut stat = SbdSuffStat::new();
+        let mut stat = StickBreakingDiscreteSuffStat::new();
         stat.observe_many(data);
         stat
     }
 }
 
-impl Default for SbdSuffStat {
+impl Default for StickBreakingDiscreteSuffStat {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl HasSuffStat<usize> for Sbd {
-    type Stat = SbdSuffStat;
+impl HasSuffStat<usize> for StickBreakingDiscrete {
+    type Stat = StickBreakingDiscreteSuffStat;
 
     fn empty_suffstat(&self) -> Self::Stat {
         Self::Stat::new()
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
-        self.sticks
+        self.stick_sequence()
             .weights(stat.counts.len())
             .0
             .iter()
             .zip(stat.counts.iter())
-            .fold(0.0, |acc, (w, c)| (*c as f64).mul_add(w.ln(), acc))
+            .map(|(w, c)| (*c as f64) * w.ln())
+            .sum()
     }
 }
 
-impl SuffStat<usize> for SbdSuffStat {
+impl SuffStat<usize> for StickBreakingDiscreteSuffStat {
     fn n(&self) -> usize {
         self.counts.iter().sum()
     }
@@ -82,7 +87,7 @@ mod tests {
 
     #[test]
     fn test_break_pairs() {
-        let suff_stat = SbdSuffStat {
+        let suff_stat = StickBreakingDiscreteSuffStat {
             counts: vec![1, 2, 3],
         };
 
@@ -92,8 +97,8 @@ mod tests {
 
     // #[test]
     // fn test_ln_f_stat() {
-    //     let sbd = Sbd::new();
-    //     let suff_stat = SbdSuffStat {
+    //     let sbd = StickBreakingDiscrete::new();
+    //     let suff_stat = StickBreakingDiscreteSuffStat {
     //         counts: vec![1, 2, 3],
     //     };
 
@@ -101,15 +106,24 @@ mod tests {
     //     assert_eq!(ln_f_stat, 2.1972245773362196); // Replace with the expected value
     // }
 
-    // #[test]
-    // fn test_observe_and_forget() {
-    //     let mut suff_stat = SbdSuffStat::new();
+    #[test]
+    fn test_observe_and_forget() {
+        let mut suff_stat = StickBreakingDiscreteSuffStat::new();
 
-    //     suff_stat.observe(&1);
-    //     suff_stat.observe(&2);
-    //     suff_stat.observe(&2);
-    //     suff_stat.forget(&2);
+        suff_stat.observe(&1);
+        suff_stat.observe(&2);
+        suff_stat.observe(&2);
+        suff_stat.forget(&2);
 
-    //     assert_eq!(suff_stat.counts, vec![0, 1, 1]);
-    // }
+        assert_eq!(suff_stat.counts, vec![0, 1, 1]);
+        assert_eq!(suff_stat.n(), 2);
+    }
+
+    #[test]
+    fn test_new_is_default() {
+        assert!(
+            StickBreakingDiscreteSuffStat::new()
+                == StickBreakingDiscreteSuffStat::default()
+        );
+    }
 }

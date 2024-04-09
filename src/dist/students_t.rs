@@ -6,7 +6,6 @@ use crate::misc::ln_gammafn;
 use crate::traits::*;
 use rand::Rng;
 use std::f64::consts::PI;
-use std::f64::INFINITY;
 use std::fmt;
 
 /// [Student's T distribution](https://en.wikipedia.org/wiki/Student%27s_t-distribution)
@@ -93,9 +92,9 @@ impl StudentsT {
     /// assert!(t.set_v(-1.0).is_err());
     ///
     ///
-    /// assert!(t.set_v(std::f64::INFINITY).is_err());
-    /// assert!(t.set_v(std::f64::NEG_INFINITY).is_err());
-    /// assert!(t.set_v(std::f64::NAN).is_err());
+    /// assert!(t.set_v(f64::INFINITY).is_err());
+    /// assert!(t.set_v(f64::NEG_INFINITY).is_err());
+    /// assert!(t.set_v(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_v(&mut self, v: f64) -> Result<(), StudentsTError> {
@@ -215,7 +214,7 @@ impl Kurtosis for StudentsT {
         if self.v > 4.0 {
             Some(6.0 / (self.v - 4.0))
         } else if self.v > 2.0 {
-            Some(INFINITY)
+            Some(f64::INFINITY)
         } else {
             None
         }

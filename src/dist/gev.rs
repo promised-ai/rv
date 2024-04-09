@@ -124,9 +124,9 @@ impl Gev {
     /// # use rv::dist::Gev;
     /// # let mut gev = Gev::new(1.2, 2.3, 3.4).unwrap();
     /// assert!(gev.set_loc(2.8).is_ok());
-    /// assert!(gev.set_loc(std::f64::INFINITY).is_err());
-    /// assert!(gev.set_loc(std::f64::NEG_INFINITY).is_err());
-    /// assert!(gev.set_loc(std::f64::NAN).is_err());
+    /// assert!(gev.set_loc(f64::INFINITY).is_err());
+    /// assert!(gev.set_loc(f64::NEG_INFINITY).is_err());
+    /// assert!(gev.set_loc(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_loc(&mut self, loc: f64) -> Result<(), GevError> {
@@ -178,9 +178,9 @@ impl Gev {
     /// # use rv::dist::Gev;
     /// # let mut gev = Gev::new(1.2, 2.3, 3.4).unwrap();
     /// assert!(gev.set_shape(2.8).is_ok());
-    /// assert!(gev.set_shape(std::f64::INFINITY).is_err());
-    /// assert!(gev.set_shape(std::f64::NEG_INFINITY).is_err());
-    /// assert!(gev.set_shape(std::f64::NAN).is_err());
+    /// assert!(gev.set_shape(f64::INFINITY).is_err());
+    /// assert!(gev.set_shape(f64::NEG_INFINITY).is_err());
+    /// assert!(gev.set_shape(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_shape(&mut self, shape: f64) -> Result<(), GevError> {
@@ -234,9 +234,9 @@ impl Gev {
     /// assert!(gev.set_scale(2.8).is_ok());
     /// assert!(gev.set_scale(0.0).is_err());
     /// assert!(gev.set_scale(-1.0).is_err());
-    /// assert!(gev.set_scale(std::f64::INFINITY).is_err());
-    /// assert!(gev.set_scale(std::f64::NEG_INFINITY).is_err());
-    /// assert!(gev.set_scale(std::f64::NAN).is_err());
+    /// assert!(gev.set_scale(f64::INFINITY).is_err());
+    /// assert!(gev.set_scale(f64::NEG_INFINITY).is_err());
+    /// assert!(gev.set_scale(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_scale(&mut self, scale: f64) -> Result<(), GevError> {

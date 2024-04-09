@@ -1,5 +1,3 @@
-use std::f64::EPSILON;
-
 const MAX_ITER: usize = 500;
 
 const BESSI0_COEFFS_A: [f64; 30] = [
@@ -208,11 +206,11 @@ impl std::fmt::Display for BesselIvError {
 /// Modified Bessel function of the first kind of real order
 pub fn bessel_iv(v: f64, z: f64) -> Result<f64, BesselIvError> {
     if v.is_nan() || z.is_nan() {
-        return Ok(std::f64::NAN);
+        return Ok(f64::NAN);
     }
     let (v, t) = {
         let t = v.floor();
-        if v < 0.0 && (t - v).abs() < EPSILON {
+        if v < 0.0 && (t - v).abs() < f64::EPSILON {
             (-v, -t)
         } else {
             (v, t)
@@ -221,11 +219,11 @@ pub fn bessel_iv(v: f64, z: f64) -> Result<f64, BesselIvError> {
 
     let sign: f64 = if z < 0.0 {
         // Return error if v is not an integer if x < 0
-        if (t - v).abs() > EPSILON {
+        if (t - v).abs() > f64::EPSILON {
             return Err(BesselIvError::OrderNotIntegerForNegativeZ);
         }
 
-        if 2.0_f64.mul_add(-(v / 2.0).floor(), v) > EPSILON {
+        if 2.0_f64.mul_add(-(v / 2.0).floor(), v) > f64::EPSILON {
             -1.0
         } else {
             1.0
@@ -645,7 +643,7 @@ fn bessel_ikv_asymptotic_uniform(
         i_sum += term;
         k_sum += if n % 2 == 0 { term } else { -term };
 
-        if term.abs() < EPSILON {
+        if term.abs() < f64::EPSILON {
             break;
         }
         divisor *= v;
@@ -654,7 +652,7 @@ fn bessel_ikv_asymptotic_uniform(
     // check convergence
     if term.abs() > 1E-3 * i_sum.abs() {
         Err(BesselIvError::FailedToConverge)
-    } else if term.abs() > EPSILON * i_sum.abs() {
+    } else if term.abs() > f64::EPSILON * i_sum.abs() {
         Err(BesselIvError::PrecisionLoss)
     } else {
         let k_value = k_prefactor * k_sum;
@@ -713,7 +711,7 @@ pub(crate) fn bessel_ikv_temme(
 
     let lim = (4.0_f64.mul_add(v * v, 10.0) / (8.0 * x)).powi(3) / 24.0;
 
-    let iv = if lim < 10.0 * EPSILON && x > 100.0 {
+    let iv = if lim < 10.0 * f64::EPSILON && x > 100.0 {
         bessel_iv_asymptotic(v, x)?
     } else {
         let fv = cf1_ik(v, x)?;
@@ -750,17 +748,17 @@ fn temme_ik_series(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
     let a = (x / 2.0).ln();
     let b = (v * a).exp();
     let sigma = -a * v;
-    let c = if v.abs() < 2.0 * EPSILON {
+    let c = if v.abs() < 2.0 * f64::EPSILON {
         1.0
     } else {
         (PI * v).sin() / (PI * v)
     };
-    let d = if sigma.abs() < EPSILON {
+    let d = if sigma.abs() < f64::EPSILON {
         1.0
     } else {
         sigma.sinh() / sigma
     };
-    let gamma1 = if v.abs() < EPSILON {
+    let gamma1 = if v.abs() < f64::EPSILON {
         -EULER_MASCERONI
     } else {
         (0.5 / v) * (gp - gm) * c
@@ -785,7 +783,7 @@ fn temme_ik_series(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
         sum += coef * f;
         sum1 += coef * h;
 
-        if (coef * f).abs() < sum.abs() * EPSILON {
+        if (coef * f).abs() < sum.abs() * f64::EPSILON {
             return Ok((sum, 2.0 * sum1 / x));
         }
     }
@@ -832,7 +830,7 @@ fn cf2_ik(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
         q += c * t;
         s += q * delta;
 
-        if (q * delta).abs() < s.abs() * EPSILON / 2.0 {
+        if (q * delta).abs() < s.abs() * f64::EPSILON / 2.0 {
             let kv = (PI / (2.0 * x)).sqrt() * (-x).exp() / s;
             let kv1 = kv * v.mul_add(v, -0.25).mul_add(f, 0.5 + v + x) / x;
             return Ok((kv, kv1));
@@ -855,8 +853,8 @@ fn cf1_ik(v: f64, x: f64) -> Result<f64, BesselIvError> {
      * Lentz, Applied Optics, vol 15, 668 (1976)
      */
 
-    const TOL: f64 = EPSILON;
-    let tiny: f64 = std::f64::MAX.sqrt().recip();
+    const TOL: f64 = f64::EPSILON;
+    let tiny: f64 = f64::MAX.sqrt().recip();
     let mut c = tiny;
     let mut f = tiny;
     let mut d = 0.0;
@@ -900,7 +898,7 @@ fn bessel_iv_asymptotic(v: f64, x: f64) -> Result<f64, BesselIvError> {
         let mut term: f64 = 1.0;
         let mut k: usize = 1;
 
-        while term.abs() > std::f64::EPSILON * sum.abs() {
+        while term.abs() > f64::EPSILON * sum.abs() {
             let kf = k as f64;
             let factor = 2.0_f64
                 .mul_add(kf, -1.0)
