@@ -30,6 +30,30 @@ pub struct NormalInvChiSquared {
     scaled_inv_x2: OnceLock<ScaledInvChiSquared>,
 }
 
+pub struct NormalInvChiSquaredParameters {
+    pub m: f64,
+    pub k: f64,
+    pub v: f64,
+    pub s2: f64,
+}
+
+impl Parameterized for NormalInvChiSquared {
+    type Parameters = NormalInvChiSquaredParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            m: self.m(),
+            k: self.k(),
+            v: self.v(),
+            s2: self.s2(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.m, params.k, params.v, params.s2)
+    }
+}
+
 impl PartialEq for NormalInvChiSquared {
     fn eq(&self, other: &Self) -> bool {
         self.m == other.m
@@ -404,8 +428,9 @@ mod test {
     use crate::{test_basic_impls, verify_cache_resets};
 
     test_basic_impls!(
-        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
-        Gaussian::new(-1.2, 0.4).unwrap()
+        Gaussian,
+        NormalInvChiSquared,
+        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap()
     );
 
     verify_cache_resets!(

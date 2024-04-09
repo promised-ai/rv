@@ -29,6 +29,26 @@ pub struct InvGamma {
     scale: f64,
 }
 
+pub struct InvGammaParameters {
+    pub shape: f64,
+    pub scale: f64,
+}
+
+impl Parameterized for InvGamma {
+    type Parameters = InvGammaParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            shape: self.shape(),
+            scale: self.scale(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.shape, params.scale)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -70,7 +90,7 @@ impl InvGamma {
         InvGamma { shape, scale }
     }
 
-    /// Get the shape paramter
+    /// Get the shape parameter
     ///
     /// # Example
     ///
@@ -359,7 +379,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] InvGamma::default());
+    test_basic_impls!(f64, InvGamma, InvGamma::new_unchecked(1.5, 2.3));
 
     #[test]
     fn new() {
@@ -459,7 +479,7 @@ mod tests {
     }
 
     #[test]
-    fn ln_pdf_at_mode_should_be_higest() {
+    fn ln_pdf_at_mode_should_be_highest() {
         let ig = InvGamma::new(3.0, 2.0).unwrap();
         let x: f64 = ig.mode().unwrap();
         let delta = 1E-6;

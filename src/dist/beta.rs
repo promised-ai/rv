@@ -53,6 +53,26 @@ pub struct Beta {
     ln_beta_ab: OnceLock<f64>,
 }
 
+pub struct BetaParameters {
+    pub alpha: f64,
+    pub beta: f64,
+}
+
+impl Parameterized for Beta {
+    type Parameters = BetaParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            alpha: self.alpha(),
+            beta: self.beta(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.alpha, params.beta)
+    }
+}
+
 impl PartialEq for Beta {
     fn eq(&self, other: &Beta) -> bool {
         self.alpha == other.alpha && self.beta == other.beta
@@ -454,7 +474,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Beta::jeffreys());
+    test_basic_impls!(f64, Beta, Beta::jeffreys());
 
     #[test]
     fn new() {
@@ -578,7 +598,7 @@ mod tests {
     }
 
     #[test]
-    fn draw_should_resturn_values_within_0_to_1() {
+    fn draw_should_return_values_within_0_to_1() {
         let mut rng = rand::thread_rng();
         let beta = Beta::jeffreys();
         for _ in 0..100 {

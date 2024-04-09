@@ -24,6 +24,30 @@ pub struct NormalGamma {
     v: f64,
 }
 
+pub struct NormalGammaParameters {
+    pub m: f64,
+    pub r: f64,
+    pub s: f64,
+    pub v: f64,
+}
+
+impl Parameterized for NormalGamma {
+    type Parameters = NormalGammaParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            m: self.m(),
+            r: self.r(),
+            s: self.s(),
+            v: self.v(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.m, params.r, params.s, params.v)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -290,12 +314,6 @@ impl NormalGamma {
     #[inline]
     pub fn set_v_unchecked(&mut self, v: f64) {
         self.v = v;
-    }
-
-    /// Return (m, r, s, v)
-    #[inline]
-    pub fn params(&self) -> (f64, f64, f64, f64) {
-        (self.m, self.r, self.s, self.v)
     }
 }
 

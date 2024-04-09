@@ -103,11 +103,25 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::test_conjugate_prior;
+    use crate::traits::*;
     use nalgebra::{dmatrix, dvector};
 
-    use super::*;
-
     const TOL: f64 = 1E-12;
+
+    test_conjugate_prior!(
+        DVector<f64>,
+        MvGaussian,
+        NormalInvWishart,
+        NormalInvWishart::new(
+            DVector::zeros(2),
+            1.0,
+            2,
+            DMatrix::identity(2, 2),
+        )
+        .unwrap()
+    );
 
     fn obs_fxtr() -> MvGaussianSuffStat {
         let x0v = vec![3.578_396_939_725_76, 0.725_404_224_946_106];

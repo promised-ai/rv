@@ -32,6 +32,28 @@ pub struct Gev {
     shape: f64,
 }
 
+pub struct GevParameters {
+    pub loc: f64,
+    pub scale: f64,
+    pub shape: f64,
+}
+
+impl Parameterized for Gev {
+    type Parameters = GevParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            loc: self.loc(),
+            scale: self.scale(),
+            shape: self.shape(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.loc, params.scale, params.shape)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -406,7 +428,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Gev::new(0.0, 1.0, 2.0).unwrap());
+    test_basic_impls!(f64, Gev, Gev::new(0.0, 1.0, 2.0).unwrap());
 
     #[test]
     fn new() {

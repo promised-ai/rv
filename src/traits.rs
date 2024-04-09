@@ -3,6 +3,14 @@ pub use crate::data::DataOrSuffStat;
 pub use crate::suffstat_traits::*;
 use rand::Rng;
 
+pub trait Parameterized {
+    type Parameters;
+
+    fn emit_params(&self) -> Self::Parameters;
+
+    fn from_params(params: Self::Parameters) -> Self;
+}
+
 pub trait Sampleable<X> {
     /// Single draw from the `Rv`
     ///

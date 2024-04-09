@@ -51,6 +51,11 @@ impl StickBreaking {
         }
     }
 
+    pub fn from_alpha(alpha: f64) -> Result<Self, UnitPowerLawError> {
+        let breaker = UnitPowerLaw::new(alpha)?;
+        Ok(Self::new(breaker))
+    }
+
     pub fn break_prefix(&self) -> &Vec<Beta> {
         &self.break_prefix
     }

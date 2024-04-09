@@ -50,6 +50,30 @@ pub struct NormalInvWishart {
     scale: DMatrix<f64>,
 }
 
+pub struct NormalInvWishartParameters {
+    pub mu: DVector<f64>,
+    pub k: f64,
+    pub df: usize,
+    pub scale: DMatrix<f64>,
+}
+
+impl Parameterized for NormalInvWishart {
+    type Parameters = NormalInvWishartParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu: self.mu().clone_owned(),
+            k: self.k(),
+            df: self.df(),
+            scale: self.scale().clone_owned(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu, params.k, params.df, params.scale)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -308,6 +332,19 @@ impl fmt::Display for NormalInvWishartError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_basic_impls;
+
+    test_basic_impls!(
+        MvGaussian,
+        NormalInvWishart,
+        NormalInvWishart::new(
+            DVector::zeros(2),
+            1.0,
+            2,
+            DMatrix::identity(2, 2),
+        )
+        .unwrap()
+    );
 
     #[test]
     fn disallow_zero_k() {

@@ -27,6 +27,30 @@ pub struct NormalInvGamma {
     b: f64,
 }
 
+pub struct NormalInvGammaParameters {
+    pub m: f64,
+    pub v: f64,
+    pub a: f64,
+    pub b: f64,
+}
+
+impl Parameterized for NormalInvGamma {
+    type Parameters = NormalInvGammaParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            m: self.m(),
+            v: self.v(),
+            a: self.a(),
+            b: self.b(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.m, params.v, params.a, params.b)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -85,12 +109,6 @@ impl NormalInvGamma {
     #[inline(always)]
     pub fn new_unchecked(m: f64, v: f64, a: f64, b: f64) -> Self {
         NormalInvGamma { m, v, a, b }
-    }
-
-    /// Returns (m, v, a, b)
-    #[inline(always)]
-    pub fn params(&self) -> (f64, f64, f64, f64) {
-        (self.m, self.v, self.a, self.b)
     }
 
     /// Get the m parameter
@@ -371,4 +389,16 @@ impl fmt::Display for NormalInvGammaError {
             }
         }
     }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::test_basic_impls;
+
+    test_basic_impls!(
+        Gaussian,
+        NormalInvGamma,
+        NormalInvGamma::new(0.1, 1.2, 2.3, 3.4).unwrap()
+    );
 }

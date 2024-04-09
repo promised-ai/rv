@@ -38,6 +38,18 @@ pub struct Uniform {
     lnf: OnceLock<f64>,
 }
 
+impl Parameterized for Uniform {
+    type Parameters = (f64, f64);
+
+    fn emit_params(&self) -> Self::Parameters {
+        (self.a(), self.b())
+    }
+
+    fn from_params((a, b): Self::Parameters) -> Self {
+        Self::new_unchecked(a, b)
+    }
+}
+
 impl PartialEq for Uniform {
     fn eq(&self, other: &Uniform) -> bool {
         self.a == other.a && self.b == other.b
@@ -292,7 +304,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Uniform::default());
+    test_basic_impls!(f64, Uniform);
 
     #[test]
     fn new() {

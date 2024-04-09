@@ -46,7 +46,6 @@ rand_xoshiro = "0.6"
 serde1 = ["serde", "nalgebra/serde-serialize"]
 arraydist = ["nalgebra"]
 process = ["serde", "nalgebra/serde-serialize", "argmin", "argmin-math", "arraydist"]
-datum = []
 experimental = ["rand_xoshiro"]
 
 [package.metadata.docs.rs]

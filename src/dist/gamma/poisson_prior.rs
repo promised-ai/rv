@@ -129,7 +129,11 @@ impl_traits!(u32);
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_conjugate_prior;
+
     const TOL: f64 = 1E-12;
+
+    test_conjugate_prior!(u32, Poisson, Gamma, Gamma::new(2.0, 1.2).unwrap());
 
     #[test]
     fn posterior_from_data() {

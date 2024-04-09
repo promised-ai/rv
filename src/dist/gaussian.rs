@@ -56,6 +56,26 @@ impl PartialEq for Gaussian {
     }
 }
 
+pub struct GaussianParameters {
+    pub mu: f64,
+    pub sigma: f64,
+}
+
+impl Parameterized for Gaussian {
+    type Parameters = GaussianParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu: self.mu(),
+            sigma: self.sigma(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu, params.sigma)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -71,7 +91,7 @@ pub enum GaussianError {
 impl Gaussian {
     /// Create a new Gaussian distribution
     ///
-    /// # Aruments
+    /// # Arguments
     /// - mu: mean
     /// - sigma: standard deviation
     pub fn new(mu: f64, sigma: f64) -> Result<Self, GaussianError> {
@@ -414,7 +434,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!([continuous] Gaussian::standard());
+    test_basic_impls!(f64, Gaussian);
 
     #[test]
     fn new() {
@@ -621,7 +641,7 @@ mod tests {
     }
 
     #[test]
-    fn kl_of_idential_dsitrbutions_should_be_zero() {
+    fn kl_of_identical_dsitrbutions_should_be_zero() {
         let gauss = Gaussian::new(1.2, 3.4).unwrap();
         assert::close(gauss.kl(&gauss), 0.0, TOL);
     }

@@ -32,6 +32,18 @@ pub struct InvChiSquared {
     ln_f_const: OnceLock<f64>,
 }
 
+impl Parameterized for InvChiSquared {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.v()
+    }
+
+    fn from_params(v: Self::Parameters) -> Self {
+        Self::new_unchecked(v)
+    }
+}
+
 impl PartialEq for InvChiSquared {
     fn eq(&self, other: &InvChiSquared) -> bool {
         self.v == other.v
@@ -264,7 +276,7 @@ mod test {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] InvChiSquared::new(3.2).unwrap());
+    test_basic_impls!(f64, InvChiSquared, InvChiSquared::new(3.2).unwrap());
 
     #[test]
     fn new() {

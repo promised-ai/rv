@@ -33,6 +33,26 @@ pub struct Laplace {
     b: f64,
 }
 
+pub struct LaplaceParameters {
+    pub mu: f64,
+    pub b: f64,
+}
+
+impl Parameterized for Laplace {
+    type Parameters = LaplaceParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu: self.mu(),
+            b: self.b(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu, params.b)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -302,7 +322,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Laplace::default());
+    test_basic_impls!(f64, Laplace);
 
     #[test]
     fn new() {

@@ -84,8 +84,11 @@ impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_conjugate_prior;
 
     const TOL: f64 = 1E-12;
+
+    test_conjugate_prior!(bool, Bernoulli, Beta, Beta::new(0.5, 1.2).unwrap());
 
     #[test]
     fn posterior_from_data_bool() {
@@ -107,30 +110,5 @@ mod tests {
 
         assert::close(posterior.alpha(), 4.0, TOL);
         assert::close(posterior.beta(), 3.0, TOL);
-    }
-
-    #[test]
-    fn bern_bayes_law() {
-        let mut rng = rand::thread_rng();
-
-        // Prior
-        let prior = Beta::new(5.0, 2.0).unwrap();
-        let par: f64 = prior.draw(&mut rng);
-        let prior_f = prior.f(&par);
-
-        // Likelihood
-        let lik = Bernoulli::new(par).unwrap();
-        let lik_data: bool = lik.draw(&mut rng);
-        let lik_f = lik.f(&lik_data);
-
-        // Evidence
-        let ev = prior.m(&DataOrSuffStat::Data(&[lik_data]));
-
-        // Posterior
-        let post = prior.posterior(&DataOrSuffStat::Data(&[lik_data]));
-        let post_f = post.f(&par);
-
-        // Bayes' law
-        assert::close(post_f, prior_f * lik_f / ev, 1e-12);
     }
 }

@@ -18,6 +18,18 @@ pub struct StudentsT {
     v: f64,
 }
 
+impl Parameterized for StudentsT {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.v()
+    }
+
+    fn from_params(v: Self::Parameters) -> Self {
+        Self::new_unchecked(v)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -29,7 +41,7 @@ pub enum StudentsTError {
 }
 
 impl StudentsT {
-    /// Create a new Student's T distribtuion with degrees of freedom, v.
+    /// Create a new Student's T distribution with degrees of freedom, v.
     #[inline]
     pub fn new(v: f64) -> Result<Self, StudentsTError> {
         if v <= 0.0 {
@@ -233,7 +245,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!([continuous] StudentsT::default());
+    test_basic_impls!(f64, StudentsT);
 
     #[test]
     fn new() {

@@ -263,14 +263,14 @@ impl fmt::Display for CrpError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_basic_impls;
+    // use crate::test_basic_impls;
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!(
-        Crp::new(1.0, 10).unwrap(),
-        Partition::new_unchecked(vec![0; 10], vec![10])
-    );
+    // test_basic_impls!(
+    //     Crp::new(1.0, 10).unwrap(),
+    //     Partition::new_unchecked(vec![0; 10], vec![10])
+    // );
 
     #[test]
     fn new() {

@@ -66,6 +66,28 @@ pub struct BetaBinomial {
     ln_beta_ab: OnceLock<f64>,
 }
 
+pub struct BetaBinomialParameters {
+    pub n: u32,
+    pub alpha: f64,
+    pub beta: f64,
+}
+
+impl Parameterized for BetaBinomial {
+    type Parameters = BetaBinomialParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            n: self.n(),
+            alpha: self.alpha(),
+            beta: self.beta(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.n, params.alpha, params.beta)
+    }
+}
+
 impl PartialEq for BetaBinomial {
     fn eq(&self, other: &BetaBinomial) -> bool {
         self.n == other.n
@@ -427,7 +449,11 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!([count] BetaBinomial::new(10, 0.2, 0.7).unwrap());
+    test_basic_impls!(
+        u32,
+        BetaBinomial,
+        BetaBinomial::new(10, 0.2, 0.7).unwrap()
+    );
 
     #[test]
     fn new() {
