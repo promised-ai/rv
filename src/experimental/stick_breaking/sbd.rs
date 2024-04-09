@@ -186,7 +186,11 @@ impl Mode<usize> for StickBreakingDiscrete {
             |ccdf| {
                 let weights: Vec<f64> =
                     ccdf.windows(2).map(|qs| qs[0] - qs[1]).collect();
-                weights.iter().enumerate().max_by(|a, b| a.1.partial_cmp(b.1).unwrap()).map(|(i, _)| i)
+                weights
+                    .iter()
+                    .enumerate()
+                    .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+                    .map(|(i, _)| i)
             },
         );
         n
