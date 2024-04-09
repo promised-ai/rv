@@ -29,17 +29,18 @@ impl StickBreakingDiscrete {
     }
 
     /// Calculates the inverse complementary cumulative distribution function
-    /// (invccdf) of the StickBreakingDiscrete. StickBreakingDiscrete is based around the ccdf instead of the cdf
-    /// because this allows for more precision in the tails.
+    /// (invccdf) for the StickBreakingDiscrete distribution. This method is preferred over the
+    /// traditional cumulative distribution function (cdf) as it provides higher precision in the
+    /// tail regions of the distribution.
     ///
     /// # Arguments
     ///
-    /// * `p` - The value for which to calculate the invccdf.
+    /// * `p` - The probability value for which to calculate the invccdf.
     ///
     /// # Returns
     ///
-    /// The index of the first element in the StickSequence whose value is less
-    /// than `u`.
+    /// The index of the first element in the StickSequence whose cumulative probability is less
+    /// than `p`.
     pub fn invccdf(&self, p: f64) -> usize {
         self.sticks.extendmap_ccdf(
             |ccdf| ccdf.last().unwrap() < &p,
@@ -47,32 +48,39 @@ impl StickBreakingDiscrete {
         )
     }
 
+    /// Provides a reference to the StickSequence used by the StickBreakingDiscrete distribution.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the StickSequence.
     pub fn stick_sequence(&self) -> &StickSequence {
         &self.sticks
     }
 
-    /// Calculates the inverse cumulative distribution function (invccdf) of the
-    /// StickBreakingDiscrete for multiple values, which are assumed to be already sorted. The
-    /// returned vector contains the indices of the StickSequence elements whose
-    /// values are less than the corresponding values in `ps`.
+    /// Calculates the inverse complementary cumulative distribution function (invccdf) for
+    /// multiple sorted values. This method is useful for efficiently computing the invccdf for a
+    /// sequence of values that are already sorted in ascending order. The returned vector contains
+    /// the indices of the StickSequence elements whose cumulative probabilities are less than the
+    /// corresponding values in `ps`.
     ///
     /// # Arguments
     ///
-    /// * `ps` - The values for which to calculate the invccdf.
+    /// * `ps` - A slice of probability values for which to calculate the invccdf. The values must
+    ///   be sorted in ascending order.
     ///
     /// # Returns
     ///
-    /// A vector containing the indices of the StickSequence elements whose
-    /// values are less than the corresponding values in `ps`.
+    /// A vector containing the indices of the StickSequence elements whose cumulative probabilities
+    /// are less than the corresponding values in `ps`.
     pub fn multi_invccdf_sorted(&self, ps: &[f64]) -> Vec<usize> {
         let n = ps.len();
         self.sticks.extendmap_ccdf(
-            // Note that ccdf is decreasing, but xs is increasing
+            // Note that ccdf is decreasing, but ps is increasing
             |ccdf| ccdf.last().unwrap() < ps.first().unwrap(),
             |ccdf| {
                 let mut result: Vec<usize> = Vec::with_capacity(n);
 
-                // We'll start at the end of the sorted uniforms (the largest value)
+                // Start at the end of the sorted probability values (the largest value)
                 let mut i: usize = n - 1;
                 for q in ccdf.iter().skip(1).enumerate() {
                     while ps[i] > *q.1 {
@@ -100,7 +108,7 @@ impl Support<usize> for StickBreakingDiscrete {
     ///
     /// # Returns
     ///
-    /// Returns `true` if the value is greater than or equal to zero, `false` otherwise.
+    /// Returns `true` for all values as `StickBreakingDiscrete` supports all `usize` values, `false` otherwise.
     fn supports(&self, _: &usize) -> bool {
         true
     }
@@ -121,7 +129,7 @@ impl Cdf<usize> for StickBreakingDiscrete {
     ///
     /// The calculated survival function value as a `f64`.
     fn sf(&self, x: &usize) -> f64 {
-        self.sticks.ccdf(x + 1)
+        self.sticks.ccdf(*x + 1)
     }
 
     /// Calculates the cumulative distribution function (CDF) for a given value `x`.
@@ -142,6 +150,18 @@ impl Cdf<usize> for StickBreakingDiscrete {
 }
 
 impl InverseCdf<usize> for StickBreakingDiscrete {
+    /// Calculates the inverse cumulative distribution function (invcdf) for a given probability `p`.
+    ///
+    /// The inverse cumulative distribution function (invcdf) represents the value below which a random variable
+    /// falls with probability `p`.
+    ///
+    /// # Arguments
+    ///
+    /// * `p` - The probability value for which to calculate the invcdf.
+    ///
+    /// # Returns
+    ///
+    /// The calculated invcdf value as a `usize`.
     fn invcdf(&self, p: f64) -> usize {
         self.invccdf(1.0 - p)
     }
@@ -150,19 +170,26 @@ impl InverseCdf<usize> for StickBreakingDiscrete {
 impl DiscreteDistr<usize> for StickBreakingDiscrete {}
 
 impl Mode<usize> for StickBreakingDiscrete {
+    /// Calculates the mode of the `StickBreakingDiscrete` distribution.
+    ///
+    /// The mode is the value that appears most frequently in a data set or probability distribution.
+    ///
+    /// # Returns
+    ///
+    /// The mode of the distribution as an `Option<usize>`. Returns `None` if the mode cannot be determined.
     fn mode(&self) -> Option<usize> {
         let w0 = self.sticks.weight(0);
-        // Once the unallocated mass is less than that of first stick, the
+        // Once the unallocated mass is less than that of the first stick, the
         // allocated mass is guaranteed to contain the mode.
         let n = self.sticks.extendmap_ccdf(
             |ccdf| ccdf.last().unwrap() < &w0,
             |ccdf| {
                 let weights: Vec<f64> =
                     ccdf.windows(2).map(|qs| qs[0] - qs[1]).collect();
-                weights.arg_max()
+                weights.iter().enumerate().max_by(|a, b| a.1.partial_cmp(b.1).unwrap()).map(|(i, _)| i)
             },
         );
-        Some(n)
+        n
     }
 }
 
