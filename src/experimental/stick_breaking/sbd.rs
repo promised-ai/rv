@@ -182,23 +182,23 @@ impl Mode<usize> for StickBreakingDiscrete {
 ///
 /// ```
 /// use rand::thread_rng;
-/// use rv::experimental::sbd::sorted_uniforms;
+/// use rv::experimental::stick_breaking::sbd::sorted_uniforms;
 ///    
 /// let mut rng = thread_rng();
 /// let n = 10000;
 /// let xs = sorted_uniforms(n, &mut rng);
-/// assert!(xs.len() == n);
+/// assert_eq!(xs.len(), n);
 ///
 /// // Result is sorted and in the unit interval
-/// assert!(&0.0 < xs.first().unwrap());
-/// assert!(xs.last().unwrap() < &1.0);
+/// assert!(xs.first().map_or(false, |&first| first > 0.0));
+/// assert!(xs.last().map_or(false, |&last| last < 1.0));
 /// assert!(xs.windows(2).all(|w| w[0] <= w[1]));
 ///
-/// // Mean is 1/2
+/// // Mean is approximately 1/2
 /// let mean = xs.iter().sum::<f64>() / n as f64;
 /// assert!(mean > 0.49 && mean < 0.51);
 ///
-/// // Variance is 1/12
+/// // Variance is approximately 1/12
 /// let var = xs.iter().map(|x| (x - 0.5).powi(2)).sum::<f64>() / n as f64;
 /// assert!(var > 0.08 && var < 0.09);
 /// ```
