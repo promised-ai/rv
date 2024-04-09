@@ -245,24 +245,70 @@ pub fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
     (0..n).for_each(|i| xs[i] /= max);
     xs
 }
-
+/// Provides density and log-density functions for StickBreakingDiscrete.
 impl HasDensity<usize> for StickBreakingDiscrete {
+    /// Computes the density of a given stick index.
+    ///
+    /// # Arguments
+    ///
+    /// * `n` - The index of the stick.
+    ///
+    /// # Returns
+    ///
+    /// The density of the stick at index `n`.
     fn f(&self, n: &usize) -> f64 {
         let sticks = &self.sticks;
         sticks.weight(*n)
     }
 
+    /// Computes the natural logarithm of the density of a given stick index.
+    ///
+    /// # Arguments
+    ///
+    /// * `n` - The index of the stick.
+    ///
+    /// # Returns
+    ///
+    /// The natural logarithm of the density of the stick at index `n`.
     fn ln_f(&self, n: &usize) -> f64 {
         self.f(n).ln()
     }
 }
 
+/// Enables sampling from StickBreakingDiscrete.
 impl Sampleable<usize> for StickBreakingDiscrete {
+    /// Draws a single sample from the distribution.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `R` - The random number generator type.
+    ///
+    /// # Arguments
+    ///
+    /// * `rng` - A mutable reference to the random number generator.
+    ///
+    /// # Returns
+    ///
+    /// A single sample as a usize.
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
         let u: f64 = rng.gen();
         self.invccdf(u)
     }
 
+    /// Draws multiple samples from the distribution and shuffles them.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `R` - The random number generator type.
+    ///
+    /// # Arguments
+    ///
+    /// * `n` - The number of samples to draw.
+    /// * `rng` - A mutable reference to the random number generator.
+    ///
+    /// # Returns
+    ///
+    /// A vector of usize samples, shuffled.
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<usize> {
         let ps = sorted_uniforms(n, &mut rng);
         let mut result = self.multi_invccdf_sorted(&ps);
