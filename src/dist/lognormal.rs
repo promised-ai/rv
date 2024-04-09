@@ -353,6 +353,7 @@ impl fmt::Display for LogNormalError {
 mod tests {
     use super::*;
     use crate::test_basic_impls;
+    use proptest::prelude::*;
     use std::f64;
 
     const TOL: f64 = 1E-12;
@@ -488,17 +489,16 @@ mod tests {
         assert::close(lognorm.cdf(&2.0_f64), 0.755_891_404_214_417_3, TOL);
     }
 
-    #[test]
-    fn quantile_agree_with_cdf() {
-        let mut rng = rand::thread_rng();
-        let lognorm = LogNormal::standard();
-        let xs: Vec<f64> = lognorm.sample(100, &mut rng);
-
-        xs.iter().for_each(|x| {
-            let p = lognorm.cdf(x);
+    proptest! {
+        #[test]
+        fn quantile_agree_with_cdf(p in 0.0..1.0) {
+            prop_assume!(p > 0.0);
+            prop_assume!(p < 1.0);
+            let lognorm = LogNormal::standard();
             let y: f64 = lognorm.quantile(p);
-            assert::close(y, *x, TOL);
-        })
+            let p2 = lognorm.cdf(&y);
+            assert::close(p, p2, TOL);
+        }
     }
 
     #[test]
