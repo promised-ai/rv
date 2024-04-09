@@ -219,7 +219,7 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 ///
 /// ```rust
 /// # use rv::misc::ln_pflip;
-/// use f64::NEG_INFINITY;
+/// use std::f64::NEG_INFINITY;
 /// use std::f64::consts::LN_2;
 ///
 /// let ln_weights: Vec<f64> = vec![-LN_2, NEG_INFINITY, -LN_2];

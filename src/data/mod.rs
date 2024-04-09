@@ -2,12 +2,6 @@
 mod partition;
 mod stat;
 
-#[cfg(feature = "datum")]
-mod datum;
-
-#[cfg(feature = "datum")]
-pub use datum::Datum;
-
 pub use partition::Partition;
 pub use stat::BernoulliSuffStat;
 pub use stat::BetaSuffStat;
