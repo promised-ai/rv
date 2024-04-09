@@ -60,10 +60,22 @@ impl From<&&[f64]> for StickBreakingSuffStat {
 //     }
 // }
 
-// A standard stick-breaking process requires a Beta(1, α) distribution. We
-// instead parameterize by a UnitPowerLaw(α), which is equivalent to a
-// Beta(α,1). Given a sequence of stick lengths coming form such a process, we
-// can recover the sufficient statistic for this UnitPowerLaw distribution
+/// Computes the sufficient statistic for a UnitPowerLaw distribution from a sequence of stick lengths.
+///
+/// This function processes a sequence of stick lengths resulting from a stick-breaking process
+/// parameterized by a UnitPowerLaw(α), which is equivalent to a Beta(α,1) distribution. It calculates
+/// the sufficient statistic for this distribution, which is necessary for further statistical analysis
+/// or parameter estimation.
+///
+/// # Arguments
+///
+/// * `sticks` - A slice of floating-point numbers representing the lengths of the sticks.
+///
+/// # Returns
+///
+/// A tuple containing:
+/// - The number of breaks (`usize`).
+/// - The natural logarithm of the product of (1 - pᵢ) for each stick length pᵢ (`f64`).
 fn stick_stat_unit_powerlaw(sticks: &[f64]) -> (usize, f64) {
     // First we need to find the sequence of remaining stick lengths. Because we
     // broke the sticks left-to-right, we need to reverse the sequence.
