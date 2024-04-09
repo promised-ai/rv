@@ -102,6 +102,16 @@ impl PartialEq<StickSequence> for StickSequence {
 }
 
 impl StickSequence {
+    /// Creates a new StickSequence with the given breaker and optional seed.
+    ///
+    /// # Arguments
+    ///
+    /// * `breaker` - A `UnitPowerLaw` instance used as the breaker.
+    /// * `seed` - An optional seed for the random number generator.
+    ///
+    /// # Returns
+    ///
+    /// A new instance of `StickSequence`.
     pub fn new(breaker: UnitPowerLaw, seed: Option<u64>) -> Self {
         Self {
             breaker,
@@ -109,6 +119,11 @@ impl StickSequence {
         }
     }
 
+    /// Pushes a new break to the stick sequence using a given probability `p`.
+    ///
+    /// # Arguments
+    ///
+    /// * `p` - The probability used to calculate the new remaining mass.
     pub fn push_break(&self, p: f64) {
         self.with_inner_mut(|inner| {
             let remaining_mass = *inner.ccdf.last().unwrap();
@@ -117,6 +132,15 @@ impl StickSequence {
         });
     }
 
+    /// Pushes a new value `p` directly to the ccdf vector if `p` is less than the last element.
+    ///
+    /// # Arguments
+    ///
+    /// * `p` - The value to be pushed to the ccdf vector.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `p` is not less than the last element of the ccdf vector.
     pub fn push_to_ccdf(&self, p: f64) {
         self.with_inner_mut(|inner| {
             assert!(p < *inner.ccdf.last().unwrap());
@@ -124,6 +148,22 @@ impl StickSequence {
         });
     }
 
+    /// Extends the ccdf vector until a condition defined by `pred` is met, then applies function `f`.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `P` - A predicate function type that takes a reference to a vector of f64 and returns a bool.
+    /// * `F` - A function type that takes a reference to a vector of f64 and returns a value of type `Ans`.
+    /// * `Ans` - The return type of the function `f`.
+    ///
+    /// # Arguments
+    ///
+    /// * `pred` - A predicate function that determines when to stop extending the ccdf vector.
+    /// * `f` - A function to apply to the ccdf vector once the condition is met.
+    ///
+    /// # Returns
+    ///
+    /// The result of applying function `f` to the ccdf vector.
     pub fn extendmap_ccdf<P, F, Ans>(&self, pred: P, f: F) -> Ans
     where
         P: Fn(&Vec<f64>) -> bool,
@@ -133,6 +173,20 @@ impl StickSequence {
         self.with_inner(|inner| f(&inner.ccdf))
     }
 
+    /// Provides read access to the inner `_Inner` structure.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `F` - A function type that takes a reference to `_Inner` and returns a value of type `Ans`.
+    /// * `Ans` - The return type of the function `f`.
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - A function that is applied to the inner `_Inner` structure.
+    ///
+    /// # Returns
+    ///
+    /// The result of applying function `f` to the inner `_Inner` structure.
     pub fn with_inner<F, Ans>(&self, f: F) -> Ans
     where
         F: FnOnce(&_Inner) -> Ans,
@@ -140,6 +194,20 @@ impl StickSequence {
         self.inner.read().map(|inner| f(&inner)).unwrap()
     }
 
+    /// Provides write access to the inner `_Inner` structure.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `F` - A function type that takes a mutable reference to `_Inner` and returns a value of type `Ans`.
+    /// * `Ans` - The return type of the function `f`.
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - A function that is applied to the inner `_Inner` structure.
+    ///
+    /// # Returns
+    ///
+    /// The result of applying function `f` to the inner `_Inner` structure.
     pub fn with_inner_mut<F, Ans>(&self, f: F) -> Ans
     where
         F: FnOnce(&mut _Inner) -> Ans,
@@ -147,10 +215,24 @@ impl StickSequence {
         self.inner.write().map(|mut inner| f(&mut inner)).unwrap()
     }
 
+    /// Ensures that the ccdf vector is extended to at least `n + 1` elements.
+    ///
+    /// # Arguments
+    ///
+    /// * `n` - The minimum number of elements the ccdf vector should have.
     pub fn ensure_breaks(&self, n: usize) {
         self.extend_until(|inner| inner.ccdf.len() > n);
     }
 
+    /// Returns the `n`th element of the ccdf vector, ensuring the vector is long enough.
+    ///
+    /// # Arguments
+    ///
+    /// * `n` - The index of the element to retrieve from the ccdf vector.
+    ///
+    /// # Returns
+    ///
+    /// The `n`th element of the ccdf vector.
     pub fn ccdf(&self, n: usize) -> f64 {
         self.ensure_breaks(n);
         self.with_inner(|inner| {
@@ -159,10 +241,24 @@ impl StickSequence {
         })
     }
 
+    /// Returns the number of weights that are unstable.
+    ///
+    /// # Returns
+    ///
+    /// The number of weights that are unstable, calculated as the length of the ccdf vector minus one.
     pub fn num_weights_unstable(&self) -> usize {
         self.with_inner(|inner| inner.ccdf.len() - 1)
     }
 
+    /// Returns the weight of the `n`th stick.
+    ///
+    /// # Arguments
+    ///
+    /// * `n` - The index of the stick whose weight is to be returned.
+    ///
+    /// # Returns
+    ///
+    /// The weight of the `n`th stick.
     pub fn weight(&self, n: usize) -> f64 {
         self.ensure_breaks(n + 1);
         self.with_inner(|inner| {
@@ -172,7 +268,16 @@ impl StickSequence {
     }
 
     /// Returns the weights of the first `n` sticks.
+    ///
     /// Note that this includes sticks `0..n-1`, but not `n`.
+    ///
+    /// # Arguments
+    ///
+    /// * `n` - The number of sticks for which to return the weights.
+    ///
+    /// # Returns
+    ///
+    /// A `PartialWeights` instance containing the weights of the first `n` sticks.
     pub fn weights(&self, n: usize) -> PartialWeights {
         self.ensure_breaks(n);
         let w = self.with_inner(|inner| {
@@ -191,10 +296,24 @@ impl StickSequence {
         PartialWeights(w)
     }
 
+    /// Returns a clone of the breaker used in this StickSequence.
+    ///
+    /// # Returns
+    ///
+    /// A clone of the `UnitPowerLaw` instance used as the breaker.
     pub fn breaker(&self) -> UnitPowerLaw {
         self.breaker.clone()
     }
 
+    /// Extends the ccdf vector until a condition defined by `p` is met.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `F` - A function type that takes a reference to `_Inner` and returns a bool.
+    ///
+    /// # Arguments
+    ///
+    /// * `p` - A predicate function that determines when to stop extending the ccdf vector.
     pub fn extend_until<F>(&self, p: F)
     where
         F: Fn(&_Inner) -> bool,
