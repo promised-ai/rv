@@ -32,7 +32,7 @@ macro_rules! test_basic_impls {
                 // Computing ln_f normally initializes all cached values
                 let y1 = fx.ln_f(&x);
                 let y2 = fx.ln_f(&x);
-                assert!((y1 - y2).abs() < std::f64::EPSILON);
+                assert!((y1 - y2).abs() < f64::EPSILON);
 
                 // check the fx == fx2 despite fx having its cached values
                 // initialized
@@ -469,7 +469,7 @@ macro_rules! test_conjugate_prior {
                     &DataOrSuffStat::SuffStat(&stat),
                 );
 
-                let mut min_err = ::std::f64::INFINITY;
+                let mut min_err = f64::INFINITY;
 
                 for _ in 0..n_tries {
                     let stream =

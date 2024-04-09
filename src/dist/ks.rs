@@ -45,7 +45,6 @@ impl Parameterized for KsTwoAsymptotic {
     type Parameters = ();
 
     fn emit_params(&self) -> Self::Parameters {
-        ()
     }
 
     fn from_params(_params: Self::Parameters) -> Self {
