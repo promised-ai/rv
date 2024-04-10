@@ -246,7 +246,7 @@ impl StickSequence {
     /// # Returns
     ///
     /// The number of weights. This is "unstable" because it's a detail of the
-    /// implementation that should not be depended on. 
+    /// implementation that should not be depended on.
     pub fn num_weights_unstable(&self) -> usize {
         self.with_inner(|inner| inner.ccdf.len() - 1)
     }
