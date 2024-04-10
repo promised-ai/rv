@@ -571,5 +571,6 @@ mod tests {
         assert_eq!(sb.break_prefix[0], Beta::new(3.0, 2.0).unwrap());
         assert_eq!(sb.break_prefix[1], Beta::new(2.0, 2.0).unwrap());
         assert_eq!(sb.break_prefix[2], Beta::new(1.0, 2.0).unwrap());
+        assert_eq!(sb.break_tail, UnitPowerLaw::new(2.0).unwrap());
     }
 } // mod tests
