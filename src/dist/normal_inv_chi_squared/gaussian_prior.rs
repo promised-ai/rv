@@ -5,7 +5,6 @@ use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
-use crate::suffstat_traits::*;
 use crate::test::GewekeTestable;
 use crate::traits::*;
 

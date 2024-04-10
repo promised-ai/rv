@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::DataOrSuffStat;
 use crate::dist::InvGaussian;
-use crate::suffstat_traits::SuffStat;
+use crate::traits::SuffStat;
 
 /// Gaussian sufficient statistic.
 ///

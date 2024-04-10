@@ -2,8 +2,8 @@ use crate::consts::LN_2PI;
 use crate::data::{extract_stat_then, DataOrSuffStat, MvGaussianSuffStat};
 use crate::dist::{MvGaussian, NormalInvWishart};
 use crate::misc::lnmv_gamma;
-use crate::suffstat_traits::SuffStat;
 use crate::traits::ConjugatePrior;
+use crate::traits::SuffStat;
 use nalgebra::{DMatrix, DVector};
 use std::f64::consts::{LN_2, PI};
 

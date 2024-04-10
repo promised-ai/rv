@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::data::Booleable;
 use crate::data::DataOrSuffStat;
 use crate::dist::Bernoulli;
-use crate::suffstat_traits::SuffStat;
+use crate::traits::SuffStat;
 
 /// Sufficient statistic for the Bernoulli distribution.
 ///
@@ -37,7 +37,7 @@ impl BernoulliSuffStat {
     ///
     /// ```
     /// # use rv::data::BernoulliSuffStat;
-    /// # use rv::suffstat_traits::SuffStat;
+    /// # use rv::traits::SuffStat;
     /// let mut stat = BernoulliSuffStat::new();
     ///
     /// stat.observe(&true);
@@ -56,7 +56,7 @@ impl BernoulliSuffStat {
     ///
     /// ```
     /// # use rv::data::BernoulliSuffStat;
-    /// # use rv::suffstat_traits::SuffStat;
+    /// # use rv::traits::SuffStat;
     /// let mut stat = BernoulliSuffStat::new();
     ///
     /// stat.observe(&true);

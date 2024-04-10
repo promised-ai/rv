@@ -5,7 +5,6 @@ use crate::consts::LN_2PI_E;
 use crate::data::PoissonSuffStat;
 use crate::impl_display;
 use crate::misc::ln_fact;
-use crate::suffstat_traits::*;
 use crate::traits::*;
 use rand::Rng;
 use rand_distr::Poisson as RPossion;

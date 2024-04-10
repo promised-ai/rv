@@ -6,6 +6,4 @@ pub use crate::data::{
 #[doc(no_inline)]
 pub use crate::dist::*;
 #[doc(no_inline)]
-pub use crate::suffstat_traits::*;
-#[doc(no_inline)]
 pub use crate::traits::*;

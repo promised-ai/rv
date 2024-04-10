@@ -3,7 +3,6 @@ use special::Beta as SBeta;
 
 use crate::data::{BernoulliSuffStat, Booleable};
 use crate::dist::{Bernoulli, Beta};
-use crate::suffstat_traits::*;
 use crate::traits::*;
 
 impl HasDensity<Bernoulli> for Beta {

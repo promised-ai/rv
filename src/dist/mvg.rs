@@ -5,7 +5,6 @@ use crate::consts::HALF_LN_2PI_E;
 use crate::consts::LN_2PI;
 use crate::data::MvGaussianSuffStat;
 use crate::impl_display;
-use crate::suffstat_traits::*;
 use crate::traits::*;
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dyn};

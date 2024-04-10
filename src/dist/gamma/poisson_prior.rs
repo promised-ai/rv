@@ -4,7 +4,6 @@ use crate::data::PoissonSuffStat;
 use crate::dist::poisson::PoissonError;
 use crate::dist::{Gamma, Poisson};
 use crate::misc::ln_binom;
-use crate::suffstat_traits::*;
 use crate::traits::*;
 
 impl HasDensity<Poisson> for Gamma {

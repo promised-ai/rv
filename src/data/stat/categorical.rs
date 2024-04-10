@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::data::CategoricalDatum;
 use crate::data::DataOrSuffStat;
 use crate::dist::Categorical;
-use crate::suffstat_traits::SuffStat;
+use crate::traits::SuffStat;
 
 /// Categorical distribution sufficient statistic.
 ///
@@ -40,7 +40,7 @@ impl CategoricalSuffStat {
     ///
     /// ```
     /// # use rv::data::CategoricalSuffStat;
-    /// # use rv::suffstat_traits::SuffStat;
+    /// # use rv::traits::SuffStat;
     /// let mut stat = CategoricalSuffStat::new(2);
     ///
     /// stat.observe(&0_u8);
@@ -60,7 +60,7 @@ impl CategoricalSuffStat {
     ///
     /// ```
     /// # use rv::data::CategoricalSuffStat;
-    /// # use rv::suffstat_traits::SuffStat;
+    /// # use rv::traits::SuffStat;
     /// let mut stat = CategoricalSuffStat::new(3);
     ///
     /// stat.observe(&0_u8);

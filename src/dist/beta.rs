@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::BetaSuffStat;
 use crate::impl_display;
-use crate::suffstat_traits::*;
 use crate::traits::*;
 use rand::Rng;
 use special::Beta as _;

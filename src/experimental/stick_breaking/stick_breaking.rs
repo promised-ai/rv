@@ -3,7 +3,6 @@ use crate::experimental::stick_breaking::StickBreakingDiscreteSuffStat;
 // use crate::experimental::stick_breaking::StickBreakingSuffStat;
 use crate::experimental::stick_breaking::StickSequence;
 use crate::prelude::*;
-use crate::suffstat_traits::*;
 use crate::traits::*;
 use itertools::Either;
 use itertools::EitherOrBoth::{Both, Left, Right};

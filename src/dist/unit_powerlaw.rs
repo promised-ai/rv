@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use crate::data::UnitPowerLawSuffStat;
 use crate::impl_display;
 use crate::prelude::Beta;
-use crate::suffstat_traits::*;
 use crate::traits::*;
 use rand::Rng;
 use special::Gamma as _;

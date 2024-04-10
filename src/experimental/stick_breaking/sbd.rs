@@ -1,4 +1,3 @@
-use peroxide::fuga::Algorithm;
 use rand::seq::SliceRandom;
 use rand::Rng;
 #[cfg(feature = "serde1")]

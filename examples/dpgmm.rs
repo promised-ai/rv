@@ -29,7 +29,6 @@ use rand::Rng;
 use rv::data::Partition;
 use rv::dist::{Crp, Gaussian, NormalInvGamma};
 use rv::misc::ln_pflip;
-use rv::suffstat_traits::*;
 use rv::traits::*;
 use rv::ConjugateModel;
 use std::sync::Arc;

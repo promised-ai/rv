@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use crate::data::{CategoricalDatum, CategoricalSuffStat};
 use crate::impl_display;
 use crate::misc::{argmax, ln_pflip, logsumexp, vec_to_string};
-use crate::suffstat_traits::*;
 use crate::traits::*;
 use rand::Rng;
 use std::fmt;
