@@ -55,6 +55,29 @@ impl StickBreaking {
         Ok(Self::new(breaker))
     }
 
+    /// Sets the alpha parameter for both the break_tail and all Beta distributions in break_prefix.
+    ///
+    /// # Arguments
+    ///
+    /// * `alpha` - The new alpha value to set.
+    ///
+    /// # Returns
+    ///
+    /// A result indicating success or containing a `UnitPowerLawError` if setting alpha on `break_tail` fails,
+    /// or a `BetaError` if setting alpha on any `Beta` distribution in `break_prefix` fails.
+    pub fn set_alpha(
+        &mut self,
+        alpha: f64,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let old_alpha = self.alpha();
+        self.break_tail.set_alpha(alpha).map_err(Box::new)?;
+        let d_alpha = alpha - old_alpha;
+        for b in &mut self.break_prefix {
+            b.set_alpha(b.alpha() + d_alpha).map_err(Box::new)?;
+        }
+        Ok(())
+    }
+
     pub fn break_prefix(&self) -> &Vec<Beta> {
         &self.break_prefix
     }
@@ -527,5 +550,26 @@ mod tests {
         let p = ChiSquared::new(dof).unwrap().sf(t);
 
         assert!(p > 0.001, "p-value = {}", p);
+    }
+
+    #[test]
+    fn test_set_alpha() {
+        // Step 1: Generate a new StickBreaking instance with alpha=3
+        let mut sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
+
+        // Step 2: Set the prefix to [Beta(4, 3), Beta(3, 2), Beta(2, 1)]
+        sb.break_prefix = vec![
+            Beta::new(4.0, 2.0).unwrap(),
+            Beta::new(3.0, 2.0).unwrap(),
+            Beta::new(2.0, 2.0).unwrap(),
+        ];
+
+        // Step 3: Call set_alpha(2.0)
+        sb.set_alpha(2.0).unwrap();
+
+        // Step 4: Check that the prefix is now [Beta(3, 3), Beta(2, 2), Beta(1, 1)]
+        assert_eq!(sb.break_prefix[0], Beta::new(3.0, 2.0).unwrap());
+        assert_eq!(sb.break_prefix[1], Beta::new(2.0, 2.0).unwrap());
+        assert_eq!(sb.break_prefix[2], Beta::new(1.0, 2.0).unwrap());
     }
 } // mod tests
