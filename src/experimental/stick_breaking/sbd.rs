@@ -41,6 +41,7 @@ impl StickBreakingDiscrete {
     /// The index of the first element in the StickSequence whose cumulative probability is less
     /// than `p`.
     pub fn invccdf(&self, p: f64) -> usize {
+        debug_assert!(p > 0.0 && p < 1.0);
         self.sticks.extendmap_ccdf(
             |ccdf| ccdf.last().unwrap() < &p,
             |ccdf| ccdf.iter().position(|q| *q < p).unwrap() - 1,
