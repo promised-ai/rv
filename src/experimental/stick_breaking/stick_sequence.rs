@@ -94,10 +94,17 @@ pub struct StickSequence {
     inner: Arc<RwLock<_Inner>>,
 }
 
-// TODO: Extend to equal length, then check for equality
 impl PartialEq<StickSequence> for StickSequence {
-    fn eq(&self, _other: &StickSequence) -> bool {
-        todo!()
+    fn eq(&self, other: &StickSequence) -> bool {
+        self.ensure_breaks(other.num_weights_unstable());
+        other.ensure_breaks(self.num_weights_unstable());
+        self.breaker == other.breaker
+            && self.with_inner(|self_inner| {
+                other.with_inner(|other_inner| {
+                    self_inner.ccdf == other_inner.ccdf
+                        && self_inner.rng == other_inner.rng
+                })
+            })
     }
 }
 
