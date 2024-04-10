@@ -241,11 +241,12 @@ impl StickSequence {
         })
     }
 
-    /// Returns the number of weights that are unstable.
+    /// Returns the number of weights instantiated so far.
     ///
     /// # Returns
     ///
-    /// The number of weights that are unstable, calculated as the length of the ccdf vector minus one.
+    /// The number of weights. This is "unstable" because it's a detail of the
+    /// implementation that should not be depended on. 
     pub fn num_weights_unstable(&self) -> usize {
         self.with_inner(|inner| inner.ccdf.len() - 1)
     }
