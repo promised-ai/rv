@@ -65,14 +65,15 @@ impl StickBreaking {
     ///
     /// A result indicating success or containing a `UnitPowerLawError` if setting alpha on `break_tail` fails,
     /// or a `BetaError` if setting alpha on any `Beta` distribution in `break_prefix` fails.
-    pub fn set_alpha(
-        &mut self,
-        alpha: f64,
-    ) -> Result<(), BetaError> {
+    pub fn set_alpha(&mut self, alpha: f64) -> Result<(), BetaError> {
         let old_alpha = self.alpha();
         self.break_tail.set_alpha(alpha).map_err(|e| match e {
-            UnitPowerLawError::AlphaNotFinite { alpha } => BetaError::AlphaNotFinite { alpha },
-            UnitPowerLawError::AlphaTooLow { alpha } => BetaError::AlphaTooLow { alpha },
+            UnitPowerLawError::AlphaNotFinite { alpha } => {
+                BetaError::AlphaNotFinite { alpha }
+            }
+            UnitPowerLawError::AlphaTooLow { alpha } => {
+                BetaError::AlphaTooLow { alpha }
+            }
         })?;
         let d_alpha = alpha - old_alpha;
         for b in &mut self.break_prefix {
