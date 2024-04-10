@@ -68,12 +68,15 @@ impl StickBreaking {
     pub fn set_alpha(
         &mut self,
         alpha: f64,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), BetaError> {
         let old_alpha = self.alpha();
-        self.break_tail.set_alpha(alpha).map_err(Box::new)?;
+        self.break_tail.set_alpha(alpha).map_err(|e| match e {
+            UnitPowerLawError::AlphaNotFinite { alpha } => BetaError::AlphaNotFinite { alpha },
+            UnitPowerLawError::AlphaTooLow { alpha } => BetaError::AlphaTooLow { alpha },
+        })?;
         let d_alpha = alpha - old_alpha;
         for b in &mut self.break_prefix {
-            b.set_alpha(b.alpha() + d_alpha).map_err(Box::new)?;
+            b.set_alpha(b.alpha() + d_alpha)?;
         }
         Ok(())
     }
