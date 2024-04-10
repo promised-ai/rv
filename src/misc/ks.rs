@@ -95,7 +95,7 @@ pub enum KsError {
 
 /// Two sample Kolmogorov-Smirnov statistic on two samples.
 ///
-/// Heavily inspired by https://github.com/scipy/scipy/blob/v1.4.1/scipy/stats/stats.py#L6087
+/// Heavily inspired by <https://github.com/scipy/scipy/blob/v1.4.1/scipy/stats/stats.py#L6087>
 /// Exact computations are derived from:
 ///     Hodges, J.L. Jr.,  "The Significance Probability of the Smirnov
 ///         Two-Sample Test," Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.

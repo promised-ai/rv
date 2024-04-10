@@ -1,7 +1,6 @@
 //! Kolmogorow-Smirnov two-sided test for large values of N.
 //! Heavily inspired by SciPy's implementation which can be found here:
-//! https://github.com/scipy/scipy/blob/a767030252ba3f7c8e2924847dffa7024171657b/scipy/special/cephes/kolmogorov.c#L153
-
+//! <https://github.com/scipy/scipy/blob/a767030252ba3f7c8e2924847dffa7024171657b/scipy/special/cephes/kolmogorov.c#L153>
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
