@@ -15,6 +15,7 @@
 //! - `process`: Gives you access to Gaussian processes.
 //! - `arraydist`: Enables distributions and statistical tests that require the
 //!   [nalgebra](https://crates.io/crates/nalgebra) crate.
+//! - `experimental`: Enables experimental features.
 //!
 //! # Design
 //!
