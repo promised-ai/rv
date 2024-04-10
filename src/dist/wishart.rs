@@ -199,8 +199,8 @@ impl Sampleable<DMatrix<f64>> for InvWishart {
         let p = self.inv_scale.nrows();
         let scale = self.inv_scale.clone().try_inverse().unwrap();
         let mvg = MvGaussian::new_unchecked(DVector::zeros(p), scale);
-        (0..n)
-            .map(|_| {
+        (0..)
+            .filter_map(|_| {
                 let xs = mvg.sample(self.df, &mut rng);
                 let y = xs.iter().fold(
                     DMatrix::<f64>::zeros(p, p),
@@ -209,8 +209,8 @@ impl Sampleable<DMatrix<f64>> for InvWishart {
                         acc + x * x.transpose()
                     },
                 );
-                y.try_inverse().unwrap()
-            })
+                y.try_inverse()
+            }).take(n)
             .collect()
     }
 }
