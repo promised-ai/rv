@@ -4,27 +4,20 @@ use itertools::{iterate, Itertools};
 
 /// Provides extension methods for iterators over `f64` values.
 pub trait IteratorExt: Iterator<Item = f64> + Sized + Clone {
-    fn diff(&self) -> impl Iterator<Item = f64> {
-        self.clone().tuple_windows().map(|(a, b)| b - a)
-    }
-
     fn aitken(
-        &self,
+        self,
     ) -> Map<TupleWindows<Self, (f64, f64, f64)>, fn((f64, f64, f64)) -> f64>
     {
-        self.clone()
-            .tuple_windows::<(_, _, _)>()
-            .map(|(x, x2, x3)| {
-                let dx = x2 - x;
-                let dx2 = x3 - x2;
-                let ddx = dx2 - dx;
-                x - dx.powi(2) / ddx
-            })
+        self.tuple_windows::<(_, _, _)>().map(|(x, x2, x3)| {
+            let dx = x2 - x;
+            let dx2 = x3 - x2;
+            let ddx = dx2 - dx;
+            x - dx.powi(2) / ddx
+        })
     }
 
-    fn limit(&self, tol: f64) -> f64 {
-        self.clone()
-            .tuple_windows::<(_, _)>()
+    fn limit(self, tol: f64) -> f64 {
+        self.tuple_windows::<(_, _)>()
             .filter_map(
                 |(a, b)| {
                     if (a - b).abs() < tol {
