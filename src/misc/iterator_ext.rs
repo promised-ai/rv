@@ -1,4 +1,3 @@
-
 use core::iter::Map;
 use itertools::TupleWindows;
 use itertools::{iterate, Itertools};
