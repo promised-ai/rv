@@ -2,6 +2,7 @@
 pub mod bessel;
 pub(crate) mod entropy;
 mod func;
+mod iterator_ext;
 mod ks;
 mod legendre;
 #[cfg(feature = "arraydist")]
@@ -10,6 +11,7 @@ mod seq;
 mod x2;
 
 pub use func::*;
+pub use iterator_ext::*;
 pub use ks::*;
 pub use legendre::*;
 #[cfg(feature = "arraydist")]
