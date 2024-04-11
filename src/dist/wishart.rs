@@ -210,7 +210,8 @@ impl Sampleable<DMatrix<f64>> for InvWishart {
                     },
                 );
                 y.try_inverse()
-            }).take(n)
+            })
+            .take(n)
             .collect()
     }
 }
