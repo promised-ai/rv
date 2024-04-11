@@ -31,7 +31,7 @@ pub trait IteratorExt: Iterator<Item = f64> + Sized {
                     }
                 },
             )
-            .nth(0)
+            .next()
             .unwrap()
     }
 }
