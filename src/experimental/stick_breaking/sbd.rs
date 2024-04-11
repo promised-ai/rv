@@ -2,7 +2,8 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-
+use crate::misc::IteratorExt;
+use crate::dist::Mixture;
 use super::StickSequence;
 use crate::traits::*;
 
@@ -317,6 +318,26 @@ impl Sampleable<usize> for StickBreakingDiscrete {
         // Note that shuffling is O(n) but sorting is O(n log n)
         result.shuffle(&mut rng);
         result
+    }
+}
+
+impl Entropy for StickBreakingDiscrete {
+    fn entropy(&self) -> f64 {
+        let probs = (0..).map(|n| self.f(&n));
+        probs.map(|p| -p * p.ln()).scan(0.0, |state, x| {
+            *state += x;
+            Some(*state)
+        }).limit(1e-10)
+    }
+}
+
+impl Entropy for &Mixture<StickBreakingDiscrete> {
+    fn entropy(&self) -> f64 {
+        let probs = (0..).map(|n| self.f(&n));
+        probs.map(|p| -p * p.ln()).scan(0.0, |state, x| {
+            *state += x;
+            Some(*state)
+        }).limit(1e-10)
     }
 }
 
