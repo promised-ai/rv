@@ -324,8 +324,8 @@ impl Sampleable<usize> for StickBreakingDiscrete {
 impl Entropy for StickBreakingDiscrete {
     fn entropy(&self) -> f64 {
         let probs = (0..).map(|n| self.f(&n));
-        probs.map(|p| -p * p.ln()).scan(0.0, |state, x| {
-            *state += x;
+        probs.map(|p| p * p.ln()).scan(0.0, |state, x| {
+            *state -= x;
             Some(*state)
         }).limit(1e-10)
     }
@@ -334,8 +334,8 @@ impl Entropy for StickBreakingDiscrete {
 impl Entropy for &Mixture<StickBreakingDiscrete> {
     fn entropy(&self) -> f64 {
         let probs = (0..).map(|n| self.f(&n));
-        probs.map(|p| -p * p.ln()).scan(0.0, |state, x| {
-            *state += x;
+        probs.map(|p| p * p.ln()).scan(0.0, |state, x| {
+            *state -= x;
             Some(*state)
         }).limit(1e-10)
     }
