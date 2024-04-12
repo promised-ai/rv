@@ -1,21 +1,53 @@
 // use core::iter::Map;
 use itertools::Itertools;
+use num::Zero;
 // use itertools::TupleWindows;
 
-/// Provides extension methods for iterators over `f64` values.
+/// A trait for sequences that can be checked for convergence.
 pub trait ConvergentSequence: Iterator<Item = f64> + Sized {
-    fn aitken(
-        self,
-    ) -> impl Iterator<Item = f64>
-    {
-        self.tuple_windows::<(_, _, _)>().map(|(x, y, z)| {
+    /// Applies Aitken's Δ² process to accelerate the convergence of a sequence.
+    /// See https://en.wikipedia.org/wiki/Aitken%27s_delta-squared_process and
+    /// https://en.wikipedia.org/wiki/Shanks_transformation
+    ///
+    /// # Returns
+    ///
+    /// An iterator over the accelerated sequence.
+    fn aitken(self) -> impl Iterator<Item = f64> {
+        self.tuple_windows::<(_, _, _)>().filter_map(|(x, y, z)| {
             let dx = z - y;
             let dx2 = y - x;
             let ddx = dx - dx2;
-            z - dx.powi(2) / ddx
+
+            // We can't handle a segment like [2,4,6]
+            // But e.g. [2, 2, 2] may have already converged
+            if ddx.is_zero() {
+                if dx.is_zero() {
+                    Some(z)
+                } else {
+                    None
+                }
+            } else {
+                Some(z - dx.powi(2) / dx)
+            }
         })
     }
 
+    /// Finds the limit of the sequence within a given tolerance using Aitken's
+    /// Δ² process. This should *only* be applied to sequences that are known to
+    /// converge.
+    ///
+    /// # Arguments
+    ///
+    /// * `tol` - The tolerance within which to find the limit.
+    ///
+    /// # Returns
+    ///
+    /// The limit of the sequence as a floating-point number.
+    ///
+    /// # Panics
+    ///
+    /// Runs forever if the sequence does not converge within the given
+    /// tolerance.
     fn limit(self, tol: f64) -> f64 {
         self.aitken()
             .aitken()
