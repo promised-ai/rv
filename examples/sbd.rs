@@ -1,6 +1,7 @@
 use itertools::Either;
 use peroxide::statistics::stat::Statistics;
 use rv::prelude::*;
+use rand::SeedableRng;
 
 #[cfg(feature = "experimental")]
 use rv::experimental::stick_breaking::{
@@ -12,11 +13,12 @@ fn main() {
     #[cfg(feature = "experimental")]
     {
         // Instantiate a stick-breaking process
-        let alpha = 100.0;
+        let alpha = 10.0;
         let sbp = StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
 
         // Sample from it to get a StickSequence
-        let sticks: StickSequence = sbp.draw(&mut rand::thread_rng());
+        let mut rng = rand::rngs::StdRng::seed_from_u64(42);
+        let sticks: StickSequence = sbp.draw(&mut rng);
 
         // Use the StickSequence to instantiate a stick-breaking discrete distribution
         let sbd = StickBreakingDiscrete::new(sticks.clone());

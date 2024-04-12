@@ -3,7 +3,7 @@ use itertools::Itertools;
 use itertools::TupleWindows;
 
 /// Provides extension methods for iterators over `f64` values.
-pub trait IteratorExt: Iterator<Item = f64> + Sized {
+pub trait ConvergentSequence: Iterator<Item = f64> + Sized {
     fn aitken(
         self,
     ) -> Map<TupleWindows<Self, (f64, f64, f64)>, fn((f64, f64, f64)) -> f64>
@@ -36,7 +36,7 @@ pub trait IteratorExt: Iterator<Item = f64> + Sized {
     }
 }
 
-impl<T> IteratorExt for T where T: Iterator<Item = f64> + Sized {}
+impl<T> ConvergentSequence for T where T: Iterator<Item = f64> + Sized {}
 
 #[cfg(test)]
 mod tests {

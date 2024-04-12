@@ -2,7 +2,7 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use crate::misc::IteratorExt;
+use crate::misc::ConvergentSequence;
 use crate::dist::Mixture;
 use super::StickSequence;
 use crate::traits::*;
