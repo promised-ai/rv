@@ -27,7 +27,7 @@ pub trait ConvergentSequence: Iterator<Item = f64> + Sized {
                     None
                 }
             } else {
-                Some(z - dx.powi(2) / dx)
+                Some(z - dx.powi(2) / ddx)
             }
         })
     }
