@@ -1,12 +1,9 @@
-use itertools::Either;
-use peroxide::statistics::stat::Statistics;
-use rv::prelude::*;
 use rand::SeedableRng;
+use rv::prelude::*;
 
 #[cfg(feature = "experimental")]
 use rv::experimental::stick_breaking::{
-    StickBreaking, StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
-    StickSequence,
+    StickBreaking, StickBreakingDiscrete, StickSequence,
 };
 
 fn main() {
@@ -23,7 +20,6 @@ fn main() {
         // Use the StickSequence to instantiate a stick-breaking discrete distribution
         let sbd = StickBreakingDiscrete::new(sticks.clone());
 
-        
         let start = std::time::Instant::now();
         let entropy = sbd.entropy();
         let duration = start.elapsed();
@@ -33,29 +29,5 @@ fn main() {
         let num_weights = sbd.stick_sequence().num_weights_unstable();
 
         println!("num weights: {}", num_weights);
-        // // Now sample from the StickBreakingDiscrete and find its sufficient statistic
-        // let n = 10000;
-        // let xs = sbd.sample(n, &mut rand::thread_rng());
-        // let stat = StickBreakingDiscreteSuffStat::from(&xs[..]);
-
-        // // Use the sufficient statistic to find the posterior
-        // let post = sbp.posterior_from_suffstat(&stat);
-
-        // let mut break_iter = post.break_dists();
-
-        // // Print the posterior parameters of each Beta distribution.
-        // while let Some(Either::Left(p)) = break_iter.next() {
-        //     let mean: f64 = p.mean().unwrap();
-        //     println!(
-        //         "alpha: {}\t beta: {}\t mean: {}",
-        //         p.alpha(),
-        //         p.beta(),
-        //         mean
-        //     );
-        // }
-
-        // let cache = sbp.ln_pp_cache(&DataOrSuffStat::SuffStat(&stat));
-        // let sum: f64 = (0..99).map(|y| sbp.pp_with_cache(&cache, &y)).sum();
-        // println!("P(posterior predictive < 100) {}", sum);
     }
 }
