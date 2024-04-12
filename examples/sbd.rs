@@ -17,7 +17,7 @@ fn main() {
         let sbp = StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
 
         // Sample from it to get a StickSequence
-        let mut rng = rand::rngs::StdRng::seed_from_u64(42);
+        let mut rng = rand_xoshiro::Xoshiro256PlusPlus::seed_from_u64(42);
         let sticks: StickSequence = sbp.draw(&mut rng);
 
         // Use the StickSequence to instantiate a stick-breaking discrete distribution
