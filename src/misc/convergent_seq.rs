@@ -1,12 +1,12 @@
-use core::iter::Map;
+// use core::iter::Map;
 use itertools::Itertools;
-use itertools::TupleWindows;
+// use itertools::TupleWindows;
 
 /// Provides extension methods for iterators over `f64` values.
 pub trait ConvergentSequence: Iterator<Item = f64> + Sized {
     fn aitken(
         self,
-    ) -> Map<TupleWindows<Self, (f64, f64, f64)>, fn((f64, f64, f64)) -> f64>
+    ) -> impl Iterator<Item = f64>
     {
         self.tuple_windows::<(_, _, _)>().map(|(x, y, z)| {
             let dx = z - y;
