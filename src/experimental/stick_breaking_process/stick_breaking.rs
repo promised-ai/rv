@@ -1,7 +1,7 @@
-use crate::experimental::stick_breaking::StickBreakingDiscrete;
-use crate::experimental::stick_breaking::StickBreakingDiscreteSuffStat;
+use crate::experimental::stick_breaking_process::StickBreakingDiscrete;
+use crate::experimental::stick_breaking_process::StickBreakingDiscreteSuffStat;
 // use crate::experimental::stick_breaking::StickBreakingSuffStat;
-use crate::experimental::stick_breaking::StickSequence;
+use crate::experimental::stick_breaking_process::StickSequence;
 use crate::prelude::*;
 use crate::traits::*;
 use itertools::Either;

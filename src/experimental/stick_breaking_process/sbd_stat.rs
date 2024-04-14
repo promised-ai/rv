@@ -1,4 +1,4 @@
-use crate::experimental::stick_breaking::sbd::StickBreakingDiscrete;
+use crate::experimental::stick_breaking_process::sbd::StickBreakingDiscrete;
 use crate::traits::{HasSuffStat, SuffStat};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};

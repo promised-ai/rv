@@ -1,4 +1,4 @@
-use crate::experimental::stick_breaking::stick_breaking::StickBreaking;
+use crate::experimental::stick_breaking_process::stick_breaking::StickBreaking;
 use crate::{
     data::UnitPowerLawSuffStat,
     traits::{HasSuffStat, SuffStat},
