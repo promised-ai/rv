@@ -1,11 +1,11 @@
+use super::StickSequence;
+use crate::dist::Mixture;
+use crate::misc::ConvergentSequence;
+use crate::traits::*;
 use rand::seq::SliceRandom;
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use crate::misc::ConvergentSequence;
-use crate::dist::Mixture;
-use super::StickSequence;
-use crate::traits::*;
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
@@ -324,20 +324,26 @@ impl Sampleable<usize> for StickBreakingDiscrete {
 impl Entropy for StickBreakingDiscrete {
     fn entropy(&self) -> f64 {
         let probs = (0..).map(|n| self.f(&n));
-        probs.map(|p| p * p.ln()).scan(0.0, |state, x| {
-            *state -= x;
-            Some(*state)
-        }).limit(1e-10)
+        probs
+            .map(|p| p * p.ln())
+            .scan(0.0, |state, x| {
+                *state -= x;
+                Some(*state)
+            })
+            .limit(1e-10)
     }
 }
 
 impl Entropy for &Mixture<StickBreakingDiscrete> {
     fn entropy(&self) -> f64 {
         let probs = (0..).map(|n| self.f(&n));
-        probs.map(|p| p * p.ln()).scan(0.0, |state, x| {
-            *state -= x;
-            Some(*state)
-        }).limit(1e-10)
+        probs
+            .map(|p| p * p.ln())
+            .scan(0.0, |state, x| {
+                *state -= x;
+                Some(*state)
+            })
+            .limit(1e-10)
     }
 }
 
