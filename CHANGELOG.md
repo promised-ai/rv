@@ -108,7 +108,7 @@
 - Added `_with_cache` variants to `ConjugatePrior` `ln_m` and `ln_pp` methods
     for use cases where these methods are called many times in different data
     without changing the underlying distribution. This also adds two more
-    associated types to the trait (`MCache` and `PpCache`), and one method
+    associated types to the trait (`LnMCache` and `LnPpCache`), and one method
     each to compute the caches.
 - Remove all references to `serde_derive` crate
 - Gaussian process improvements including new kernels
