@@ -6,7 +6,6 @@
   - `StickBreakingDiscrete` struct representing a discrete distribution based on a stick-breaking process
   - `StickSequence` struct representing a sequence of stick breaks
   - `BreakSequence` struct representing a sequence of break points
-  - `UnitPowerLaw` struct representing a unit power law distribution used as the base distribution for a stick-breaking process
   - `posterior` method on `StickBreaking` to compute the posterior distribution given data
   - Various helper methods and trait implementations
 - Update `ConjugatePrior`
