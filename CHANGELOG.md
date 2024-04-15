@@ -17,6 +17,7 @@
 - Add `Parameterized` trait
 - Add `impl<X: Booleable> ConjugatePrior<X, Bernoulli> for UnitPowerLaw`
 - Add `ConvergentSequence` implementing Aitken's delta-squared method
+- Add `sorted_uniforms` helper function
 - Minor stylistic changes suggested by Clippy
 
 
