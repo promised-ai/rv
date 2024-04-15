@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.17.0] - 2024-05-15
+- Add `experimental` module with `stick_breaking_process` submodule containing:
+  - `StickBreaking` struct representing a stick-breaking process
+  - `StickBreakingDiscrete` struct representing a discrete distribution based on a stick-breaking process
+  - `StickSequence` struct representing a sequence of stick breaks
+  - `BreakSequence` struct representing a sequence of break points
+  - `UnitPowerLaw` struct representing a unit power law distribution used as the base distribution for a stick-breaking process
+  - `posterior` method on `StickBreaking` to compute the posterior distribution given data
+  - Various helper methods and trait implementations
+- Update `ConjugatePrior`
+  - Change `LnMCache` to `MCache`
+  - Change `LnPpCache` to `PpCache`
+- Split `Rv` into `Sampleable` and `HasDensity`
+- Add `Process` generalizing `Rv`
+- Add `Parameterized` trait
+- Add `impl<X: Booleable> ConjugatePrior<X, Bernoulli> for UnitPowerLaw`
+- Minor stylistic changes suggested by Clippy
+
 ## [0.16.5] - 2024-03-14
 - Moved repository to GitHub.
 
