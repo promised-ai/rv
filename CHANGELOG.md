@@ -16,7 +16,9 @@
 - Add `Process` generalizing `Rv`
 - Add `Parameterized` trait
 - Add `impl<X: Booleable> ConjugatePrior<X, Bernoulli> for UnitPowerLaw`
+- Add `ConvergentSequence` implementing Aitken's delta-squared method
 - Minor stylistic changes suggested by Clippy
+
 
 ## [0.16.5] - 2024-03-14
 - Moved repository to GitHub.
