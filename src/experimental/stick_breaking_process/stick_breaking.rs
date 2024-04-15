@@ -1,6 +1,6 @@
 use crate::experimental::stick_breaking_process::StickBreakingDiscrete;
 use crate::experimental::stick_breaking_process::StickBreakingDiscreteSuffStat;
-// use crate::experimental::stick_breaking::StickBreakingSuffStat;
+// use crate::experimental::stick_breaking_process::StickBreakingSuffStat;
 use crate::experimental::stick_breaking_process::StickSequence;
 use crate::prelude::*;
 use crate::traits::*;
@@ -37,7 +37,7 @@ impl StickBreaking {
     /// # Example
     /// ```
     /// use rv::prelude::*;
-    /// use rv::experimental::stick_breaking::StickBreaking;
+    /// use rv::experimental::stick_breaking_process::StickBreaking;
     ///
     /// let alpha = 5.0;
     /// let stick_breaking = StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());

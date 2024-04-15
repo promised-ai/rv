@@ -214,7 +214,7 @@ impl Mode<usize> for StickBreakingDiscrete {
 ///
 /// ```
 /// use rand::thread_rng;
-/// use rv::experimental::stick_breaking::sbd::sorted_uniforms;
+/// use rv::experimental::stick_breaking_process::sbd::sorted_uniforms;
 ///    
 /// let mut rng = thread_rng();
 /// let n = 10000;
