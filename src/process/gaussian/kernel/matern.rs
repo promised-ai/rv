@@ -1,10 +1,10 @@
 use crate::misc::bessel::bessel_ikv_temme;
 
 use super::{e2_norm, CovGrad, CovGradError, Kernel, KernelError};
+use crate::misc::gammafn;
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
-use peroxide::prelude::gamma;
 use std::f64;
 
 #[cfg(feature = "serde1")]
@@ -63,7 +63,7 @@ impl MaternKernel {
         let n = x.nrows();
 
         let mut dm: DMatrix<f64> = DMatrix::zeros(n, n);
-        let c = (1.0 - self.nu).exp2() / gamma(self.nu);
+        let c = (1.0 - self.nu).exp2() / gammafn(self.nu);
         let sqrt_two_nu = (2.0 * self.nu).sqrt();
 
         for i in 0..n {
@@ -119,7 +119,7 @@ impl Kernel for MaternKernel {
         let n = x2.nrows();
 
         let mut dm: DMatrix<f64> = DMatrix::zeros(m, n);
-        let c = (1.0 - self.nu).exp2() / gamma(self.nu);
+        let c = (1.0 - self.nu).exp2() / gammafn(self.nu);
         let sqrt_two_nu = (2.0 * self.nu).sqrt();
 
         for i in 0..m {
