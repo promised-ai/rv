@@ -30,6 +30,26 @@ pub enum DiscreteUniformError {
     InvalidInterval,
 }
 
+pub struct DiscreteUniformParameters<T: DuParam> {
+    pub a: T,
+    pub b: T,
+}
+
+impl<T: DuParam> Parameterized for DiscreteUniform<T> {
+    type Parameters = DiscreteUniformParameters<T>;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            a: self.a(),
+            b: self.b(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.a, params.b)
+    }
+}
+
 impl<T: DuParam> DiscreteUniform<T> {
     /// Create a new discreet uniform distribution
     ///
@@ -99,7 +119,7 @@ where
     }
 }
 
-impl<X, T> Rv<X> for DiscreteUniform<T>
+impl<X, T> HasDensity<X> for DiscreteUniform<T>
 where
     T: DuParam + SampleUniform + Copy,
     X: Integer + From<T>,
@@ -111,7 +131,13 @@ where
             f64::NEG_INFINITY
         }
     }
+}
 
+impl<X, T> Sampleable<X> for DiscreteUniform<T>
+where
+    T: DuParam + SampleUniform + Copy,
+    X: Integer + From<T>,
+{
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
         let d = rand::distributions::Uniform::new_inclusive(self.a, self.b);
         X::from(rng.sample(d))
@@ -247,7 +273,11 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([count] DiscreteUniform::new(0_u32, 10_u32).unwrap());
+    test_basic_impls!(
+        u32,
+        DiscreteUniform<u32>,
+        DiscreteUniform::new(0_u32, 10_u32).unwrap()
+    );
 
     #[test]
     fn new() {

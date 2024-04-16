@@ -24,6 +24,30 @@ pub struct NormalGamma {
     v: f64,
 }
 
+pub struct NormalGammaParameters {
+    pub m: f64,
+    pub r: f64,
+    pub s: f64,
+    pub v: f64,
+}
+
+impl Parameterized for NormalGamma {
+    type Parameters = NormalGammaParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            m: self.m(),
+            r: self.r(),
+            s: self.s(),
+            v: self.v(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.m, params.r, params.s, params.v)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -110,9 +134,9 @@ impl NormalGamma {
     /// # use rv::dist::NormalGamma;
     /// # let mut ng = NormalGamma::new(0.0, 1.2, 2.3, 3.4).unwrap();
     /// assert!(ng.set_m(-1.1).is_ok());
-    /// assert!(ng.set_m(std::f64::INFINITY).is_err());
-    /// assert!(ng.set_m(std::f64::NEG_INFINITY).is_err());
-    /// assert!(ng.set_m(std::f64::NAN).is_err());
+    /// assert!(ng.set_m(f64::INFINITY).is_err());
+    /// assert!(ng.set_m(f64::NEG_INFINITY).is_err());
+    /// assert!(ng.set_m(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_m(&mut self, m: f64) -> Result<(), NormalGammaError> {
@@ -162,9 +186,9 @@ impl NormalGamma {
     /// assert!(ng.set_r(-1.0).is_err());
     ///
     ///
-    /// assert!(ng.set_r(std::f64::INFINITY).is_err());
-    /// assert!(ng.set_r(std::f64::NEG_INFINITY).is_err());
-    /// assert!(ng.set_r(std::f64::NAN).is_err());
+    /// assert!(ng.set_r(f64::INFINITY).is_err());
+    /// assert!(ng.set_r(f64::NEG_INFINITY).is_err());
+    /// assert!(ng.set_r(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_r(&mut self, r: f64) -> Result<(), NormalGammaError> {
@@ -216,9 +240,9 @@ impl NormalGamma {
     /// assert!(ng.set_s(-1.0).is_err());
     ///
     ///
-    /// assert!(ng.set_s(std::f64::INFINITY).is_err());
-    /// assert!(ng.set_s(std::f64::NEG_INFINITY).is_err());
-    /// assert!(ng.set_s(std::f64::NAN).is_err());
+    /// assert!(ng.set_s(f64::INFINITY).is_err());
+    /// assert!(ng.set_s(f64::NEG_INFINITY).is_err());
+    /// assert!(ng.set_s(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_s(&mut self, s: f64) -> Result<(), NormalGammaError> {
@@ -270,9 +294,9 @@ impl NormalGamma {
     /// assert!(ng.set_v(-1.0).is_err());
     ///
     ///
-    /// assert!(ng.set_v(std::f64::INFINITY).is_err());
-    /// assert!(ng.set_v(std::f64::NEG_INFINITY).is_err());
-    /// assert!(ng.set_v(std::f64::NAN).is_err());
+    /// assert!(ng.set_v(f64::INFINITY).is_err());
+    /// assert!(ng.set_v(f64::NEG_INFINITY).is_err());
+    /// assert!(ng.set_v(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_v(&mut self, v: f64) -> Result<(), NormalGammaError> {
@@ -291,12 +315,6 @@ impl NormalGamma {
     pub fn set_v_unchecked(&mut self, v: f64) {
         self.v = v;
     }
-
-    /// Return (m, r, s, v)
-    #[inline]
-    pub fn params(&self) -> (f64, f64, f64, f64) {
-        (self.m, self.r, self.s, self.v)
-    }
 }
 
 impl From<&NormalGamma> for String {
@@ -310,7 +328,7 @@ impl From<&NormalGamma> for String {
 
 impl_display!(NormalGamma);
 
-impl Rv<Gaussian> for NormalGamma {
+impl HasDensity<Gaussian> for NormalGamma {
     fn ln_f(&self, x: &Gaussian) -> f64 {
         // TODO: could cache the gamma and Gaussian distributions
         let rho = (x.sigma() * x.sigma()).recip();
@@ -320,7 +338,9 @@ impl Rv<Gaussian> for NormalGamma {
         let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&x.mu());
         lnf_rho + lnf_mu
     }
+}
 
+impl Sampleable<Gaussian> for NormalGamma {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
         // NOTE: The parameter errors in this fn shouldn't happen if the prior
         // parameters are valid.
@@ -339,7 +359,7 @@ impl Rv<Gaussian> for NormalGamma {
             .draw(&mut rng);
 
         let sigma = if rho.is_infinite() {
-            std::f64::EPSILON
+            f64::EPSILON
         } else {
             rho.recip().sqrt()
         };

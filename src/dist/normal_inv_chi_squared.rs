@@ -9,7 +9,7 @@ mod gaussian_prior;
 
 use crate::dist::{Gaussian, ScaledInvChiSquared};
 use crate::impl_display;
-use crate::traits::Rv;
+use crate::traits::*;
 use rand::Rng;
 use std::sync::OnceLock;
 
@@ -28,6 +28,30 @@ pub struct NormalInvChiSquared {
     /// Cached scaled inv X^2
     #[cfg_attr(feature = "serde1", serde(skip))]
     scaled_inv_x2: OnceLock<ScaledInvChiSquared>,
+}
+
+pub struct NormalInvChiSquaredParameters {
+    pub m: f64,
+    pub k: f64,
+    pub v: f64,
+    pub s2: f64,
+}
+
+impl Parameterized for NormalInvChiSquared {
+    type Parameters = NormalInvChiSquaredParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            m: self.m(),
+            k: self.k(),
+            v: self.v(),
+            s2: self.s2(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.m, params.k, params.v, params.s2)
+    }
 }
 
 impl PartialEq for NormalInvChiSquared {
@@ -145,9 +169,9 @@ impl NormalInvChiSquared {
     /// # use rv::dist::NormalInvChiSquared;
     /// # let mut nix = NormalInvChiSquared::new(0.0, 1.2, 2.3, 3.4).unwrap();
     /// assert!(nix.set_m(-1.1).is_ok());
-    /// assert!(nix.set_m(std::f64::INFINITY).is_err());
-    /// assert!(nix.set_m(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nix.set_m(std::f64::NAN).is_err());
+    /// assert!(nix.set_m(f64::INFINITY).is_err());
+    /// assert!(nix.set_m(f64::NEG_INFINITY).is_err());
+    /// assert!(nix.set_m(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_m(&mut self, m: f64) -> Result<(), NormalInvChiSquaredError> {
@@ -197,9 +221,9 @@ impl NormalInvChiSquared {
     /// assert!(nix.set_k(-1.0).is_err());
     ///
     ///
-    /// assert!(nix.set_k(std::f64::INFINITY).is_err());
-    /// assert!(nix.set_k(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nix.set_k(std::f64::NAN).is_err());
+    /// assert!(nix.set_k(f64::INFINITY).is_err());
+    /// assert!(nix.set_k(f64::NEG_INFINITY).is_err());
+    /// assert!(nix.set_k(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_k(&mut self, k: f64) -> Result<(), NormalInvChiSquaredError> {
@@ -251,9 +275,9 @@ impl NormalInvChiSquared {
     /// assert!(nix.set_v(-1.0).is_err());
     ///
     ///
-    /// assert!(nix.set_v(std::f64::INFINITY).is_err());
-    /// assert!(nix.set_v(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nix.set_v(std::f64::NAN).is_err());
+    /// assert!(nix.set_v(f64::INFINITY).is_err());
+    /// assert!(nix.set_v(f64::NEG_INFINITY).is_err());
+    /// assert!(nix.set_v(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_v(&mut self, v: f64) -> Result<(), NormalInvChiSquaredError> {
@@ -307,9 +331,9 @@ impl NormalInvChiSquared {
     /// assert!(nix.set_s2(-1.0).is_err());
     ///
     ///
-    /// assert!(nix.set_s2(std::f64::INFINITY).is_err());
-    /// assert!(nix.set_s2(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nix.set_s2(std::f64::NAN).is_err());
+    /// assert!(nix.set_s2(f64::INFINITY).is_err());
+    /// assert!(nix.set_s2(f64::NEG_INFINITY).is_err());
+    /// assert!(nix.set_s2(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_s2(&mut self, s2: f64) -> Result<(), NormalInvChiSquaredError> {
@@ -349,22 +373,20 @@ impl From<&NormalInvChiSquared> for String {
 
 impl_display!(NormalInvChiSquared);
 
-impl Rv<Gaussian> for NormalInvChiSquared {
+impl HasDensity<Gaussian> for NormalInvChiSquared {
     fn ln_f(&self, x: &Gaussian) -> f64 {
         let lnf_sigma = self.scaled_inv_x2().ln_f(&(x.sigma() * x.sigma()));
         let prior_sigma = x.sigma() / self.k.sqrt();
         let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&x.mu());
         lnf_sigma + lnf_mu
     }
+}
 
+impl Sampleable<Gaussian> for NormalInvChiSquared {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
         let var: f64 = self.scaled_inv_x2().draw(&mut rng);
 
-        let sigma = if var <= 0.0 {
-            std::f64::EPSILON
-        } else {
-            var.sqrt()
-        };
+        let sigma = if var <= 0.0 { f64::EPSILON } else { var.sqrt() };
 
         let post_sigma: f64 = sigma / self.k.sqrt();
         let mu: f64 = Gaussian::new(self.m, post_sigma)
@@ -406,8 +428,9 @@ mod test {
     use crate::{test_basic_impls, verify_cache_resets};
 
     test_basic_impls!(
-        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap(),
-        Gaussian::new(-1.2, 0.4).unwrap()
+        Gaussian,
+        NormalInvChiSquared,
+        NormalInvChiSquared::new(0.1, 1.2, 2.3, 3.4).unwrap()
     );
 
     verify_cache_resets!(

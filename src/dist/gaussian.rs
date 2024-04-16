@@ -55,6 +55,26 @@ impl PartialEq for Gaussian {
     }
 }
 
+pub struct GaussianParameters {
+    pub mu: f64,
+    pub sigma: f64,
+}
+
+impl Parameterized for Gaussian {
+    type Parameters = GaussianParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu: self.mu(),
+            sigma: self.sigma(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu, params.sigma)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -70,7 +90,7 @@ pub enum GaussianError {
 impl Gaussian {
     /// Create a new Gaussian distribution
     ///
-    /// # Aruments
+    /// # Arguments
     /// - mu: mean
     /// - sigma: standard deviation
     pub fn new(mu: f64, sigma: f64) -> Result<Self, GaussianError> {
@@ -153,9 +173,9 @@ impl Gaussian {
     /// # use rv::dist::Gaussian;
     /// # let mut gauss = Gaussian::new(2.0, 1.5).unwrap();
     /// assert!(gauss.set_mu(1.3).is_ok());
-    /// assert!(gauss.set_mu(std::f64::NEG_INFINITY).is_err());
-    /// assert!(gauss.set_mu(std::f64::INFINITY).is_err());
-    /// assert!(gauss.set_mu(std::f64::NAN).is_err());
+    /// assert!(gauss.set_mu(f64::NEG_INFINITY).is_err());
+    /// assert!(gauss.set_mu(f64::INFINITY).is_err());
+    /// assert!(gauss.set_mu(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), GaussianError> {
@@ -209,9 +229,9 @@ impl Gaussian {
     /// assert!(gauss.set_sigma(2.3).is_ok());
     /// assert!(gauss.set_sigma(0.0).is_err());
     /// assert!(gauss.set_sigma(-1.0).is_err());
-    /// assert!(gauss.set_sigma(std::f64::INFINITY).is_err());
-    /// assert!(gauss.set_sigma(std::f64::NEG_INFINITY).is_err());
-    /// assert!(gauss.set_sigma(std::f64::NAN).is_err());
+    /// assert!(gauss.set_sigma(f64::INFINITY).is_err());
+    /// assert!(gauss.set_sigma(f64::NEG_INFINITY).is_err());
+    /// assert!(gauss.set_sigma(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_sigma(&mut self, sigma: f64) -> Result<(), GaussianError> {
@@ -255,12 +275,14 @@ impl_display!(Gaussian);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Gaussian {
+        impl HasDensity<$kind> for Gaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k = (f64::from(*x) - self.mu) / self.sigma;
                 (0.5 * k).mul_add(-k, -self.ln_sigma()) - HALF_LN_2PI
             }
+        }
 
+        impl Sampleable<$kind> for Gaussian {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let g = Normal::new(self.mu, self.sigma).unwrap();
                 rng.sample(g) as $kind
@@ -411,7 +433,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!([continuous] Gaussian::standard());
+    test_basic_impls!(f64, Gaussian);
 
     #[test]
     fn new() {
@@ -618,7 +640,7 @@ mod tests {
     }
 
     #[test]
-    fn kl_of_idential_dsitrbutions_should_be_zero() {
+    fn kl_of_identical_dsitrbutions_should_be_zero() {
         let gauss = Gaussian::new(1.2, 3.4).unwrap();
         assert::close(gauss.kl(&gauss), 0.0, TOL);
     }

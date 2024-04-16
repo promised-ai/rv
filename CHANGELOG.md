@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.17.0] - 2024-05-15
+- Add `experimental` module with `stick_breaking_process` submodule containing:
+  - `StickBreaking` struct representing a stick-breaking process
+  - `StickBreakingDiscrete` struct representing a discrete distribution based on a stick-breaking process
+  - `StickSequence` struct representing a sequence of stick breaks
+  - `BreakSequence` struct representing a sequence of break points
+  - `posterior` method on `StickBreaking` to compute the posterior distribution given data
+  - Various helper methods and trait implementations
+- Update `ConjugatePrior`
+  - Change `LnMCache` to `MCache`
+  - Change `LnPpCache` to `PpCache`
+- Split `Rv` into `Sampleable` and `HasDensity`
+- Add `Process` generalizing `Rv`
+- Add `Parameterized` trait
+- Add `impl<X: Booleable> ConjugatePrior<X, Bernoulli> for UnitPowerLaw`
+- Add `ConvergentSequence` implementing Aitken's delta-squared method
+- Add `sorted_uniforms` helper function
+- Minor stylistic changes suggested by Clippy
+
+
 ## [0.16.5] - 2024-03-14
 - Moved repository to GitHub.
 
@@ -172,7 +192,7 @@
 - Remove dependency on `quadrature` crate in favor of hand-rolled adaptive
     Simpson's rule, which handles multimodal distributions better.
 
-
+[0.17.0]: https://github.com/promise-ai/rv/compare/v0.16.5...v0.17.0
 [0.16.5]: https://github.com/promise-ai/rv/compare/v0.16.4...v0.16.5
 [0.16.4]: https://github.com/promise-ai/rv/compare/v0.16.3...v0.16.4
 [0.16.3]: https://github.com/promise-ai/rv/compare/v0.16.2...v0.16.3

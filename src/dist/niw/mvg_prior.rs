@@ -2,7 +2,8 @@ use crate::consts::LN_2PI;
 use crate::data::{extract_stat_then, DataOrSuffStat, MvGaussianSuffStat};
 use crate::dist::{MvGaussian, NormalInvWishart};
 use crate::misc::lnmv_gamma;
-use crate::traits::{ConjugatePrior, SuffStat};
+use crate::traits::ConjugatePrior;
+use crate::traits::SuffStat;
 use nalgebra::{DMatrix, DVector};
 use std::f64::consts::{LN_2, PI};
 
@@ -21,8 +22,8 @@ fn ln_z(k: f64, df: usize, scale: &DMatrix<f64>) -> f64 {
 
 impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
     type Posterior = Self;
-    type LnMCache = f64;
-    type LnPpCache = (Self, f64);
+    type MCache = f64;
+    type PpCache = (Self, f64);
 
     fn posterior(&self, x: &MvgData) -> NormalInvWishart {
         if x.n() == 0 {
@@ -66,7 +67,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         ln_z(self.k(), self.df(), self.scale())
     }
 
-    fn ln_m_with_cache(&self, cache: &Self::LnMCache, x: &MvgData) -> f64 {
+    fn ln_m_with_cache(&self, cache: &Self::MCache, x: &MvgData) -> f64 {
         let z0 = cache;
         let post = self.posterior(x);
         let zn = ln_z(post.k(), post.df(), post.scale());
@@ -76,17 +77,13 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
     }
 
     #[inline]
-    fn ln_pp_cache(&self, x: &MvgData) -> Self::LnPpCache {
+    fn ln_pp_cache(&self, x: &MvgData) -> Self::PpCache {
         let post = self.posterior(x);
         let zn = ln_z(post.k(), post.df(), post.scale());
         (post, zn)
     }
 
-    fn ln_pp_with_cache(
-        &self,
-        cache: &Self::LnPpCache,
-        y: &DVector<f64>,
-    ) -> f64 {
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &DVector<f64>) -> f64 {
         let post = &cache.0;
         let zn = cache.1;
 
@@ -106,11 +103,25 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::test_conjugate_prior;
+    use crate::traits::*;
     use nalgebra::{dmatrix, dvector};
 
-    use super::*;
-
     const TOL: f64 = 1E-12;
+
+    test_conjugate_prior!(
+        DVector<f64>,
+        MvGaussian,
+        NormalInvWishart,
+        NormalInvWishart::new(
+            DVector::zeros(2),
+            1.0,
+            2,
+            DMatrix::identity(2, 2),
+        )
+        .unwrap()
+    );
 
     fn obs_fxtr() -> MvGaussianSuffStat {
         let x0v = vec![3.578_396_939_725_76, 0.725_404_224_946_106];
@@ -159,7 +170,7 @@ mod tests {
     #[test]
     fn posterior() {
         // This checks this implementation against the one from
-        // Kevin Murphey
+        // Kevin Murphy
         // Found here: https://github.com/probml/probml-utils/blob/983e107875d550957d6c046b5c1af0fbae4badff/probml_utils/dp_mixgauss_utils.py#L206-L225
 
         let niw = NormalInvWishart::new(

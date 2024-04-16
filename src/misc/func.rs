@@ -3,7 +3,6 @@ use rand::distributions::Open01;
 use rand::Rng;
 use special::Gamma;
 use std::cmp::Ordering;
-use std::cmp::PartialOrd;
 use std::fmt::Debug;
 use std::ops::AddAssign;
 
@@ -24,7 +23,9 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
     out += "[";
     let n = xs.len();
     xs.iter().enumerate().for_each(|(i, x)| {
-        let to_push = if i < max_entries - 1 {
+        let to_push = if i == n - 1 {
+            format!("{:?}]", x)
+        } else if i < max_entries - 1 {
             format!("{:?}, ", x)
         } else if i == (max_entries - 1) && n > max_entries {
             String::from("... , ")
@@ -38,7 +39,7 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
     out
 }
 
-/// Natural logarithm of binomial coefficent, ln nCk
+/// Natural logarithm of binomial coefficient, ln nCk
 ///
 /// # Example
 ///
@@ -99,16 +100,15 @@ pub fn logsumexp(xs: &[f64]) -> f64 {
         xs[0]
     } else {
         let (alpha, r) =
-            xs.iter()
-                .fold((std::f64::NEG_INFINITY, 0.0), |(alpha, r), &x| {
-                    if x == std::f64::NEG_INFINITY {
-                        (alpha, r)
-                    } else if x <= alpha {
-                        (alpha, r + (x - alpha).exp())
-                    } else {
-                        (x, r.mul_add((alpha - x).exp(), 1.0))
-                    }
-                });
+            xs.iter().fold((f64::NEG_INFINITY, 0.0), |(alpha, r), &x| {
+                if x == f64::NEG_INFINITY {
+                    (alpha, r)
+                } else if x <= alpha {
+                    (alpha, r + (x - alpha).exp())
+                } else {
+                    (x, r.mul_add((alpha - x).exp(), 1.0))
+                }
+            });
 
         r.ln() + alpha
     }
@@ -342,6 +342,55 @@ pub fn ln_fact(n: usize) -> f64 {
         (y - 0.5).mul_add(y.ln(), -y)
             + 0.5_f64.mul_add(LN_2PI, (12.0 * y).recip())
     }
+}
+
+/// Generate a vector of sorted uniform random variables.
+///
+/// # Arguments
+///     
+/// * `n` - The number of random variables to generate.
+///
+/// * `rng` - A mutable reference to the random number generator.
+///
+/// # Returns
+///
+/// A vector of sorted uniform random variables.
+///
+/// # Example
+///
+/// ```
+/// use rand::thread_rng;
+/// use rv::misc::sorted_uniforms;
+///    
+/// let mut rng = thread_rng();
+/// let n = 10000;
+/// let xs = sorted_uniforms(n, &mut rng);
+/// assert_eq!(xs.len(), n);
+///
+/// // Result is sorted and in the unit interval
+/// assert!(xs.first().map_or(false, |&first| first > 0.0));
+/// assert!(xs.last().map_or(false, |&last| last < 1.0));
+/// assert!(xs.windows(2).all(|w| w[0] <= w[1]));
+///
+/// // Mean is approximately 1/2
+/// let mean = xs.iter().sum::<f64>() / n as f64;
+/// assert!(mean > 0.49 && mean < 0.51);
+///
+/// // Variance is approximately 1/12
+/// let var = xs.iter().map(|x| (x - 0.5).powi(2)).sum::<f64>() / n as f64;
+/// assert!(var > 0.08 && var < 0.09);
+/// ```
+pub fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
+    let mut xs: Vec<_> = (0..n)
+        .map(|_| -rng.gen::<f64>().ln())
+        .scan(0.0, |state, x| {
+            *state += x;
+            Some(*state)
+        })
+        .collect();
+    let max = *xs.last().unwrap() - rng.gen::<f64>().ln();
+    (0..n).for_each(|i| xs[i] /= max);
+    xs
 }
 
 const LN_FACT: [f64; 255] = [
@@ -605,6 +654,9 @@ const LN_FACT: [f64; 255] = [
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::prelude::ChiSquared;
+    use crate::traits::Cdf;
+    use rand::thread_rng;
 
     const TOL: f64 = 1E-12;
 
@@ -666,18 +718,18 @@ mod tests {
 
     #[test]
     fn logsumexp_leading_neginf() {
-        let inf = std::f64::INFINITY;
+        let inf = f64::INFINITY;
         let weights = vec![
             -inf,
-            -210.14873879197316,
-            -818.1043044601643,
-            -1269.0480185226445,
-            -2916.862476271387,
+            -210.148_738_791_973_16,
+            -818.104_304_460_164_3,
+            -1_269.048_018_522_644_5,
+            -2_916.862_476_271_387,
             -inf,
         ];
 
         let lse = logsumexp(&weights);
-        assert::close(lse, -210.14873879197316, TOL);
+        assert::close(lse, -210.148_738_791_973_16, TOL);
     }
 
     #[test]
@@ -724,9 +776,8 @@ mod tests {
     #[test]
     fn ln_pflip_works_with_zero_weights() {
         use std::f64::consts::LN_2;
-        use std::f64::NEG_INFINITY;
 
-        let ln_weights: Vec<f64> = vec![-LN_2, NEG_INFINITY, -LN_2];
+        let ln_weights: Vec<f64> = vec![-LN_2, f64::NEG_INFINITY, -LN_2];
 
         let xs = ln_pflip(&ln_weights, 100, true, &mut rand::thread_rng());
 
@@ -737,5 +788,51 @@ mod tests {
         assert!(zero_count > 30);
         assert_eq!(one_count, 0);
         assert!(two_count > 30);
+    }
+
+    #[test]
+    fn test_sorted_uniforms() {
+        let mut rng = thread_rng();
+        let n = 1000;
+        let xs = sorted_uniforms(n, &mut rng);
+        assert_eq!(xs.len(), n);
+
+        // Result is sorted and in the unit interval
+        assert!(&0.0 < xs.first().unwrap());
+        assert!(xs.last().unwrap() < &1.0);
+        assert!(xs.windows(2).all(|w| w[0] <= w[1]));
+
+        // t will aggregate our chi-squared test statistic
+        let mut t = 0.0;
+
+        {
+            // We'll build a histogram and count the bin populations, aggregating
+            // the chi-squared statistic as we go
+            let mut next_bin = 0.01;
+            let mut bin_pop = 0;
+
+            for x in xs.iter() {
+                bin_pop += 1;
+                if *x > next_bin {
+                    let obs = bin_pop as f64;
+                    let exp = n as f64 / 100.0;
+                    t += (obs - exp).powi(2) / exp;
+                    bin_pop = 0;
+                    next_bin += 0.01;
+                }
+            }
+
+            // The last bin
+            let obs = bin_pop as f64;
+            let exp = n as f64 / 100.0;
+            t += (obs - exp).powi(2) / exp;
+        }
+
+        let alpha = 0.001;
+
+        // dof = number of bins minus one
+        let chi2 = ChiSquared::new(99.0).unwrap();
+        let p = chi2.sf(&t);
+        assert!(p > alpha);
     }
 }

@@ -1,7 +1,7 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::traits::{Cdf, Mean, Rv, Variance};
+use crate::traits::*;
 use rand::Rng;
 
 /// An empirical distribution derived from samples.
@@ -11,7 +11,7 @@ use rand::Rng;
 ///
 /// ```rust
 /// use rv::dist::{Gaussian, Empirical};
-/// use rv::prelude::Rv;
+/// use rv::prelude::*;
 /// use rv::misc::linspace;
 /// use rand_xoshiro::Xoshiro256Plus;
 /// use rand::SeedableRng;
@@ -42,6 +42,24 @@ enum Pos {
     Last,
     Present(usize),
     Absent(usize),
+}
+
+pub struct EmpiricalParameters {
+    pub xs: Vec<f64>,
+}
+
+impl Parameterized for Empirical {
+    type Parameters = EmpiricalParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            xs: self.xs.clone(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new(params.xs)
+    }
 }
 
 impl Empirical {
@@ -121,7 +139,7 @@ impl Empirical {
     }
 }
 
-impl Rv<f64> for Empirical {
+impl HasDensity<f64> for Empirical {
     fn f(&self, x: &f64) -> f64 {
         eprintln!("WARNING: empirical.f is unstable. You probably don't want to use it.");
         match self.pos(*x) {
@@ -148,7 +166,9 @@ impl Rv<f64> for Empirical {
     fn ln_f(&self, x: &f64) -> f64 {
         self.f(x).ln()
     }
+}
 
+impl Sampleable<f64> for Empirical {
     fn draw<R: Rng>(&self, rng: &mut R) -> f64 {
         let n = self.xs.len();
         let ix: usize = rng.gen_range(0..n);

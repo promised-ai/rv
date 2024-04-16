@@ -9,7 +9,6 @@ use crate::dist::{Categorical, Gaussian, Poisson};
 use crate::misc::{logsumexp, pflip};
 use crate::traits::*;
 use rand::Rng;
-use std::convert::TryFrom;
 use std::fmt;
 use std::sync::OnceLock;
 
@@ -40,6 +39,37 @@ pub struct Mixture<Fx> {
     components: Vec<Fx>,
     // Cached ln(weights)
     ln_weights: OnceLock<Vec<f64>>,
+}
+
+pub struct MixtureParameters<Fx: Parameterized> {
+    pub component_params: Vec<Fx::Parameters>,
+    pub weights: Vec<f64>,
+}
+
+impl<Fx: Parameterized> Parameterized for Mixture<Fx> {
+    type Parameters = MixtureParameters<Fx>;
+
+    fn emit_params(&self) -> Self::Parameters {
+        let component_params = self
+            .components()
+            .iter()
+            .map(|cpnt| cpnt.emit_params())
+            .collect();
+
+        Self::Parameters {
+            component_params,
+            weights: self.weights().clone(),
+        }
+    }
+
+    fn from_params(mut params: Self::Parameters) -> Self {
+        let components = params
+            .component_params
+            .drain(..)
+            .map(|p| Fx::from_params(p))
+            .collect();
+        Self::new_unchecked(params.weights, components)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -353,7 +383,7 @@ impl<Fx> From<Mixture<Fx>> for Vec<(f64, Fx)> {
     }
 }
 
-impl<X, Fx> Rv<X> for Mixture<Fx>
+impl<X, Fx> HasDensity<X> for Mixture<Fx>
 where
     Fx: Rv<X>,
 {
@@ -374,7 +404,12 @@ where
             .zip(self.components.iter())
             .fold(0.0, |acc, (&w, cpnt)| cpnt.f(x).mul_add(w, acc))
     }
+}
 
+impl<X, Fx> Sampleable<X> for Mixture<Fx>
+where
+    Fx: Rv<X>,
+{
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
         let k: usize = pflip(&self.weights, 1, &mut rng)[0];
         self.components[k].draw(&mut rng)
@@ -773,8 +808,6 @@ fn continuous_mixture_quad_points<Fx>(mm: &Mixture<Fx>) -> Vec<f64>
 where
     Fx: Mode<f64> + Variance<f64>,
 {
-    use std::f64::INFINITY;
-
     let mut state = (None, None);
 
     mm.components()
@@ -785,7 +818,8 @@ where
             match (&state, (mode, std)) {
                 ((Some(m1), s1), (Some(m2), s2)) => {
                     if (m2 - *m1)
-                        > s1.unwrap_or(INFINITY).min(s2.unwrap_or(INFINITY))
+                        > s1.unwrap_or(f64::INFINITY)
+                            .min(s2.unwrap_or(f64::INFINITY))
                     {
                         state = (mode, std);
                         Some(m2)
@@ -903,7 +937,7 @@ macro_rules! ds_discrete_quad_bounds {
     };
 }
 
-ds_discrete_quad_bounds!(Mixture<Poisson>, u32, 0, u32::max_value());
+ds_discrete_quad_bounds!(Mixture<Poisson>, u32, 0, u32::MAX);
 
 #[cfg(test)]
 mod tests {
@@ -1345,7 +1379,6 @@ mod tests {
         #[test]
         fn gauss_mixture_quad_bounds_have_zero_pdf() {
             use crate::dist::{InvGamma, Poisson};
-            use crate::traits::Rv;
 
             let mut rng = rand::thread_rng();
             let pois = Poisson::new(7.0).unwrap();

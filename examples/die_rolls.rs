@@ -1,4 +1,3 @@
-use rv::data::DataOrSuffStat;
 use rv::dist::{Categorical, SymmetricDirichlet};
 use rv::prelude::CategoricalData;
 use rv::traits::*;

@@ -103,6 +103,27 @@ pub struct MvGaussian {
     cache: OnceLock<MvgCache>,
 }
 
+pub struct MvGaussianParameters {
+    pub mu: DVector<f64>,
+    // Covariance Matrix
+    pub cov: DMatrix<f64>,
+}
+
+impl Parameterized for MvGaussian {
+    type Parameters = MvGaussianParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu: self.mu().clone_owned(),
+            cov: self.cov().clone_owned(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu, params.cov)
+    }
+}
+
 #[allow(dead_code)]
 #[cfg(feature = "serde1")]
 fn default_cache_none() -> OnceLock<MvgCache> {
@@ -395,7 +416,7 @@ impl From<&MvGaussian> for String {
 
 impl_display!(MvGaussian);
 
-impl Rv<DVector<f64>> for MvGaussian {
+impl HasDensity<DVector<f64>> for MvGaussian {
     fn ln_f(&self, x: &DVector<f64>) -> f64 {
         let diff = x - &self.mu;
         let det_sqrt: f64 = self
@@ -411,7 +432,9 @@ impl Rv<DVector<f64>> for MvGaussian {
         let term: f64 = (diff.transpose() * inv * &diff)[0];
         -0.5 * (det.ln() + (diff.nrows() as f64).mul_add(LN_2PI, term))
     }
+}
 
+impl Sampleable<DVector<f64>> for MvGaussian {
     fn draw<R: Rng>(&self, rng: &mut R) -> DVector<f64> {
         let dims = self.mu.len();
         let norm = rand_distr::StandardNormal;
@@ -537,7 +560,11 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const MARDIA_PVAL: f64 = 0.2;
 
-    test_basic_impls!(MvGaussian::standard(3).unwrap(), DVector::zeros(3));
+    test_basic_impls!(
+        DVector<f64>,
+        MvGaussian,
+        MvGaussian::standard(2).unwrap()
+    );
 
     #[test]
     fn new() {

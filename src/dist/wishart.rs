@@ -21,6 +21,26 @@ pub struct InvWishart {
     df: usize,
 }
 
+pub struct InvWishartParameters {
+    pub inv_scale: DMatrix<f64>,
+    pub df: usize,
+}
+
+impl Parameterized for InvWishart {
+    type Parameters = InvWishartParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            inv_scale: self.inv_scale().clone_owned(),
+            df: self.df(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.inv_scale, params.df)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -137,7 +157,7 @@ impl InvWishart {
     }
 }
 
-impl Rv<DMatrix<f64>> for InvWishart {
+impl HasDensity<DMatrix<f64>> for InvWishart {
     fn ln_f(&self, x: &DMatrix<f64>) -> f64 {
         let p = self.inv_scale.nrows();
         let pf = p as f64;
@@ -154,7 +174,9 @@ impl Rv<DMatrix<f64>> for InvWishart {
 
         det_s - denom + det_x + numer
     }
+}
 
+impl Sampleable<DMatrix<f64>> for InvWishart {
     // XXX: The complexity of this is O(df * dims^2). There is a O(dims^2)
     // algorithm, but it's more complicated to implement, so standby.
     // See https://www.math.wustl.edu/~sawyer/hmhandouts/Wishart.pdf  for more
@@ -177,8 +199,8 @@ impl Rv<DMatrix<f64>> for InvWishart {
         let p = self.inv_scale.nrows();
         let scale = self.inv_scale.clone().try_inverse().unwrap();
         let mvg = MvGaussian::new_unchecked(DVector::zeros(p), scale);
-        (0..n)
-            .map(|_| {
+        (0..)
+            .filter_map(|_| {
                 let xs = mvg.sample(self.df, &mut rng);
                 let y = xs.iter().fold(
                     DMatrix::<f64>::zeros(p, p),
@@ -187,8 +209,9 @@ impl Rv<DMatrix<f64>> for InvWishart {
                         acc + x * x.transpose()
                     },
                 );
-                y.try_inverse().unwrap()
+                y.try_inverse()
             })
+            .take(n)
             .collect()
     }
 }
@@ -246,7 +269,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!(InvWishart::identity(3), DMatrix::identity(3, 3));
+    test_basic_impls!(DMatrix<f64>, InvWishart, InvWishart::identity(3));
 
     #[test]
     fn new_should_reject_df_too_low() {
@@ -331,7 +354,7 @@ mod tests {
         ];
         let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
         let iw = InvWishart::new(inv_scale, 5).unwrap();
-        for x in <InvWishart as crate::traits::Rv<DMatrix<f64>>>::sample::<
+        for x in <InvWishart as crate::traits::Sampleable<DMatrix<f64>>>::sample::<
             rand::rngs::ThreadRng,
         >(&iw, 100, &mut rng)
         {

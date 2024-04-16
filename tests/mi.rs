@@ -1,6 +1,6 @@
 use rand::Rng;
 use rv::dist::{Gaussian, Mixture};
-use rv::traits::{Entropy, Rv};
+use rv::traits::*;
 
 #[test]
 fn bivariate_mixture_mi() {

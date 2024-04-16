@@ -39,6 +39,18 @@ pub struct Bernoulli {
     p: f64,
 }
 
+impl Parameterized for Bernoulli {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.p()
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -58,7 +70,7 @@ impl Bernoulli {
     ///
     /// ```rust
     /// # use rv::dist::Bernoulli;
-    /// # use rv::traits::Rv;
+    /// # use rv::traits::*;
     /// # let mut rng = rand::thread_rng();
     /// let b = Bernoulli::new(0.5).unwrap();
     ///
@@ -146,9 +158,9 @@ impl Bernoulli {
     /// assert!(b.set_p(1.0).is_ok());
     /// assert!(b.set_p(-1.0).is_err());
     /// assert!(b.set_p(1.1).is_err());
-    /// assert!(b.set_p(std::f64::INFINITY).is_err());
+    /// assert!(b.set_p(f64::INFINITY).is_err());
     /// assert!(b.set_p(std::f64::NEG_INFINITY).is_err());
-    /// assert!(b.set_p(std::f64::NAN).is_err());
+    /// assert!(b.set_p(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_p(&mut self, p: f64) -> Result<(), BernoulliError> {
@@ -200,7 +212,7 @@ impl From<&Bernoulli> for String {
 
 impl_display!(Bernoulli);
 
-impl<X: Booleable> Rv<X> for Bernoulli {
+impl<X: Booleable> HasDensity<X> for Bernoulli {
     fn f(&self, x: &X) -> f64 {
         let val: bool = x.into_bool();
         if val {
@@ -214,7 +226,9 @@ impl<X: Booleable> Rv<X> for Bernoulli {
         // TODO: this is really slow, we should cache ln(p) and ln(q)
         self.f(x).ln()
     }
+}
 
+impl<X: Booleable> Sampleable<X> for Bernoulli {
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
         let u = rand_distr::Open01;
         let x: f64 = rng.sample(u);
@@ -365,13 +379,12 @@ mod tests {
     use super::*;
     use crate::misc::x2_test;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!([binary] Bernoulli::default());
+    test_basic_impls!(bool, Bernoulli, Bernoulli::default());
 
     #[test]
     fn new() {
@@ -656,7 +669,7 @@ mod tests {
     }
 
     #[test]
-    fn unifrom_entropy() {
+    fn uniform_entropy() {
         let b = Bernoulli::uniform();
         assert::close(b.entropy(), f64::consts::LN_2, TOL);
     }

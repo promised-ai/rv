@@ -15,6 +15,7 @@
 //! - `process`: Gives you access to Gaussian processes.
 //! - `arraydist`: Enables distributions and statistical tests that require the
 //!   [nalgebra](https://crates.io/crates/nalgebra) crate.
+//! - `experimental`: Enables experimental features.
 //!
 //! # Design
 //!
@@ -93,6 +94,8 @@ doctest!("../README.md");
 pub mod consts;
 pub mod data;
 pub mod dist;
+#[cfg(feature = "experimental")]
+pub mod experimental;
 pub mod misc;
 mod model;
 pub mod prelude;
@@ -129,7 +132,6 @@ macro_rules! extract_stat {
                     xs.iter().for_each(|y| stat.observe(y));
                     stat
                 }
-                DataOrSuffStat::None => $stat_type::new(),
             }
         }
     };

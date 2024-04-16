@@ -21,6 +21,26 @@ pub struct LogNormal {
     sigma: f64,
 }
 
+pub struct LogNormalParameters {
+    pub mu: f64,
+    pub sigma: f64,
+}
+
+impl Parameterized for LogNormal {
+    type Parameters = LogNormalParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu: self.mu(),
+            sigma: self.sigma(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu, params.sigma)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -59,7 +79,7 @@ impl LogNormal {
         LogNormal { mu, sigma }
     }
 
-    /// LogNorma(0, 1)
+    /// LogNormal(0, 1)
     ///
     /// # Example
     ///
@@ -109,9 +129,9 @@ impl LogNormal {
     /// # use rv::dist::LogNormal;
     /// # let mut lognormal = LogNormal::new(2.0, 1.5).unwrap();
     /// assert!(lognormal.set_mu(1.3).is_ok());
-    /// assert!(lognormal.set_mu(std::f64::NEG_INFINITY).is_err());
-    /// assert!(lognormal.set_mu(std::f64::INFINITY).is_err());
-    /// assert!(lognormal.set_mu(std::f64::NAN).is_err());
+    /// assert!(lognormal.set_mu(f64::NEG_INFINITY).is_err());
+    /// assert!(lognormal.set_mu(f64::INFINITY).is_err());
+    /// assert!(lognormal.set_mu(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), LogNormalError> {
@@ -164,9 +184,9 @@ impl LogNormal {
     /// assert!(lognormal.set_sigma(2.3).is_ok());
     /// assert!(lognormal.set_sigma(0.0).is_err());
     /// assert!(lognormal.set_sigma(-1.0).is_err());
-    /// assert!(lognormal.set_sigma(std::f64::INFINITY).is_err());
-    /// assert!(lognormal.set_sigma(std::f64::NEG_INFINITY).is_err());
-    /// assert!(lognormal.set_sigma(std::f64::NAN).is_err());
+    /// assert!(lognormal.set_sigma(f64::INFINITY).is_err());
+    /// assert!(lognormal.set_sigma(f64::NEG_INFINITY).is_err());
+    /// assert!(lognormal.set_sigma(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_sigma(&mut self, sigma: f64) -> Result<(), LogNormalError> {
@@ -203,7 +223,7 @@ impl_display!(LogNormal);
 
 macro_rules! impl_traits {
     ($kind: ty) => {
-        impl Rv<$kind> for LogNormal {
+        impl HasDensity<$kind> for LogNormal {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: cache ln(sigma)
                 let xk = f64::from(*x);
@@ -211,7 +231,9 @@ macro_rules! impl_traits {
                 let d = (xk_ln - self.mu) / self.sigma;
                 (0.5 * d).mul_add(-d, -xk_ln - self.sigma.ln() - HALF_LN_2PI)
             }
+        }
 
+        impl Sampleable<$kind> for LogNormal {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let g =
                     rand_distr::LogNormal::new(self.mu, self.sigma).unwrap();
@@ -331,11 +353,12 @@ impl fmt::Display for LogNormalError {
 mod tests {
     use super::*;
     use crate::test_basic_impls;
+    use proptest::prelude::*;
     use std::f64;
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!([continuous] LogNormal::default());
+    test_basic_impls!(f64, LogNormal);
 
     #[test]
     fn new() {
@@ -466,17 +489,16 @@ mod tests {
         assert::close(lognorm.cdf(&2.0_f64), 0.755_891_404_214_417_3, TOL);
     }
 
-    #[test]
-    fn quantile_agree_with_cdf() {
-        let mut rng = rand::thread_rng();
-        let lognorm = LogNormal::standard();
-        let xs: Vec<f64> = lognorm.sample(100, &mut rng);
-
-        xs.iter().for_each(|x| {
-            let p = lognorm.cdf(x);
+    proptest! {
+        #[test]
+        fn quantile_agree_with_cdf(p in 0.0..1.0) {
+            prop_assume!(p > 0.0);
+            prop_assume!(p < 1.0);
+            let lognorm = LogNormal::standard();
             let y: f64 = lognorm.quantile(p);
-            assert::close(y, *x, TOL);
-        })
+            let p2 = lognorm.cdf(&y);
+            assert::close(p, p2, TOL);
+        }
     }
 
     #[test]

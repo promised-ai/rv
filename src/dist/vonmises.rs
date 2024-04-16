@@ -9,7 +9,7 @@ use rand::Rng;
 use std::f64::consts::PI;
 use std::fmt;
 
-/// [VonMises distirbution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
+/// [VonMises distribution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
 /// on the circular interval (0, 2π]
 ///
 /// # Example
@@ -38,6 +38,26 @@ pub struct VonMises {
     k: f64,
     // bessel:i0(k), save some cycles
     i0_k: f64,
+}
+
+pub struct VonMisesParameters {
+    pub mu: f64,
+    pub k: f64,
+}
+
+impl Parameterized for VonMises {
+    type Parameters = VonMisesParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu: self.mu(),
+            k: self.k(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu, params.k)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -118,9 +138,9 @@ impl VonMises {
     /// assert!(vm.set_mu(0.0 - 0.001).is_err());
     /// assert!(vm.set_mu(2.0 * std::f64::consts::PI + 0.001).is_err());
     ///
-    /// assert!(vm.set_mu(std::f64::NEG_INFINITY).is_err());
-    /// assert!(vm.set_mu(std::f64::INFINITY).is_err());
-    /// assert!(vm.set_mu(std::f64::NAN).is_err());
+    /// assert!(vm.set_mu(f64::NEG_INFINITY).is_err());
+    /// assert!(vm.set_mu(f64::INFINITY).is_err());
+    /// assert!(vm.set_mu(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), VonMisesError> {
@@ -182,9 +202,9 @@ impl VonMises {
     /// assert!(vm.set_k(0.0).is_err());
     /// assert!(vm.set_k(-1.0).is_err());
     ///
-    /// assert!(vm.set_k(std::f64::INFINITY).is_err());
-    /// assert!(vm.set_k(std::f64::NEG_INFINITY).is_err());
-    /// assert!(vm.set_k(std::f64::NAN).is_err());
+    /// assert!(vm.set_k(f64::INFINITY).is_err());
+    /// assert!(vm.set_k(f64::NEG_INFINITY).is_err());
+    /// assert!(vm.set_k(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_k(&mut self, k: f64) -> Result<(), VonMisesError> {
@@ -222,13 +242,15 @@ impl_display!(VonMises);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for VonMises {
+        impl HasDensity<$kind> for VonMises {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could also cache ln(i0_k)
                 let xf = f64::from(*x);
                 self.k.mul_add((xf - self.mu).cos(), -LN_2PI) - self.i0_k.ln()
             }
+        }
 
+        impl Sampleable<$kind> for VonMises {
             // Best, D. J., & Fisher, N. I. (1979). Efficient simulation of the
             //     von Mises distribution. Applied Statistics, 152-157.
             // https://www.researchgate.net/publication/246035131_Efficient_Simulation_of_the_von_Mises_Distribution
@@ -349,13 +371,12 @@ mod tests {
     use super::*;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
-    use std::f64::EPSILON;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] VonMises::default());
+    test_basic_impls!(f64, VonMises);
 
     #[test]
     fn new_should_allow_mu_in_0_2pi() {
@@ -367,7 +388,7 @@ mod tests {
     #[test]
     fn new_should_not_allow_mu_outside_0_2pi() {
         assert!(VonMises::new(-PI, 1.0).is_err());
-        assert!(VonMises::new(-EPSILON, 1.0).is_err());
+        assert!(VonMises::new(-f64::EPSILON, 1.0).is_err());
         assert!(VonMises::new(2.0_f64.mul_add(PI, 0.001), 1.0).is_err());
         assert!(VonMises::new(100.0, 1.0).is_err());
     }

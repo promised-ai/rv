@@ -31,7 +31,7 @@ impl RBFKernel {
             Err(KernelError::ParameterOutOfBounds {
                 name: "length_scale".to_string(),
                 given: length_scale,
-                bounds: (0.0, std::f64::INFINITY),
+                bounds: (0.0, f64::INFINITY),
             })
         } else {
             Ok(Self { length_scale })

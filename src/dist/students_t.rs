@@ -6,7 +6,6 @@ use crate::misc::ln_gammafn;
 use crate::traits::*;
 use rand::Rng;
 use std::f64::consts::PI;
-use std::f64::INFINITY;
 use std::fmt;
 
 /// [Student's T distribution](https://en.wikipedia.org/wiki/Student%27s_t-distribution)
@@ -17,6 +16,18 @@ use std::fmt;
 pub struct StudentsT {
     /// Degrees of freedom, ν, in (0, ∞)
     v: f64,
+}
+
+impl Parameterized for StudentsT {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.v()
+    }
+
+    fn from_params(v: Self::Parameters) -> Self {
+        Self::new_unchecked(v)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -30,7 +41,7 @@ pub enum StudentsTError {
 }
 
 impl StudentsT {
-    /// Create a new Student's T distribtuion with degrees of freedom, v.
+    /// Create a new Student's T distribution with degrees of freedom, v.
     #[inline]
     pub fn new(v: f64) -> Result<Self, StudentsTError> {
         if v <= 0.0 {
@@ -81,9 +92,9 @@ impl StudentsT {
     /// assert!(t.set_v(-1.0).is_err());
     ///
     ///
-    /// assert!(t.set_v(std::f64::INFINITY).is_err());
-    /// assert!(t.set_v(std::f64::NEG_INFINITY).is_err());
-    /// assert!(t.set_v(std::f64::NAN).is_err());
+    /// assert!(t.set_v(f64::INFINITY).is_err());
+    /// assert!(t.set_v(f64::NEG_INFINITY).is_err());
+    /// assert!(t.set_v(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_v(&mut self, v: f64) -> Result<(), StudentsTError> {
@@ -120,7 +131,7 @@ impl_display!(StudentsT);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for StudentsT {
+        impl HasDensity<$kind> for StudentsT {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(pi*v) and ln_gamma(v/2)
                 let vp1 = (self.v + 1.0) / 2.0;
@@ -132,7 +143,9 @@ macro_rules! impl_traits {
                 );
                 zterm + xterm
             }
+        }
 
+        impl Sampleable<$kind> for StudentsT {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let t = rand_distr::StudentT::new(self.v).unwrap();
                 rng.sample(t) as $kind
@@ -201,7 +214,7 @@ impl Kurtosis for StudentsT {
         if self.v > 4.0 {
             Some(6.0 / (self.v - 4.0))
         } else if self.v > 2.0 {
-            Some(INFINITY)
+            Some(f64::INFINITY)
         } else {
             None
         }
@@ -232,7 +245,7 @@ mod tests {
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!([continuous] StudentsT::default());
+    test_basic_impls!(f64, StudentsT);
 
     #[test]
     fn new() {

@@ -28,6 +28,26 @@ pub struct InvGamma {
     scale: f64,
 }
 
+pub struct InvGammaParameters {
+    pub shape: f64,
+    pub scale: f64,
+}
+
+impl Parameterized for InvGamma {
+    type Parameters = InvGammaParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            shape: self.shape(),
+            scale: self.scale(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.shape, params.scale)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -69,7 +89,7 @@ impl InvGamma {
         InvGamma { shape, scale }
     }
 
-    /// Get the shape paramter
+    /// Get the shape parameter
     ///
     /// # Example
     ///
@@ -104,9 +124,9 @@ impl InvGamma {
     /// assert!(ig.set_shape(1.1).is_ok());
     /// assert!(ig.set_shape(0.0).is_err());
     /// assert!(ig.set_shape(-1.0).is_err());
-    /// assert!(ig.set_shape(std::f64::INFINITY).is_err());
-    /// assert!(ig.set_shape(std::f64::NEG_INFINITY).is_err());
-    /// assert!(ig.set_shape(std::f64::NAN).is_err());
+    /// assert!(ig.set_shape(f64::INFINITY).is_err());
+    /// assert!(ig.set_shape(f64::NEG_INFINITY).is_err());
+    /// assert!(ig.set_shape(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_shape(&mut self, shape: f64) -> Result<(), InvGammaError> {
@@ -161,9 +181,9 @@ impl InvGamma {
     /// assert!(ig.set_scale(1.1).is_ok());
     /// assert!(ig.set_scale(0.0).is_err());
     /// assert!(ig.set_scale(-1.0).is_err());
-    /// assert!(ig.set_scale(std::f64::INFINITY).is_err());
-    /// assert!(ig.set_scale(std::f64::NEG_INFINITY).is_err());
-    /// assert!(ig.set_scale(std::f64::NAN).is_err());
+    /// assert!(ig.set_scale(f64::INFINITY).is_err());
+    /// assert!(ig.set_scale(f64::NEG_INFINITY).is_err());
+    /// assert!(ig.set_scale(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_scale(&mut self, scale: f64) -> Result<(), InvGammaError> {
@@ -203,7 +223,7 @@ impl_display!(InvGamma);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for InvGamma {
+        impl HasDensity<$kind> for InvGamma {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(scale) and ln_gamma(shape)
                 let xf = f64::from(*x);
@@ -213,7 +233,9 @@ macro_rules! impl_traits {
                         .mul_add(self.scale.ln(), -ln_gammafn(self.shape)),
                 ) - (self.scale / xf)
             }
+        }
 
+        impl Sampleable<$kind> for InvGamma {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let g = rand_distr::Gamma::new(self.shape, self.scale.recip())
                     .unwrap();
@@ -356,7 +378,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] InvGamma::default());
+    test_basic_impls!(f64, InvGamma, InvGamma::new_unchecked(1.5, 2.3));
 
     #[test]
     fn new() {
@@ -456,7 +478,7 @@ mod tests {
     }
 
     #[test]
-    fn ln_pdf_at_mode_should_be_higest() {
+    fn ln_pdf_at_mode_should_be_highest() {
         let ig = InvGamma::new(3.0, 2.0).unwrap();
         let x: f64 = ig.mode().unwrap();
         let delta = 1E-6;

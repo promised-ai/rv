@@ -1,9 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::consts::HALF_LN_PI;
-use crate::data::{
-    extract_stat, extract_stat_then, DataOrSuffStat, GaussianSuffStat,
-};
+use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
@@ -54,8 +52,8 @@ fn posterior_from_stat(
 
 impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     type Posterior = Self;
-    type LnMCache = f64;
-    type LnPpCache = (GaussianSuffStat, f64);
+    type MCache = f64;
+    type PpCache = (GaussianSuffStat, f64);
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
         extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
@@ -64,13 +62,13 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     }
 
     #[inline]
-    fn ln_m_cache(&self) -> Self::LnMCache {
+    fn ln_m_cache(&self) -> Self::MCache {
         ln_z(self.k, self.v, self.s2)
     }
 
     fn ln_m_with_cache(
         &self,
-        cache: &Self::LnMCache,
+        cache: &Self::MCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
         extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
@@ -82,10 +80,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     }
 
     #[inline]
-    fn ln_pp_cache(
-        &self,
-        x: &DataOrSuffStat<f64, Gaussian>,
-    ) -> Self::LnPpCache {
+    fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
         let stat = extract_stat(x, GaussianSuffStat::new);
         let post_n = posterior_from_stat(self, &stat);
         let lnz_n = ln_z(post_n.k, post_n.v, post_n.s2);
@@ -93,7 +88,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
         // post_n
     }
 
-    fn ln_pp_with_cache(&self, cache: &Self::LnPpCache, y: &f64) -> f64 {
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
         let mut stat = cache.0.clone();
         let lnz_n = cache.1;
 
@@ -111,8 +106,16 @@ gaussian_prior_geweke_testable!(NormalInvChiSquared, Gaussian);
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::test_conjugate_prior;
 
     const TOL: f64 = 1E-12;
+
+    test_conjugate_prior!(
+        f64,
+        Gaussian,
+        NormalInvChiSquared,
+        NormalInvChiSquared::new(0.1, 1.2, 0.5, 1.8).unwrap()
+    );
 
     #[test]
     fn geweke() {
@@ -135,7 +138,7 @@ mod test {
     }
 
     fn post_params(
-        xs: &Vec<f64>,
+        xs: &[f64],
         m: f64,
         k: f64,
         v: f64,
@@ -163,7 +166,7 @@ mod test {
     // examples/dpgmm.rs) words with the NormalInvGamma prior, then we should be
     // good to go.
     fn alternate_ln_marginal(
-        xs: &Vec<f64>,
+        xs: &[f64],
         m: f64,
         k: f64,
         v: f64,
@@ -215,7 +218,7 @@ mod test {
     #[test]
     fn posterior_of_nothing_is_prior() {
         let prior = NormalInvChiSquared::new_unchecked(1.2, 2.3, 3.4, 4.5);
-        let post = prior.posterior(&DataOrSuffStat::None);
+        let post = prior.posterior(&DataOrSuffStat::from(&vec![]));
         assert_eq!(prior.m(), post.m());
         assert_eq!(prior.k(), post.k());
         assert_eq!(prior.v(), post.v());
@@ -305,7 +308,8 @@ mod test {
 
         let (m, k, v, s2) = (1.0, 2.2, 3.3, 4.4);
         let nix = NormalInvChiSquared::new(m, k, v, s2).unwrap();
-        let ln_pp = nix.ln_pp(&x, &DataOrSuffStat::<f64, Gaussian>::None);
+        let ln_pp =
+            nix.ln_pp(&x, &DataOrSuffStat::<f64, Gaussian>::from(&vec![]));
 
         let mc_est = {
             let ln_fs: Vec<f64> = nix
@@ -331,7 +335,8 @@ mod test {
 
         let (ln_pp, ln_m) = {
             let ys = vec![y];
-            let data = DataOrSuffStat::<f64, Gaussian>::None;
+            let new_vec = Vec::new();
+            let data = DataOrSuffStat::<f64, Gaussian>::from(&new_vec);
             let y_data = DataOrSuffStat::<f64, Gaussian>::from(&ys);
             (nix.ln_pp(&y, &data), nix.ln_m(&y_data))
         };

@@ -33,6 +33,26 @@ pub struct Cauchy {
     scale: f64,
 }
 
+pub struct CauchyParameters {
+    pub loc: f64,
+    pub scale: f64,
+}
+
+impl Parameterized for Cauchy {
+    type Parameters = CauchyParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            loc: self.loc(),
+            scale: self.scale(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.loc, params.scale)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -101,9 +121,9 @@ impl Cauchy {
     /// # use rv::dist::Cauchy;
     /// # let mut c = Cauchy::new(0.1, 1.0).unwrap();
     /// assert!(c.set_loc(2.0).is_ok());
-    /// assert!(c.set_loc(std::f64::INFINITY).is_err());
-    /// assert!(c.set_loc(std::f64::NEG_INFINITY).is_err());
-    /// assert!(c.set_loc(std::f64::NAN).is_err());
+    /// assert!(c.set_loc(f64::INFINITY).is_err());
+    /// assert!(c.set_loc(f64::NEG_INFINITY).is_err());
+    /// assert!(c.set_loc(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_loc(&mut self, loc: f64) -> Result<(), CauchyError> {
@@ -154,8 +174,8 @@ impl Cauchy {
     /// # let mut c = Cauchy::new(0.1, 1.0).unwrap();
     /// assert!(c.set_scale(0.0).is_err());
     /// assert!(c.set_scale(-1.0).is_err());
-    /// assert!(c.set_scale(std::f64::NAN).is_err());
-    /// assert!(c.set_scale(std::f64::INFINITY).is_err());
+    /// assert!(c.set_scale(f64::NAN).is_err());
+    /// assert!(c.set_scale(f64::INFINITY).is_err());
     /// ```
     #[inline]
     pub fn set_scale(&mut self, scale: f64) -> Result<(), CauchyError> {
@@ -192,7 +212,7 @@ impl_display!(Cauchy);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Cauchy {
+        impl HasDensity<$kind> for Cauchy {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let ln_scale = self.scale.ln();
                 let term = 2.0_f64.mul_add(
@@ -202,7 +222,9 @@ macro_rules! impl_traits {
                 // TODO: make a logaddexp method for two floats
                 -logsumexp(&[ln_scale, term]) - LN_PI
             }
+        }
 
+        impl Sampleable<$kind> for Cauchy {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let cauchy = RCauchy::new(self.loc, self.scale).unwrap();
                 rng.sample(cauchy) as $kind
@@ -289,7 +311,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Cauchy::default());
+    test_basic_impls!(f64, Cauchy);
 
     #[test]
     fn ln_pdf_loc_zero() {

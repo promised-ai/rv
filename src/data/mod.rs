@@ -2,12 +2,6 @@
 mod partition;
 mod stat;
 
-#[cfg(feature = "datum")]
-mod datum;
-
-#[cfg(feature = "datum")]
-pub use datum::Datum;
-
 pub use partition::Partition;
 pub use stat::BernoulliSuffStat;
 pub use stat::BetaSuffStat;
@@ -154,8 +148,6 @@ where
     Data(&'a [X]),
     /// A sufficient statistic
     SuffStat(&'a Fx::Stat),
-    /// No data
-    None,
 }
 
 impl<'a, X, Fx> DataOrSuffStat<'a, X, Fx>
@@ -168,7 +160,6 @@ where
         match &self {
             DataOrSuffStat::Data(data) => data.len(),
             DataOrSuffStat::SuffStat(s) => s.n(),
-            DataOrSuffStat::None => 0,
         }
     }
 
@@ -217,33 +208,6 @@ where
     pub fn is_suffstat(&self) -> bool {
         matches!(&self, DataOrSuffStat::SuffStat(..))
     }
-
-    /// Determine whether the object is empty
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use rv::data::DataOrSuffStat;
-    /// use rv::dist::Gaussian;
-    /// use rv::data::GaussianSuffStat;
-    ///
-    /// let xs = vec![1.0_f64];
-    /// let data: DataOrSuffStat<f64, Gaussian> = DataOrSuffStat::Data(&xs);
-    ///
-    /// assert!(!data.is_none());
-    ///
-    /// let gauss_stats = GaussianSuffStat::new();
-    /// let suffstat: DataOrSuffStat<f64, Gaussian> = DataOrSuffStat::SuffStat(&gauss_stats);
-    ///
-    /// assert!(!suffstat.is_none());
-    ///
-    /// let none: DataOrSuffStat<f64, Gaussian> = DataOrSuffStat::None;
-    ///
-    /// assert!(none.is_none());
-    /// ```
-    pub fn is_none(&self) -> bool {
-        matches!(&self, DataOrSuffStat::None)
-    }
 }
 
 /// Convert a `DataOrSuffStat` into a `Stat`
@@ -264,7 +228,6 @@ where
             xs.iter().for_each(|y| stat.observe(y));
             stat
         }
-        DataOrSuffStat::None => stat_ctor(),
     }
 }
 

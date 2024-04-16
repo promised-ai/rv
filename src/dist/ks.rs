@@ -1,17 +1,13 @@
 //! Kolmogorow-Smirnov two-sided test for large values of N.
 //! Heavily inspired by SciPy's implementation which can be found here:
-//! https://github.com/scipy/scipy/blob/a767030252ba3f7c8e2924847dffa7024171657b/scipy/special/cephes/kolmogorov.c#L153
-
+//! <https://github.com/scipy/scipy/blob/a767030252ba3f7c8e2924847dffa7024171657b/scipy/special/cephes/kolmogorov.c#L153>
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
-use std::f64::{
-    consts::{PI, SQRT_2},
-    EPSILON,
-};
+use std::f64::consts::{PI, SQRT_2};
 
 #[inline]
 fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
@@ -19,9 +15,12 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
     diff <= rtol.mul_add(y.abs(), atol)
 }
 
-/// Kolmogorov-Smirnov distribution where the number of samples, $N$, is assumed to be large
-/// This is the distribution of $\sqrt{N} D_n$ where $D_n = \sup_x |F_n(x) - F(x)|$ where $F$
-/// is the true CDF and $F_n$ the emperical CDF.
+/// Kolmogorov-Smirnov distribution where the number of samples, $N$, is
+/// assumed to be large.
+///
+/// This is the distribution of $\sqrt{N} D_n$ where
+/// $D_n = \sup_x |F_n(x) - F(x)|$ where $F$ is the true CDF and $F_n$ the
+/// empirical CDF.
 ///
 /// # Example
 ///
@@ -40,6 +39,16 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct KsTwoAsymptotic {}
+
+impl Parameterized for KsTwoAsymptotic {
+    type Parameters = ();
+
+    fn emit_params(&self) -> Self::Parameters {}
+
+    fn from_params(_params: Self::Parameters) -> Self {
+        Self {}
+    }
+}
 
 struct CdfPdf {
     cdf: f64,
@@ -97,7 +106,7 @@ impl KsTwoAsymptotic {
             }
 
             CdfPdf {
-                cdf: p.max(0.0).min(1.0),
+                cdf: p.clamp(0.0, 1.0),
                 pdf: d.max(0.0),
             }
         } else {
@@ -133,7 +142,7 @@ impl KsTwoAsymptotic {
             p *= 2.0 * v;
             d *= 8.0 * v * x;
             p = p.max(0.0);
-            let cdf = (1.0 - p).max(0.0).min(1.0);
+            let cdf = (1.0 - p).clamp(0.0, 1.0);
             let pdf = d.max(0.0);
             CdfPdf { cdf, pdf }
         }
@@ -145,13 +154,13 @@ impl KsTwoAsymptotic {
     #[allow(clippy::many_single_char_names)]
     fn inverse(sf: f64, cdf: f64) -> f64 {
         if !(sf >= 0.0 && cdf >= 0.0 && sf <= 1.0 && cdf <= 1.0)
-            || (1.0 - cdf - sf).abs() > 4.0 * EPSILON
+            || (1.0 - cdf - sf).abs() > 4.0 * f64::EPSILON
         {
-            std::f64::NAN
+            f64::NAN
         } else if cdf == 0.0 {
             0.0
         } else if sf == 0.0 {
-            std::f64::INFINITY
+            f64::INFINITY
         } else {
             let mut x: f64;
             let mut a: f64;
@@ -177,7 +186,7 @@ impl KsTwoAsymptotic {
                         * (-(logcdf + b.ln() - log_sqrt_2pi)).sqrt());
                 x = (a + b) / 2.0;
             } else {
-                const JITTERB: f64 = EPSILON * 256.0;
+                const JITTERB: f64 = f64::EPSILON * 256.0;
                 let pba = sf / (2.0 * (1.0 - (-4.0_f64).exp()));
                 let pbb = sf * (1.0 - JITTERB) / 2.0;
 
@@ -230,7 +239,7 @@ impl KsTwoAsymptotic {
                 }
 
                 let dfdx = -c.pdf;
-                if dfdx.abs() <= EPSILON {
+                if dfdx.abs() <= f64::EPSILON {
                     x = (a + b) / 2.0;
                 } else {
                     let t = df / dfdx;
@@ -238,18 +247,21 @@ impl KsTwoAsymptotic {
                 }
 
                 if x >= a && x <= b {
-                    if within_tol(x, x0, EPSILON, EPSILON * 2.0) {
+                    if within_tol(x, x0, f64::EPSILON, f64::EPSILON * 2.0) {
                         break;
-                    } else if (x - a).abs() < EPSILON || (x - b).abs() < EPSILON
+                    } else if (x - a).abs() < f64::EPSILON
+                        || (x - b).abs() < f64::EPSILON
                     {
                         x = (a + b) / 2.0;
-                        if (x - a).abs() > EPSILON || (x - b).abs() < EPSILON {
+                        if (x - a).abs() > f64::EPSILON
+                            || (x - b).abs() < f64::EPSILON
+                        {
                             break;
                         }
                     }
                 } else {
                     x = (a + b) / 2.0;
-                    if within_tol(x, x0, EPSILON, EPSILON * 2.0) {
+                    if within_tol(x, x0, f64::EPSILON, f64::EPSILON * 2.0) {
                         break;
                     }
                 }
@@ -270,11 +282,13 @@ impl_display!(KsTwoAsymptotic);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for KsTwoAsymptotic {
+        impl HasDensity<$kind> for KsTwoAsymptotic {
             fn ln_f(&self, x: &$kind) -> f64 {
                 Self::compute(*x as f64).pdf.ln()
             }
+        }
 
+        impl Sampleable<$kind> for KsTwoAsymptotic {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let p: f64 = rng.gen();
                 self.invcdf(p)

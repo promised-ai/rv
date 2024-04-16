@@ -32,6 +32,28 @@ pub struct Gev {
     shape: f64,
 }
 
+pub struct GevParameters {
+    pub loc: f64,
+    pub scale: f64,
+    pub shape: f64,
+}
+
+impl Parameterized for Gev {
+    type Parameters = GevParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            loc: self.loc(),
+            scale: self.scale(),
+            shape: self.shape(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.loc, params.scale, params.shape)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -102,9 +124,9 @@ impl Gev {
     /// # use rv::dist::Gev;
     /// # let mut gev = Gev::new(1.2, 2.3, 3.4).unwrap();
     /// assert!(gev.set_loc(2.8).is_ok());
-    /// assert!(gev.set_loc(std::f64::INFINITY).is_err());
-    /// assert!(gev.set_loc(std::f64::NEG_INFINITY).is_err());
-    /// assert!(gev.set_loc(std::f64::NAN).is_err());
+    /// assert!(gev.set_loc(f64::INFINITY).is_err());
+    /// assert!(gev.set_loc(f64::NEG_INFINITY).is_err());
+    /// assert!(gev.set_loc(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_loc(&mut self, loc: f64) -> Result<(), GevError> {
@@ -156,9 +178,9 @@ impl Gev {
     /// # use rv::dist::Gev;
     /// # let mut gev = Gev::new(1.2, 2.3, 3.4).unwrap();
     /// assert!(gev.set_shape(2.8).is_ok());
-    /// assert!(gev.set_shape(std::f64::INFINITY).is_err());
-    /// assert!(gev.set_shape(std::f64::NEG_INFINITY).is_err());
-    /// assert!(gev.set_shape(std::f64::NAN).is_err());
+    /// assert!(gev.set_shape(f64::INFINITY).is_err());
+    /// assert!(gev.set_shape(f64::NEG_INFINITY).is_err());
+    /// assert!(gev.set_shape(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_shape(&mut self, shape: f64) -> Result<(), GevError> {
@@ -212,9 +234,9 @@ impl Gev {
     /// assert!(gev.set_scale(2.8).is_ok());
     /// assert!(gev.set_scale(0.0).is_err());
     /// assert!(gev.set_scale(-1.0).is_err());
-    /// assert!(gev.set_scale(std::f64::INFINITY).is_err());
-    /// assert!(gev.set_scale(std::f64::NEG_INFINITY).is_err());
-    /// assert!(gev.set_scale(std::f64::NAN).is_err());
+    /// assert!(gev.set_scale(f64::INFINITY).is_err());
+    /// assert!(gev.set_scale(f64::NEG_INFINITY).is_err());
+    /// assert!(gev.set_scale(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_scale(&mut self, scale: f64) -> Result<(), GevError> {
@@ -253,13 +275,15 @@ impl_display!(Gev);
 
 macro_rules! impl_traits {
     ($kind: ty) => {
-        impl Rv<$kind> for Gev {
+        impl HasDensity<$kind> for Gev {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(scale)
                 let tv = t(self.loc, self.shape, self.scale, f64::from(*x));
                 (self.shape + 1.0).mul_add(tv.ln(), -self.scale.ln()) - tv
             }
+        }
 
+        impl Sampleable<$kind> for Gev {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let uni = rand_distr::Open01;
                 let u: f64 = rng.sample(uni);
@@ -399,13 +423,12 @@ mod tests {
     use crate::misc::ks_test;
     use crate::misc::linspace;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Gev::new(0.0, 1.0, 2.0).unwrap());
+    test_basic_impls!(f64, Gev, Gev::new(0.0, 1.0, 2.0).unwrap());
 
     #[test]
     fn new() {

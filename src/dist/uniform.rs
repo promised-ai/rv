@@ -38,6 +38,18 @@ pub struct Uniform {
     lnf: OnceLock<f64>,
 }
 
+impl Parameterized for Uniform {
+    type Parameters = (f64, f64);
+
+    fn emit_params(&self) -> Self::Parameters {
+        (self.a(), self.b())
+    }
+
+    fn from_params((a, b): Self::Parameters) -> Self {
+        Self::new_unchecked(a, b)
+    }
+}
+
 impl PartialEq for Uniform {
     fn eq(&self, other: &Uniform) -> bool {
         self.a == other.a && self.b == other.b
@@ -168,7 +180,7 @@ impl_display!(Uniform);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Uniform {
+        impl HasDensity<$kind> for Uniform {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let xf = f64::from(*x);
                 if self.a <= xf && xf <= self.b {
@@ -178,7 +190,9 @@ macro_rules! impl_traits {
                     f64::NEG_INFINITY
                 }
             }
+        }
 
+        impl Sampleable<$kind> for Uniform {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let u = rand_distr::Uniform::new(self.a, self.b);
                 rng.sample(u) as $kind
@@ -290,7 +304,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Uniform::default());
+    test_basic_impls!(f64, Uniform);
 
     #[test]
     fn new() {
