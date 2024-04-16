@@ -1,8 +1,5 @@
 use crate::experimental::stick_breaking_process::stick_breaking::StickBreaking;
-use crate::{
-    data::UnitPowerLawSuffStat,
-    traits::{HasSuffStat, SuffStat},
-};
+use crate::traits::{HasSuffStat, SuffStat};
 
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -53,26 +50,16 @@ impl StickBreakingSuffStat {
             sum_log_q: 0.0,
         }
     }
-}
 
-impl From<StickBreakingSuffStat> for UnitPowerLawSuffStat {
-    /// Converts `StickBreakingSuffStat` into `UnitPowerLawSuffStat`.
-    ///
-    /// This conversion allows the statistics collected from a stick-breaking process
-    /// to be used directly with unit power law distributions.
-    ///
-    /// # Arguments
-    ///
-    /// * `stat` - The `StickBreakingSuffStat` instance to convert.
-    ///
-    /// # Returns
-    ///
-    /// A new instance of `UnitPowerLawSuffStat` containing the converted statistics.
-    fn from(stat: StickBreakingSuffStat) -> Self {
-        Self {
-            n: stat.num_breaks,
-            sum_ln_x: stat.sum_log_q,
-        }
+    /// Returns the number of breaks observed in the stick-breaking process.
+    pub fn num_breaks(&self) -> usize {
+        self.num_breaks
+    }
+
+    /// Returns the sum of the logarithms of the remaining stick lengths after
+    /// each break.
+    pub fn sum_log_q(&self) -> f64 {
+        self.sum_log_q
     }
 }
 
