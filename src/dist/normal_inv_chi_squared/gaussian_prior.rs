@@ -30,9 +30,8 @@ fn posterior_from_stat(
 
     let (m, k, v, s2) = nix.params();
 
-    let x_bar = stat.mean();
-    let sum_x = x_bar * n;
-    let xbar = sum_x / n;
+    let xbar = stat.mean();
+    let sum_x = xbar * n;
     // Sum (x - xbar)^2
     //   = Sum[ x*x - 2x*xbar + xbar*xbar ]
     //   = Sum[x^2] + n * xbar^2 - 2 * xbar + Sum[x]
@@ -41,10 +40,13 @@ fn posterior_from_stat(
     let mid = (n * xbar).mul_add(-xbar, stat.sum_x_sq());
 
     let kn = k + n;
+    let divby_k_plus_n = kn.recip();
     let vn = v + n;
-    let mn = k.mul_add(m, sum_x) / kn;
-    let s2n =
-        ((n * k / kn) * (m - xbar)).mul_add(m - xbar, v.mul_add(s2, mid)) / vn;
+    let mn = k.mul_add(m, sum_x) * divby_k_plus_n;
+    let diff_m_xbar = m - xbar;
+    let s2n = ((n * k * divby_k_plus_n) * diff_m_xbar)
+        .mul_add(diff_m_xbar, v.mul_add(s2, mid))
+        / vn;
 
     NormalInvChiSquared::new(mn, kn, vn, s2n)
         .expect("Invalid posterior params.")

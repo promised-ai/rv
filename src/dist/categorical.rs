@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{CategoricalDatum, CategoricalSuffStat};
 use crate::impl_display;
-use crate::misc::{argmax, ln_pflip, logsumexp, vec_to_string};
+use crate::misc::{argmax, ln_pflips, logsumexp, vec_to_string};
 use crate::traits::*;
 use rand::Rng;
 use std::fmt;
@@ -215,12 +215,12 @@ impl<X: CategoricalDatum> HasDensity<X> for Categorical {
 
 impl<X: CategoricalDatum> Sampleable<X> for Categorical {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
-        let ix = ln_pflip(&self.ln_weights, 1, true, &mut rng)[0];
+        let ix = ln_pflips(&self.ln_weights, 1, true, &mut rng)[0];
         CategoricalDatum::from_usize(ix)
     }
 
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<X> {
-        ln_pflip(&self.ln_weights, n, true, &mut rng)
+        ln_pflips(&self.ln_weights, n, true, &mut rng)
             .iter()
             .map(|&ix| CategoricalDatum::from_usize(ix))
             .collect()

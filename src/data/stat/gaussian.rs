@@ -130,8 +130,10 @@ macro_rules! impl_gaussian_suffstat {
 
                     let n = self.n as f64;
                     let nm1 = (self.n - 1) as f64;
+                    let nm1_recip = 1.0 / nm1;
 
-                    let old_mean = (n / nm1).mul_add(self.mean, -xf / nm1);
+                    let old_mean =
+                        (n * nm1_recip).mul_add(self.mean, -xf * nm1_recip);
 
                     self.sx -= (xf - old_mean) * (xf - self.mean);
                     self.mean = old_mean;

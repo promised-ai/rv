@@ -127,18 +127,25 @@ impl From<&BreakSequence> for PartialWeights {
 
 impl From<&PartialWeights> for BreakSequence {
     fn from(ws: &PartialWeights) -> Self {
-        let mut remaining = 1.0;
-        let bs =
+        let mut r_new = 1.0;
+        let mut r_old = 1.0;
+        let mut b = f64::NAN;
+        let bs: Vec<f64> =
             ws.0.iter()
                 .map(|w| {
                     debug_assert!((0.0..=1.0).contains(w));
-                    let b = 1.0 - (w / remaining);
+                    r_new = r_old - w;
+                    debug_assert!((0.0..=1.0).contains(&r_new));
+                    b = r_new / r_old;
                     debug_assert!((0.0..=1.0).contains(&b));
-                    remaining -= w;
-                    debug_assert!((0.0..=1.0).contains(&remaining));
+                    r_old = r_new;
                     b
                 })
                 .collect();
+        assert!(
+            (0.0..=1.0).contains(bs.last().unwrap()),
+            "Weights cannot sum to more than one."
+        );
         BreakSequence(bs)
     }
 }
@@ -185,6 +192,31 @@ impl Sampleable<StickSequence> for StickBreaking {
         }
         seq
     }
+}
+
+fn rising_pow(x: f64, n: usize) -> f64 {
+    let mut r = 1.0;
+    for k in 0..n {
+        r *= x + k as f64;
+    }
+    r
+}
+
+fn rising_beta_prod(x: f64, a: usize, y: f64, b: usize) -> f64 {
+    let x_y = x + y;
+    let mut r = 1.0;
+    for k in 0..a {
+        let k = k as f64;
+        r *= x + k;
+        r /= x_y + k;
+    }
+    let x_y_a = x_y + a as f64;
+    for k in 0..b {
+        let k = k as f64;
+        r *= y + k;
+        r /= x_y_a + k;
+    }
+    r
 }
 
 /// Implements the `Sampleable` trait for `StickBreaking`.
@@ -281,16 +313,25 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
             .iter()
             .zip_longest(params)
             .map(|pair| match pair {
-                Left((yes, no)) => {
-                    let (yes, no) = (*yes as f64, *no as f64);
+                Left((num_pass, num_fail)) => {
+                    let (num_pass, num_fail) =
+                        (*num_pass as f64, *num_fail as f64);
 
                     // TODO: Simplify this after everything is working
-                    (yes + alpha).ln_beta(no + 1.0) - alpha.ln_beta(1.0)
+                    (num_pass + alpha).ln_beta(num_fail + 1.0)
+                        - alpha.ln_beta(1.0)
+                    // num_pass * alpha.ln() - (num_pass + num_fail) * (alpha + 1.0).ln()
                 }
                 Right((_a, _b)) => 0.0,
-                Both((yes, no), (a, b)) => {
-                    let (yes, no) = (*yes as f64, *no as f64);
-                    (yes + a).ln_beta(no + b) - a.ln_beta(b)
+                Both((num_pass, num_fail), (a, b)) => {
+                    // let (num_pass, num_fail) = (*num_pass as f64, *num_fail as f64);
+                    // num_pass * a.ln() + num_fail * b.ln() - (num_pass + num_fail) * (a + b).ln()
+                    // (num_pass + a).ln_beta(num_fail + b) - a.ln_beta(b)
+
+                    // rising_pow(a, *num_pass).ln() + rising_pow(b, *num_fail).ln()
+                    // - rising_pow(a + b, num_pass + num_fail).ln()
+
+                    rising_beta_prod(a, *num_pass, b, *num_fail).ln()
                 }
             })
             .sum()
