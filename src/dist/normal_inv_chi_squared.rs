@@ -367,7 +367,6 @@ impl NormalInvChiSquared {
         let k = self.k;
         let v = self.v;
         let s2 = self.s2;
-        println!("Calling ln_z");
         let ln_gamma_half_v = ln_gammafn(0.5 * self.v);
         // -0.5 * k.ln() + v2.ln_gamma().0 - v2 * (v * s2).ln()
         let term = (v * s2).ln().mul_add(-0.5 * v, ln_gamma_half_v);
