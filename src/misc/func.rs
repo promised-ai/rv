@@ -298,27 +298,19 @@ pub fn ln_pflips<R: Rng>(
 
 pub fn ln_pflip<R: Rng>(
     ln_weights: &[f64],
-    normed: bool,
+    _normed: bool,
     rng: &mut R,
 ) -> usize {
-    let z = if normed { 0.0 } else { logsumexp(ln_weights) };
-
-    let cws: Vec<f64> = ln_weights
+    ln_weights
         .iter()
-        .scan(0.0, |state, w| {
-            *state += (w - z).exp();
-            Some(*state)
+        .map(|ln_w| {
+            (ln_w , rng.gen::<f64>().ln())
         })
-        .collect();
-
-    let r = rng.sample(Open01);
-    match catflip(&cws, r) {
-        Some(ix) => ix,
-        None => {
-            let wsvec = ln_weights.to_vec();
-            panic!("Could not draw from {:?}", wsvec)
-        }
-    }
+        .enumerate()
+        .max_by(|(_, (ln_w1, l1)), (_, (ln_w2, l2))|
+        l1.partial_cmp(&(l2 * (*ln_w1 - *ln_w2).exp())).unwrap())
+        .unwrap()
+        .0
 }
 
 /// Indices of the largest element(s) in xs.
