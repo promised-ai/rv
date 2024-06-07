@@ -9,10 +9,10 @@ mod gaussian_prior;
 
 use crate::dist::{Gaussian, ScaledInvChiSquared};
 use crate::impl_display;
+use crate::misc::ln_gammafn;
 use crate::traits::*;
 use rand::Rng;
 use std::sync::OnceLock;
-use crate::misc::ln_gammafn;
 
 /// Prior for Gaussian
 ///

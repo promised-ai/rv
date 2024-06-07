@@ -177,12 +177,11 @@ pub fn pflip(weights: &[f64], rng: &mut impl Rng) -> usize {
     assert!(!weights.is_empty(), "Empty container");
     weights
         .iter()
-        .map(|w| {
-            (w , rng.gen::<f64>().ln())
-        })
+        .map(|w| (w, rng.gen::<f64>().ln()))
         .enumerate()
-        .max_by(|(_, (w1, l1)), (_, (w2, l2))|
-        (*w2 * l1).partial_cmp(&(*w1 * l2)).unwrap())
+        .max_by(|(_, (w1, l1)), (_, (w2, l2))| {
+            (*w2 * l1).partial_cmp(&(*w1 * l2)).unwrap()
+        })
         .unwrap()
         .0
 }
@@ -303,12 +302,11 @@ pub fn ln_pflip<R: Rng>(
 ) -> usize {
     ln_weights
         .iter()
-        .map(|ln_w| {
-            (ln_w , rng.gen::<f64>().ln())
-        })
+        .map(|ln_w| (ln_w, rng.gen::<f64>().ln()))
         .enumerate()
-        .max_by(|(_, (ln_w1, l1)), (_, (ln_w2, l2))|
-        l1.partial_cmp(&(l2 * (*ln_w1 - *ln_w2).exp())).unwrap())
+        .max_by(|(_, (ln_w1, l1)), (_, (ln_w2, l2))| {
+            l1.partial_cmp(&(l2 * (*ln_w1 - *ln_w2).exp())).unwrap()
+        })
         .unwrap()
         .0
 }
