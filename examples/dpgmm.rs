@@ -26,6 +26,8 @@
 
 use rand::seq::SliceRandom;
 use rand::Rng;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256Plus;
 use rv::data::Partition;
 use rv::dist::{Crp, Gaussian, NormalInvGamma};
 use rv::misc::ln_pflips;
@@ -200,7 +202,7 @@ where
 }
 
 fn main() {
-    let mut rng = rand::thread_rng();
+    let mut rng = Xoshiro256Plus::seed_from_u64(42);
 
     // Generate 100 data from two Gaussians. The Gaussians are far enough apart
     // that the DPGMM should separate them.
