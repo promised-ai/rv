@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::data::Partition;
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::misc::pflips;
+use crate::misc::pflip;
 use crate::traits::*;
 use rand::Rng;
 use std::fmt;
@@ -217,7 +217,7 @@ impl Sampleable<Partition> for Crp {
 
         for _ in 1..self.n {
             weights.push(self.alpha);
-            let zi = pflips(&weights, 1, rng)[0];
+            let zi = pflip(&weights, rng);
             z.push(zi);
 
             if zi == k {
