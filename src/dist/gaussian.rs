@@ -640,7 +640,7 @@ mod tests {
     }
 
     #[test]
-    fn kl_of_identical_dsitrbutions_should_be_zero() {
+    fn kl_of_identical_distributions_should_be_zero() {
         let gauss = Gaussian::new(1.2, 3.4).unwrap();
         assert::close(gauss.kl(&gauss), 0.0, TOL);
     }

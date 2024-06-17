@@ -73,7 +73,7 @@ impl Crp {
         }
     }
 
-    /// Create a new Crp without checking whether the parametes are valid.
+    /// Create a new Crp without checking whether the parameters are valid.
     #[inline]
     pub fn new_unchecked(alpha: f64, n: usize) -> Self {
         Crp { alpha, n }

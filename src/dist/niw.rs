@@ -232,7 +232,7 @@ impl NormalInvWishart {
     }
 
     #[inline]
-    pub fn set_scale_unnchecked(&mut self, scale: DMatrix<f64>) {
+    pub fn set_scale_unchecked(&mut self, scale: DMatrix<f64>) {
         self.scale = scale;
     }
 

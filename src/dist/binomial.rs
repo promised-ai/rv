@@ -91,7 +91,7 @@ impl Binomial {
     /// # Arguments
     ///
     /// - n: the total number of trials
-    /// - p: the pobability of success
+    /// - p: the probability of success
     pub fn new(n: u64, p: f64) -> Result<Self, BinomialError> {
         if n == 0 {
             Err(BinomialError::NIsZero)

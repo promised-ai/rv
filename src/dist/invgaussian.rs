@@ -1,4 +1,4 @@
-//! Invere Gaussian distribution over x in (0, ∞)
+//! Inverse Gaussian distribution over x in (0, ∞)
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 

@@ -65,7 +65,7 @@ pub enum KsMode {
     Exact,
     /// Compute the statistic in the large N limit
     Asymptotic,
-    /// Determine appropiate method automatically.
+    /// Determine appropriate method automatically.
     #[default]
     Auto,
 }
@@ -73,7 +73,7 @@ pub enum KsMode {
 /// Hypothesis Alternative for ks_two_sample test
 #[derive(Debug, Clone, Copy, Default)]
 pub enum KsAlternative {
-    /// Alternative where the emperical CDFs could lie on either side on one another.
+    /// Alternative where the empirical CDFs could lie on either side on one another.
     #[default]
     TwoSided,
     /// Alternative where the emperical CDF of the first sequence is strictly less than the

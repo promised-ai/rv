@@ -421,7 +421,7 @@ pub trait KlDivergence {
     /// ```
     fn kl(&self, other: &Self) -> f64;
 
-    /// Symmetrised divergence, KL(P|Q) + KL(Q|P)
+    /// Symmetrized divergence, KL(P|Q) + KL(Q|P)
     ///
     /// # Example
     ///
@@ -616,7 +616,7 @@ pub trait HasSuffStat<X> {
 ///
 /// # Examples
 ///
-/// Basic suffstat useage.
+/// Basic suffstat usage.
 ///
 /// ```
 /// use rv::data::BernoulliSuffStat;

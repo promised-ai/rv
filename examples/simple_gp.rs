@@ -79,7 +79,7 @@ pub fn noisy() {
     .expect("Optimization should succeed");
 
     println!("Optimized Kernel = {:#?}", gp.kernel());
-    println!("kernel parama = {:?}", gp.kernel().parameters());
+    println!("kernel paramaters = {:?}", gp.kernel().parameters());
     println!("ln_m = {}", gp.ln_m());
 }
 

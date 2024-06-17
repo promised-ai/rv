@@ -80,7 +80,7 @@ impl Bernoulli {
     /// ```
     ///
     /// `Bernoulli::new` will return an `Error` type if given an invalid
-    /// paramter.
+    /// parameter.
     ///
     /// ```rust
     /// # use rv::dist::Bernoulli;

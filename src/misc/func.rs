@@ -787,7 +787,7 @@ mod tests {
     }
 
     #[test]
-    fn bisection_and_stanard_catflip_equivalence() {
+    fn bisection_and_standard_catflip_equivalence() {
         let mut rng = rand::thread_rng();
         for _ in 0..1000 {
             let n: usize = rng.gen_range(10..100);

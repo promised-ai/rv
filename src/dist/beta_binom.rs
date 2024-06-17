@@ -113,13 +113,13 @@ pub enum BetaBinomialError {
 }
 
 impl BetaBinomial {
-    /// Create a beta-binomal distirbution
+    /// Create a beta-binomial distirbution
     ///
     /// # Arguments
     ///
     /// - n: the total number of trials
-    /// - alpha: the prior pseudo obersvations of success
-    /// - beta: the prior pseudo obersvations of failure
+    /// - alpha: the prior pseudo observations of success
+    /// - beta: the prior pseudo observations of failure
     pub fn new(
         n: u32,
         alpha: f64,

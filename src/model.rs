@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 /// A wrapper for a complete conjugate model
 ///
-/// # Paramters
+/// # Parameters
 ///
 /// `X`: The type of the data/observations to be modeled
 /// `Fx`: The type of the likelihood, *f(x|θ)*

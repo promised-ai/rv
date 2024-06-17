@@ -1,4 +1,4 @@
-//! Possion distribution on unsigned integers
+//! Poisson distribution on unsigned integers
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
