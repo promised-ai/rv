@@ -113,7 +113,7 @@ impl Kernel for SEardKernel {
                 let exped: Vec<f64> = params.iter().map(|x| x.exp()).collect();
                 Ok(Self::new(DVector::from_row_slice(&exped)).unwrap())
             }
-            Ordering::Greater => Err(KernelError::ExtraniousParameters(
+            Ordering::Greater => Err(KernelError::ExtraneousParameters(
                 params.len() - self.length_scale.nrows(),
             )),
             Ordering::Less => Err(KernelError::MissingParameters(

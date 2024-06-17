@@ -105,7 +105,7 @@ impl Kernel for RBFKernel {
         match params {
             [] => Err(KernelError::MissingParameters(1)),
             [value] => Self::new(value.exp()),
-            _ => Err(KernelError::ExtraniousParameters(params.len() - 1)),
+            _ => Err(KernelError::ExtraneousParameters(params.len() - 1)),
         }
     }
 
