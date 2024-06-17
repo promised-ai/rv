@@ -4,6 +4,7 @@ use crate::consts::HALF_LN_PI;
 use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
+
 use crate::test::GewekeTestable;
 use crate::traits::*;
 
@@ -152,6 +153,7 @@ mod test {
         (mn, kn, vn, s2n)
     }
 
+    use crate::misc::ln_gammafn;
     // XXX: Implemented this directly against the Kevin Murphy whitepaper. Makes
     // things a little easier to understand compared to using the sufficient
     // statistics and traits and all that. Still possible for this to be wrong,
