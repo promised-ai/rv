@@ -148,10 +148,7 @@ where
     type SampleFunction = GaussianProcessPrediction<K>;
     type Error = GaussianProcessError;
 
-    fn sample_function(
-        &self,
-        indices: &[Self::Index],
-    ) -> Self::SampleFunction {
+    fn sample_function(&self, indices: &[Self::Index]) -> Self::SampleFunction {
         let n = indices.len();
         let m = indices.first().map(|i| i.len()).unwrap_or(0);
 
