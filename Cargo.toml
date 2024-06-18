@@ -17,10 +17,10 @@ github = { repository = "promised-ai/rv", tag = "v0.16.0" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-argmin = { version = "0.8", optional = true }
-argmin-math = { version = "0.3", optional = true, features = ["nalgebra_v0_32"] }
+argmin = { version = "0.10.0", optional = true }
+argmin-math = { version = "0.4.0", optional = true, features = ["nalgebra_v0_32"] }
 doc-comment = "0.3"
-lru = "0.9.0"
+lru = "0.12.3"
 nalgebra = { version = "0.32", optional = true }
 num = "0.4"
 rand = { version = "0.8.5", features = ["small_rng"] }
@@ -35,7 +35,7 @@ itertools = "0.12.1"
 assert = "0.7"
 criterion = { version = "0.5", features = ["html_reports"] }
 indoc = "2"
-peroxide = { version = "0.32.1" }
+peroxide = { version = "0.37.5" }
 proptest = "1.4.0"
 serde_yaml = "0.9"
 serde_json = "1"
@@ -46,11 +46,11 @@ rand_xoshiro = "0.6"
 serde1 = ["serde", "nalgebra/serde-serialize"]
 arraydist = ["nalgebra"]
 process = ["serde", "nalgebra/serde-serialize", "argmin", "argmin-math", "arraydist"]
+datum = []
 experimental = ["rand_xoshiro"]
 
 [package.metadata.docs.rs]
 all-features = true
-
 [profile.test.package.proptest]
 opt-level = 3
 

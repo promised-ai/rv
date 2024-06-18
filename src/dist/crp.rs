@@ -211,13 +211,16 @@ impl HasDensity<Partition> for Crp {
 impl Sampleable<Partition> for Crp {
     fn draw<R: Rng>(&self, rng: &mut R) -> Partition {
         let mut k = 1;
+        // TODO: Set capacity according to
+        // https://www.cs.princeton.edu/courses/archive/fall07/cos597C/scribe/20070921.pdf
         let mut weights: Vec<f64> = vec![1.0];
+        let mut sum = 1.0 + self.alpha;
         let mut z: Vec<usize> = Vec::with_capacity(self.n);
         z.push(0);
 
         for _ in 1..self.n {
             weights.push(self.alpha);
-            let zi = pflip(&weights, rng);
+            let zi = pflip(&weights, Some(sum), rng);
             z.push(zi);
 
             if zi == k {
@@ -227,9 +230,11 @@ impl Sampleable<Partition> for Crp {
                 weights.truncate(k);
                 weights[zi] += 1.0;
             }
+            sum += 1.0;
         }
         // convert weights to counts, correcting for possible floating point
         // errors
+        // TODO: Is this right? Wouldn't this be the _expected_ counts?
         let counts: Vec<usize> =
             weights.iter().map(|w| (w + 0.5) as usize).collect();
 

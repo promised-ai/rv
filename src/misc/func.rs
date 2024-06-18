@@ -173,7 +173,8 @@ fn catflip(cws: &[f64], r: f64) -> Option<usize> {
     }
 }
 
-pub fn pflip(weights: &[f64], rng: &mut impl Rng) -> usize {
+// Draw a categorical using Gumbel max sampling
+pub fn gumbel_pflip(weights: &[f64], rng: &mut impl Rng) -> usize {
     assert!(!weights.is_empty(), "Empty container");
     weights
         .iter()
@@ -186,22 +187,21 @@ pub fn pflip(weights: &[f64], rng: &mut impl Rng) -> usize {
         .0
 }
 
-// pub fn pflip(weights: &[f64], rng: &mut impl Rng) -> usize {
-//     assert!(!weights.is_empty(), "Empty container");
+pub fn pflip(weights: &[f64], sum: Option<f64>, rng: &mut impl Rng) -> usize {
+    assert!(!weights.is_empty(), "Empty container");
 
-//     let cws: Vec<f64> = cumsum(weights);
-//     let scale: f64 = *cws.last().unwrap();
-//     let u = rand::distributions::Uniform::new(0.0, 1.0);
+    let sum = sum.unwrap_or_else(|| weights.iter().sum::<f64>());
 
-//     let r = rng.sample(u) * scale;
-//     match catflip(&cws, r) {
-//         Some(ix) => ix,
-//         None => {
-//             let wsvec = weights.to_vec();
-//             panic!("Could not draw from {:?}", wsvec)
-//         }
-//     }
-// }
+    let mut cwt = 0.0;
+    let r: f64 = rng.gen::<f64>() * sum;
+    for (ix, w) in weights.iter().enumerate() {
+        cwt += w;
+        if cwt > r {
+            return ix;
+        }
+    }
+    panic!("Could not draw from {:?}", weights)
+}
 
 /// Draw `n` indices in proportion to their `weights`
 pub fn pflips(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
