@@ -436,7 +436,7 @@ mod tests {
             let res = gauss_kronrod_quadrature(
                 pdf,
                 (1e-16, x),
-                Integral::G7K15(1e-10, 1000),
+                Integral::G7K15(1e-10, 100),
             );
             let cdf = ig.cdf(&x);
             assert::close(res, cdf, 1e-7);
