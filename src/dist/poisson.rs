@@ -7,12 +7,12 @@ use crate::impl_display;
 use crate::misc::ln_fact;
 use crate::traits::*;
 use rand::Rng;
-use rand_distr::Poisson as RPossion;
+use rand_distr::Poisson as RPoisson;
 use special::Gamma as _;
 use std::fmt;
 use std::sync::OnceLock;
 
-/// [Possion distribution](https://en.wikipedia.org/wiki/Poisson_distribution)
+/// [Poisson distribution](https://en.wikipedia.org/wiki/Poisson_distribution)
 /// over x in {0, 1, ... }.
 ///
 /// # Example
@@ -206,13 +206,13 @@ macro_rules! impl_traits {
 
         impl Sampleable<$kind> for Poisson {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let pois = RPossion::new(self.rate).unwrap();
+                let pois = RPoisson::new(self.rate).unwrap();
                 let x: u64 = rng.sample(pois) as u64;
                 x as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let pois = RPossion::new(self.rate).unwrap();
+                let pois = RPoisson::new(self.rate).unwrap();
                 (0..n)
                     .map(|_| {
                         let x: u64 = rng.sample(pois) as u64;

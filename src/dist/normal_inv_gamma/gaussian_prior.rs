@@ -81,7 +81,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
-        let mut stat = cache.0.clone();
+        let mut stat = cache.0;
         let lnz_n = cache.1;
 
         stat.observe(y);

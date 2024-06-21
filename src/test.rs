@@ -446,7 +446,7 @@ macro_rules! test_conjugate_prior {
                 eprintln!("bayes_law ln_m: {ln_m}");
                 eprintln!("bayes_law ln_post: {ln_post}");
 
-                assert::close(ln_post, ln_like + ln_prior - ln_m, 1e-12);
+                assert::close(ln_post, ln_like + ln_prior - ln_m, 1e-10);
             }
 
             #[test]

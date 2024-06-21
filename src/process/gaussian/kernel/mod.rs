@@ -117,7 +117,7 @@ pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum KernelError {
     /// Lower bounds must be lower that upper bounds
-    InproperBounds(f64, f64),
+    ImproperBounds(f64, f64),
     /// Parameter Out of Bounds
     ParameterOutOfBounds {
         /// Name of parameter
@@ -128,7 +128,7 @@ pub enum KernelError {
         bounds: (f64, f64),
     },
     /// Too many parameters provided
-    ExtraniousParameters(usize),
+    ExtraneousParameters(usize),
     /// Too few parameters provided
     MissingParameters(usize),
     /// An error in computing cov-grad
@@ -140,7 +140,7 @@ impl std::error::Error for KernelError {}
 impl std::fmt::Display for KernelError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::InproperBounds(lower, upper) => {
+            Self::ImproperBounds(lower, upper) => {
                 writeln!(f, "Bounds are not in order: ({}, {})", lower, upper)
             }
             Self::ParameterOutOfBounds {
@@ -152,7 +152,7 @@ impl std::fmt::Display for KernelError {
                 "Parameter {} is out of bounds ({}, {}), given: {}",
                 name, bounds.0, bounds.1, given
             ),
-            Self::ExtraniousParameters(n) => {
+            Self::ExtraneousParameters(n) => {
                 writeln!(f, "{} extra parameters proved to kernel", n)
             }
             Self::MissingParameters(n) => {

@@ -148,25 +148,22 @@ where
     type SampleFunction = GaussianProcessPrediction<K>;
     type Error = GaussianProcessError;
 
-    fn sample_function(
-        &self,
-        indicies: &[Self::Index],
-    ) -> Self::SampleFunction {
-        let n = indicies.len();
-        let m = indicies.first().map(|i| i.len()).unwrap_or(0);
+    fn sample_function(&self, indices: &[Self::Index]) -> Self::SampleFunction {
+        let n = indices.len();
+        let m = indices.first().map(|i| i.len()).unwrap_or(0);
 
-        let indicies: DMatrix<f64> = DMatrix::from_iterator(
+        let indices: DMatrix<f64> = DMatrix::from_iterator(
             n,
             m,
-            indicies.iter().flat_map(|i| i.iter().cloned()),
+            indices.iter().flat_map(|i| i.iter().cloned()),
         );
-        let k_trans = self.kernel.covariance(&indicies, &self.x_train);
+        let k_trans = self.kernel.covariance(&indices, &self.x_train);
         let y_mean = &k_trans * &self.alpha;
         GaussianProcessPrediction {
             gp: self.clone(),
             y_mean,
             k_trans,
-            xs: indicies,
+            xs: indices,
             cov: OnceCell::new(),
             dist: OnceCell::new(),
         }
@@ -253,7 +250,7 @@ where
         let leftovers: Vec<f64> = leftovers.collect();
         if !leftovers.is_empty() {
             return Err(GaussianProcessError::KernelError(
-                KernelError::ExtraniousParameters(leftovers.len()),
+                KernelError::ExtraneousParameters(leftovers.len()),
             ));
         }
 
@@ -283,7 +280,7 @@ where
     }
 }
 
-/// Structure for making GP preditions
+/// Structure for making GP predictions
 pub struct GaussianProcessPrediction<K>
 where
     K: Kernel,

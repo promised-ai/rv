@@ -59,7 +59,7 @@ impl MvgCache {
 /// let k = 3;   // number of dimensions
 /// let df = 6;  // The degrees of freedom is an unsigned int > k
 ///
-/// // The scale matrix of the wishar distribution
+/// // The scale matrix of the Wishart distribution
 /// let scale_mat: DMatrix<f64> = DMatrix::identity(k, k);
 ///
 /// // The draw procedure outlined in the appendices of "Bayesian Data
@@ -192,7 +192,7 @@ impl MvGaussian {
     ///
     /// # Arguments
     /// - mu: k-length mean vector
-    /// - cov_chol: Choleksy decomposition of k-by-k positive-definite covariance matrix
+    /// - cov_chol: Cholesky decomposition of k-by-k positive-definite covariance matrix
     /// ```rust
     /// use nalgebra::{DMatrix, DVector};
     /// use rv::prelude::*;

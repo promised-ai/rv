@@ -173,8 +173,38 @@ fn catflip(cws: &[f64], r: f64) -> Option<usize> {
     }
 }
 
+// Draw a categorical using Gumbel max sampling
+pub fn gumbel_pflip(weights: &[f64], rng: &mut impl Rng) -> usize {
+    assert!(!weights.is_empty(), "Empty container");
+    weights
+        .iter()
+        .map(|w| (w, rng.gen::<f64>().ln()))
+        .enumerate()
+        .max_by(|(_, (w1, l1)), (_, (w2, l2))| {
+            (*w2 * l1).partial_cmp(&(*w1 * l2)).unwrap()
+        })
+        .unwrap()
+        .0
+}
+
+pub fn pflip(weights: &[f64], sum: Option<f64>, rng: &mut impl Rng) -> usize {
+    assert!(!weights.is_empty(), "Empty container");
+
+    let sum = sum.unwrap_or_else(|| weights.iter().sum::<f64>());
+
+    let mut cwt = 0.0;
+    let r: f64 = rng.gen::<f64>() * sum;
+    for (ix, w) in weights.iter().enumerate() {
+        cwt += w;
+        if cwt > r {
+            return ix;
+        }
+    }
+    panic!("Could not draw from {:?}", weights)
+}
+
 /// Draw `n` indices in proportion to their `weights`
-pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
+pub fn pflips(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
     assert!(!weights.is_empty(), "Empty container");
 
     let cws: Vec<f64> = cumsum(weights);
@@ -203,12 +233,12 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 /// # Examples
 ///
 /// ```rust
-/// use rv::misc::ln_pflip;
+/// use rv::misc::ln_pflips;
 ///
 /// let weights: Vec<f64> = vec![0.4, 0.2, 0.3, 0.1];
 /// let ln_weights: Vec<f64> = weights.iter().map(|&w| w.ln()).collect();
 ///
-/// let xs = ln_pflip(&ln_weights, 100, true, &mut rand::thread_rng());
+/// let xs = ln_pflips(&ln_weights, 100, true, &mut rand::thread_rng());
 ///
 /// assert_eq!(xs.len(), 100);
 /// assert!(xs.iter().all(|&x| x <= 3));
@@ -218,13 +248,13 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 /// Can handle -Inf ln weights
 ///
 /// ```rust
-/// # use rv::misc::ln_pflip;
+/// # use rv::misc::ln_pflips;
 /// use std::f64::NEG_INFINITY;
 /// use std::f64::consts::LN_2;
 ///
 /// let ln_weights: Vec<f64> = vec![-LN_2, NEG_INFINITY, -LN_2];
 ///
-/// let xs = ln_pflip(&ln_weights, 100, true, &mut rand::thread_rng());
+/// let xs = ln_pflips(&ln_weights, 100, true, &mut rand::thread_rng());
 ///
 /// let zero_count = xs.iter().filter(|&&x| x == 0).count();
 /// let one_count = xs.iter().filter(|&&x| x == 1).count();
@@ -234,7 +264,7 @@ pub fn pflip(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 /// assert_eq!(one_count, 0);
 /// assert!(two_count > 30);
 /// ```
-pub fn ln_pflip<R: Rng>(
+pub fn ln_pflips<R: Rng>(
     ln_weights: &[f64],
     n: usize,
     normed: bool,
@@ -242,7 +272,7 @@ pub fn ln_pflip<R: Rng>(
 ) -> Vec<usize> {
     let z = if normed { 0.0 } else { logsumexp(ln_weights) };
 
-    // doing this instead of calling pflip shaves about 30% off the runtime.
+    // doing this instead of calling pflips shaves about 30% off the runtime.
     let cws: Vec<f64> = ln_weights
         .iter()
         .scan(0.0, |state, w| {
@@ -263,6 +293,22 @@ pub fn ln_pflip<R: Rng>(
             }
         })
         .collect()
+}
+
+pub fn ln_pflip<R: Rng>(
+    ln_weights: &[f64],
+    _normed: bool,
+    rng: &mut R,
+) -> usize {
+    ln_weights
+        .iter()
+        .map(|ln_w| (ln_w, rng.gen::<f64>().ln()))
+        .enumerate()
+        .max_by(|(_, (ln_w1, l1)), (_, (ln_w2, l2))| {
+            l1.partial_cmp(&(l2 * (*ln_w1 - *ln_w2).exp())).unwrap()
+        })
+        .unwrap()
+        .0
 }
 
 /// Indices of the largest element(s) in xs.
@@ -741,7 +787,7 @@ mod tests {
     }
 
     #[test]
-    fn bisection_and_stanard_catflip_equivalence() {
+    fn bisection_and_standard_catflip_equivalence() {
         let mut rng = rand::thread_rng();
         for _ in 0..1000 {
             let n: usize = rng.gen_range(10..100);
@@ -774,12 +820,12 @@ mod tests {
     }
 
     #[test]
-    fn ln_pflip_works_with_zero_weights() {
+    fn ln_pflips_works_with_zero_weights() {
         use std::f64::consts::LN_2;
 
         let ln_weights: Vec<f64> = vec![-LN_2, f64::NEG_INFINITY, -LN_2];
 
-        let xs = ln_pflip(&ln_weights, 100, true, &mut rand::thread_rng());
+        let xs = ln_pflips(&ln_weights, 100, true, &mut rand::thread_rng());
 
         let zero_count = xs.iter().filter(|&&x| x == 0).count();
         let one_count = xs.iter().filter(|&&x| x == 1).count();

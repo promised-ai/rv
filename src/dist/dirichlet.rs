@@ -16,7 +16,7 @@ mod categorical_prior;
 /// Symmetric [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
 /// where all alphas are the same.
 ///
-/// `SymmetricDirichlet { alpha, k }` is mathematicall equivalent to
+/// `SymmetricDirichlet { alpha, k }` is mathematical equivalent to
 /// `Dirichlet { alphas: vec![alpha; k] }`. This version has some extra
 /// optimizations to seep up computing the PDF and drawing random vectors.
 #[derive(Debug, Clone)]
@@ -69,7 +69,7 @@ pub enum SymmetricDirichletError {
 }
 
 impl SymmetricDirichlet {
-    /// Create a new symmetric Dirichlet distributon
+    /// Create a new symmetric Dirichlet distribution
     ///
     /// # Arguments
     /// - alpha: The Dirichlet weight.
@@ -124,7 +124,7 @@ impl SymmetricDirichlet {
         }
     }
 
-    /// Get the alpha unfiorm weight parameter
+    /// Get the alpha uniform weight parameter
     ///
     /// # Example
     ///
@@ -550,7 +550,7 @@ mod tests {
         }
 
         #[test]
-        fn log_pdf_symemtric() {
+        fn log_pdf_symmetric() {
             let dir = Dirichlet::symmetric(1.0, 3).unwrap();
             assert::close(
                 dir.ln_pdf(&vec![0.2, 0.3, 0.5]),

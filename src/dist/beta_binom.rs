@@ -9,7 +9,7 @@ use std::fmt;
 use std::sync::OnceLock;
 
 use crate::impl_display;
-use crate::misc::{ln_binom, ln_pflip};
+use crate::misc::{ln_binom, ln_pflips};
 use crate::traits::*;
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
@@ -113,13 +113,13 @@ pub enum BetaBinomialError {
 }
 
 impl BetaBinomial {
-    /// Create a beta-binomal distirbution
+    /// Create a beta-binomial distirbution
     ///
     /// # Arguments
     ///
     /// - n: the total number of trials
-    /// - alpha: the prior pseudo obersvations of success
-    /// - beta: the prior pseudo obersvations of failure
+    /// - alpha: the prior pseudo observations of success
+    /// - beta: the prior pseudo observations of failure
     pub fn new(
         n: u32,
         alpha: f64,
@@ -364,7 +364,7 @@ macro_rules! impl_int_traits {
                 let ln_weights: Vec<f64> =
                     (0..=self.n).map(|x| self.ln_f(&x)).collect();
 
-                ln_pflip(&ln_weights, n, true, &mut rng)
+                ln_pflips(&ln_weights, n, true, &mut rng)
                     .iter()
                     .map(|k| *k as $kind)
                     .collect()

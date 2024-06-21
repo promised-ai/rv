@@ -4,17 +4,9 @@ use crate::consts::HALF_LN_PI;
 use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
-use crate::misc::ln_gammafn;
+
 use crate::test::GewekeTestable;
 use crate::traits::*;
-
-#[inline]
-fn ln_z(k: f64, v: f64, s2: f64) -> f64 {
-    let v2 = 0.5 * v;
-    // -0.5 * k.ln() + v2.ln_gamma().0 - v2 * (v * s2).ln()
-    let term = (v * s2).ln().mul_add(-v2, ln_gammafn(v2));
-    k.ln().mul_add(-0.5, term)
-}
 
 // XXX: Check out section 6.3 from Kevin Murphy's paper
 // https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf
@@ -30,9 +22,8 @@ fn posterior_from_stat(
 
     let (m, k, v, s2) = nix.params();
 
-    let x_bar = stat.mean();
-    let sum_x = x_bar * n;
-    let xbar = sum_x / n;
+    let xbar = stat.mean();
+    let sum_x = xbar * n;
     // Sum (x - xbar)^2
     //   = Sum[ x*x - 2x*xbar + xbar*xbar ]
     //   = Sum[x^2] + n * xbar^2 - 2 * xbar + Sum[x]
@@ -41,10 +32,13 @@ fn posterior_from_stat(
     let mid = (n * xbar).mul_add(-xbar, stat.sum_x_sq());
 
     let kn = k + n;
+    let divby_k_plus_n = kn.recip();
     let vn = v + n;
-    let mn = k.mul_add(m, sum_x) / kn;
-    let s2n =
-        ((n * k / kn) * (m - xbar)).mul_add(m - xbar, v.mul_add(s2, mid)) / vn;
+    let mn = k.mul_add(m, sum_x) * divby_k_plus_n;
+    let diff_m_xbar = m - xbar;
+    let s2n = ((n * k * divby_k_plus_n) * diff_m_xbar)
+        .mul_add(diff_m_xbar, v.mul_add(s2, mid))
+        / vn;
 
     NormalInvChiSquared::new(mn, kn, vn, s2n)
         .expect("Invalid posterior params.")
@@ -63,7 +57,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
 
     #[inline]
     fn ln_m_cache(&self) -> Self::MCache {
-        ln_z(self.k, self.v, self.s2)
+        self.ln_z()
     }
 
     fn ln_m_with_cache(
@@ -74,7 +68,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
         extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
             let n = stat.n() as f64;
             let post = posterior_from_stat(self, &stat);
-            let lnz_n = ln_z(post.k, post.v, post.s2);
+            let lnz_n = post.ln_z();
             n.mul_add(-HALF_LN_PI, lnz_n - cache)
         })
     }
@@ -83,19 +77,19 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
         let stat = extract_stat(x, GaussianSuffStat::new);
         let post_n = posterior_from_stat(self, &stat);
-        let lnz_n = ln_z(post_n.k, post_n.v, post_n.s2);
+        let lnz_n = post_n.ln_z();
         (stat, lnz_n)
         // post_n
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
-        let mut stat = cache.0.clone();
+        let mut stat = cache.0;
         let lnz_n = cache.1;
 
         stat.observe(y);
         let post_m = posterior_from_stat(self, &stat);
 
-        let lnz_m = ln_z(post_m.k, post_m.v, post_m.s2);
+        let lnz_m = post_m.ln_z();
 
         -HALF_LN_PI + lnz_m - lnz_n
     }
@@ -159,6 +153,7 @@ mod test {
         (mn, kn, vn, s2n)
     }
 
+    use crate::misc::ln_gammafn;
     // XXX: Implemented this directly against the Kevin Murphy whitepaper. Makes
     // things a little easier to understand compared to using the sufficient
     // statistics and traits and all that. Still possible for this to be wrong,

@@ -57,7 +57,7 @@ where
     /// Error type from Optimization errors
     type Solver: Solver<
         RandomProcessMleOp<Self, X>,
-        IterState<DVector<f64>, DVector<f64>, (), (), f64>,
+        IterState<DVector<f64>, DVector<f64>, (), (), (), f64>,
     >;
 
     /// Generator for optimizer

@@ -6,3 +6,5 @@
 .helix
 *.zip
 lcov.info
+.vscode/settings.json
+.vscode/tasks.json

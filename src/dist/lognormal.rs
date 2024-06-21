@@ -439,7 +439,7 @@ mod tests {
     }
 
     #[test]
-    fn should_contain_positve_finite_values() {
+    fn should_contain_positive_finite_values() {
         let lognorm = LogNormal::standard();
         assert!(lognorm.supports(&1E-8_f32));
         assert!(lognorm.supports(&10E8_f64));

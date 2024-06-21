@@ -622,7 +622,7 @@ mod tests {
     }
 
     #[test]
-    fn uniform_entropy_should_be_higheest() {
+    fn uniform_entropy_should_be_highest() {
         // XXX: This doesn't test values
         let kuma_u = Kumaraswamy::uniform();
         let kuma_m = Kumaraswamy::centered(3.0).unwrap();

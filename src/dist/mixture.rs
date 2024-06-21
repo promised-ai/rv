@@ -6,7 +6,7 @@ use serde::ser::{SerializeStruct, Serializer};
 use serde::{Deserialize, Serialize};
 
 use crate::dist::{Categorical, Gaussian, Poisson};
-use crate::misc::{logsumexp, pflip};
+use crate::misc::{logsumexp, pflips};
 use crate::traits::*;
 use rand::Rng;
 use std::fmt;
@@ -411,12 +411,12 @@ where
     Fx: Rv<X>,
 {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
-        let k: usize = pflip(&self.weights, 1, &mut rng)[0];
+        let k: usize = pflips(&self.weights, 1, &mut rng)[0];
         self.components[k].draw(&mut rng)
     }
 
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<X> {
-        pflip(&self.weights, n, &mut rng)
+        pflips(&self.weights, n, &mut rng)
             .iter()
             .map(|&k| self.components[k].draw(&mut rng))
             .collect()

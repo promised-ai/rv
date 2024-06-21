@@ -26,9 +26,11 @@
 
 use rand::seq::SliceRandom;
 use rand::Rng;
+use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256Plus;
 use rv::data::Partition;
 use rv::dist::{Crp, Gaussian, NormalInvGamma};
-use rv::misc::ln_pflip;
+use rv::misc::ln_pflips;
 use rv::traits::*;
 use rv::ConjugateModel;
 use std::sync::Arc;
@@ -145,7 +147,7 @@ where
         ln_weights.push(self.crp.alpha().ln() + ctmp.ln_pp(&x));
 
         // Draws a new assignment in proportion with the weights
-        let zi = ln_pflip(&ln_weights, 1, false, rng)[0];
+        let zi = ln_pflips(&ln_weights, 1, false, rng)[0];
 
         // Here is where we re-insert the data back into xs, ixs, and the
         // partition.
@@ -200,7 +202,7 @@ where
 }
 
 fn main() {
-    let mut rng = rand::thread_rng();
+    let mut rng = Xoshiro256Plus::seed_from_u64(42);
 
     // Generate 100 data from two Gaussians. The Gaussians are far enough apart
     // that the DPGMM should separate them.

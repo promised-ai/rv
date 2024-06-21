@@ -163,7 +163,7 @@ impl Kernel for MaternKernel {
             [] => Err(KernelError::MissingParameters(2)),
             [_] => Err(KernelError::MissingParameters(1)),
             [ln_nu, ln_length] => Self::new(ln_nu.exp(), ln_length.exp()),
-            _ => Err(KernelError::ExtraniousParameters(params.len() - 2)),
+            _ => Err(KernelError::ExtraneousParameters(params.len() - 2)),
         }
     }
 
