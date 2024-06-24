@@ -21,7 +21,7 @@ impl ConstantKernel {
             Err(KernelError::ParameterOutOfBounds {
                 name: "value".to_string(),
                 given: value,
-                bounds: (0.0, std::f64::INFINITY),
+                bounds: (0.0, f64::INFINITY),
             })
         } else {
             Ok(Self { scale: value })
@@ -91,7 +91,7 @@ impl Kernel for ConstantKernel {
         match param_vec {
             [] => Err(KernelError::MissingParameters(1)),
             [value] => Self::new(value.exp()),
-            _ => Err(KernelError::ExtraniousParameters(param_vec.len() - 1)),
+            _ => Err(KernelError::ExtraneousParameters(param_vec.len() - 1)),
         }
     }
 

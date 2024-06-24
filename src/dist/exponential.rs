@@ -31,6 +31,24 @@ pub struct Exponential {
     rate: f64,
 }
 
+impl Default for Exponential {
+    fn default() -> Self {
+        Self::new_unchecked(1.0)
+    }
+}
+
+impl Parameterized for Exponential {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.rate()
+    }
+
+    fn from_params(rate: Self::Parameters) -> Self {
+        Self::new_unchecked(rate)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -99,9 +117,9 @@ impl Exponential {
     /// assert!(expon.set_rate(0.1).is_ok());
     /// assert!(expon.set_rate(0.0).is_err());
     /// assert!(expon.set_rate(-1.0).is_err());
-    /// assert!(expon.set_rate(std::f64::INFINITY).is_err());
-    /// assert!(expon.set_rate(std::f64::NEG_INFINITY).is_err());
-    /// assert!(expon.set_rate(std::f64::NAN).is_err());
+    /// assert!(expon.set_rate(f64::INFINITY).is_err());
+    /// assert!(expon.set_rate(f64::NEG_INFINITY).is_err());
+    /// assert!(expon.set_rate(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_rate(&mut self, rate: f64) -> Result<(), ExponentialError> {
@@ -132,7 +150,7 @@ impl_display!(Exponential);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Exponential {
+        impl HasDensity<$kind> for Exponential {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(rate)
                 if x < &0.0 {
@@ -141,7 +159,9 @@ macro_rules! impl_traits {
                     self.rate.mul_add(-f64::from(*x), self.rate.ln())
                 }
             }
+        }
 
+        impl Sampleable<$kind> for Exponential {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let expdist = Exp::new(self.rate).unwrap();
                 rng.sample(expdist) as $kind
@@ -248,13 +268,12 @@ mod tests {
     use super::*;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Exponential::new(1.0).unwrap());
+    test_basic_impls!(f64, Exponential);
 
     #[test]
     fn new() {

@@ -90,7 +90,7 @@ impl Kernel for ExpSineSquaredKernel {
         true
     }
 
-    /// Returns the diagnal of the kernel(x, x)
+    /// Returns the diagonal of the kernel(x, x)
     fn diag<R, C, S>(&self, x: &Matrix<f64, R, C, S>) -> DVector<f64>
     where
         R: Dim,
@@ -115,7 +115,7 @@ impl Kernel for ExpSineSquaredKernel {
             [length_scale, periodicity] => {
                 Self::new(length_scale.exp(), periodicity.exp())
             }
-            _ => Err(KernelError::ExtraniousParameters(params.len() - 1)),
+            _ => Err(KernelError::ExtraneousParameters(params.len() - 1)),
         }
     }
 

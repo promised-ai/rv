@@ -9,7 +9,7 @@ use std::fmt;
 use std::sync::OnceLock;
 
 use crate::impl_display;
-use crate::misc::{ln_binom, ln_pflip};
+use crate::misc::{ln_binom, ln_pflips};
 use crate::traits::*;
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
@@ -66,6 +66,28 @@ pub struct BetaBinomial {
     ln_beta_ab: OnceLock<f64>,
 }
 
+pub struct BetaBinomialParameters {
+    pub n: u32,
+    pub alpha: f64,
+    pub beta: f64,
+}
+
+impl Parameterized for BetaBinomial {
+    type Parameters = BetaBinomialParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            n: self.n(),
+            alpha: self.alpha(),
+            beta: self.beta(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.n, params.alpha, params.beta)
+    }
+}
+
 impl PartialEq for BetaBinomial {
     fn eq(&self, other: &BetaBinomial) -> bool {
         self.n == other.n
@@ -91,13 +113,13 @@ pub enum BetaBinomialError {
 }
 
 impl BetaBinomial {
-    /// Create a beta-binomal distirbution
+    /// Create a beta-binomial distirbution
     ///
     /// # Arguments
     ///
     /// - n: the total number of trials
-    /// - alpha: the prior pseudo obersvations of success
-    /// - beta: the prior pseudo obersvations of failure
+    /// - alpha: the prior pseudo observations of success
+    /// - beta: the prior pseudo observations of failure
     pub fn new(
         n: u32,
         alpha: f64,
@@ -192,8 +214,8 @@ impl BetaBinomial {
     /// assert!(bb.set_alpha(0.1).is_ok());
     /// assert!(bb.set_alpha(0.0).is_err());
     /// assert!(bb.set_alpha(-1.0).is_err());
-    /// assert!(bb.set_alpha(std::f64::INFINITY).is_err());
-    /// assert!(bb.set_alpha(std::f64::NAN).is_err());
+    /// assert!(bb.set_alpha(f64::INFINITY).is_err());
+    /// assert!(bb.set_alpha(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_alpha(&mut self, alpha: f64) -> Result<(), BetaBinomialError> {
@@ -248,8 +270,8 @@ impl BetaBinomial {
     /// assert!(bb.set_beta(0.1).is_ok());
     /// assert!(bb.set_beta(0.0).is_err());
     /// assert!(bb.set_beta(-1.0).is_err());
-    /// assert!(bb.set_beta(std::f64::INFINITY).is_err());
-    /// assert!(bb.set_beta(std::f64::NAN).is_err());
+    /// assert!(bb.set_beta(f64::INFINITY).is_err());
+    /// assert!(bb.set_beta(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_beta(&mut self, beta: f64) -> Result<(), BetaBinomialError> {
@@ -320,7 +342,7 @@ impl_display!(BetaBinomial);
 
 macro_rules! impl_int_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for BetaBinomial {
+        impl HasDensity<$kind> for BetaBinomial {
             fn ln_f(&self, k: &$kind) -> f64 {
                 let nf = f64::from(self.n);
                 let kf = *k as f64;
@@ -328,7 +350,9 @@ macro_rules! impl_int_traits {
                     + (kf + self.alpha).ln_beta(nf - kf + self.beta)
                     - self.ln_beta_ab()
             }
+        }
 
+        impl Sampleable<$kind> for BetaBinomial {
             fn draw<R: Rng>(&self, mut rng: &mut R) -> $kind {
                 self.sample(1, &mut rng)[0]
             }
@@ -340,7 +364,7 @@ macro_rules! impl_int_traits {
                 let ln_weights: Vec<f64> =
                     (0..=self.n).map(|x| self.ln_f(&x)).collect();
 
-                ln_pflip(&ln_weights, n, true, &mut rng)
+                ln_pflips(&ln_weights, n, true, &mut rng)
                     .iter()
                     .map(|k| *k as $kind)
                     .collect()
@@ -422,11 +446,14 @@ impl fmt::Display for BetaBinomialError {
 mod tests {
     use super::*;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!([count] BetaBinomial::new(10, 0.2, 0.7).unwrap());
+    test_basic_impls!(
+        u32,
+        BetaBinomial,
+        BetaBinomial::new(10, 0.2, 0.7).unwrap()
+    );
 
     #[test]
     fn new() {

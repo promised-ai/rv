@@ -1,4 +1,4 @@
-//! Possion distribution on unisgned integers
+//! Poisson distribution on unsigned integers
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -37,6 +37,18 @@ pub struct Geometric {
     // ln_(1-p)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_1mp: OnceLock<f64>,
+}
+
+impl Parameterized for Geometric {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.p()
+    }
+
+    fn from_params(p: Self::Parameters) -> Self {
+        Self::new_unchecked(p)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -115,9 +127,9 @@ impl Geometric {
     /// assert!(geom.set_p(0.0).is_err());
     /// assert!(geom.set_p(-1.0).is_err());
     /// assert!(geom.set_p(1.1).is_err());
-    /// assert!(geom.set_p(std::f64::INFINITY).is_err());
-    /// assert!(geom.set_p(std::f64::NEG_INFINITY).is_err());
-    /// assert!(geom.set_p(std::f64::NAN).is_err());
+    /// assert!(geom.set_p(f64::INFINITY).is_err());
+    /// assert!(geom.set_p(f64::NEG_INFINITY).is_err());
+    /// assert!(geom.set_p(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_p(&mut self, p: f64) -> Result<(), GeometricError> {
@@ -204,7 +216,7 @@ impl From<&Geometric> for String {
 
 impl_display!(Geometric);
 
-impl<X> Rv<X> for Geometric
+impl<X> HasDensity<X> for Geometric
 where
     X: Unsigned + Integer + FromPrimitive + ToPrimitive + Saturating + Bounded,
 {
@@ -213,7 +225,12 @@ where
         kf.mul_add(self.ln_1mp(), self.ln_p())
         // kf.mul_add((1.0 - self.p).ln(), self.p.ln())
     }
+}
 
+impl<X> Sampleable<X> for Geometric
+where
+    X: Unsigned + Integer + FromPrimitive + ToPrimitive + Saturating + Bounded,
+{
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
         // Follows the same pattern as
         // https://github.com/numpy/numpy/blob/7c41164f5340dc998ea1c04d2061f7d246894955/numpy/random/mtrand/distributions.c#L777
@@ -309,7 +326,7 @@ mod tests {
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!([count] Geometric::default());
+    test_basic_impls!(u32, Geometric);
 
     #[test]
     fn new() {

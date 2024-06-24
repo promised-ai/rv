@@ -30,7 +30,8 @@ use std::sync::OnceLock;
 /// assert::close(x, y, 1E-10);
 /// ```
 ///
-/// Kumaraswamy(a, 1) is equivalent to Beta(a, 1)  and Kumaraswamy(1, b) is equivalent to Beta(1, b)
+/// Kumaraswamy(a, 1) is equivalent to Beta(a, 1)  and Kumaraswamy(1, b) is
+/// equivalent to Beta(1, b)
 ///
 /// ```
 /// # use rv::prelude::*;
@@ -52,6 +53,26 @@ pub struct Kumaraswamy {
     #[cfg_attr(feature = "serde1", serde(skip))]
     /// Cached log(a*b)
     ab_ln: OnceLock<f64>,
+}
+
+pub struct KumaraswamyParameters {
+    pub a: f64,
+    pub b: f64,
+}
+
+impl Parameterized for Kumaraswamy {
+    type Parameters = KumaraswamyParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            a: self.a(),
+            b: self.b(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.a, params.b)
+    }
 }
 
 impl PartialEq for Kumaraswamy {
@@ -162,7 +183,7 @@ impl Kumaraswamy {
     ///
     /// ```rust
     /// # use rv::dist::Kumaraswamy;
-    /// # use rv::traits::{Rv, Cdf, Median};
+    /// # use rv::traits::*;
     /// // Bowl-shaped
     /// let kuma_1 = Kumaraswamy::centered(0.5).unwrap();
     /// let median_1: f64 = kuma_1.median().unwrap();
@@ -182,7 +203,7 @@ impl Kumaraswamy {
     ///
     /// ```rust
     /// # use rv::dist::Kumaraswamy;
-    /// # use rv::traits::{Rv, Cdf};
+    /// # use rv::traits::*;
     /// fn absolute_error(a: f64, b: f64) -> f64 {
     ///     (a - b).abs()
     /// }
@@ -253,9 +274,9 @@ impl Kumaraswamy {
     /// # let mut kuma = Kumaraswamy::new(1.0, 5.0).unwrap();
     /// assert!(kuma.set_a(2.3).is_ok());
     /// assert!(kuma.set_a(0.0).is_err());
-    /// assert!(kuma.set_a(std::f64::INFINITY).is_err());
-    /// assert!(kuma.set_a(std::f64::NEG_INFINITY).is_err());
-    /// assert!(kuma.set_a(std::f64::NAN).is_err());
+    /// assert!(kuma.set_a(f64::INFINITY).is_err());
+    /// assert!(kuma.set_a(f64::NEG_INFINITY).is_err());
+    /// assert!(kuma.set_a(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_a(&mut self, a: f64) -> Result<(), KumaraswamyError> {
@@ -295,9 +316,9 @@ impl Kumaraswamy {
     /// # let mut kuma = Kumaraswamy::new(1.0, 5.0).unwrap();
     /// assert!(kuma.set_b(2.3).is_ok());
     /// assert!(kuma.set_b(0.0).is_err());
-    /// assert!(kuma.set_b(std::f64::INFINITY).is_err());
-    /// assert!(kuma.set_b(std::f64::NEG_INFINITY).is_err());
-    /// assert!(kuma.set_b(std::f64::NAN).is_err());
+    /// assert!(kuma.set_b(f64::INFINITY).is_err());
+    /// assert!(kuma.set_b(f64::NEG_INFINITY).is_err());
+    /// assert!(kuma.set_b(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_b(&mut self, b: f64) -> Result<(), KumaraswamyError> {
@@ -332,7 +353,7 @@ fn invcdf(p: f64, a: f64, b: f64) -> f64 {
 
 macro_rules! impl_kumaraswamy {
     ($kind: ty) => {
-        impl Rv<$kind> for Kumaraswamy {
+        impl HasDensity<$kind> for Kumaraswamy {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let xf = *x as f64;
                 let a = self.a;
@@ -342,7 +363,9 @@ macro_rules! impl_kumaraswamy {
                     (a - 1.0).mul_add(xf.ln(), self.ab_ln()),
                 )
             }
+        }
 
+        impl Sampleable<$kind> for Kumaraswamy {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let p: f64 = rng.gen();
                 invcdf(p, self.a, self.b) as $kind
@@ -444,7 +467,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Kumaraswamy::centered(1.2).unwrap());
+    test_basic_impls!(f64, Kumaraswamy, Kumaraswamy::centered(1.2).unwrap());
 
     #[test]
     fn cdf_uniform_midpoint() {
@@ -453,7 +476,7 @@ mod tests {
     }
 
     #[test]
-    fn draw_should_resturn_values_within_0_to_1() {
+    fn draw_should_return_values_within_0_to_1() {
         let mut rng = rand::thread_rng();
         let kuma = Kumaraswamy::default();
         for _ in 0..100 {
@@ -599,7 +622,7 @@ mod tests {
     }
 
     #[test]
-    fn uniform_entropy_should_be_higheest() {
+    fn uniform_entropy_should_be_highest() {
         // XXX: This doesn't test values
         let kuma_u = Kumaraswamy::uniform();
         let kuma_m = Kumaraswamy::centered(3.0).unwrap();

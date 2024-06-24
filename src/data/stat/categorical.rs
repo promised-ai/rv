@@ -41,7 +41,7 @@ impl CategoricalSuffStat {
     /// ```
     /// # use rv::data::CategoricalSuffStat;
     /// # use rv::traits::SuffStat;
-    /// let mut stat = CategoricalSuffStat::new(3);
+    /// let mut stat = CategoricalSuffStat::new(2);
     ///
     /// stat.observe(&0_u8);
     /// stat.observe(&1_u8);
@@ -64,10 +64,10 @@ impl CategoricalSuffStat {
     /// let mut stat = CategoricalSuffStat::new(3);
     ///
     /// stat.observe(&0_u8);
-    /// stat.observe(&1_u8);
-    /// stat.observe(&1_u8);
+    /// stat.observe(&2_u8);
+    /// stat.observe(&2_u8);
     ///
-    /// assert_eq!(*stat.counts(), vec![1.0, 2.0, 0.0]);
+    /// assert_eq!(*stat.counts(), vec![1.0, 0.0, 2.0]);
     /// ```
     #[inline]
     pub fn counts(&self) -> &Vec<f64> {

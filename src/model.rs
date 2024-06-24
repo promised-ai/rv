@@ -1,4 +1,3 @@
-use crate::data::DataOrSuffStat;
 use crate::traits::*;
 use rand::Rng;
 use std::marker::PhantomData;
@@ -6,7 +5,7 @@ use std::sync::Arc;
 
 /// A wrapper for a complete conjugate model
 ///
-/// # Paramters
+/// # Parameters
 ///
 /// `X`: The type of the data/observations to be modeled
 /// `Fx`: The type of the likelihood, *f(x|θ)*
@@ -112,7 +111,7 @@ where
     }
 }
 
-impl<X, Fx, Pr> Rv<X> for ConjugateModel<X, Fx, Pr>
+impl<X, Fx, Pr> HasDensity<X> for ConjugateModel<X, Fx, Pr>
 where
     Fx: Rv<X> + HasSuffStat<X>,
     Pr: ConjugatePrior<X, Fx>,
@@ -120,7 +119,13 @@ where
     fn ln_f(&self, x: &X) -> f64 {
         self.prior.ln_pp(x, &self.obs())
     }
+}
 
+impl<X, Fx, Pr> Sampleable<X> for ConjugateModel<X, Fx, Pr>
+where
+    Fx: Rv<X> + HasSuffStat<X>,
+    Pr: ConjugatePrior<X, Fx>,
+{
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
         let post = self.posterior();
         let fx: Fx = post.draw(&mut rng);

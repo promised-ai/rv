@@ -50,6 +50,30 @@ pub struct NormalInvWishart {
     scale: DMatrix<f64>,
 }
 
+pub struct NormalInvWishartParameters {
+    pub mu: DVector<f64>,
+    pub k: f64,
+    pub df: usize,
+    pub scale: DMatrix<f64>,
+}
+
+impl Parameterized for NormalInvWishart {
+    type Parameters = NormalInvWishartParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu: self.mu().clone_owned(),
+            k: self.k(),
+            df: self.df(),
+            scale: self.scale().clone_owned(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu, params.k, params.df, params.scale)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -208,7 +232,7 @@ impl NormalInvWishart {
     }
 
     #[inline]
-    pub fn set_scale_unnchecked(&mut self, scale: DMatrix<f64>) {
+    pub fn set_scale_unchecked(&mut self, scale: DMatrix<f64>) {
         self.scale = scale;
     }
 
@@ -242,7 +266,7 @@ impl_display!(NormalInvWishart);
 
 // TODO: We might be able to make things faster by storing the InvWishart
 // because each time we create it, it clones and validates the parameters.
-impl Rv<MvGaussian> for NormalInvWishart {
+impl HasDensity<MvGaussian> for NormalInvWishart {
     fn ln_f(&self, x: &MvGaussian) -> f64 {
         let m = self.mu.clone();
         let sigma = x.cov().clone() / self.k;
@@ -251,7 +275,9 @@ impl Rv<MvGaussian> for NormalInvWishart {
         let iw = InvWishart::new_unchecked(self.scale.clone(), self.df);
         mvg.ln_f(x.mu()) + iw.ln_f(x.cov())
     }
+}
 
+impl Sampleable<MvGaussian> for NormalInvWishart {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> MvGaussian {
         let iw = InvWishart::new_unchecked(self.scale.clone(), self.df);
         let sigma: DMatrix<f64> = iw.draw(&mut rng);
@@ -306,6 +332,19 @@ impl fmt::Display for NormalInvWishartError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_basic_impls;
+
+    test_basic_impls!(
+        MvGaussian,
+        NormalInvWishart,
+        NormalInvWishart::new(
+            DVector::zeros(2),
+            1.0,
+            2,
+            DMatrix::identity(2, 2),
+        )
+        .unwrap()
+    );
 
     #[test]
     fn disallow_zero_k() {

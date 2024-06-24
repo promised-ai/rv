@@ -1,10 +1,10 @@
 use crate::misc::bessel::bessel_ikv_temme;
 
 use super::{e2_norm, CovGrad, CovGradError, Kernel, KernelError};
+use crate::misc::gammafn;
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
-use peroxide::prelude::gamma;
 use std::f64;
 
 #[cfg(feature = "serde1")]
@@ -35,13 +35,13 @@ impl MaternKernel {
             Err(KernelError::ParameterOutOfBounds {
                 name: "nu".to_string(),
                 given: nu,
-                bounds: (0.0, std::f64::INFINITY),
+                bounds: (0.0, f64::INFINITY),
             })
         } else if length_scale <= 0.0 {
             Err(KernelError::ParameterOutOfBounds {
                 name: "length_scale".to_string(),
                 given: length_scale,
-                bounds: (0.0, std::f64::INFINITY),
+                bounds: (0.0, f64::INFINITY),
             })
         } else {
             Ok(Self { nu, length_scale })
@@ -63,7 +63,7 @@ impl MaternKernel {
         let n = x.nrows();
 
         let mut dm: DMatrix<f64> = DMatrix::zeros(n, n);
-        let c = (1.0 - self.nu).exp2() / gamma(self.nu);
+        let c = (1.0 - self.nu).exp2() / gammafn(self.nu);
         let sqrt_two_nu = (2.0 * self.nu).sqrt();
 
         for i in 0..n {
@@ -119,7 +119,7 @@ impl Kernel for MaternKernel {
         let n = x2.nrows();
 
         let mut dm: DMatrix<f64> = DMatrix::zeros(m, n);
-        let c = (1.0 - self.nu).exp2() / gamma(self.nu);
+        let c = (1.0 - self.nu).exp2() / gammafn(self.nu);
         let sqrt_two_nu = (2.0 * self.nu).sqrt();
 
         for i in 0..m {
@@ -163,7 +163,7 @@ impl Kernel for MaternKernel {
             [] => Err(KernelError::MissingParameters(2)),
             [_] => Err(KernelError::MissingParameters(1)),
             [ln_nu, ln_length] => Self::new(ln_nu.exp(), ln_length.exp()),
-            _ => Err(KernelError::ExtraniousParameters(params.len() - 2)),
+            _ => Err(KernelError::ExtraneousParameters(params.len() - 2)),
         }
     }
 

@@ -12,6 +12,8 @@ use std::f64;
 use std::fmt;
 use std::sync::OnceLock;
 
+pub mod bernoulli_prior;
+
 /// UnitPowerLaw(α) over x in (0, 1).
 ///
 /// # Examples
@@ -37,6 +39,18 @@ pub struct UnitPowerLaw {
     // Cached alpha.ln()
     #[cfg_attr(feature = "serde1", serde(skip))]
     alpha_ln: OnceLock<f64>,
+}
+
+impl Parameterized for UnitPowerLaw {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.alpha()
+    }
+
+    fn from_params(alpha: Self::Parameters) -> Self {
+        Self::new_unchecked(alpha)
+    }
 }
 
 impl PartialEq for UnitPowerLaw {
@@ -142,8 +156,8 @@ impl UnitPowerLaw {
     /// assert!(powlaw.set_alpha(0.1).is_ok());
     /// assert!(powlaw.set_alpha(0.0).is_err());
     /// assert!(powlaw.set_alpha(-1.0).is_err());
-    /// assert!(powlaw.set_alpha(std::f64::INFINITY).is_err());
-    /// assert!(powlaw.set_alpha(std::f64::NAN).is_err());
+    /// assert!(powlaw.set_alpha(f64::INFINITY).is_err());
+    /// assert!(powlaw.set_alpha(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_alpha(&mut self, alpha: f64) -> Result<(), UnitPowerLawError> {
@@ -167,13 +181,13 @@ impl UnitPowerLaw {
 
     /// Evaluate or fetch cached ln(a*b)
     #[inline]
-    fn alpha_inv(&self) -> f64 {
+    pub fn alpha_inv(&self) -> f64 {
         *self.alpha_inv.get_or_init(|| self.alpha.recip())
     }
 
     /// Evaluate or fetch cached ln(a*b)
     #[inline]
-    fn alpha_ln(&self) -> f64 {
+    pub fn alpha_ln(&self) -> f64 {
         *self.alpha_ln.get_or_init(|| self.alpha.ln())
     }
 }
@@ -200,11 +214,13 @@ impl_display!(UnitPowerLaw);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for UnitPowerLaw {
+        impl HasDensity<$kind> for UnitPowerLaw {
             fn ln_f(&self, x: &$kind) -> f64 {
                 (*x as f64).ln().mul_add(self.alpha - 1.0, self.alpha_ln())
             }
+        }
 
+        impl Sampleable<$kind> for UnitPowerLaw {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 self.invcdf(rng.gen::<f64>())
             }
@@ -330,13 +346,12 @@ mod tests {
     use super::*;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] UnitPowerLaw::new(1.5).unwrap());
+    test_basic_impls!(f64, UnitPowerLaw, UnitPowerLaw::new(1.5).unwrap());
 
     #[test]
     fn new() {
@@ -413,7 +428,7 @@ mod tests {
     }
 
     #[test]
-    fn draw_should_resturn_values_within_0_to_1() {
+    fn draw_should_return_values_within_0_to_1() {
         let mut rng = rand::thread_rng();
         let powlaw = UnitPowerLaw::new(2.0).unwrap();
         for _ in 0..100 {

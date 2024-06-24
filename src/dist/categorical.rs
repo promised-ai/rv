@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{CategoricalDatum, CategoricalSuffStat};
 use crate::impl_display;
-use crate::misc::{argmax, ln_pflip, logsumexp, vec_to_string};
+use crate::misc::{argmax, ln_pflips, logsumexp, vec_to_string};
 use crate::traits::*;
 use rand::Rng;
 use std::fmt;
@@ -17,6 +17,24 @@ use std::fmt;
 pub struct Categorical {
     // Use log weights instead to optimize for computation of ln_f
     ln_weights: Vec<f64>,
+}
+
+pub struct CategoricalParameters {
+    pub ln_weights: Vec<f64>,
+}
+
+impl Parameterized for Categorical {
+    type Parameters = CategoricalParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            ln_weights: self.ln_weights().clone(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.ln_weights)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -118,7 +136,7 @@ impl Categorical {
             .enumerate()
             .try_for_each(|(ix, &weight)| {
                 // Manually check for -Inf
-                if weight.is_finite() || weight == std::f64::NEG_INFINITY {
+                if weight.is_finite() || weight == f64::NEG_INFINITY {
                     Ok(())
                 } else {
                     // Catch Inf and NaN
@@ -188,19 +206,21 @@ impl From<&Categorical> for String {
 
 impl_display!(Categorical);
 
-impl<X: CategoricalDatum> Rv<X> for Categorical {
+impl<X: CategoricalDatum> HasDensity<X> for Categorical {
     fn ln_f(&self, x: &X) -> f64 {
         let ix: usize = x.into_usize();
         self.ln_weights[ix]
     }
+}
 
+impl<X: CategoricalDatum> Sampleable<X> for Categorical {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
-        let ix = ln_pflip(&self.ln_weights, 1, true, &mut rng)[0];
+        let ix = ln_pflips(&self.ln_weights, 1, true, &mut rng)[0];
         CategoricalDatum::from_usize(ix)
     }
 
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<X> {
-        ln_pflip(&self.ln_weights, n, true, &mut rng)
+        ln_pflips(&self.ln_weights, n, true, &mut rng)
             .iter()
             .map(|&ix| CategoricalDatum::from_usize(ix))
             .collect()
@@ -302,17 +322,16 @@ mod tests {
     use crate::misc::x2_test;
     use crate::test_basic_impls;
     use std::f64::consts::LN_2;
-    use std::f64::NEG_INFINITY;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!([categorical] Categorical::uniform(3));
+    test_basic_impls!(u8, Categorical, Categorical::uniform(3));
 
     #[test]
     fn from_ln_weights_with_zero_weight_should_work() {
-        let ln_weights: Vec<f64> = vec![-LN_2, NEG_INFINITY, -LN_2];
+        let ln_weights: Vec<f64> = vec![-LN_2, f64::NEG_INFINITY, -LN_2];
         let res = Categorical::from_ln_weights(ln_weights);
         assert!(res.is_ok());
     }

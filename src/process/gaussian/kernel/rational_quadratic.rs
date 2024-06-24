@@ -98,7 +98,7 @@ impl Kernel for RationalQuadratic {
             [length_scale, mixture] => {
                 Self::new(length_scale.exp(), mixture.exp())
             }
-            _ => Err(KernelError::ExtraniousParameters(params.len() - 1)),
+            _ => Err(KernelError::ExtraneousParameters(params.len() - 1)),
         }
     }
 

@@ -1,4 +1,4 @@
-//! Χ</sup>-2</sup> over x in (0, ∞)
+//! Χ<sup>-2</sup> over x in (0, ∞)
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -30,6 +30,18 @@ pub struct InvChiSquared {
     // ln( 2^{-v/2} / gamma(v/2))
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_f_const: OnceLock<f64>,
+}
+
+impl Parameterized for InvChiSquared {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.v()
+    }
+
+    fn from_params(v: Self::Parameters) -> Self {
+        Self::new_unchecked(v)
+    }
 }
 
 impl PartialEq for InvChiSquared {
@@ -111,8 +123,8 @@ impl InvChiSquared {
     /// assert!(ix2.set_v(2.2).is_ok());
     /// assert!(ix2.set_v(0.0).is_err());
     /// assert!(ix2.set_v(-1.0).is_err());
-    /// assert!(ix2.set_v(std::f64::NAN).is_err());
-    /// assert!(ix2.set_v(std::f64::INFINITY).is_err());
+    /// assert!(ix2.set_v(f64::NAN).is_err());
+    /// assert!(ix2.set_v(f64::INFINITY).is_err());
     /// ```
     #[inline]
     pub fn set_v(&mut self, v: f64) -> Result<(), InvChiSquaredError> {
@@ -152,13 +164,15 @@ impl_display!(InvChiSquared);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for InvChiSquared {
+        impl HasDensity<$kind> for InvChiSquared {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let x64 = f64::from(*x);
                 let z = self.ln_f_const();
                 (-self.v / 2.0 - 1.0).mul_add(x64.ln(), z) - (2.0 * x64).recip()
             }
+        }
 
+        impl Sampleable<$kind> for InvChiSquared {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let x2 = rand_distr::ChiSquared::new(self.v).unwrap();
                 let x_inv: f64 = rng.sample(x2);
@@ -262,7 +276,7 @@ mod test {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] InvChiSquared::new(3.2).unwrap());
+    test_basic_impls!(f64, InvChiSquared, InvChiSquared::new(3.2).unwrap());
 
     #[test]
     fn new() {

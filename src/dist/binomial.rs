@@ -51,6 +51,26 @@ pub struct Binomial {
     p: f64,
 }
 
+pub struct BinomialParameters {
+    pub n: u64,
+    pub p: f64,
+}
+
+impl Parameterized for Binomial {
+    type Parameters = BinomialParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            n: self.n(),
+            p: self.p(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.n, params.p)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -71,7 +91,7 @@ impl Binomial {
     /// # Arguments
     ///
     /// - n: the total number of trials
-    /// - p: the pobability of success
+    /// - p: the probability of success
     pub fn new(n: u64, p: f64) -> Result<Self, BinomialError> {
         if n == 0 {
             Err(BinomialError::NIsZero)
@@ -195,9 +215,9 @@ impl Binomial {
     /// assert!(binom.set_p(1.0).is_ok());
     /// assert!(binom.set_p(-1.0).is_err());
     /// assert!(binom.set_p(1.1).is_err());
-    /// assert!(binom.set_p(std::f64::INFINITY).is_err());
-    /// assert!(binom.set_p(std::f64::NEG_INFINITY).is_err());
-    /// assert!(binom.set_p(std::f64::NAN).is_err());
+    /// assert!(binom.set_p(f64::INFINITY).is_err());
+    /// assert!(binom.set_p(f64::NEG_INFINITY).is_err());
+    /// assert!(binom.set_p(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_p(&mut self, p: f64) -> Result<(), BinomialError> {
@@ -244,7 +264,7 @@ impl_display!(Binomial);
 
 macro_rules! impl_int_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Binomial {
+        impl HasDensity<$kind> for Binomial {
             fn ln_f(&self, k: &$kind) -> f64 {
                 let nf = self.n as f64;
                 let kf = *k as f64;
@@ -254,6 +274,9 @@ macro_rules! impl_int_traits {
                     self.p.ln().mul_add(kf, ln_binom(nf, kf)),
                 )
             }
+        }
+
+        impl Sampleable<$kind> for Binomial {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let b = rand_distr::Binomial::new(self.n, self.p).unwrap();
                 rng.sample(b) as $kind
@@ -337,13 +360,12 @@ mod tests {
     use super::*;
     use crate::misc::x2_test;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!([count] Binomial::uniform(10));
+    test_basic_impls!(u32, Binomial, Binomial::uniform(10));
 
     #[test]
     fn new() {

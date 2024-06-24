@@ -4,7 +4,7 @@ use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use nalgebra::DVector;
 use rv::dist::MvGaussian;
-use rv::traits::{ContinuousDistr, Rv};
+use rv::traits::*;
 
 fn bench_mvg_draw(c: &mut Criterion) {
     let mut group = c.benchmark_group("MvGaussian, draw 1");

@@ -1,4 +1,3 @@
-use rv::data::DataOrSuffStat;
 use rv::dist::{Categorical, SymmetricDirichlet};
 use rv::prelude::CategoricalData;
 use rv::traits::*;
@@ -22,7 +21,7 @@ fn main() {
     let pp_5: f64 = prior.pp(&5_u8, &obs);
     println!("P(y = 5 | rolls) = {}", pp_5);
 
-    // Draw a sample from the posterior distributoin P(θ|x)
+    // Draw a sample from the posterior distribution P(θ|x)
     let weights: Vec<f64> = prior.posterior(&obs).draw(&mut rng);
     println!("Die weight sample: {:?}", weights);
 }

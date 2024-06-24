@@ -33,6 +33,26 @@ pub struct Laplace {
     b: f64,
 }
 
+pub struct LaplaceParameters {
+    pub mu: f64,
+    pub b: f64,
+}
+
+impl Parameterized for Laplace {
+    type Parameters = LaplaceParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu: self.mu(),
+            b: self.b(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu, params.b)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -98,9 +118,9 @@ impl Laplace {
     /// # use rv::dist::Laplace;
     /// # let mut laplace = Laplace::new(-1.0, 2.0).unwrap();
     /// assert!(laplace.set_mu(0.0).is_ok());
-    /// assert!(laplace.set_mu(std::f64::INFINITY).is_err());
-    /// assert!(laplace.set_mu(std::f64::NEG_INFINITY).is_err());
-    /// assert!(laplace.set_mu(std::f64::NAN).is_err());
+    /// assert!(laplace.set_mu(f64::INFINITY).is_err());
+    /// assert!(laplace.set_mu(f64::NEG_INFINITY).is_err());
+    /// assert!(laplace.set_mu(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), LaplaceError> {
@@ -151,9 +171,9 @@ impl Laplace {
     /// # let mut laplace = Laplace::new(-1.0, 2.0).unwrap();
     /// assert!(laplace.set_b(2.3).is_ok());
     /// assert!(laplace.set_b(0.0).is_err());
-    /// assert!(laplace.set_b(std::f64::INFINITY).is_err());
-    /// assert!(laplace.set_b(std::f64::NEG_INFINITY).is_err());
-    /// assert!(laplace.set_b(std::f64::NAN).is_err());
+    /// assert!(laplace.set_b(f64::INFINITY).is_err());
+    /// assert!(laplace.set_b(f64::NEG_INFINITY).is_err());
+    /// assert!(laplace.set_b(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_b(&mut self, b: f64) -> Result<(), LaplaceError> {
@@ -197,12 +217,14 @@ fn laplace_partial_draw(u: f64) -> f64 {
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Laplace {
+        impl HasDensity<$kind> for Laplace {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could cache ln(b)
                 -(f64::from(*x) - self.mu).abs() / self.b - self.b.ln() - LN_2
             }
+        }
 
+        impl Sampleable<$kind> for Laplace {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let u = rng.sample(rand_distr::OpenClosed01);
                 self.b.mul_add(-laplace_partial_draw(u), self.mu) as $kind
@@ -300,7 +322,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Laplace::default());
+    test_basic_impls!(f64, Laplace);
 
     #[test]
     fn new() {

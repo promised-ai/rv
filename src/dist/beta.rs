@@ -29,7 +29,7 @@ pub mod bernoulli_prior;
 ///
 /// // The posterior predictive probability that a coin will come up heads given
 /// // no new observations.
-/// let p_prior_heads = beta.pp(&true, &DataOrSuffStat::None); // 0.5
+/// let p_prior_heads = beta.pp(&true, &DataOrSuffStat::from(&vec![])); // 0.5
 /// assert!((p_prior_heads - 0.5).abs() < 1E-12);
 ///
 /// // Five Bernoulli trials. We flipped a coin five times and it came up head
@@ -50,6 +50,26 @@ pub struct Beta {
     #[cfg_attr(feature = "serde1", serde(skip))]
     /// Cached ln(Beta(a, b))
     ln_beta_ab: OnceLock<f64>,
+}
+
+pub struct BetaParameters {
+    pub alpha: f64,
+    pub beta: f64,
+}
+
+impl Parameterized for Beta {
+    type Parameters = BetaParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            alpha: self.alpha(),
+            beta: self.beta(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.alpha, params.beta)
+    }
 }
 
 impl PartialEq for Beta {
@@ -190,8 +210,8 @@ impl Beta {
     /// assert!(beta.set_alpha(0.1).is_ok());
     /// assert!(beta.set_alpha(0.0).is_err());
     /// assert!(beta.set_alpha(-1.0).is_err());
-    /// assert!(beta.set_alpha(std::f64::INFINITY).is_err());
-    /// assert!(beta.set_alpha(std::f64::NAN).is_err());
+    /// assert!(beta.set_alpha(f64::INFINITY).is_err());
+    /// assert!(beta.set_alpha(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_alpha(&mut self, alpha: f64) -> Result<(), BetaError> {
@@ -246,8 +266,8 @@ impl Beta {
     /// assert!(beta.set_beta(0.1).is_ok());
     /// assert!(beta.set_beta(0.0).is_err());
     /// assert!(beta.set_beta(-1.0).is_err());
-    /// assert!(beta.set_beta(std::f64::INFINITY).is_err());
-    /// assert!(beta.set_beta(std::f64::NAN).is_err());
+    /// assert!(beta.set_beta(f64::INFINITY).is_err());
+    /// assert!(beta.set_beta(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_beta(&mut self, beta: f64) -> Result<(), BetaError> {
@@ -293,14 +313,16 @@ impl_display!(Beta);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Beta {
+        impl HasDensity<$kind> for Beta {
             fn ln_f(&self, x: &$kind) -> f64 {
                 (self.alpha - 1.0).mul_add(
                     f64::from(*x).ln(),
                     (self.beta - 1.0) * (1.0 - f64::from(*x)).ln(),
                 ) - self.ln_beta_ab()
             }
+        }
 
+        impl Sampleable<$kind> for Beta {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let b = rand_distr::Beta::new(self.alpha, self.beta).unwrap();
                 rng.sample(b) as $kind
@@ -446,13 +468,12 @@ mod tests {
     use super::*;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Beta::jeffreys());
+    test_basic_impls!(f64, Beta, Beta::jeffreys());
 
     #[test]
     fn new() {
@@ -576,7 +597,7 @@ mod tests {
     }
 
     #[test]
-    fn draw_should_resturn_values_within_0_to_1() {
+    fn draw_should_return_values_within_0_to_1() {
         let mut rng = rand::thread_rng();
         let beta = Beta::jeffreys();
         for _ in 0..100 {

@@ -9,7 +9,7 @@ mod gaussian_prior;
 
 use crate::dist::{Gaussian, InvGamma};
 use crate::impl_display;
-use crate::traits::Rv;
+use crate::traits::*;
 use rand::Rng;
 use std::fmt;
 
@@ -25,6 +25,30 @@ pub struct NormalInvGamma {
     v: f64,
     a: f64,
     b: f64,
+}
+
+pub struct NormalInvGammaParameters {
+    pub m: f64,
+    pub v: f64,
+    pub a: f64,
+    pub b: f64,
+}
+
+impl Parameterized for NormalInvGamma {
+    type Parameters = NormalInvGammaParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            m: self.m(),
+            v: self.v(),
+            a: self.a(),
+            b: self.b(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.m, params.v, params.a, params.b)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -87,12 +111,6 @@ impl NormalInvGamma {
         NormalInvGamma { m, v, a, b }
     }
 
-    /// Returns (m, v, a, b)
-    #[inline(always)]
-    pub fn params(&self) -> (f64, f64, f64, f64) {
-        (self.m, self.v, self.a, self.b)
-    }
-
     /// Get the m parameter
     #[inline(always)]
     pub fn m(&self) -> f64 {
@@ -119,9 +137,9 @@ impl NormalInvGamma {
     /// # use rv::dist::NormalInvGamma;
     /// # let mut nig = NormalInvGamma::new(0.0, 1.2, 2.3, 3.4).unwrap();
     /// assert!(nig.set_m(-1.1).is_ok());
-    /// assert!(nig.set_m(std::f64::INFINITY).is_err());
-    /// assert!(nig.set_m(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nig.set_m(std::f64::NAN).is_err());
+    /// assert!(nig.set_m(f64::INFINITY).is_err());
+    /// assert!(nig.set_m(f64::NEG_INFINITY).is_err());
+    /// assert!(nig.set_m(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_m(&mut self, m: f64) -> Result<(), NormalInvGammaError> {
@@ -171,9 +189,9 @@ impl NormalInvGamma {
     /// assert!(nig.set_v(-1.0).is_err());
     ///
     ///
-    /// assert!(nig.set_v(std::f64::INFINITY).is_err());
-    /// assert!(nig.set_v(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nig.set_v(std::f64::NAN).is_err());
+    /// assert!(nig.set_v(f64::INFINITY).is_err());
+    /// assert!(nig.set_v(f64::NEG_INFINITY).is_err());
+    /// assert!(nig.set_v(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_v(&mut self, v: f64) -> Result<(), NormalInvGammaError> {
@@ -225,9 +243,9 @@ impl NormalInvGamma {
     /// assert!(nig.set_a(-1.0).is_err());
     ///
     ///
-    /// assert!(nig.set_a(std::f64::INFINITY).is_err());
-    /// assert!(nig.set_a(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nig.set_a(std::f64::NAN).is_err());
+    /// assert!(nig.set_a(f64::INFINITY).is_err());
+    /// assert!(nig.set_a(f64::NEG_INFINITY).is_err());
+    /// assert!(nig.set_a(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_a(&mut self, a: f64) -> Result<(), NormalInvGammaError> {
@@ -279,9 +297,9 @@ impl NormalInvGamma {
     /// assert!(nig.set_b(-1.0).is_err());
     ///
     ///
-    /// assert!(nig.set_b(std::f64::INFINITY).is_err());
-    /// assert!(nig.set_b(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nig.set_b(std::f64::NAN).is_err());
+    /// assert!(nig.set_b(f64::INFINITY).is_err());
+    /// assert!(nig.set_b(f64::NEG_INFINITY).is_err());
+    /// assert!(nig.set_b(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_b(&mut self, b: f64) -> Result<(), NormalInvGammaError> {
@@ -313,7 +331,7 @@ impl From<&NormalInvGamma> for String {
 
 impl_display!(NormalInvGamma);
 
-impl Rv<Gaussian> for NormalInvGamma {
+impl HasDensity<Gaussian> for NormalInvGamma {
     fn ln_f(&self, x: &Gaussian) -> f64 {
         // TODO: could cache the gamma and Gaussian distributions
         let mu = x.mu();
@@ -324,7 +342,9 @@ impl Rv<Gaussian> for NormalInvGamma {
         let lnf_mu = Gaussian::new_unchecked(self.m, prior_sigma).ln_f(&mu);
         lnf_sigma + lnf_mu
     }
+}
 
+impl Sampleable<Gaussian> for NormalInvGamma {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> Gaussian {
         // NOTE: The parameter errors in this fn shouldn't happen if the prior
         // parameters are valid.
@@ -335,11 +355,7 @@ impl Rv<Gaussian> for NormalInvGamma {
             .unwrap()
             .draw(&mut rng);
 
-        let sigma = if var <= 0.0 {
-            std::f64::EPSILON
-        } else {
-            var.sqrt()
-        };
+        let sigma = if var <= 0.0 { f64::EPSILON } else { var.sqrt() };
 
         let post_sigma: f64 = self.v.sqrt() * sigma;
         let mu: f64 = Gaussian::new(self.m, post_sigma)
@@ -373,4 +389,16 @@ impl fmt::Display for NormalInvGammaError {
             }
         }
     }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::test_basic_impls;
+
+    test_basic_impls!(
+        Gaussian,
+        NormalInvGamma,
+        NormalInvGamma::new(0.1, 1.2, 2.3, 3.4).unwrap()
+    );
 }

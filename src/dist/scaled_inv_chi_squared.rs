@@ -1,4 +1,4 @@
-//! Χ</sup>-2</sup> over x in (0, ∞)
+//! Χ<sup>-2</sup> over x in (0, ∞)
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -34,6 +34,26 @@ pub struct ScaledInvChiSquared {
     // ln (t2*v/2)^(v/2)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_f_const: OnceLock<f64>,
+}
+
+pub struct ScaledInvChiSquaredParameters {
+    pub v: f64,
+    pub t2: f64,
+}
+
+impl Parameterized for ScaledInvChiSquared {
+    type Parameters = ScaledInvChiSquaredParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            v: self.v(),
+            t2: self.t2(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.v, params.t2)
+    }
 }
 
 impl PartialEq for ScaledInvChiSquared {
@@ -128,8 +148,8 @@ impl ScaledInvChiSquared {
     /// assert!(ix2.set_v(2.2).is_ok());
     /// assert!(ix2.set_v(0.0).is_err());
     /// assert!(ix2.set_v(-1.0).is_err());
-    /// assert!(ix2.set_v(std::f64::NAN).is_err());
-    /// assert!(ix2.set_v(std::f64::INFINITY).is_err());
+    /// assert!(ix2.set_v(f64::NAN).is_err());
+    /// assert!(ix2.set_v(f64::INFINITY).is_err());
     /// ```
     #[inline]
     pub fn set_v(&mut self, v: f64) -> Result<(), ScaledInvChiSquaredError> {
@@ -184,8 +204,8 @@ impl ScaledInvChiSquared {
     /// assert!(ix2.set_t2(2.2).is_ok());
     /// assert!(ix2.set_t2(0.0).is_err());
     /// assert!(ix2.set_t2(-1.0).is_err());
-    /// assert!(ix2.set_t2(std::f64::NAN).is_err());
-    /// assert!(ix2.set_t2(std::f64::INFINITY).is_err());
+    /// assert!(ix2.set_t2(f64::NAN).is_err());
+    /// assert!(ix2.set_t2(f64::INFINITY).is_err());
     /// ```
     #[inline]
     pub fn set_t2(&mut self, t2: f64) -> Result<(), ScaledInvChiSquaredError> {
@@ -234,14 +254,16 @@ impl_display!(ScaledInvChiSquared);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for ScaledInvChiSquared {
+        impl HasDensity<$kind> for ScaledInvChiSquared {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let x64 = f64::from(*x);
                 let term_1 = -self.v * self.t2 / (2.0 * x64);
                 let term_2 = self.v.mul_add(0.5, 1.0) * x64.ln();
                 self.ln_f_const() - self.ln_gamma_v_2() + term_1 - term_2
             }
+        }
 
+        impl Sampleable<$kind> for ScaledInvChiSquared {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let a = 0.5 * self.v;
                 let b = 0.5 * self.v * self.t2;
@@ -353,7 +375,11 @@ mod test {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] ScaledInvChiSquared::new(3.2, 1.4).unwrap());
+    test_basic_impls!(
+        f64,
+        ScaledInvChiSquared,
+        ScaledInvChiSquared::new(3.2, 1.4).unwrap()
+    );
 
     #[test]
     fn new() {

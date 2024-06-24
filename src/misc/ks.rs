@@ -65,7 +65,7 @@ pub enum KsMode {
     Exact,
     /// Compute the statistic in the large N limit
     Asymptotic,
-    /// Determine appropiate method automatically.
+    /// Determine appropriate method automatically.
     #[default]
     Auto,
 }
@@ -73,7 +73,7 @@ pub enum KsMode {
 /// Hypothesis Alternative for ks_two_sample test
 #[derive(Debug, Clone, Copy, Default)]
 pub enum KsAlternative {
-    /// Alternative where the emperical CDFs could lie on either side on one another.
+    /// Alternative where the empirical CDFs could lie on either side on one another.
     #[default]
     TwoSided,
     /// Alternative where the emperical CDF of the first sequence is strictly less than the
@@ -95,7 +95,7 @@ pub enum KsError {
 
 /// Two sample Kolmogorov-Smirnov statistic on two samples.
 ///
-/// Heavily inspired by https://github.com/scipy/scipy/blob/v1.4.1/scipy/stats/stats.py#L6087
+/// Heavily inspired by <https://github.com/scipy/scipy/blob/v1.4.1/scipy/stats/stats.py#L6087>
 /// Exact computations are derived from:
 ///     Hodges, J.L. Jr.,  "The Significance Probability of the Smirnov
 ///         Two-Sample Test," Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
@@ -162,7 +162,7 @@ where
         .iter()
         .zip(cdf_y.iter())
         .map(|(cx, cy)| (cx - cy))
-        .fold((std::f64::MAX, std::f64::MIN), |(min, max), z| {
+        .fold((f64::MAX, f64::MIN), |(min, max), z| {
             let new_min = min.min(z);
             let new_max = max.max(z);
             (new_min, new_max)
@@ -191,7 +191,7 @@ where
             }
         }
         KsMode::Exact => {
-            if n_x_g > std::f64::MAX / n_y_g {
+            if n_x_g > f64::MAX / n_y_g {
                 return Err(KsError::TooLongForExact);
             }
             KsMode::Exact
@@ -473,7 +473,6 @@ fn ks_cdf(n: usize, d: f64) -> f64 {
 mod tests {
     use super::*;
     use crate::dist::Gaussian;
-    use crate::traits::Cdf;
 
     const TOL: f64 = 1E-12;
 

@@ -91,7 +91,7 @@ pub fn main() -> std::io::Result<()> {
         gp.ln_m_with_params(&gp.kernel().parameters()).unwrap();
     println!("ln_m = {}\ngrad_ln_m = {:?}", ln_m, grad_ln_m);
 
-    // Let's find better parametes
+    // Let's find better parameters
     println!("Optimizing...");
     let mut rng = Xoshiro256Plus::seed_from_u64(0xABCD);
     let gp = gp.optimize(10, 0, &mut rng).expect("Failed to optimize");

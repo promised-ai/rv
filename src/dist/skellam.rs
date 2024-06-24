@@ -45,6 +45,26 @@ fn cache_default() -> RefCell<LruCache<i32, f64>> {
     RefCell::new(LruCache::new(unsafe { NonZeroUsize::new_unchecked(100) }))
 }
 
+pub struct SkellamParameters {
+    pub mu_1: f64,
+    pub mu_2: f64,
+}
+
+impl Parameterized for Skellam {
+    type Parameters = SkellamParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            mu_1: self.mu_1(),
+            mu_2: self.mu_2(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.mu_1, params.mu_2)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -120,9 +140,9 @@ impl Skellam {
     /// assert!(skel.set_mu_1(1.1).is_ok());
     /// assert!(skel.set_mu_1(0.0).is_err());
     /// assert!(skel.set_mu_1(-1.0).is_err());
-    /// assert!(skel.set_mu_1(std::f64::INFINITY).is_err());
-    /// assert!(skel.set_mu_1(std::f64::NEG_INFINITY).is_err());
-    /// assert!(skel.set_mu_1(std::f64::NAN).is_err());
+    /// assert!(skel.set_mu_1(f64::INFINITY).is_err());
+    /// assert!(skel.set_mu_1(f64::NEG_INFINITY).is_err());
+    /// assert!(skel.set_mu_1(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_mu_1(&mut self, mu_1: f64) -> Result<(), SkellamError> {
@@ -177,9 +197,9 @@ impl Skellam {
     /// assert!(skel.set_mu_2(1.1).is_ok());
     /// assert!(skel.set_mu_2(0.0).is_err());
     /// assert!(skel.set_mu_2(-1.0).is_err());
-    /// assert!(skel.set_mu_2(std::f64::INFINITY).is_err());
-    /// assert!(skel.set_mu_2(std::f64::NEG_INFINITY).is_err());
-    /// assert!(skel.set_mu_2(std::f64::NAN).is_err());
+    /// assert!(skel.set_mu_2(f64::INFINITY).is_err());
+    /// assert!(skel.set_mu_2(f64::NEG_INFINITY).is_err());
+    /// assert!(skel.set_mu_2(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_mu_2(&mut self, mu_2: f64) -> Result<(), SkellamError> {
@@ -222,7 +242,7 @@ impl_display!(Skellam);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Skellam {
+        impl HasDensity<$kind> for Skellam {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let kf = f64::from(*x);
                 let mut cache = self.bessel_iv_cache.borrow_mut();
@@ -239,13 +259,15 @@ macro_rules! impl_traits {
                 -(self.mu_1 + self.mu_2)
                     + (kf / 2.0).mul_add((self.mu_1 / self.mu_2).ln(), bf)
             }
+        }
 
+        impl Sampleable<$kind> for Skellam {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let pois_1 = Poisson::new_unchecked(self.mu_1);
                 let pois_2 = Poisson::new_unchecked(self.mu_2);
                 let x_1: u32 = pois_1.draw(rng);
                 let x_2: u32 = pois_2.draw(rng);
-                (x_1 - x_2) as $kind
+                (x_1 as i32 - x_2 as i32) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
@@ -333,7 +355,7 @@ mod tests {
     const N_TRIES: usize = 5;
     const X2_PVAL: f64 = 0.2;
 
-    test_basic_impls!(Skellam::new(0.5, 2.0).unwrap(), 3_i32);
+    test_basic_impls!(i32, Skellam, Skellam::new(1.0, 2.0).unwrap());
 
     #[test]
     fn new() {

@@ -27,6 +27,26 @@ pub struct Pareto {
     scale: f64,
 }
 
+pub struct ParetoParameters {
+    pub shape: f64,
+    pub scale: f64,
+}
+
+impl Parameterized for Pareto {
+    type Parameters = ParetoParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            shape: self.shape(),
+            scale: self.scale(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.shape, params.scale)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -98,9 +118,9 @@ impl Pareto {
     /// assert!(pareto.set_shape(1.1).is_ok());
     /// assert!(pareto.set_shape(0.0).is_err());
     /// assert!(pareto.set_shape(-1.0).is_err());
-    /// assert!(pareto.set_shape(std::f64::INFINITY).is_err());
-    /// assert!(pareto.set_shape(std::f64::NEG_INFINITY).is_err());
-    /// assert!(pareto.set_shape(std::f64::NAN).is_err());
+    /// assert!(pareto.set_shape(f64::INFINITY).is_err());
+    /// assert!(pareto.set_shape(f64::NEG_INFINITY).is_err());
+    /// assert!(pareto.set_shape(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_shape(&mut self, shape: f64) -> Result<(), ParetoError> {
@@ -155,9 +175,9 @@ impl Pareto {
     /// assert!(pareto.set_scale(1.1).is_ok());
     /// assert!(pareto.set_scale(0.0).is_err());
     /// assert!(pareto.set_scale(-1.0).is_err());
-    /// assert!(pareto.set_scale(std::f64::INFINITY).is_err());
-    /// assert!(pareto.set_scale(std::f64::NEG_INFINITY).is_err());
-    /// assert!(pareto.set_scale(std::f64::NAN).is_err());
+    /// assert!(pareto.set_scale(f64::INFINITY).is_err());
+    /// assert!(pareto.set_scale(f64::NEG_INFINITY).is_err());
+    /// assert!(pareto.set_scale(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_scale(&mut self, scale: f64) -> Result<(), ParetoError> {
@@ -188,7 +208,7 @@ impl_display!(Pareto);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Pareto {
+        impl HasDensity<$kind> for Pareto {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: cache ln(shape) and ln(scale)
                 (self.shape + 1.0).mul_add(
@@ -196,7 +216,9 @@ macro_rules! impl_traits {
                     self.shape.mul_add(self.scale.ln(), self.shape.ln()),
                 )
             }
+        }
 
+        impl Sampleable<$kind> for Pareto {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let p =
                     rand_distr::Pareto::new(self.scale, self.shape).unwrap();
@@ -318,13 +340,12 @@ mod tests {
     use super::*;
     use crate::misc::{ks_test, linspace};
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Pareto::new(1.0, 0.2).unwrap());
+    test_basic_impls!(f64, Pareto, Pareto::new(1.0, 0.2).unwrap());
 
     #[test]
     fn new() {

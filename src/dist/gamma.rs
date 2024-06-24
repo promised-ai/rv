@@ -37,6 +37,26 @@ pub struct Gamma {
     ln_rate: OnceLock<f64>,
 }
 
+pub struct GammaParameters {
+    pub shape: f64,
+    pub rate: f64,
+}
+
+impl Parameterized for Gamma {
+    type Parameters = GammaParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            shape: self.shape(),
+            rate: self.rate(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.shape, params.rate)
+    }
+}
+
 impl PartialEq for Gamma {
     fn eq(&self, other: &Gamma) -> bool {
         self.shape == other.shape && self.rate == other.rate
@@ -131,9 +151,9 @@ impl Gamma {
     /// assert!(gam.set_shape(1.1).is_ok());
     /// assert!(gam.set_shape(0.0).is_err());
     /// assert!(gam.set_shape(-1.0).is_err());
-    /// assert!(gam.set_shape(std::f64::INFINITY).is_err());
-    /// assert!(gam.set_shape(std::f64::NEG_INFINITY).is_err());
-    /// assert!(gam.set_shape(std::f64::NAN).is_err());
+    /// assert!(gam.set_shape(f64::INFINITY).is_err());
+    /// assert!(gam.set_shape(f64::NEG_INFINITY).is_err());
+    /// assert!(gam.set_shape(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_shape(&mut self, shape: f64) -> Result<(), GammaError> {
@@ -189,9 +209,9 @@ impl Gamma {
     /// assert!(gam.set_rate(1.1).is_ok());
     /// assert!(gam.set_rate(0.0).is_err());
     /// assert!(gam.set_rate(-1.0).is_err());
-    /// assert!(gam.set_rate(std::f64::INFINITY).is_err());
-    /// assert!(gam.set_rate(std::f64::NEG_INFINITY).is_err());
-    /// assert!(gam.set_rate(std::f64::NAN).is_err());
+    /// assert!(gam.set_rate(f64::INFINITY).is_err());
+    /// assert!(gam.set_rate(f64::NEG_INFINITY).is_err());
+    /// assert!(gam.set_rate(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_rate(&mut self, rate: f64) -> Result<(), GammaError> {
@@ -229,7 +249,7 @@ impl_display!(Gamma);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Gamma {
+        impl HasDensity<$kind> for Gamma {
             fn ln_f(&self, x: &$kind) -> f64 {
                 self.shape.mul_add(self.ln_rate(), -self.ln_gamma_shape())
                     + (self.shape - 1.0).mul_add(
@@ -237,7 +257,9 @@ macro_rules! impl_traits {
                         -(self.rate * f64::from(*x)),
                     )
             }
+        }
 
+        impl Sampleable<$kind> for Gamma {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let g = rand_distr::Gamma::new(self.shape, 1.0 / self.rate)
                     .unwrap();
@@ -345,7 +367,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] Gamma::default());
+    test_basic_impls!(f64, Gamma, Gamma::new_unchecked(1.0, 2.0));
 
     #[test]
     fn new() {
@@ -379,7 +401,7 @@ mod tests {
     }
 
     #[test]
-    fn ln_pdf_hight_value() {
+    fn ln_pdf_high_value() {
         let gam = Gamma::new(1.2, 3.4).unwrap();
         assert::close(
             gam.ln_pdf(&0.352_941_176_470_588_26_f64),

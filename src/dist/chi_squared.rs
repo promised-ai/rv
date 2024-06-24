@@ -1,4 +1,4 @@
-//! Χ</sup>2</sup> over x in (0, ∞)
+//! Χ<sup>2</sup> over x in (0, ∞)
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +26,18 @@ use std::fmt;
 pub struct ChiSquared {
     /// Degrees of freedom in (0, ∞)
     k: f64,
+}
+
+impl Parameterized for ChiSquared {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.k()
+    }
+
+    fn from_params(k: Self::Parameters) -> Self {
+        Self::new_unchecked(k)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -95,8 +107,8 @@ impl ChiSquared {
     /// assert!(x2.set_k(2.2).is_ok());
     /// assert!(x2.set_k(0.0).is_err());
     /// assert!(x2.set_k(-1.0).is_err());
-    /// assert!(x2.set_k(std::f64::NAN).is_err());
-    /// assert!(x2.set_k(std::f64::INFINITY).is_err());
+    /// assert!(x2.set_k(f64::NAN).is_err());
+    /// assert!(x2.set_k(f64::INFINITY).is_err());
     /// ```
     #[inline]
     pub fn set_k(&mut self, k: f64) -> Result<(), ChiSquaredError> {
@@ -126,7 +138,7 @@ impl_display!(ChiSquared);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for ChiSquared {
+        impl HasDensity<$kind> for ChiSquared {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k2 = self.k / 2.0;
                 let xf = f64::from(*x);
@@ -134,7 +146,9 @@ macro_rules! impl_traits {
                 k2.mul_add(-LN_2, (k2 - 1.0).mul_add(xf.ln(), -xf / 2.0))
                     - ln_gammafn(k2)
             }
+        }
 
+        impl Sampleable<$kind> for ChiSquared {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let x2 = rand_distr::ChiSquared::new(self.k).unwrap();
                 rng.sample(x2) as $kind
@@ -219,7 +233,7 @@ mod tests {
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
-    test_basic_impls!([continuous] ChiSquared::new(3.2).unwrap());
+    test_basic_impls!(f64, ChiSquared, ChiSquared::new(3.2).unwrap());
 
     #[test]
     fn new() {

@@ -8,7 +8,7 @@
 //  A_square      4 * r^2      4         # in square
 //
 use rv::dist::Uniform;
-use rv::traits::Rv;
+use rv::traits::*;
 use std::f64::consts::PI;
 
 fn main() {

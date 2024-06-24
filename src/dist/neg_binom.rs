@@ -47,6 +47,26 @@ pub struct NegBinomial {
     r_ln_p: OnceLock<f64>,
 }
 
+pub struct NegBinomialParameters {
+    pub r: f64,
+    pub p: f64,
+}
+
+impl Parameterized for NegBinomial {
+    type Parameters = NegBinomialParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            r: self.r(),
+            p: self.p(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.r, params.p)
+    }
+}
+
 impl PartialEq for NegBinomial {
     fn eq(&self, other: &NegBinomial) -> bool {
         self.r == other.r && self.p == other.p
@@ -114,9 +134,9 @@ impl NegBinomial {
     /// // r must be >= 1.0
     /// assert!(nbin.set_r(0.99).is_err());
     ///
-    /// assert!(nbin.set_r(std::f64::INFINITY).is_err());
-    /// assert!(nbin.set_r(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nbin.set_r(std::f64::NAN).is_err());
+    /// assert!(nbin.set_r(f64::INFINITY).is_err());
+    /// assert!(nbin.set_r(f64::NEG_INFINITY).is_err());
+    /// assert!(nbin.set_r(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_r(&mut self, r: f64) -> Result<(), NegBinomialError> {
@@ -175,9 +195,9 @@ impl NegBinomial {
     /// // Too high, not in [0, 1]
     /// assert!(nbin.set_p(-1.1).is_err());
     ///
-    /// assert!(nbin.set_p(std::f64::INFINITY).is_err());
-    /// assert!(nbin.set_p(std::f64::NEG_INFINITY).is_err());
-    /// assert!(nbin.set_p(std::f64::NAN).is_err());
+    /// assert!(nbin.set_p(f64::INFINITY).is_err());
+    /// assert!(nbin.set_p(f64::NEG_INFINITY).is_err());
+    /// assert!(nbin.set_p(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_p(&mut self, p: f64) -> Result<(), NegBinomialError> {
@@ -212,13 +232,15 @@ impl NegBinomial {
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for NegBinomial {
+        impl HasDensity<$kind> for NegBinomial {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let xf = (*x) as f64;
                 ln_binom(xf + self.r - 1.0, self.r - 1.0)
                     + xf.mul_add(self.ln_1mp(), self.r_ln_p())
             }
+        }
 
+        impl Sampleable<$kind> for NegBinomial {
             fn draw<R: Rng>(&self, mut rng: &mut R) -> $kind {
                 let q = 1.0 - self.p;
                 let scale = q / (1.0 - q);
@@ -316,7 +338,7 @@ mod tests {
 
     const TOL: f64 = 1E-10;
 
-    test_basic_impls!([count] NegBinomial::new(2.1, 0.6).unwrap());
+    test_basic_impls!(u32, NegBinomial, NegBinomial::new(2.1, 0.6).unwrap());
 
     #[test]
     fn new_with_good_params() {
@@ -580,7 +602,7 @@ mod tests {
 
         // How many bins do we need?
         let k: usize = (0..100)
-            .position(|x| nbin.pmf(&(x as u32)) < std::f64::EPSILON)
+            .position(|x| nbin.pmf(&(x as u32)) < f64::EPSILON)
             .unwrap_or(99)
             + 1;
 
@@ -612,7 +634,7 @@ mod tests {
 
         // How many bins do we need?
         let k: usize = (0..100)
-            .position(|x| nbin.pmf(&(x as u32)) < std::f64::EPSILON)
+            .position(|x| nbin.pmf(&(x as u32)) < f64::EPSILON)
             .unwrap_or(99)
             + 1;
 

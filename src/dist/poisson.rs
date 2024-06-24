@@ -7,12 +7,12 @@ use crate::impl_display;
 use crate::misc::ln_fact;
 use crate::traits::*;
 use rand::Rng;
-use rand_distr::Poisson as RPossion;
+use rand_distr::Poisson as RPoisson;
 use special::Gamma as _;
 use std::fmt;
 use std::sync::OnceLock;
 
-/// [Possion distribution](https://en.wikipedia.org/wiki/Poisson_distribution)
+/// [Poisson distribution](https://en.wikipedia.org/wiki/Poisson_distribution)
 /// over x in {0, 1, ... }.
 ///
 /// # Example
@@ -71,6 +71,18 @@ pub struct Poisson {
     /// Cached ln(rate)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_rate: OnceLock<f64>,
+}
+
+impl Parameterized for Poisson {
+    type Parameters = f64;
+
+    fn emit_params(&self) -> Self::Parameters {
+        self.rate()
+    }
+
+    fn from_params(rate: Self::Parameters) -> Self {
+        Self::new_unchecked(rate)
+    }
 }
 
 impl PartialEq for Poisson {
@@ -151,9 +163,9 @@ impl Poisson {
     /// assert!(pois.set_rate(1.1).is_ok());
     /// assert!(pois.set_rate(0.0).is_err());
     /// assert!(pois.set_rate(-1.0).is_err());
-    /// assert!(pois.set_rate(std::f64::INFINITY).is_err());
-    /// assert!(pois.set_rate(std::f64::NEG_INFINITY).is_err());
-    /// assert!(pois.set_rate(std::f64::NAN).is_err());
+    /// assert!(pois.set_rate(f64::INFINITY).is_err());
+    /// assert!(pois.set_rate(f64::NEG_INFINITY).is_err());
+    /// assert!(pois.set_rate(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_rate(&mut self, rate: f64) -> Result<(), PoissonError> {
@@ -185,20 +197,22 @@ impl_display!(Poisson);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
-        impl Rv<$kind> for Poisson {
+        impl HasDensity<$kind> for Poisson {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let kf = *x as f64;
                 kf.mul_add(self.ln_rate(), -self.rate) - ln_fact(*x as usize)
             }
+        }
 
+        impl Sampleable<$kind> for Poisson {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let pois = RPossion::new(self.rate).unwrap();
+                let pois = RPoisson::new(self.rate).unwrap();
                 let x: u64 = rng.sample(pois) as u64;
                 x as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let pois = RPossion::new(self.rate).unwrap();
+                let pois = RPoisson::new(self.rate).unwrap();
                 (0..n)
                     .map(|_| {
                         let x: u64 = rng.sample(pois) as u64;
@@ -349,7 +363,7 @@ mod tests {
             .sum()
     }
 
-    test_basic_impls!([count] Poisson::new(0.5).unwrap());
+    test_basic_impls!(u32, Poisson, Poisson::new(0.5).unwrap());
 
     #[test]
     fn new() {

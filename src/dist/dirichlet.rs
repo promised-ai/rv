@@ -16,7 +16,7 @@ mod categorical_prior;
 /// Symmetric [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
 /// where all alphas are the same.
 ///
-/// `SymmetricDirichlet { alpha, k }` is mathematicall equivalent to
+/// `SymmetricDirichlet { alpha, k }` is mathematical equivalent to
 /// `Dirichlet { alphas: vec![alpha; k] }`. This version has some extra
 /// optimizations to seep up computing the PDF and drawing random vectors.
 #[derive(Debug, Clone)]
@@ -28,6 +28,26 @@ pub struct SymmetricDirichlet {
     /// Cached ln_gamma(alpha)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_gamma_alpha: OnceLock<f64>,
+}
+
+pub struct SymmetricDirichletParameters {
+    pub alpha: f64,
+    pub k: usize,
+}
+
+impl Parameterized for SymmetricDirichlet {
+    type Parameters = SymmetricDirichletParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            alpha: self.alpha(),
+            k: self.k(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.alpha, params.k)
+    }
 }
 
 impl PartialEq for SymmetricDirichlet {
@@ -49,7 +69,7 @@ pub enum SymmetricDirichletError {
 }
 
 impl SymmetricDirichlet {
-    /// Create a new symmetric Dirichlet distributon
+    /// Create a new symmetric Dirichlet distribution
     ///
     /// # Arguments
     /// - alpha: The Dirichlet weight.
@@ -71,7 +91,7 @@ impl SymmetricDirichlet {
         }
     }
 
-    /// Create a new SymmetricDirichlet without checking whether the parmaeters
+    /// Create a new SymmetricDirichlet without checking whether the parameters
     /// are valid.
     #[inline]
     pub fn new_unchecked(alpha: f64, k: usize) -> Self {
@@ -104,7 +124,7 @@ impl SymmetricDirichlet {
         }
     }
 
-    /// Get the alpha unfiorm weight parameter
+    /// Get the alpha uniform weight parameter
     ///
     /// # Example
     ///
@@ -138,9 +158,9 @@ impl SymmetricDirichlet {
     /// assert!(symdir.set_alpha(0.5).is_ok());
     /// assert!(symdir.set_alpha(0.0).is_err());
     /// assert!(symdir.set_alpha(-1.0).is_err());
-    /// assert!(symdir.set_alpha(std::f64::INFINITY).is_err());
-    /// assert!(symdir.set_alpha(std::f64::NEG_INFINITY).is_err());
-    /// assert!(symdir.set_alpha(std::f64::NAN).is_err());
+    /// assert!(symdir.set_alpha(f64::INFINITY).is_err());
+    /// assert!(symdir.set_alpha(f64::NEG_INFINITY).is_err());
+    /// assert!(symdir.set_alpha(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_alpha(
@@ -193,7 +213,7 @@ impl From<&SymmetricDirichlet> for String {
 
 impl_display!(SymmetricDirichlet);
 
-impl Rv<Vec<f64>> for SymmetricDirichlet {
+impl Sampleable<Vec<f64>> for SymmetricDirichlet {
     fn draw<R: Rng>(&self, rng: &mut R) -> Vec<f64> {
         let g = RGamma::new(self.alpha, 1.0).unwrap();
         let mut xs: Vec<f64> = (0..self.k).map(|_| rng.sample(g)).collect();
@@ -201,7 +221,9 @@ impl Rv<Vec<f64>> for SymmetricDirichlet {
         xs.iter_mut().for_each(|x| *x /= z);
         xs
     }
+}
 
+impl HasDensity<Vec<f64>> for SymmetricDirichlet {
     fn ln_f(&self, x: &Vec<f64>) -> f64 {
         let kf = self.k as f64;
         let sum_ln_gamma = self.ln_gamma_alpha() * kf;
@@ -236,6 +258,24 @@ pub enum DirichletError {
 pub struct Dirichlet {
     /// A `Vec` of real numbers in (0, ∞)
     pub(crate) alphas: Vec<f64>,
+}
+
+pub struct DirichletParameters {
+    pub alphas: Vec<f64>,
+}
+
+impl Parameterized for Dirichlet {
+    type Parameters = DirichletParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            alphas: self.alphas().clone(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.alphas)
+    }
 }
 
 impl From<SymmetricDirichlet> for Dirichlet {
@@ -288,7 +328,7 @@ impl Dirichlet {
     ///
     /// ```
     /// # use rv::dist::{Dirichlet, SymmetricDirichlet};
-    /// # use rv::traits::Rv;
+    /// # use rv::traits::*;
     /// let dir = Dirichlet::symmetric(1.0, 4).unwrap();
     /// assert_eq!(*dir.alphas(), vec![1.0, 1.0, 1.0, 1.0]);
     ///
@@ -324,7 +364,7 @@ impl Dirichlet {
     /// ```
     /// # use rv::dist::Dirichlet;
     /// # use rv::dist::SymmetricDirichlet;
-    /// # use rv::traits::Rv;
+    /// # use rv::traits::*;
     /// let dir = Dirichlet::jeffreys(3).unwrap();
     /// assert_eq!(*dir.alphas(), vec![0.5, 0.5, 0.5]);
     ///
@@ -376,7 +416,7 @@ impl Support<Vec<f64>> for SymmetricDirichlet {
     }
 }
 
-impl Rv<Vec<f64>> for Dirichlet {
+impl Sampleable<Vec<f64>> for Dirichlet {
     fn draw<R: Rng>(&self, rng: &mut R) -> Vec<f64> {
         let gammas: Vec<RGamma<f64>> = self
             .alphas
@@ -388,7 +428,9 @@ impl Rv<Vec<f64>> for Dirichlet {
         xs.iter_mut().for_each(|x| *x /= z);
         xs
     }
+}
 
+impl HasDensity<Vec<f64>> for Dirichlet {
     fn ln_f(&self, x: &Vec<f64>) -> f64 {
         // XXX: could cache all ln_gamma(alpha)
         let sum_ln_gamma: f64 = self
@@ -464,7 +506,7 @@ mod tests {
     mod dir {
         use super::*;
 
-        test_basic_impls!(Dirichlet::jeffreys(4).unwrap(), vec![0.25_f64; 4]);
+        test_basic_impls!(Vec<f64>, Dirichlet, Dirichlet::jeffreys(4).unwrap());
 
         #[test]
         fn properly_sized_points_on_simplex_should_be_in_support() {
@@ -491,7 +533,7 @@ mod tests {
         fn draws_should_be_in_support() {
             let mut rng = rand::thread_rng();
             // Small alphas gives us more variability in the simplex, and more
-            // variability gives us a beter test.
+            // variability gives us a better test.
             let dir = Dirichlet::jeffreys(10).unwrap();
             for _ in 0..100 {
                 let x = dir.draw(&mut rng);
@@ -508,7 +550,7 @@ mod tests {
         }
 
         #[test]
-        fn log_pdf_symemtric() {
+        fn log_pdf_symmetric() {
             let dir = Dirichlet::symmetric(1.0, 3).unwrap();
             assert::close(
                 dir.ln_pdf(&vec![0.2, 0.3, 0.5]),
@@ -544,8 +586,9 @@ mod tests {
         use super::*;
 
         test_basic_impls!(
-            SymmetricDirichlet::jeffreys(4).unwrap(),
-            vec![0.25_f64; 4]
+            Vec<f64>,
+            SymmetricDirichlet,
+            SymmetricDirichlet::jeffreys(4).unwrap()
         );
 
         #[test]
@@ -577,7 +620,7 @@ mod tests {
         fn draws_should_be_in_support() {
             let mut rng = rand::thread_rng();
             // Small alphas gives us more variability in the simplex, and more
-            // variability gives us a beter test.
+            // variability gives us a better test.
             let symdir = SymmetricDirichlet::jeffreys(10).unwrap();
             for _ in 0..100 {
                 let x: Vec<f64> = symdir.draw(&mut rng);

@@ -9,7 +9,7 @@ use crate::traits::SuffStat;
 ///
 /// Holds the number of observations, their sum, and the sum of their squared
 /// values.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct GaussianSuffStat {
@@ -116,30 +116,44 @@ macro_rules! impl_gaussian_suffstat {
             fn observe(&mut self, x: &$kind) {
                 let xf = f64::from(*x);
 
-                self.n += 1;
+                let n = self.n;
+                let mean = self.mean;
+                let sx = self.sx;
 
-                let mean_xn = (xf - self.mean)
-                    .mul_add((self.n as f64).recip(), self.mean);
-                self.sx = (xf - self.mean).mul_add(xf - mean_xn, self.sx);
+                let n1 = n + 1;
+                let mean_xn = (xf - mean).mul_add((n1 as f64).recip(), mean);
+
+                self.n = n + 1;
                 self.mean = mean_xn;
+                self.sx = (xf - mean).mul_add(xf - mean_xn, sx);
             }
 
+            #[inline]
             fn forget(&mut self, x: &$kind) {
-                if self.n > 1 {
+                let n = self.n;
+                if n > 1 {
                     let xf = f64::from(*x);
+                    let mean = self.mean;
+                    let n_float = n as f64;
+                    let nm1 = n_float - 1.0;
+                    let nm1_recip = nm1.recip();
 
-                    let n = self.n as f64;
-                    let nm1 = (self.n - 1) as f64;
+                    let old_mean =
+                        (n_float * nm1_recip).mul_add(mean, -xf * nm1_recip);
 
-                    let old_mean = (n / nm1).mul_add(self.mean, -xf / nm1);
+                    let sx = (xf - old_mean).mul_add(-(xf - mean), self.sx);
 
-                    self.sx -= (xf - old_mean) * (xf - self.mean);
-                    self.mean = old_mean;
-                    self.n -= 1;
+                    *self = GaussianSuffStat {
+                        n: n - 1,
+                        mean: old_mean,
+                        sx,
+                    };
                 } else {
-                    self.n = 0;
-                    self.mean = 0.0;
-                    self.sx = 0.0;
+                    *self = GaussianSuffStat {
+                        n: 0,
+                        mean: 0.0,
+                        sx: 0.0,
+                    };
                 }
             }
         }

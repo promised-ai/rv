@@ -57,7 +57,7 @@ where
     /// Error type from Optimization errors
     type Solver: Solver<
         RandomProcessMleOp<Self, X>,
-        IterState<DVector<f64>, DVector<f64>, (), (), f64>,
+        IterState<DVector<f64>, DVector<f64>, (), (), (), f64>,
     >;
 
     /// Generator for optimizer
@@ -84,7 +84,7 @@ where
         let random_params =
             (0..random_reinits).map(|_| self.random_params(rng));
 
-        let mut best_cost = std::f64::INFINITY;
+        let mut best_cost = f64::INFINITY;
         let mut successes = 0;
         let mut last_err = None;
 

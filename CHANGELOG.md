@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.17.0] - 2024-06-24
+
+### Added
+- experimental module with stick_breaking_process submodule
+- ConvergentSequence trait and sorted_uniforms function
+- Parameterized trait for distributions
+- Process trait generalizing Rv
+- HasDensity and Sampleable traits split from Rv
+- Implementations of ConjugatePrior<X, Bernoulli> for UnitPowerLaw
+- Implementations of Parameterized, HasDensity and Sampleable for various distributions
+- Tests for new trait implementations
+- Chad Scherrer to authors
+
+### Changed
+- Updated dependencies including ahash, aho-corasick, anyhow, argmin, argmin-math, autocfg, bit-vec
+- Refactored ConjugatePrior with changes to cache names
+- Updated import statements to use wildcards for rv::traits module
+- Changed random number generator in examples to Xoshiro256Plus
+- Renamed LnMCache and LnPpCache to MCache and PpCache in conjugate prior implementations
+- Updated code examples in documentation
+- Made minor stylistic changes suggested by Clippy
+- Updated test profile for proptest with opt-level 3
+
+### Removed
+- datum module and related code
+- Distribution enum and ProductDistribution struct
+- Rv trait implementation for various distributions
+
+### Fixed
+- Various typos in comments and documentation
+- Incorrect usages of std::f64 constants
+
+
 ## [0.16.5] - 2024-03-14
 - Moved repository to GitHub.
 
@@ -172,7 +205,7 @@
 - Remove dependency on `quadrature` crate in favor of hand-rolled adaptive
     Simpson's rule, which handles multimodal distributions better.
 
-
+[0.17.0]: https://github.com/promise-ai/rv/compare/v0.16.5...v0.17.0
 [0.16.5]: https://github.com/promise-ai/rv/compare/v0.16.4...v0.16.5
 [0.16.4]: https://github.com/promise-ai/rv/compare/v0.16.3...v0.16.4
 [0.16.3]: https://github.com/promise-ai/rv/compare/v0.16.2...v0.16.3
