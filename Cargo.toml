@@ -13,7 +13,7 @@ include = ["README.md", "src/**/*", "benches/*", "Cargo.toml"]
 rust-version = "1.72"
 
 [badges]
-github = { repository = "promised-ai/rv", tag = "v0.16.0" }
+github = { repository = "promised-ai/rv", tag = "v0.17.0" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
