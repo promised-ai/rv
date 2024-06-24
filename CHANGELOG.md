@@ -1,23 +1,36 @@
 # Changelog
 
-## [0.17.0] - 2024-05-15
-- Add `experimental` module with `stick_breaking_process` submodule containing:
-  - `StickBreaking` struct representing a stick-breaking process
-  - `StickBreakingDiscrete` struct representing a discrete distribution based on a stick-breaking process
-  - `StickSequence` struct representing a sequence of stick breaks
-  - `BreakSequence` struct representing a sequence of break points
-  - `posterior` method on `StickBreaking` to compute the posterior distribution given data
-  - Various helper methods and trait implementations
-- Update `ConjugatePrior`
-  - Change `LnMCache` to `MCache`
-  - Change `LnPpCache` to `PpCache`
-- Split `Rv` into `Sampleable` and `HasDensity`
-- Add `Process` generalizing `Rv`
-- Add `Parameterized` trait
-- Add `impl<X: Booleable> ConjugatePrior<X, Bernoulli> for UnitPowerLaw`
-- Add `ConvergentSequence` implementing Aitken's delta-squared method
-- Add `sorted_uniforms` helper function
-- Minor stylistic changes suggested by Clippy
+## [0.17.0] - 2024-06-24
+
+### Added
+- experimental module with stick_breaking_process submodule
+- ConvergentSequence trait and sorted_uniforms function
+- Parameterized trait for distributions
+- Process trait generalizing Rv
+- HasDensity and Sampleable traits split from Rv
+- Implementations of ConjugatePrior<X, Bernoulli> for UnitPowerLaw
+- Implementations of Parameterized, HasDensity and Sampleable for various distributions
+- Tests for new trait implementations
+- Chad Scherrer to authors
+
+### Changed
+- Updated dependencies including ahash, aho-corasick, anyhow, argmin, argmin-math, autocfg, bit-vec
+- Refactored ConjugatePrior with changes to cache names
+- Updated import statements to use wildcards for rv::traits module
+- Changed random number generator in examples to Xoshiro256Plus
+- Renamed LnMCache and LnPpCache to MCache and PpCache in conjugate prior implementations
+- Updated code examples in documentation
+- Made minor stylistic changes suggested by Clippy
+- Updated test profile for proptest with opt-level 3
+
+### Removed
+- datum module and related code
+- Distribution enum and ProductDistribution struct
+- Rv trait implementation for various distributions
+
+### Fixed
+- Various typos in comments and documentation
+- Incorrect usages of std::f64 constants
 
 
 ## [0.16.5] - 2024-03-14
