@@ -697,8 +697,106 @@ const LN_FACT: [f64; 255] = [
     1_156.170_837_573_242_4,
 ];
 
+use num::Zero;
+
+/// Computes the natural logarithm of the product of a sequence of floating-point numbers.
+///
+/// This function calculates ln(x1 * x2 * ... * xn) in a numerically stable way,
+/// avoiding potential overflow or underflow issues that might occur with naive multiplication.
+///
+/// # Arguments
+///
+/// * `data` - An iterator yielding f64 values whose product's logarithm is to be computed.
+///
+/// # Returns
+///
+/// * The natural logarithm of the product of all numbers in the input iterator.
+///
+/// # Examples
+///
+/// ```
+/// # use rv::misc::log_product;
+/// let numbers = vec![2.0, 3.0, 4.0];
+/// let result = log_product(numbers.into_iter());
+/// assert!((result - (2.0f64 * 3.0 * 4.0).ln()).abs() < 1e-10);
+/// ```
+///
+/// # Notes
+///
+/// - If the input iterator is empty, the function returns 0.0 (ln(1) = 0).
+/// - If any input value is 0, the function returns negative infinity.
+/// - This function is particularly useful for computing products of many numbers
+///   or products of very large or very small numbers where direct multiplication
+///   might lead to floating-point overflow or underflow.
+pub fn log_product(data: impl Iterator<Item = f64>) -> f64 {
+    let mut result = 0.0;
+    let mut prod = 1.0;
+    for x in data {
+        let next_prod: f64 = x * prod;
+        if next_prod.is_normal() {
+            prod = next_prod;
+        } else {
+            if x.is_zero() {
+                return f64::NEG_INFINITY;
+            }
+            result += prod.ln();
+            prod = x;
+        }
+    }
+    result + prod.ln()
+}
+
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    #[test]
+    fn test_log_product_empty() {
+        let empty: Vec<f64> = vec![];
+        assert_eq!(log_product(empty.into_iter()), 0.0);
+    }
+
+    #[test]
+    fn test_log_product_single_element() {
+        let single = vec![2.0];
+        assert_eq!(log_product(single.into_iter()), 2.0_f64.ln());
+    }
+
+    #[test]
+    fn test_log_product_multiple_elements() {
+        let multiple = vec![2.0, 3.0, 4.0];
+        assert!(
+            (log_product(multiple.into_iter())
+                - (2.0_f64 * 3.0_f64 * 4.0_f64).ln())
+            .abs()
+                < 1e-10
+        );
+    }
+
+    #[test]
+    fn test_log_product_overflow() {
+        let n = 100;
+        let large = vec![1e100; n];
+        let result = log_product(large.into_iter());
+        let correct = n as f64 * 1e100_f64.ln();
+        assert!((result - correct).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_log_product_underflow() {
+        let n = 100;
+        let large = vec![1e-100; n];
+        let result = log_product(large.into_iter());
+        let correct = n as f64 * 1e-100_f64.ln();
+        assert!((result - correct).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_log_product_with_zero() {
+        let with_zero = vec![2.0, 0.0, 3.0];
+        assert_eq!(log_product(with_zero.into_iter()), f64::NEG_INFINITY);
+    }
+
     use super::*;
     use crate::prelude::ChiSquared;
     use crate::traits::Cdf;
