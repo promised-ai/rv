@@ -729,20 +729,14 @@ use num::Zero;
 ///   or products of very large or very small numbers where direct multiplication
 ///   might lead to floating-point overflow or underflow.
 pub fn log_product(data: impl Iterator<Item = f64>) -> f64 {
-    let mut result = 0.0;
-    let mut prod = 1.0;
-    for x in data {
-        let next_prod: f64 = x * prod;
+    let (result, prod) = data.fold((0.0, 1.0), |(result, prod), x| {
+        let next_prod = x * prod;
         if next_prod.is_normal() {
-            prod = next_prod;
+            (result, next_prod)
         } else {
-            if x.is_zero() {
-                return f64::NEG_INFINITY;
-            }
-            result += prod.ln();
-            prod = x;
+            (result + prod.ln(), x)
         }
-    }
+    });
     result + prod.ln()
 }
 

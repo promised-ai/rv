@@ -62,6 +62,10 @@ harness = false
 required-features = ["arraydist"]
 
 [[bench]]
+name = "log_product"
+harness = false
+
+[[bench]]
 name = "gev"
 harness = false
 
