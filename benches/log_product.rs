@@ -1,3 +1,4 @@
+use criterion::black_box;
 use criterion::{
     criterion_group, criterion_main, AxisScale, BenchmarkId, Criterion,
     PlotConfiguration,
@@ -24,24 +25,26 @@ pub fn bench_log_product(c: &mut Criterion) {
 
     for &x in &inputs {
         let input = vec![x; input_size];
-        let x = x.log10();
+        let param = x.log10();
 
         group.bench_with_input(
-            BenchmarkId::new("log_product", x),
+            BenchmarkId::new("log_product", param),
             &input,
-            |b, data| b.iter(|| log_product(data.iter().cloned())),
+            |b, data| b.iter(|| black_box(log_product(data.iter().cloned()))),
         );
 
         group.bench_with_input(
-            BenchmarkId::new("sum_of_logs", x),
+            BenchmarkId::new("sum_of_logs", param),
             &input,
-            |b, data| b.iter(|| data.iter().map(|&x| x.ln()).sum::<f64>()),
+            |b, data| {
+                b.iter(|| black_box(data.iter().map(|&x| x.ln()).sum::<f64>()))
+            },
         );
 
         group.bench_with_input(
-            BenchmarkId::new("log_of_product", x),
+            BenchmarkId::new("log_of_product", param),
             &input,
-            |b, data| b.iter(|| data.iter().product::<f64>().ln()),
+            |b, data| b.iter(|| black_box(data.iter().product::<f64>().ln())),
         );
     }
 

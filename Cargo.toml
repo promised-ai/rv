@@ -54,6 +54,12 @@ all-features = true
 [profile.test.package.proptest]
 opt-level = 3
 
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
 # Benchmarks
 # ==========
 [[bench]]
