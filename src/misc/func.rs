@@ -699,14 +699,30 @@ const LN_FACT: [f64; 255] = [
 
 use num::Zero;
 
-/// Computes the natural logarithm of the product of a sequence of floating-point numbers.
+/// Computes the natural logarithm of the product of a sequence of
+/// floating-point numbers.
 ///
-/// This function calculates ln(x1 * x2 * ... * xn) in a numerically stable way,
-/// avoiding potential overflow or underflow issues that might occur with naive multiplication.
+/// It's *much* faster to compute ln(x1 * x2 * ... * xn) than ln(x1) + ln(x2) +
+/// ... + ln(xn), but the former is vulnerable to overflow or underflow.
+/// `log_product` attempts to meet in the middle by checking `is_normal()` on
+/// each intermediate product and falling back on the latter method if the
+/// product is not normal.
+///
+/// For n==1000, ln(x1 * x2 * ... * xn) takes about 1 μs, while ln(x1) + ln(x2)
+/// + ... + ln(xn) takes about 5 μs. Whether `log_product` is faster depends on
+/// the specific values of x1, x2, ..., xn. When each xi is around 1e-100,
+/// `log_product` is very slow, taking around 30 μs. At around xi=-13 it reaches
+/// 5 μs, and for xi=0 it takes just over 1 μs.
+///
+/// The point is, `log_product` is good if the product *sometimes* overflows. If
+/// it *never* does, it's better to just take the log of the product. If it
+/// *often* does, it's better to take the sum of the logs. When in doubt,
+/// benchmark it.
 ///
 /// # Arguments
 ///
-/// * `data` - An iterator yielding f64 values whose product's logarithm is to be computed.
+/// * `data` - An iterator yielding f64 values whose product's logarithm is to
+///   be computed.
 ///
 /// # Returns
 ///
@@ -725,9 +741,9 @@ use num::Zero;
 ///
 /// - If the input iterator is empty, the function returns 0.0 (ln(1) = 0).
 /// - If any input value is 0, the function returns negative infinity.
-/// - This function is particularly useful for computing products of many numbers
-///   or products of very large or very small numbers where direct multiplication
-///   might lead to floating-point overflow or underflow.
+/// - This function is particularly useful for computing products of many
+///   numbers or products of very large or very small numbers where direct
+///   multiplication might lead to floating-point overflow or underflow.
 pub fn log_product(data: impl Iterator<Item = f64>) -> f64 {
     let (result, prod) = data.fold((0.0, 1.0), |(result, prod), x| {
         let next_prod = x * prod;
