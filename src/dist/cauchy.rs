@@ -220,7 +220,7 @@ macro_rules! impl_traits {
                     ln_scale,
                 );
                 // TODO: make a logaddexp method for two floats
-                -logsumexp(&[ln_scale, term]) - LN_PI
+                -logsumexp([ln_scale, term].into_iter()) - LN_PI
             }
         }
 

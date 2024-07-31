@@ -92,10 +92,8 @@ impl Categorical {
             }
         })?;
 
-        let ln_weights: Vec<f64> = weights.iter().map(|w| w.ln()).collect();
-        let ln_norm = logsumexp(&ln_weights);
-        let normed_weights =
-            ln_weights.iter().map(|lnw| lnw - ln_norm).collect();
+        let ln_norm = weights.iter().sum::<f64>().ln();
+        let normed_weights = weights.iter().map(|w| w.ln() - ln_norm).collect();
         Ok(Categorical::new_unchecked(normed_weights))
     }
 
@@ -148,7 +146,7 @@ impl Categorical {
                 }
             })?;
 
-        let sum = logsumexp(&ln_weights).abs();
+        let sum = logsumexp(ln_weights.iter().map(|&x| x)).abs();
         if sum < 10E-12 {
             Ok(Categorical { ln_weights })
         } else {

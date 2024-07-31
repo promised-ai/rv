@@ -93,25 +93,18 @@ pub fn ln_gammafn(x: f64) -> f64 {
 
 /// Safely compute `log(sum(exp(xs))`
 /// Streaming `logexp` implementation as described in [Sebastian Nowozin's blog](https://www.nowozin.net/sebastian/blog/streaming-log-sum-exp-computation.html)
-pub fn logsumexp(xs: &[f64]) -> f64 {
-    if xs.is_empty() {
-        panic!("Empty container");
-    } else if xs.len() == 1 {
-        xs[0]
-    } else {
-        let (alpha, r) =
-            xs.iter().fold((f64::NEG_INFINITY, 0.0), |(alpha, r), &x| {
-                if x == f64::NEG_INFINITY {
-                    (alpha, r)
-                } else if x <= alpha {
-                    (alpha, r + (x - alpha).exp())
-                } else {
-                    (x, r.mul_add((alpha - x).exp(), 1.0))
-                }
-            });
+pub fn logsumexp(xs: impl Iterator<Item = f64>) -> f64 {
+    let (alpha, r) = xs.fold((f64::NEG_INFINITY, 0.0), |(alpha, r), x| {
+        if x == f64::NEG_INFINITY {
+            (alpha, r)
+        } else if x <= alpha {
+            (alpha, r + (x - alpha).exp())
+        } else {
+            (x, r.mul_add((alpha - x).exp(), 1.0))
+        }
+    });
 
-        r.ln() + alpha
-    }
+    r.ln() + alpha
 }
 
 /// Cumulative sum of `xs`
@@ -270,7 +263,11 @@ pub fn ln_pflips<R: Rng>(
     normed: bool,
     rng: &mut R,
 ) -> Vec<usize> {
-    let z = if normed { 0.0 } else { logsumexp(ln_weights) };
+    let z = if normed {
+        0.0
+    } else {
+        logsumexp(ln_weights.iter().map(|&x| x))
+    };
 
     // doing this instead of calling pflips shaves about 30% off the runtime.
     let cws: Vec<f64> = ln_weights
@@ -828,52 +825,50 @@ mod tests {
         assert_eq!(argmax(&xs), vec![4, 6]);
     }
 
-    #[test]
-    fn logsumexp_on_vector_of_zeros() {
-        let xs: Vec<f64> = vec![0.0; 5];
-        // should be about log(5)
-        assert::close(logsumexp(&xs), 1.609_437_912_434_100_3, TOL);
-    }
+    use proptest::prelude::*;
 
-    #[test]
-    fn logsumexp_on_random_values() {
-        let xs: Vec<f64> = vec![
-            0.304_153_86,
-            -0.070_722_96,
-            -1.042_870_19,
-            0.278_554_07,
-            -0.818_967_65,
-        ];
-        assert::close(logsumexp(&xs), 1.482_000_789_426_305_9, TOL);
-    }
+    proptest! {
+        #[test]
+        fn proptest_logsumexp(xs in prop::collection::vec(-1e10f64..1e10, 0..100)) {
+            let result = logsumexp(xs.iter().cloned());
 
-    #[test]
-    fn logsumexp_returns_only_value_on_one_element_container() {
-        let xs: Vec<f64> = vec![0.304_153_86];
-        assert::close(logsumexp(&xs), 0.304_153_86, TOL);
-    }
+            if xs.is_empty() {
+                prop_assert!(result.is_nan());
+            } else {
+                // Naive implementation for comparison
+                let max_x = xs.iter().cloned().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+                let sum_exp = xs.iter().map(|&x| (x - max_x).exp()).sum::<f64>();
+                let expected = max_x + sum_exp.ln();
 
-    #[test]
-    #[should_panic]
-    fn logsumexp_should_panic_on_empty() {
-        let xs: Vec<f64> = Vec::new();
-        logsumexp(&xs);
-    }
+                // Check that the results are close
+                prop_assert!((result - expected).abs() < 1e-10);
 
-    #[test]
-    fn logsumexp_leading_neginf() {
-        let inf = f64::INFINITY;
-        let weights = vec![
-            -inf,
-            -210.148_738_791_973_16,
-            -818.104_304_460_164_3,
-            -1_269.048_018_522_644_5,
-            -2_916.862_476_271_387,
-            -inf,
-        ];
+                // Check that the result is greater than or equal to the maximum input
+                prop_assert!(result >= *xs.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap());
 
-        let lse = logsumexp(&weights);
-        assert::close(lse, -210.148_738_791_973_16, TOL);
+                // Check that exp(result) is greater than or equal to the sum of exp(x) for all x
+                let sum_exp_inputs: f64 = xs.iter().map(|&x| x.exp()).sum();
+                prop_assert!(result.exp() >= sum_exp_inputs);
+            }
+        }
+
+        #[test]
+        fn proptest_logsumexp_with_neg_infinity(
+            xs in prop::collection::vec(-1e10f64..1e10, 0..99),
+            neg_inf_count in 0..10usize
+        ) {
+            let mut extended_xs = xs.clone();
+            extended_xs.extend(std::iter::repeat(f64::NEG_INFINITY).take(neg_inf_count));
+
+            let result = logsumexp(extended_xs.iter().cloned());
+
+            if extended_xs.iter().all(|&x| x == f64::NEG_INFINITY) {
+                prop_assert!(result == f64::NEG_INFINITY);
+            } else {
+                let expected = logsumexp(xs.iter().cloned());
+                prop_assert!((result - expected).abs() < 1e-10);
+            }
+        }
     }
 
     #[test]

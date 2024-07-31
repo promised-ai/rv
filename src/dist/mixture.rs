@@ -388,14 +388,13 @@ where
     Fx: Rv<X>,
 {
     fn ln_f(&self, x: &X) -> f64 {
-        let lfs: Vec<f64> = self
+        let lfs = self
             .ln_weights()
             .iter()
             .zip(self.components.iter())
-            .map(|(&w, cpnt)| w + cpnt.ln_f(x))
-            .collect();
+            .map(|(&w, cpnt)| w + cpnt.ln_f(x));
 
-        logsumexp(&lfs)
+        logsumexp(lfs)
     }
 
     fn f(&self, x: &X) -> f64 {
