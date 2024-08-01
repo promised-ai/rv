@@ -2,7 +2,7 @@
 pub mod bessel;
 mod convergent_seq;
 pub(crate) mod entropy;
-mod func;
+pub mod func;
 mod ks;
 mod legendre;
 #[cfg(feature = "arraydist")]
