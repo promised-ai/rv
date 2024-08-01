@@ -391,7 +391,7 @@ mod tests {
 
     #[test]
     fn sb_ln_m_vs_monte_carlo() {
-        use crate::misc::logsumexp;
+        use crate::misc::func::LogSumExp;
 
         let n_samples = 1_000_000;
         let xs: Vec<usize> = vec![1, 2, 3];
@@ -401,14 +401,13 @@ mod tests {
         let ln_m = sb.ln_m(&obs);
 
         let mc_est = {
-            let ln_fs: Vec<f64> = sb
-                .sample_stream(&mut rand::thread_rng())
+            sb.sample_stream(&mut rand::thread_rng())
                 .take(n_samples)
                 .map(|sbd: StickBreakingDiscrete| {
                     xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>()
                 })
-                .collect();
-            logsumexp(&ln_fs) - (n_samples as f64).ln()
+                .logsumexp()
+                - (n_samples as f64).ln()
         };
         // high error tolerance. MC estimation is not the most accurate...
         assert::close(ln_m, mc_est, 1e-2);

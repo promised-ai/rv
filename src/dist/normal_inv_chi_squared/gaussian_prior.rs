@@ -222,7 +222,7 @@ mod test {
 
     #[test]
     fn ln_m_single_datum_vs_monte_carlo() {
-        use crate::misc::logsumexp;
+        use crate::misc::LogSumExp;
 
         let n_samples = 1_000_000;
         let x: f64 = -0.3;
@@ -233,12 +233,11 @@ mod test {
         let ln_m = nix.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            let ln_fs: Vec<f64> = nix
-                .sample_stream(&mut rand::thread_rng())
+            nix.sample_stream(&mut rand::thread_rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| gauss.ln_f(&x))
-                .collect();
-            logsumexp(&ln_fs) - (n_samples as f64).ln()
+                .logsumexp()
+                - (n_samples as f64).ln()
         };
         // high error tolerance. MC estimation is not the most accurate...
         assert::close(ln_m, mc_est, 1e-2);
@@ -246,7 +245,7 @@ mod test {
 
     #[test]
     fn ln_m_vs_monte_carlo() {
-        use crate::misc::logsumexp;
+        use crate::misc::LogSumExp;
 
         let n_samples = 1_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -256,14 +255,13 @@ mod test {
         let ln_m = nix.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            let ln_fs: Vec<f64> = nix
-                .sample_stream(&mut rand::thread_rng())
+            nix.sample_stream(&mut rand::thread_rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| {
                     xs.iter().map(|x| gauss.ln_f(x)).sum::<f64>()
                 })
-                .collect();
-            logsumexp(&ln_fs) - (n_samples as f64).ln()
+                .logsumexp()
+                - (n_samples as f64).ln()
         };
         // high error tolerance. MC estimation is not the most accurate...
         assert::close(ln_m, mc_est, 1e-2);
@@ -271,7 +269,7 @@ mod test {
 
     #[test]
     fn ln_pp_vs_monte_carlo() {
-        use crate::misc::logsumexp;
+        use crate::misc::LogSumExp;
 
         let n_samples = 1_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -283,12 +281,11 @@ mod test {
         let ln_pp = nix.ln_pp(&y, &DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            let ln_fs: Vec<f64> = post
-                .sample_stream(&mut rand::thread_rng())
+            post.sample_stream(&mut rand::thread_rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| gauss.ln_f(&y))
-                .collect();
-            logsumexp(&ln_fs) - (n_samples as f64).ln()
+                .logsumexp()
+                - (n_samples as f64).ln()
         };
         // high error tolerance. MC estimation is not the most accurate...
         assert::close(ln_pp, mc_est, 1e-2);
@@ -296,7 +293,7 @@ mod test {
 
     #[test]
     fn ln_pp_single_vs_monte_carlo() {
-        use crate::misc::logsumexp;
+        use crate::misc::LogSumExp;
 
         let n_samples = 1_000_000;
         let x: f64 = -0.3;
@@ -307,12 +304,11 @@ mod test {
             nix.ln_pp(&x, &DataOrSuffStat::<f64, Gaussian>::from(&vec![]));
 
         let mc_est = {
-            let ln_fs: Vec<f64> = nix
-                .sample_stream(&mut rand::thread_rng())
+            nix.sample_stream(&mut rand::thread_rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| gauss.ln_f(&x))
-                .collect();
-            logsumexp(&ln_fs) - (n_samples as f64).ln()
+                .logsumexp()
+                - (n_samples as f64).ln()
         };
         // high error tolerance. MC estimation is not the most accurate...
         assert::close(ln_pp, mc_est, 1e-2);

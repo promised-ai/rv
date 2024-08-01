@@ -6,7 +6,7 @@ use serde::ser::{SerializeStruct, Serializer};
 use serde::{Deserialize, Serialize};
 
 use crate::dist::{Categorical, Gaussian, Poisson};
-use crate::misc::{logsumexp, pflips};
+use crate::misc::{pflips, LogSumExp};
 use crate::traits::*;
 use rand::Rng;
 use std::fmt;
@@ -388,14 +388,11 @@ where
     Fx: Rv<X>,
 {
     fn ln_f(&self, x: &X) -> f64 {
-        let lfs: Vec<f64> = self
-            .ln_weights()
+        self.ln_weights()
             .iter()
             .zip(self.components.iter())
             .map(|(&w, cpnt)| w + cpnt.ln_f(x))
-            .collect();
-
-        logsumexp(&lfs)
+            .logsumexp()
     }
 
     fn f(&self, x: &X) -> f64 {
