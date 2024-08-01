@@ -297,7 +297,7 @@ pub fn ln_pflips<R: Rng>(
     let z = if normed {
         0.0
     } else {
-        ln_weights.iter().copied().logsumexp()
+        ln_weights.iter().logsumexp()
     };
 
     // doing this instead of calling pflips shaves about 30% off the runtime.
