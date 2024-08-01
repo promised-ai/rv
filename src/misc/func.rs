@@ -654,7 +654,7 @@ const LN_FACT: [f64; 255] = [
     773.860_102_952_558_5,
     779.075_038_710_167_4,
     784.295_394_535_245_7,
-    789.521_141_208_959,
+    789.921_183_163_208_1,
     794.752_249_825_813_5,
     799.988_691_788_643_5,
     805.230_438_803_703_1,
@@ -868,9 +868,10 @@ mod tests {
         #[test]
         fn proptest_logsumexp(xs in prop::collection::vec(-1e10_f64..1e10_f64, 0..100)) {
             let result = xs.iter().logsumexp();
-
+            println!("xs: {:?}", xs);
+            println!("result: {}", result);
             if xs.is_empty() {
-                prop_assert!(result.is_nan());
+                prop_assert!(result == f64::NEG_INFINITY);
             } else {
                 // Naive implementation for comparison
                 let max_x = xs.iter().cloned().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
