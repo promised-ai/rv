@@ -4,6 +4,8 @@ use rv::traits::*;
 
 #[test]
 fn bivariate_mixture_mi() {
+    use rv::misc::LogSumExp;
+
     let n_samples = 100_000;
     let n_f = n_samples as f64;
 
@@ -56,15 +58,13 @@ fn bivariate_mixture_mi() {
                 let logpy = my.ln_f(&y);
 
                 let logpxy = {
-                    let ps: Vec<f64> = (0..k)
-                        .map(|ix| {
-                            let px = mx.components()[ix].ln_f(&x);
-                            let py = my.components()[ix].ln_f(&y);
-                            px + py - lnk
-                        })
-                        .collect();
+                    let ps = (0..k).map(|ix| {
+                        let px = mx.components()[ix].ln_f(&x);
+                        let py = my.components()[ix].ln_f(&y);
+                        px + py - lnk
+                    });
 
-                    rv::misc::logsumexp(&ps)
+                    ps.logsumexp()
                 };
 
                 (mi + logpxy - logpx - logpy, hxy - logpxy)

@@ -391,8 +391,6 @@ mod tests {
 
     #[test]
     fn sb_ln_m_vs_monte_carlo() {
-        use crate::misc::logsumexp;
-
         let n_samples = 1_000_000;
         let xs: Vec<usize> = vec![1, 2, 3];
 
@@ -408,7 +406,7 @@ mod tests {
                     xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>()
                 })
                 .collect();
-            logsumexp(&ln_fs) - (n_samples as f64).ln()
+            ln_fs.logsumexp() - (n_samples as f64).ln()
         };
         // high error tolerance. MC estimation is not the most accurate...
         assert::close(ln_m, mc_est, 1e-2);

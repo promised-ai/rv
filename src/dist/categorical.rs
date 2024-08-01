@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{CategoricalDatum, CategoricalSuffStat};
 use crate::impl_display;
-use crate::misc::{argmax, ln_pflips, logsumexp, vec_to_string};
+use crate::misc::{argmax, ln_pflips, vec_to_string, LogSumExp};
 use crate::traits::*;
 use rand::Rng;
 use std::fmt;
@@ -146,8 +146,8 @@ impl Categorical {
                 }
             })?;
 
-        let sum = logsumexp(ln_weights.iter().map(|&x| x)).abs();
-        if sum < 10E-12 {
+        let sum = ln_weights.iter().logsumexp();
+        if sum.abs() < 1E-12 {
             Ok(Categorical { ln_weights })
         } else {
             Err(CategoricalError::WeightsDoNotSumToOne { ln: true, sum })
@@ -339,7 +339,11 @@ mod tests {
         // weights the def do not sum to 1
         let weights: Vec<f64> = vec![2.0, 1.0, 2.0, 3.0, 1.0];
         let cat = Categorical::new(&weights).unwrap();
-        assert::close(logsumexp(&cat.ln_weights), 0.0, TOL);
+        assert::close(
+            (cat.ln_weights.iter().map(|&ln_w| ln_w)).logsumexp(),
+            0.0,
+            TOL,
+        );
     }
 
     #[test]
@@ -350,7 +354,11 @@ mod tests {
         cat.ln_weights
             .iter()
             .for_each(|&ln_w| assert::close(ln_w, ln_weight, TOL));
-        assert::close(logsumexp(&cat.ln_weights), 0.0, TOL);
+        assert::close(
+            (cat.ln_weights.iter().map(|&ln_w| ln_w)).logsumexp(),
+            0.0,
+            TOL,
+        );
     }
 
     #[test]

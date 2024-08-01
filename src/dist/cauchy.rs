@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::consts::LN_PI;
 use crate::impl_display;
-use crate::misc::logsumexp;
 use crate::traits::*;
 use rand::Rng;
 use rand_distr::Cauchy as RCauchy;
@@ -209,7 +208,7 @@ impl From<&Cauchy> for String {
 }
 
 impl_display!(Cauchy);
-
+use crate::misc::logaddexp;
 macro_rules! impl_traits {
     ($kind:ty) => {
         impl HasDensity<$kind> for Cauchy {
@@ -219,8 +218,7 @@ macro_rules! impl_traits {
                     ((f64::from(*x) - self.loc).abs().ln() - ln_scale),
                     ln_scale,
                 );
-                // TODO: make a logaddexp method for two floats
-                -logsumexp([ln_scale, term].into_iter()) - LN_PI
+                -logaddexp(ln_scale, term) - LN_PI
             }
         }
 

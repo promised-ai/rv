@@ -91,20 +91,51 @@ pub fn ln_gammafn(x: f64) -> f64 {
     Gamma::ln_gamma(x).0
 }
 
-/// Safely compute `log(sum(exp(xs))`
-/// Streaming `logexp` implementation as described in [Sebastian Nowozin's blog](https://www.nowozin.net/sebastian/blog/streaming-log-sum-exp-computation.html)
-pub fn logsumexp(xs: impl Iterator<Item = f64>) -> f64 {
-    let (alpha, r) = xs.fold((f64::NEG_INFINITY, 0.0), |(alpha, r), x| {
-        if x == f64::NEG_INFINITY {
-            (alpha, r)
-        } else if x <= alpha {
-            (alpha, r + (x - alpha).exp())
-        } else {
-            (x, r.mul_add((alpha - x).exp(), 1.0))
-        }
-    });
+pub fn log1pexp(x: f64) -> f64 {
+    if x <= -37.0 {
+        f64::exp(x)
+    } else if x <= 18.0 {
+        f64::ln_1p(f64::exp(x))
+    } else if x <= 33.3 {
+        x + f64::exp(-x)
+    } else {
+        x
+    }
+}
 
-    r.ln() + alpha
+pub fn logaddexp(x: f64, y: f64) -> f64 {
+    if x > y {
+        x + log1pexp(y - x)
+    } else {
+        y + log1pexp(x - y)
+    }
+}
+
+/// Streaming `logexp` implementation as described in [Sebastian Nowozin's blog](https://www.nowozin.net/sebastian/blog/streaming-log-sum-exp-computation.html)
+pub trait LogSumExp {
+    fn logsumexp(self) -> f64;
+}
+
+use std::borrow::Borrow;
+
+impl<I> LogSumExp for I
+where
+    I: Iterator,
+    I::Item: std::borrow::Borrow<f64>,
+{
+    fn logsumexp(self) -> f64 {
+        let (max, sum) =
+            self.fold((f64::NEG_INFINITY, 0.0), |(max, sum), x| {
+                let x = *x.borrow();
+                if x > max {
+                    (x, sum * (max - x).exp())
+                } else {
+                    (max, sum + (x - max).exp())
+                }
+            });
+
+        max + sum.ln()
+    }
 }
 
 /// Cumulative sum of `xs`
@@ -266,7 +297,7 @@ pub fn ln_pflips<R: Rng>(
     let z = if normed {
         0.0
     } else {
-        logsumexp(ln_weights.iter().map(|&x| x))
+        ln_weights.iter().copied().logsumexp()
     };
 
     // doing this instead of calling pflips shaves about 30% off the runtime.
@@ -651,7 +682,7 @@ const LN_FACT: [f64; 255] = [
     921.837_328_707_804_9,
     927.193_914_982_476_7,
     932.555_207_148_186_2,
-    937.921_183_163_208_1,
+    937.921_821_191_335_7,
     943.291_821_191_335_7,
     948.667_099_599_019_8,
     954.046_996_952_560_4,
@@ -746,7 +777,16 @@ pub fn log_product(data: impl Iterator<Item = f64>) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
 
+    proptest! {
+        #[test]
+        fn test_log1pexp_close_to_ln_1p_exp(x in -100.0..100.0_f64) {
+            let expected = (1.0 + x.exp()).ln();
+            let actual = log1pexp(x);
+            prop_assert!((expected - actual).abs() < 1e-10);
+        }
+    }
     #[test]
     fn test_log_product_empty() {
         let empty: Vec<f64> = vec![];
@@ -794,7 +834,6 @@ mod tests {
         assert_eq!(log_product(with_zero.into_iter()), f64::NEG_INFINITY);
     }
 
-    use super::*;
     use crate::prelude::ChiSquared;
     use crate::traits::Cdf;
     use rand::thread_rng;
@@ -825,12 +864,10 @@ mod tests {
         assert_eq!(argmax(&xs), vec![4, 6]);
     }
 
-    use proptest::prelude::*;
-
     proptest! {
         #[test]
-        fn proptest_logsumexp(xs in prop::collection::vec(-1e10f64..1e10, 0..100)) {
-            let result = logsumexp(xs.iter().cloned());
+        fn proptest_logsumexp(xs in prop::collection::vec(-1e10_f64..1e10_f64, 0..100)) {
+            let result = xs.iter().logsumexp();
 
             if xs.is_empty() {
                 prop_assert!(result.is_nan());
@@ -854,18 +891,18 @@ mod tests {
 
         #[test]
         fn proptest_logsumexp_with_neg_infinity(
-            xs in prop::collection::vec(-1e10f64..1e10, 0..99),
-            neg_inf_count in 0..10usize
+            xs in prop::collection::vec(-1e10_f64..1e10_f64, 0..99),
+            neg_inf_count in 0..10_usize
         ) {
             let mut extended_xs = xs.clone();
             extended_xs.extend(std::iter::repeat(f64::NEG_INFINITY).take(neg_inf_count));
 
-            let result = logsumexp(extended_xs.iter().cloned());
+            let result = extended_xs.iter().logsumexp();
 
             if extended_xs.iter().all(|&x| x == f64::NEG_INFINITY) {
                 prop_assert!(result == f64::NEG_INFINITY);
             } else {
-                let expected = logsumexp(xs.iter().cloned());
+                let expected = xs.iter().logsumexp();
                 prop_assert!((result - expected).abs() < 1e-10);
             }
         }

@@ -220,7 +220,7 @@ mod test {
 
     #[test]
     fn ln_m_vs_monte_carlo() {
-        use crate::misc::logsumexp;
+        use crate::misc::LogSumExp;
 
         let n_samples = 1_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -231,14 +231,13 @@ mod test {
         // let ln_m = alternate_ln_marginal(&xs, m, v, a, b);
 
         let mc_est = {
-            let ln_fs: Vec<f64> = nig
-                .sample_stream(&mut rand::thread_rng())
+            nig.sample_stream(&mut rand::thread_rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| {
                     xs.iter().map(|x| gauss.ln_f(x)).sum::<f64>()
                 })
-                .collect();
-            logsumexp(&ln_fs) - (n_samples as f64).ln()
+                .logsumexp()
+                - (n_samples as f64).ln()
         };
         // high error tolerance. MC estimation is not the most accurate...
         assert::close(ln_m, mc_est, 1e-2);
@@ -247,7 +246,7 @@ mod test {
     #[test]
     fn ln_m_vs_importance() {
         use crate::dist::Gamma;
-        use crate::misc::logsumexp;
+        use crate::misc::LogSumExp;
 
         let n_samples = 1_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -260,16 +259,14 @@ mod test {
             let mut rng = rand::thread_rng();
             let pr_m = Gaussian::new(1.0, 8.0).unwrap();
             let pr_s = Gamma::new(2.0, 0.4).unwrap();
-            let ln_fs: Vec<f64> = (0..n_samples)
-                .map(|_| {
-                    let mu: f64 = pr_m.draw(&mut rng);
-                    let var: f64 = pr_s.draw(&mut rng);
-                    let gauss = Gaussian::new(mu, var.sqrt()).unwrap();
-                    let ln_f = xs.iter().map(|x| gauss.ln_f(x)).sum::<f64>();
-                    ln_f + nig.ln_f(&gauss) - pr_m.ln_f(&mu) - pr_s.ln_f(&var)
-                })
-                .collect();
-            logsumexp(&ln_fs) - (n_samples as f64).ln()
+            let ln_fs = (0..n_samples).map(|_| {
+                let mu: f64 = pr_m.draw(&mut rng);
+                let var: f64 = pr_s.draw(&mut rng);
+                let gauss = Gaussian::new(mu, var.sqrt()).unwrap();
+                let ln_f = xs.iter().map(|x| gauss.ln_f(x)).sum::<f64>();
+                ln_f + nig.ln_f(&gauss) - pr_m.ln_f(&mu) - pr_s.ln_f(&var)
+            });
+            ln_fs.logsumexp() - (n_samples as f64).ln()
         };
         // high error tolerance. MC estimation is not the most accurate...
         assert::close(ln_m, mc_est, 1e-2);
@@ -277,7 +274,7 @@ mod test {
 
     #[test]
     fn ln_pp_vs_monte_carlo() {
-        use crate::misc::logsumexp;
+        use crate::misc::LogSumExp;
 
         let n_samples = 1_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -290,12 +287,11 @@ mod test {
         // let ln_m = alternate_ln_marginal(&xs, m, v, a, b);
 
         let mc_est = {
-            let ln_fs: Vec<f64> = post
-                .sample_stream(&mut rand::thread_rng())
+            post.sample_stream(&mut rand::thread_rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| gauss.ln_f(&y))
-                .collect();
-            logsumexp(&ln_fs) - (n_samples as f64).ln()
+                .logsumexp()
+                - (n_samples as f64).ln()
         };
         // high error tolerance. MC estimation is not the most accurate...
         assert::close(ln_pp, mc_est, 1e-2);
