@@ -1,6 +1,6 @@
 [package]
 name = "rv"
-version = "0.17.1"
+version = "0.18.0"
 authors = ["Baxter Eaves", "Michael Schmidt", "Chad Scherrer"]
 description = "Random variables"
 repository = "https://github.com/promised-ai/rv"

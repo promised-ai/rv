@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.18.0] - 2024-06-24
+
+### Added
+- Add log1pexp and logaddexp
+- Add LogSumExp trait with logsumexp method. This way we can make applying it a little more generic, similar to how sum works.
+- Propagate these functions across crate
+
+### Removed
+- Removed logsumexp function taking a slice argument
+
 ## [0.17.0] - 2024-06-24
 
 ### Added
