@@ -94,7 +94,6 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
         let post = posterior_from_stat(self, &stat);
         let kn = post.kn;
         let vn = post.vn;
-        // let s2n = post.s2n;
 
         let z = ln_gammafn((vn + 1.0) / 2.0) - ln_gammafn(vn / 2.0)
             + 0.5 * (kn / ((kn + 1.0) * PI * vn * post.s2n)).ln();
