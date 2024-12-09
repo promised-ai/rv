@@ -62,6 +62,11 @@ impl GaussianSuffStat {
         let nf = self.n as f64;
         (self.mean() * self.mean()).mul_add(nf, self.sx)
     }
+
+    #[inline]
+    pub fn sum_sq_diff(&self) -> f64 {
+        self.sx
+    }
 }
 
 impl Default for GaussianSuffStat {
