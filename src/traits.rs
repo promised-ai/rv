@@ -542,8 +542,6 @@ where
     type PpCache;
 
     /// Computes the posterior distribution from the data
-    // fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
-
     fn posterior_from_suffstat(&self, stat: &Fx::Stat) -> Self::Posterior {
         self.posterior(&DataOrSuffStat::SuffStat(stat))
     }

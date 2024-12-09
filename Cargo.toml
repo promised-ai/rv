@@ -90,3 +90,7 @@ required-features = ["arraydist"]
 [[bench]]
 name = "mixture_entropy"
 harness = false
+
+[[bench]]
+name = "nix"
+harness = false

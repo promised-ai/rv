@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
+use std::f64::consts::PI;
 
 use crate::consts::HALF_LN_PI;
 use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
 
+use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
 use crate::traits::*;
 
@@ -47,7 +49,7 @@ fn posterior_from_stat(
 impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     type Posterior = Self;
     type MCache = f64;
-    type PpCache = (GaussianSuffStat, f64);
+    type PpCache = (NormalInvChiSquared, f64);
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
         extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
@@ -77,21 +79,31 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
         let stat = extract_stat(x, GaussianSuffStat::new);
         let post_n = posterior_from_stat(self, &stat);
-        let lnz_n = post_n.ln_z();
-        (stat, lnz_n)
-        // post_n
+        let kn = post_n.k;
+        let vn = post_n.v;
+        let half_vn = 0.5 * vn;
+        let s2n = post_n.s2;
+
+        let z1 = ln_gammafn(half_vn + 0.5) - ln_gammafn(half_vn);
+        let z2 = 0.5 * (kn / ((kn + 1.0) * PI * vn * s2n)).ln();
+        (post_n, z1 + z2)
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
-        let mut stat = cache.0;
-        let lnz_n = cache.1;
+        let post = &cache.0;
+        let z = cache.1;
+        let kn = post.k;
 
-        stat.observe(y);
-        let post_m = posterior_from_stat(self, &stat);
+        let diff = y - post.m;
 
-        let lnz_m = post_m.ln_z();
-
-        -HALF_LN_PI + lnz_m - lnz_n
+        // z - ((post.v + 1.0) / 2.0)
+        //     * (1.0 + (kn * diff * diff) / ((kn + 1.0) * post.v * post.s2)).ln()
+        // z - ((post.v + 1.0) / 2.0)
+        //     * ((kn * diff * diff) / ((kn + 1.0) * post.v * post.s2)).ln_1p()
+        ((post.v + 1.0) / 2.0).mul_add(
+            -((kn * diff * diff) / ((kn + 1.0) * post.v * post.s2)).ln_1p(),
+            z,
+        )
     }
 }
 
