@@ -126,7 +126,7 @@ macro_rules! impl_gaussian_suffstat {
                 let sx = self.sx;
 
                 let n1 = n + 1;
-                let mean_xn = (xf - mean).mul_add((n1 as f64).recip(), mean);
+                let mean_xn = (xf - mean) / (n1 as f64) + mean;
 
                 self.n = n + 1;
                 self.mean = mean_xn;
@@ -141,10 +141,8 @@ macro_rules! impl_gaussian_suffstat {
                     let mean = self.mean;
                     let n_float = n as f64;
                     let nm1 = n_float - 1.0;
-                    let nm1_recip = nm1.recip();
 
-                    let old_mean =
-                        (n_float * nm1_recip).mul_add(mean, -xf * nm1_recip);
+                    let old_mean = (n_float / nm1).mul_add(mean, -xf / nm1);
 
                     let sx = (xf - old_mean).mul_add(-(xf - mean), self.sx);
 
