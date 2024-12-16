@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.19.0] - 2024-06-24
+
+### Changed
+- `NormalInvChiSquared` and `NormalGamma` `PpChache` for Gaussian xonjugate analysis changed. `ln_pp_with_cache` is much faster.
+
 ## [0.18.0] - 2024-06-24
 
 ### Added

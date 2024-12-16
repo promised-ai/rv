@@ -15,13 +15,26 @@ fn ln_z(v: f64, a: f64, b: f64) -> f64 {
     -b.ln().mul_add(a, -p1)
 }
 
+pub struct PosteriorParameters {
+    m: f64,
+    v: f64,
+    a: f64,
+    b: f64,
+}
+
+impl From<PosteriorParameters> for NormalInvGamma {
+    fn from(PosteriorParameters { m, v, a, b }: PosteriorParameters) -> Self {
+        NormalInvGamma::new(m, v, a, b).unwrap()
+    }
+}
+
 // XXX: Check out section 6.3 from Kevin Murphy's paper
 // https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf
 #[allow(clippy::many_single_char_names)]
 fn posterior_from_stat(
     nig: &NormalInvGamma,
     stat: &GaussianSuffStat,
-) -> NormalInvGamma {
+) -> PosteriorParameters {
     let n = stat.n() as f64;
 
     let super::NormalInvGammaParameters { m, v, a, b } = nig.emit_params();
@@ -30,26 +43,28 @@ fn posterior_from_stat(
 
     let vn_inv = v_inv + n;
     let vn = vn_inv.recip();
-    // let mn = (v_inv * m + stat.sum_x()) * vn;
     let mn = v_inv.mul_add(m, stat.sum_x()) / vn_inv;
-    // let an = a + 0.5 * n;
     let an = n.mul_add(0.5, a);
-    // let bn = b + 0.5 * (m * m * v_inv + stat.sum_x_sq() - mn * mn * vn_inv);
     let p1 = (m * m).mul_add(v_inv, stat.sum_x_sq());
     let bn = (-mn * mn).mul_add(vn_inv, p1).mul_add(0.5, b);
 
-    NormalInvGamma::new(mn, vn, an, bn).expect("Invalid posterior params.")
+    PosteriorParameters {
+        m: mn,
+        v: vn,
+        a: an,
+        b: bn,
+    }
 }
 
 impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
     type Posterior = Self;
     type MCache = f64;
-    type PpCache = (GaussianSuffStat, f64);
+    type PpCache = (PosteriorParameters, f64);
     // type PpCache = NormalInvGamma;
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
         extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
-            posterior_from_stat(self, &stat)
+            posterior_from_stat(self, &stat).into()
         })
     }
 

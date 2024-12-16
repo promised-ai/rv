@@ -18,10 +18,11 @@ pub struct PosteriorParameters {
     pub s2n: f64,
 }
 
-impl Into<NormalInvChiSquared> for PosteriorParameters {
-    fn into(self) -> NormalInvChiSquared {
-        NormalInvChiSquared::new(self.mn, self.kn, self.vn, self.s2n)
-            .expect("Invalid NIX posterior parameters")
+impl From<PosteriorParameters> for NormalInvChiSquared {
+    fn from(
+        PosteriorParameters { mn, kn, vn, s2n }: PosteriorParameters,
+    ) -> Self {
+        NormalInvChiSquared::new(mn, kn, vn, s2n).unwrap()
     }
 }
 
@@ -51,10 +52,11 @@ fn posterior_from_stat(
     let vn = v + n;
     let mn = k.mul_add(m, stat.sum_x()) * kn_recip;
     let diff_m_xbar = m - xbar;
-    let s2n = (((n * k * kn_recip) * diff_m_xbar * diff_m_xbar)
-        + stat.sum_sq_diff()
-        + v * s2)
-        / vn;
+    let s2n = v.mul_add(
+        s2,
+        ((n * k * kn_recip) * diff_m_xbar)
+            .mul_add(diff_m_xbar, stat.sum_sq_diff()),
+    ) / vn;
 
     PosteriorParameters { mn, kn, vn, s2n }
 }
@@ -95,8 +97,10 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
         let kn = post.kn;
         let vn = post.vn;
 
-        let z = ln_gammafn((vn + 1.0) / 2.0) - ln_gammafn(vn / 2.0)
-            + 0.5 * (kn / ((kn + 1.0) * PI * vn * post.s2n)).ln();
+        let z = 0.5_f64.mul_add(
+            (kn / ((kn + 1.0) * PI * vn * post.s2n)).ln(),
+            ln_gammafn((vn + 1.0) / 2.0) - ln_gammafn(vn / 2.0),
+        );
         (post, z)
     }
 

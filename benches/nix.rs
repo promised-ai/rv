@@ -53,5 +53,47 @@ fn bench_nix_postpred(c: &mut Criterion) {
     });
 }
 
-criterion_group!(nix_benches, bench_nix_postpred);
+fn bench_gauss_stat(c: &mut Criterion) {
+    let mut group = c.benchmark_group("Gaussian Suffstat");
+
+    let mut rng = rand::thread_rng();
+    let g = Gaussian::standard();
+
+    group.bench_function(format!("Forget"), |b| {
+        b.iter_batched(
+            || {
+                let mut stat = GaussianSuffStat::new();
+                for _ in 0..3 {
+                    let x: f64 = g.draw(&mut rng);
+                    stat.observe(&x);
+                }
+                let x: f64 = g.draw(&mut rng);
+                stat.observe(&x);
+                (x, stat)
+            },
+            |(x, mut stat)| {
+                black_box(stat.forget(&x));
+            },
+            BatchSize::SmallInput,
+        );
+    });
+
+    group.bench_function(format!("Observe"), |b| {
+        b.iter_batched(
+            || {
+                let mut stat = GaussianSuffStat::new();
+                let x: f64 = g.draw(&mut rng);
+                stat.observe(&x);
+                let x: f64 = g.draw(&mut rng);
+                (x, stat)
+            },
+            |(x, mut stat)| {
+                black_box(stat.observe(&x));
+            },
+            BatchSize::SmallInput,
+        );
+    });
+}
+
+criterion_group!(nix_benches, bench_nix_postpred, bench_gauss_stat);
 criterion_main!(nix_benches);
