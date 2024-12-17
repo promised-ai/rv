@@ -1,9 +1,11 @@
 # Changelog
 
-## [0.19.0] - 2024-06-24
+## [0.19.0] - 2024-12-25
 
 ### Changed
+- Merry Christmas
 - `NormalInvChiSquared`, `NormalGamma`, and `NormalInvGamme` `PpCache` for Gaussian conjugate analysis changed. `ln_pp_with_cache` is much faster.
+- `Gamma` `PpCache` for Poisson conjugate analysis has been optimized. `ln_pp_with_cache` is faster.
 
 ## [0.18.0] - 2024-06-24
 
