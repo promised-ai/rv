@@ -1,6 +1,6 @@
 [package]
 name = "rv"
-version = "0.18.0"
+version = "0.19.0"
 authors = ["Baxter Eaves", "Michael Schmidt", "Chad Scherrer"]
 description = "Random variables"
 repository = "https://github.com/promised-ai/rv"
@@ -13,7 +13,7 @@ include = ["README.md", "src/**/*", "benches/*", "Cargo.toml"]
 rust-version = "1.72"
 
 [badges]
-github = { repository = "promised-ai/rv", tag = "v0.17.0" }
+github = { repository = "promised-ai/rv", tag = "v0.19.0" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
@@ -93,4 +93,8 @@ harness = false
 
 [[bench]]
 name = "nix"
+harness = false
+
+[[bench]]
+name = "ng"
 harness = false
