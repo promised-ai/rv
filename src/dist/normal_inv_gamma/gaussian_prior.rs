@@ -10,7 +10,6 @@ use crate::traits::*;
 
 #[inline]
 fn ln_z(v: f64, a: f64, b: f64) -> f64 {
-    // -(a * b.ln() - 0.5 * v.ln() - a.ln_gamma().0)
     let p1 = v.ln().mul_add(0.5, ln_gammafn(a));
     -b.ln().mul_add(a, -p1)
 }
@@ -60,7 +59,6 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
     type Posterior = Self;
     type MCache = f64;
     type PpCache = (PosteriorParameters, f64);
-    // type PpCache = NormalInvGamma;
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
         extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
@@ -83,28 +81,35 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
             let n = stat.n() as f64;
             let lnz_n = ln_z(post.v, post.a, post.b);
             n.mul_add(-HALF_LN_2PI, lnz_n - cache)
-            // lnz_n - cache - n * HALF_LN_PI - n*LN_2
         })
     }
 
     #[inline]
     fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
         let stat = extract_stat(x, GaussianSuffStat::new);
-        let post_n = posterior_from_stat(self, &stat);
-        let lnz_n = ln_z(post_n.v, post_n.a, post_n.b);
-        (stat, lnz_n)
+        let params = posterior_from_stat(self, &stat);
+        let PosteriorParameters { v, a, b, .. } = params;
+
+        let gamma_ratio = ln_gammafn(a + 0.5) - ln_gammafn(a);
+        let z = (-0.5_f64).mul_add(v.ln_1p(), a * b.ln()) + gamma_ratio
+            - HALF_LN_2PI;
+
+        (params, z)
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
-        let mut stat = cache.0;
-        let lnz_n = cache.1;
+        let PosteriorParameters { m, v, a, b } = cache.0;
 
-        stat.observe(y);
-        let post_m = posterior_from_stat(self, &stat);
+        let y = *y;
+        let v_recip = v.recip();
+        let vn_recip = v_recip + 1.0;
+        let mn = v_recip.mul_add(m, y) / vn_recip;
+        let bn = 0.5_f64.mul_add(
+            (mn * mn).mul_add(-vn_recip, (m * m).mul_add(v_recip, y * y)),
+            b,
+        );
 
-        let lnz_m = ln_z(post_m.v, post_m.a, post_m.b);
-
-        -HALF_LN_2PI + lnz_m - lnz_n
+        (a + 0.5).mul_add(-bn.ln(), cache.1)
     }
 }
 
