@@ -871,8 +871,19 @@ mod tests {
     fn logsumexp_nan_handling() {
         let a: f64 = -3.0;
         let b: f64 = -7.0;
-        let target: f64 = logaddexp(a,b);
-        let xs = [-f64::INFINITY, a, -f64::INFINITY, b, -f64::INFINITY, -f64::INFINITY, -f64::INFINITY, -f64::INFINITY, -f64::INFINITY, -f64::INFINITY];
+        let target: f64 = logaddexp(a, b);
+        let xs = [
+            -f64::INFINITY,
+            a,
+            -f64::INFINITY,
+            b,
+            -f64::INFINITY,
+            -f64::INFINITY,
+            -f64::INFINITY,
+            -f64::INFINITY,
+            -f64::INFINITY,
+            -f64::INFINITY,
+        ];
         let result = xs.iter().logsumexp();
         assert!((result - target).abs() < 1e-12);
     }
