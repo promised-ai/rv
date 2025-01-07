@@ -874,8 +874,6 @@ mod tests {
         let target: f64 = logaddexp(a,b);
         let xs = [-f64::INFINITY, a, -f64::INFINITY, b, -f64::INFINITY, -f64::INFINITY, -f64::INFINITY, -f64::INFINITY, -f64::INFINITY, -f64::INFINITY];
         let result = xs.iter().logsumexp();
-        println!("result: {}", result);
-        println!("target: {}", target);
         assert!((result - target).abs() < 1e-12);
     }
 
