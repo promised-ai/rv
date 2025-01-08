@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.18.1] - 2025-01-07
+
+### Fixed
+- Fixed logsumexp function for -inf values
+
 ## [0.18.0] - 2024-06-24
 
 ### Added
