@@ -118,6 +118,16 @@ impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
         self.n -= 1;
         self.counts[ix] -= 1.0;
     }
+
+    fn merge(&mut self, other: Self) {
+        self.n += other.n;
+        self.counts
+            .iter_mut()
+            .zip(other.counts.iter().copied())
+            .for_each(|(ct, ct_o)| {
+                *ct += ct_o;
+            });
+    }
 }
 
 #[cfg(test)]

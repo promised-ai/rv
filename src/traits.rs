@@ -541,6 +541,9 @@ where
     /// Type of the cache for the posterior predictive
     type PpCache;
 
+    /// Generate and empty sufficient statistic
+    fn empty_stat(&self) -> Fx::Stat;
+
     /// Computes the posterior distribution from the data
     fn posterior_from_suffstat(&self, stat: &Fx::Stat) -> Self::Posterior {
         self.posterior(&DataOrSuffStat::SuffStat(stat))
@@ -680,4 +683,7 @@ pub trait SuffStat<X> {
     fn forget_many(&mut self, xs: &[X]) {
         xs.iter().for_each(|x| self.forget(x));
     }
+
+    /// Combine sufficient statistics
+    fn merge(&mut self, other: Self);
 }

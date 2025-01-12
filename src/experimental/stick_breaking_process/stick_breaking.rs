@@ -240,6 +240,12 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
     type MCache = ();
     type PpCache = Self::Posterior;
 
+    fn empty_stat(
+        &self,
+    ) -> <StickBreakingDiscrete as HasSuffStat<usize>>::Stat {
+        StickBreakingDiscreteSuffStat::new()
+    }
+
     /// Computes the logarithm of the marginal likelihood cache.
     fn ln_m_cache(&self) -> Self::MCache {}
 

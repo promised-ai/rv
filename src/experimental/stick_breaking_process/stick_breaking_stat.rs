@@ -205,4 +205,14 @@ impl SuffStat<&[f64]> for StickBreakingSuffStat {
         self.num_breaks -= num_breaks;
         self.sum_log_q -= sum_log_q;
     }
+
+    fn merge(&mut self, other: Self) {
+        if other.n == 0 {
+            return;
+        }
+        self.n += other.n;
+        self.sum_log_q += other.sum_log_q;
+        // FIXME: is this right?
+        self.num_breaks += other.num_breaks;
+    }
 }

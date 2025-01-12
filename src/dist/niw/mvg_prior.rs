@@ -3,6 +3,7 @@ use crate::data::{extract_stat_then, DataOrSuffStat, MvGaussianSuffStat};
 use crate::dist::{MvGaussian, NormalInvWishart};
 use crate::misc::lnmv_gamma;
 use crate::traits::ConjugatePrior;
+use crate::traits::HasSuffStat;
 use crate::traits::SuffStat;
 use nalgebra::{DMatrix, DVector};
 use std::f64::consts::{LN_2, PI};
@@ -25,44 +26,41 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
     type MCache = f64;
     type PpCache = (Self, f64);
 
+    fn empty_stat(&self) -> <MvGaussian as HasSuffStat<DVector<f64>>>::Stat {
+        MvGaussianSuffStat::new(self.ndims())
+    }
+
     fn posterior(&self, x: &MvgData) -> NormalInvWishart {
         if x.n() == 0 {
             return self.clone();
         }
 
         let nf = x.n() as f64;
-        extract_stat_then(
-            x,
-            || MvGaussianSuffStat::new(self.ndims()),
-            |stat: MvGaussianSuffStat| {
-                let xbar = stat.sum_x() / stat.n() as f64;
-                let diff = &xbar - self.mu();
-                // s = \sum_{i=1}^N (x_i - \bar{x}) (x_i - \bar{x})^T
-                // = \sum_{i=1}^N (x_i x_i^T - x_i \bar{x}^T - \bar{x} x_i^T + \bar{x}\bar{x}^T)
-                // = N \bar{x} \bar{x}^T + \sum_{i=1}^N (x_i x_i^T - x_i \bar{x}^T - \bar{x} x_i^T)
-                // = N \bar{x} \bar{x}^T + \sum_{i=1}^N x_i x_i^T
-                //   - (\sum_{i=1}^N x_i) \bar{x}^T - \bar{x} (\sum_{i=1}^N x_i^T)
-                let s: DMatrix<f64> = stat.sum_x_sq()
-                    + nf * (&xbar * &xbar.transpose())
-                    - stat.sum_x() * &xbar.transpose()
-                    - &xbar * stat.sum_x().transpose();
+        extract_stat_then(self, x, |stat: MvGaussianSuffStat| {
+            let xbar = stat.sum_x() / stat.n() as f64;
+            let diff = &xbar - self.mu();
+            // s = \sum_{i=1}^N (x_i - \bar{x}) (x_i - \bar{x})^T
+            // = \sum_{i=1}^N (x_i x_i^T - x_i \bar{x}^T - \bar{x} x_i^T + \bar{x}\bar{x}^T)
+            // = N \bar{x} \bar{x}^T + \sum_{i=1}^N (x_i x_i^T - x_i \bar{x}^T - \bar{x} x_i^T)
+            // = N \bar{x} \bar{x}^T + \sum_{i=1}^N x_i x_i^T
+            //   - (\sum_{i=1}^N x_i) \bar{x}^T - \bar{x} (\sum_{i=1}^N x_i^T)
+            let s: DMatrix<f64> = stat.sum_x_sq()
+                + nf * (&xbar * &xbar.transpose())
+                - stat.sum_x() * &xbar.transpose()
+                - &xbar * stat.sum_x().transpose();
 
-                let kn = self.k() + stat.n() as f64;
-                let vn = self.df() + stat.n();
-                let mn = (self.k() * self.mu() + stat.sum_x()) / kn;
-                let sn = self.scale()
-                    + s
-                    + (self.k() * stat.n() as f64) / kn
-                        * &diff
-                        * &diff.transpose();
+            let kn = self.k() + stat.n() as f64;
+            let vn = self.df() + stat.n();
+            let mn = (self.k() * self.mu() + stat.sum_x()) / kn;
+            let sn = self.scale()
+                + s
+                + (self.k() * stat.n() as f64) / kn * &diff * &diff.transpose();
 
-                NormalInvWishart::new(mn, kn, vn, sn)
-                    .expect("Invalid posterior parameters")
-            },
-        )
+            NormalInvWishart::new(mn, kn, vn, sn)
+                .expect("Invalid posterior parameters")
+        })
     }
 
-    #[inline]
     fn ln_m_cache(&self) -> f64 {
         ln_z(self.k(), self.df(), self.scale())
     }
@@ -76,7 +74,6 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         (nd / 2.0).mul_add(-LN_2PI, zn - z0)
     }
 
-    #[inline]
     fn ln_pp_cache(&self, x: &MvgData) -> Self::PpCache {
         let post = self.posterior(x);
         let zn = ln_z(post.k(), post.df(), post.scale());

@@ -156,6 +156,16 @@ impl SuffStat<usize> for StickBreakingDiscreteSuffStat {
         assert!(self.counts[*i] > 0, "No observations of {i} to forget.");
         self.counts[*i] -= 1;
     }
+
+    fn merge(&mut self, other: Self) {
+        if other.counts.len() > self.counts.len() {
+            self.counts.resize(other.counts.len(), 0);
+        }
+        self.counts
+            .iter_mut()
+            .zip(other.counts.iter())
+            .for_each(|(ct_a, &ct_b)| *ct_a += ct_b);
+    }
 }
 #[cfg(test)]
 mod tests {

@@ -170,6 +170,27 @@ macro_rules! impl_gaussian_suffstat {
                     };
                 }
             }
+
+            fn merge(&mut self, other: Self) {
+                if other.n == 0 {
+                    return;
+                }
+                let n1 = self.n as f64;
+                let n2 = other.n as f64;
+                let m1 = self.mean;
+                let m2 = other.mean;
+                let sum = n1 + n2;
+
+                let mean = n1.mul_add(m1, n2 * m2) / sum;
+
+                let d1 = m1 - mean;
+                let d2 = m2 - mean;
+                let sx = self.sx + other.sx + n1 * d1 * d1 + n2 * d2 * d2;
+
+                self.mean = mean;
+                self.sx = sx;
+                self.n += other.n;
+            }
         }
     };
 }
@@ -179,6 +200,8 @@ impl_gaussian_suffstat!(f64);
 
 #[cfg(test)]
 mod tests {
+    use crate::traits::Sampleable;
+
     use super::*;
 
     #[test]
@@ -220,5 +243,34 @@ mod tests {
         assert::close(suffstat.mean(), 2.025, 1e-14);
         assert::close(suffstat.sum_x(), 8.1, 1e-14);
         assert::close(suffstat.sum_x_sq(), 27.889_999_999_999_993, 1e-13);
+    }
+
+    #[test]
+    fn incremental_merge() {
+        let mut rng = rand::thread_rng();
+        let g = crate::dist::Gaussian::standard();
+
+        let xs: Vec<f64> = g.sample(5, &mut rng);
+        let stat_a = {
+            let mut stat = GaussianSuffStat::new();
+            stat.observe_many(&xs);
+            stat
+        };
+
+        let mut stat_b = {
+            let mut stat = GaussianSuffStat::new();
+            stat.observe(&xs[0]);
+            stat
+        };
+
+        for x in xs.iter().skip(1) {
+            let mut stat_temp = GaussianSuffStat::new();
+            stat_temp.observe(x);
+            <GaussianSuffStat as SuffStat<f64>>::merge(&mut stat_b, stat_temp);
+        }
+
+        assert_eq!(stat_a.n, stat_b.n);
+        assert::close(stat_a.mean, stat_b.mean, 1e-10);
+        assert::close(stat_a.sx, stat_b.sx, 1e-10);
     }
 }

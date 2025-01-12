@@ -46,6 +46,10 @@ macro_rules! impl_traits {
             type MCache = f64;
             type PpCache = (f64, f64, f64);
 
+            fn empty_stat(&self) -> <Poisson as HasSuffStat<$kind>>::Stat {
+                PoissonSuffStat::new()
+            }
+
             fn posterior(&self, x: &DataOrSuffStat<$kind, Poisson>) -> Self {
                 let (n, sum) = match x {
                     DataOrSuffStat::Data(ref xs) => {
@@ -53,9 +57,10 @@ macro_rules! impl_traits {
                         xs.iter().for_each(|x| stat.observe(x));
                         (stat.n(), stat.sum())
                     }
-                    DataOrSuffStat::SuffStat(ref stat) => {
-                        (stat.n(), stat.sum())
-                    }
+                    DataOrSuffStat::SuffStat(ref stat) => (
+                        <PoissonSuffStat as SuffStat<$kind>>::n(stat),
+                        stat.sum(),
+                    ),
                 };
 
                 let a = self.shape() + sum;

@@ -5,7 +5,6 @@ use crate::consts::HALF_LN_PI;
 use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
-
 use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
 use crate::traits::*;
@@ -66,8 +65,12 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     type MCache = f64;
     type PpCache = (PosteriorParameters, f64);
 
+    fn empty_stat(&self) -> <Gaussian as HasSuffStat<f64>>::Stat {
+        GaussianSuffStat::new()
+    }
+
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
+        extract_stat_then(self, x, |stat: GaussianSuffStat| {
             posterior_from_stat(self, &stat).into()
         })
     }
@@ -82,7 +85,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
         cache: &Self::MCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
+        extract_stat_then(self, x, |stat: GaussianSuffStat| {
             let n = stat.n() as f64;
             let post: Self = posterior_from_stat(self, &stat).into();
             let lnz_n = post.ln_z();
@@ -91,7 +94,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     }
 
     fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
-        let stat = extract_stat(x, GaussianSuffStat::new);
+        let stat = extract_stat(self, x);
         let post = posterior_from_stat(self, &stat);
         let kn = post.kn;
         let vn = post.vn;

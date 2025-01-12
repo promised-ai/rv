@@ -31,6 +31,10 @@ impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
     type MCache = f64;
     type PpCache = (f64, f64);
 
+    fn empty_stat(&self) -> <Bernoulli as HasSuffStat<X>>::Stat {
+        BernoulliSuffStat::new()
+    }
+
     #[allow(clippy::many_single_char_names)]
     fn posterior(&self, x: &DataOrSuffStat<X, Bernoulli>) -> Self {
         let (n, k) = match x {
@@ -39,7 +43,9 @@ impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
                 xs.iter().for_each(|x| stat.observe(x));
                 (stat.n(), stat.k())
             }
-            DataOrSuffStat::SuffStat(stat) => (stat.n(), stat.k()),
+            DataOrSuffStat::SuffStat(stat) => {
+                (<BernoulliSuffStat as SuffStat<X>>::n(stat), stat.k())
+            }
         };
 
         let a = self.alpha() + k as f64;

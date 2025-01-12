@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::consts::HALF_LN_2PI;
 use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
+use crate::dist::normal_gamma::dos_to_post;
 use crate::dist::{Gaussian, NormalInvGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
@@ -60,10 +61,12 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
     type MCache = f64;
     type PpCache = (PosteriorParameters, f64);
 
+    fn empty_stat(&self) -> <Gaussian as HasSuffStat<f64>>::Stat {
+        GaussianSuffStat::new()
+    }
+
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
-            posterior_from_stat(self, &stat).into()
-        })
+        dos_to_post!(self, x).into()
     }
 
     #[inline]
@@ -76,17 +79,13 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
         cache: &Self::MCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
-            let post = posterior_from_stat(self, &stat);
-            let n = stat.n() as f64;
-            let lnz_n = ln_z(post.v, post.a, post.b);
-            n.mul_add(-HALF_LN_2PI, lnz_n - cache)
-        })
+        let (n, post) = dos_to_post!(# self, x);
+        let lnz_n = ln_z(post.v, post.a, post.b);
+        (n as f64).mul_add(-HALF_LN_2PI, lnz_n - cache)
     }
 
     fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
-        let stat = extract_stat(x, GaussianSuffStat::new);
-        let params = posterior_from_stat(self, &stat);
+        let params = dos_to_post!(self, x);
         let PosteriorParameters { v, a, b, .. } = params;
 
         let gamma_ratio = ln_gammafn(a + 0.5) - ln_gammafn(a);
