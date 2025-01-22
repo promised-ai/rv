@@ -29,6 +29,10 @@ impl StickBreakingDiscreteSuffStat {
         Self { counts: Vec::new() }
     }
 
+    pub fn from_counts(counts: Vec<usize>) -> Self {
+        Self { counts }
+    }
+
     /// Calculates break pairs for probabilities.
     ///
     /// Returns a vector of pairs where each pair consists of the sum of all counts after the current index and the count at the current index.
