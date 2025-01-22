@@ -7,11 +7,12 @@ use serde::{Deserialize, Serialize};
 
 mod gaussian_prior;
 
+use rand::Rng;
+use std::fmt;
+
 use crate::dist::{Gaussian, InvGamma};
 use crate::impl_display;
 use crate::traits::*;
-use rand::Rng;
-use std::fmt;
 
 /// Prior for Gaussian
 ///

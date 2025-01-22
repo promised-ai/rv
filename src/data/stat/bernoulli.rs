@@ -121,6 +121,11 @@ impl<X: Booleable> SuffStat<X> for BernoulliSuffStat {
             self.k -= 1
         }
     }
+
+    fn merge(&mut self, other: Self) {
+        self.n += other.n;
+        self.k += other.k;
+    }
 }
 
 #[cfg(test)]

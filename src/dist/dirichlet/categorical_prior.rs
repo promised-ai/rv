@@ -26,17 +26,17 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     type MCache = f64;
     type PpCache = (Vec<f64>, f64);
 
-    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
-        extract_stat_then(
-            x,
-            || CategoricalSuffStat::new(self.k()),
-            |stat: CategoricalSuffStat| {
-                let alphas: Vec<f64> =
-                    stat.counts().iter().map(|&ct| self.alpha() + ct).collect();
+    fn empty_stat(&self) -> <Categorical as HasSuffStat<X>>::Stat {
+        CategoricalSuffStat::new(self.k())
+    }
 
-                Dirichlet::new(alphas).unwrap()
-            },
-        )
+    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
+        extract_stat_then(self, x, |stat: CategoricalSuffStat| {
+            let alphas: Vec<f64> =
+                stat.counts().iter().map(|&ct| self.alpha() + ct).collect();
+
+            Dirichlet::new(alphas).unwrap()
+        })
     }
 
     #[inline]
@@ -54,20 +54,15 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     ) -> f64 {
         let sum_alpha = self.alpha() * self.k() as f64;
 
-        extract_stat_then(
-            x,
-            || CategoricalSuffStat::new(self.k()),
-            |stat: CategoricalSuffStat| {
-                // terms
-                let b = ln_gammafn(sum_alpha + stat.n() as f64);
-                let c = stat
-                    .counts()
-                    .iter()
-                    .fold(0.0, |acc, &ct| acc + ln_gammafn(self.alpha() + ct));
+        extract_stat_then(self, x, |stat: CategoricalSuffStat| {
+            let b = ln_gammafn(sum_alpha + stat.n() as f64);
+            let c = stat
+                .counts()
+                .iter()
+                .fold(0.0, |acc, &ct| acc + ln_gammafn(self.alpha() + ct));
 
-                -b + c + cache
-            },
-        )
+            -b + c + cache
+        })
     }
 
     #[inline]
@@ -101,21 +96,21 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     type MCache = (f64, f64);
     type PpCache = (Vec<f64>, f64);
 
-    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
-        extract_stat_then(
-            x,
-            || CategoricalSuffStat::new(self.k()),
-            |stat: CategoricalSuffStat| {
-                let alphas: Vec<f64> = self
-                    .alphas()
-                    .iter()
-                    .zip(stat.counts().iter())
-                    .map(|(&a, &ct)| a + ct)
-                    .collect();
+    fn empty_stat(&self) -> <Categorical as HasSuffStat<X>>::Stat {
+        CategoricalSuffStat::new(self.k())
+    }
 
-                Dirichlet::new(alphas).unwrap()
-            },
-        )
+    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
+        extract_stat_then(self, x, |stat: CategoricalSuffStat| {
+            let alphas: Vec<f64> = self
+                .alphas()
+                .iter()
+                .zip(stat.counts().iter())
+                .map(|(&a, &ct)| a + ct)
+                .collect();
+
+            Dirichlet::new(alphas).unwrap()
+        })
     }
 
     #[inline]
@@ -135,22 +130,17 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
         x: &CategoricalData<X>,
     ) -> f64 {
         let (sum_alpha, ln_norm) = cache;
-        extract_stat_then(
-            x,
-            || CategoricalSuffStat::new(self.k()),
-            |stat: CategoricalSuffStat| {
-                // terms
-                let b = ln_gammafn(sum_alpha + stat.n() as f64);
-                let c = self
-                    .alphas()
-                    .iter()
-                    .zip(stat.counts().iter())
-                    .map(|(&a, &ct)| ln_gammafn(a + ct))
-                    .sum::<f64>();
+        extract_stat_then(self, x, |stat: CategoricalSuffStat| {
+            let b = ln_gammafn(sum_alpha + stat.n() as f64);
+            let c = self
+                .alphas()
+                .iter()
+                .zip(stat.counts().iter())
+                .map(|(&a, &ct)| ln_gammafn(a + ct))
+                .sum::<f64>();
 
-                -b + c + ln_norm
-            },
-        )
+            -b + c + ln_norm
+        })
     }
 
     #[inline]

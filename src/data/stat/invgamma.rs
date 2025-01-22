@@ -133,6 +133,12 @@ macro_rules! impl_suffstat {
                     self.sum_inv_x = 0.0;
                 }
             }
+
+            fn merge(&mut self, other: Self) {
+                self.n += other.n;
+                self.sum_ln_x += other.sum_ln_x;
+                self.sum_inv_x += other.sum_inv_x;
+            }
         }
     };
 }

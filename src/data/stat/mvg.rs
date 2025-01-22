@@ -80,4 +80,10 @@ impl SuffStat<DVector<f64>> for MvGaussianSuffStat {
             self.sum_x_sq = DMatrix::zeros(dims, dims);
         }
     }
+
+    fn merge(&mut self, other: Self) {
+        self.n += other.n;
+        self.sum_x += other.sum_x;
+        self.sum_x_sq += other.sum_x_sq;
+    }
 }

@@ -1,6 +1,5 @@
 use crate::experimental::stick_breaking_process::StickBreakingDiscrete;
 use crate::experimental::stick_breaking_process::StickBreakingDiscreteSuffStat;
-// use crate::experimental::stick_breaking_process::StickBreakingSuffStat;
 use crate::experimental::stick_breaking_process::StickSequence;
 use crate::prelude::*;
 use crate::traits::*;
@@ -13,10 +12,10 @@ use special::Beta as BetaFn;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+/// Represents a stick-breaking process.
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
-/// Represents a stick-breaking process.
 pub struct StickBreaking {
     break_prefix: Vec<Beta>,
     break_tail: UnitPowerLaw,
@@ -240,6 +239,12 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
     type Posterior = StickBreaking;
     type MCache = ();
     type PpCache = Self::Posterior;
+
+    fn empty_stat(
+        &self,
+    ) -> <StickBreakingDiscrete as HasSuffStat<usize>>::Stat {
+        StickBreakingDiscreteSuffStat::new()
+    }
 
     /// Computes the logarithm of the marginal likelihood cache.
     fn ln_m_cache(&self) -> Self::MCache {}

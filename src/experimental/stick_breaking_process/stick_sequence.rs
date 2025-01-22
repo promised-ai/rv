@@ -60,6 +60,10 @@ impl _Inner {
         }
     }
 
+    pub fn ccdf(&self) -> &[f64] {
+        &self.ccdf
+    }
+
     fn extend<B: Rv<f64> + Clone>(&mut self, breaker: &B) -> f64 {
         let p: f64 = breaker.draw(&mut self.rng);
         let remaining_mass = self.ccdf.last().unwrap();
