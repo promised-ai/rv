@@ -53,8 +53,8 @@ mod wishart;
 
 pub use bernoulli::{Bernoulli, BernoulliError};
 pub use beta::{Beta, BetaError};
-pub use beta_prime::{BetaPrime, BetaPrimeError};
 pub use beta_binom::{BetaBinomial, BetaBinomialError};
+pub use beta_prime::{BetaPrime, BetaPrimeError};
 pub use binomial::{Binomial, BinomialError};
 pub use categorical::{Categorical, CategoricalError};
 pub use cauchy::{Cauchy, CauchyError};
