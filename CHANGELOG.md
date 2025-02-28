@@ -1,6 +1,11 @@
 # Changelog
 
-## [0.18.0] - 2024-06-24
+## [0.18.1] - 2025-02-28
+
+### Fixed
+- `LogSumExp` issues with `-Inf` entries
+
+## [0.18.0] - 2024-12-09
 
 ### Added
 - Add log1pexp and logaddexp
@@ -215,6 +220,7 @@
 - Remove dependency on `quadrature` crate in favor of hand-rolled adaptive
     Simpson's rule, which handles multimodal distributions better.
 
+[0.18.1]: https://github.com/promise-ai/rv/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/promise-ai/rv/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/promise-ai/rv/compare/v0.16.5...v0.17.0
 [0.16.5]: https://github.com/promise-ai/rv/compare/v0.16.4...v0.16.5
