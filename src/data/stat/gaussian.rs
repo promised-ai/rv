@@ -185,7 +185,9 @@ macro_rules! impl_gaussian_suffstat {
 
                 let d1 = m1 - mean;
                 let d2 = m2 - mean;
-                let sx = self.sx + other.sx + n1 * d1 * d1 + n2 * d2 * d2;
+                // let sx = self.sx + other.sx + n1 * d1 * d1 + n2 * d2 * d2;
+                let sx = (n2 * d2)
+                    .mul_add(d2, (n1 * d1).mul_add(d1, self.sx + other.sx));
 
                 self.mean = mean;
                 self.sx = sx;

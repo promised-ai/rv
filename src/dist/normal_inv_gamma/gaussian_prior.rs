@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::consts::HALF_LN_2PI;
-use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
+use crate::data::GaussianSuffStat;
 use crate::dist::normal_gamma::dos_to_post;
 use crate::dist::{Gaussian, NormalInvGamma};
 use crate::gaussian_prior_geweke_testable;

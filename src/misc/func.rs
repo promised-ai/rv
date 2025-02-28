@@ -128,7 +128,7 @@ where
             self.fold((f64::NEG_INFINITY, 0.0), |(alpha, r), x| {
                 let x = *x.borrow();
                 if x == f64::NEG_INFINITY {
-                    return (alpha, r);
+                    (alpha, r)
                 } else if x <= alpha {
                     (alpha, r + (x - alpha).exp())
                 } else {
@@ -784,7 +784,7 @@ mod tests {
     proptest! {
         #[test]
         fn test_log1pexp_close_to_ln_1p_exp(x in -100.0..100.0_f64) {
-            let expected = (1.0 + x.exp()).ln();
+            let expected = x.exp().ln_1p();
             let actual = log1pexp(x);
             prop_assert!((expected - actual).abs() < 1e-10);
         }
