@@ -93,23 +93,27 @@ where
     }
 }
 
-// impl<X, Fx, Pr> SuffStat<X> for ConjugateModel<X, Fx, Pr>
-// where
-//     Fx: Rv<X> + HasSuffStat<X>,
-//     Pr: ConjugatePrior<X, Fx>,
-// {
-//     fn n(&self) -> usize {
-//         self.suffstat.n()
-//     }
+impl<X, Fx, Pr> SuffStat<X> for ConjugateModel<X, Fx, Pr>
+where
+    Fx: Rv<X> + HasSuffStat<X>,
+    Pr: ConjugatePrior<X, Fx>,
+{
+    fn n(&self) -> usize {
+        self.suffstat.n()
+    }
 
-//     fn observe(&mut self, x: &X) {
-//         self.suffstat.observe(x);
-//     }
+    fn observe(&mut self, x: &X) {
+        self.suffstat.observe(x);
+    }
 
-//     fn forget(&mut self, x: &X) {
-//         self.suffstat.forget(x);
-//     }
-// }
+    fn forget(&mut self, x: &X) {
+        self.suffstat.forget(x);
+    }
+
+    fn merge(&mut self, other: Self) {
+        self.suffstat.merge(other.suffstat);
+    }
+}
 
 impl<X, Fx, Pr> HasDensity<X> for ConjugateModel<X, Fx, Pr>
 where
