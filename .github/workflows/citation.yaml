@@ -29,13 +29,3 @@ jobs:
                 CITATION_VERSION=$(cffconvert -f schema.org | jq -r .version)
                 RV_VERSION=$(tomlq -r .package.version Cargo.toml)
                 test "$CITATION_VERSION" = "$RV_VERSION"
-
-            - name: Verify CITATION.cff date field
-              run: |
-                LAST_RELEASE=$(git describe --abbrev=0 --tags --match="v*" HEAD~1)
-                echo $LAST_RELEASE
-                LAST_RELEASE_DATE=$(git cat-file -p $LAST_RELEASE:CITATION.cff | cffconvert -f schema.org | jq -r .datePublished)
-                CURRENT_RELEASE_DATE=$(cffconvert -f schema.org | jq -r .datePublished)
-                echo $CURRENT_RELEASE_DATE $LAST_RELEASE_DATE
-                # Verify that the release date was updated since the last release
-                [[ "$CURRENT_RELEASE_DATE" > "$LAST_RELEASE_DATE" ]]

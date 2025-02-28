@@ -127,7 +127,6 @@ where
         let (alpha, r) =
             self.fold((f64::NEG_INFINITY, 0.0), |(alpha, r), x| {
                 let x = *x.borrow();
-
                 if x == f64::NEG_INFINITY {
                     return (alpha, r);
                 } else if x <= alpha {

@@ -1,11 +1,11 @@
 # Changelog
 
-## [0.18.1] - 2025-01-07
+## [0.18.1] - 2025-02-28
 
 ### Fixed
-- Fixed logsumexp function for -inf values
+- `LogSumExp` issues with `-Inf` entries
 
-## [0.18.0] - 2024-06-24
+## [0.18.0] - 2024-12-09
 
 ### Added
 - Add log1pexp and logaddexp
