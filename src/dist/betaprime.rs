@@ -253,8 +253,7 @@ impl HasDensity<f64> for BetaPrime {
     fn ln_f(&self, x: &f64) -> f64 {
         let alpha = self.alpha;
         let beta = self.beta;
-        (alpha - 1.0)
-            .mul_add(x.ln(), -((alpha + beta) * x.ln_1p()))
+        (alpha - 1.0).mul_add(x.ln(), -((alpha + beta) * x.ln_1p()))
             - self.ln_beta_ab()
     }
 }
@@ -278,7 +277,6 @@ impl Sampleable<f64> for BetaPrime {
     }
 }
 
-
 use crate::data::DataOrSuffStat;
 #[cfg(feature = "experimental")]
 use crate::experimental::stick_breaking_process::{
@@ -288,7 +286,6 @@ use crate::traits::ConjugatePrior;
 
 use crate::experimental::stick_breaking_process::StickBreaking;
 use crate::prelude::UnitPowerLaw;
-
 
 #[cfg(feature = "experimental")]
 impl Sampleable<StickBreakingDiscrete> for BetaPrime {
@@ -302,8 +299,6 @@ impl Sampleable<StickBreakingDiscrete> for BetaPrime {
         stick_breaking.draw(rng)
     }
 }
-
-
 
 impl Support<f64> for BetaPrime {
     fn supports(&self, x: &f64) -> bool {
@@ -376,7 +371,8 @@ impl Kurtosis for BetaPrime {
         let bm1 = b - 1.0;
         if b > 4.0 {
             let numer = 6.0
-                * (a * (a + bm1)).mul_add(5.0_f64.mul_add(b, -11.0), bm1 * bm1 * (b - 2.0));
+                * (a * (a + bm1))
+                    .mul_add(5.0_f64.mul_add(b, -11.0), bm1 * bm1 * (b - 2.0));
             let denom = a * (a + bm1) * (b - 3.0) * (b - 4.0);
             Some(numer / denom)
         } else {
@@ -421,11 +417,6 @@ impl fmt::Display for BetaPrimeError {
         }
     }
 }
-
-
-
-
-
 
 #[cfg(feature = "experimental")]
 impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
@@ -482,7 +473,6 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -491,7 +481,6 @@ mod tests {
     const TOL: f64 = 1E-12;
 
     test_basic_impls!(f64, BetaPrime, BetaPrime::new(1.0, 1.0).unwrap());
-
 
     #[test]
     fn new() {
@@ -611,7 +600,6 @@ mod tests {
             assert::close(beta.cdf(&x), bp.cdf(&y), 1e-12);
         }
     }
-
 
     #[test]
     fn test_posterior() {
