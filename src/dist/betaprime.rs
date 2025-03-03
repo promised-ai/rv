@@ -2,12 +2,10 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::data::BetaSuffStat;
 use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
-use special::Beta as _;
-use special::Gamma as _;
+use special::Beta;
 use std::f64;
 use std::fmt;
 use std::sync::OnceLock;
@@ -257,9 +255,8 @@ impl_display!(BetaPrime);
 
 impl HasDensity<f64> for BetaPrime {
     fn ln_f(&self, x: &f64) -> f64 {
-        let xf = f64::from(*x);
-        (self.alpha - 1.0) * xf.ln()
-            - (self.alpha + self.beta) * (1.0 + xf).ln()
+        (self.alpha - 1.0)
+            .mul_add(x.ln(), -((self.alpha + self.beta) * x.ln_1p()))
             - self.ln_beta_ab()
     }
 }
@@ -285,8 +282,7 @@ impl Sampleable<f64> for BetaPrime {
 
 impl Support<f64> for BetaPrime {
     fn supports(&self, x: &f64) -> bool {
-        let xf = f64::from(*x);
-        xf > 0.0 && xf.is_finite()
+        x.is_finite() && *x > 0.0
     }
 }
 
@@ -322,9 +318,9 @@ impl Mode<f64> for BetaPrime {
 impl Variance<f64> for BetaPrime {
     fn variance(&self) -> Option<f64> {
         if self.beta > 2.0 {
-            let numer = self.alpha * (self.alpha + self.beta - 1.0);
-            let denom =
-                (self.beta - 2.0) * (self.beta - 1.0) * (self.beta - 1.0);
+            let beta_m1 = self.beta - 1.0;
+            let numer = self.alpha * (self.alpha + beta_m1);
+            let denom = (beta_m1 - 1.0) * beta_m1 * beta_m1;
             Some(numer / denom)
         } else {
             None
@@ -335,7 +331,7 @@ impl Variance<f64> for BetaPrime {
 impl Skewness for BetaPrime {
     fn skewness(&self) -> Option<f64> {
         if self.beta > 3.0 {
-            let numer = 2.0 * (2.0 * self.alpha + self.beta - 1.0);
+            let numer = 2.0 * (2.0_f64.mul_add(self.alpha, self.beta) - 1.0);
             let denom = (self.beta - 3.0)
                 * ((self.beta - 2.0)
                     / (self.alpha * (self.alpha + self.beta - 1.0)))
@@ -349,18 +345,13 @@ impl Skewness for BetaPrime {
 
 impl Kurtosis for BetaPrime {
     fn kurtosis(&self) -> Option<f64> {
-        if self.beta > 4.0 {
+        let a = self.alpha;
+        let b = self.beta;
+        let bm1 = b - 1.0;
+        if b > 4.0 {
             let numer = 6.0
-                * (self.alpha
-                    * (self.alpha + self.beta - 1.0)
-                    * (5.0 * self.beta - 11.0)
-                    + (self.beta - 1.0)
-                        * (self.beta - 1.0)
-                        * (self.beta - 2.0));
-            let denom = self.alpha
-                * (self.alpha + self.beta - 1.0)
-                * (self.beta - 3.0)
-                * (self.beta - 4.0);
+                * (a * (a + bm1)).mul_add(5.0_f64.mul_add(b, -11.0), bm1 * bm1 * (b - 2.0));
+            let denom = a * (a + bm1) * (b - 3.0) * (b - 4.0);
             Some(numer / denom)
         } else {
             None
@@ -471,8 +462,8 @@ mod tests {
     #[test]
     fn skewness_when_beta_gt_three() {
         let bp = BetaPrime::new(2.0, 4.0).unwrap();
-        let expected: f64 = 2.0 * (2.0 * 2.0 + 4.0 - 1.0)
-            / (1.0 * ((2.0) / (2.0 * (2.0 + 4.0 - 1.0)) as f64).sqrt());
+        #[allow(clippy::suboptimal_flops)]
+        let expected: f64 = 2.0 * (2.0 * 2.0 + 4.0 - 1.0);
         assert::close(bp.skewness().unwrap(), expected, TOL);
     }
 
@@ -485,6 +476,7 @@ mod tests {
     #[test]
     fn kurtosis_when_beta_gt_four() {
         let bp = BetaPrime::new(2.0, 5.0).unwrap();
+        #[allow(clippy::suboptimal_flops)]
         let expected = 6.0
             * (2.0 * (2.0 + 5.0 - 1.0) * (5.0 * 5.0 - 11.0)
                 + (5.0 - 1.0) * (5.0 - 1.0) * (5.0 - 2.0))
@@ -498,7 +490,6 @@ mod tests {
         assert!(bp.kurtosis().is_none());
     }
 
-    
     // TODO: Uncomment once limiting behavior is corrected
     // #[test]
     // fn entropy_finite() {
@@ -511,14 +502,14 @@ mod tests {
     fn cdf_values() {
         let bp = BetaPrime::new(2.0, 3.0).unwrap();
         let beta = crate::dist::Beta::new(2.0, 3.0).unwrap();
-        
+
         // Take points in (0,1) and compare Beta CDF with BetaPrime CDF on transformed points
         let points = vec![0.1, 0.3, 0.5, 0.7, 0.9];
-        
+
         for x in points {
             // For x in (0,1), transform to y = x/(1-x) to get corresponding BetaPrime point
             let y = x / (1.0 - x);
-            
+
             // The CDFs should match at these corresponding points
             assert::close(beta.cdf(&x), bp.cdf(&y), 1e-12);
         }
