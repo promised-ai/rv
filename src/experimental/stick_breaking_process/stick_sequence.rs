@@ -45,8 +45,14 @@ impl From<StickSequence> for StickSequenceFmt {
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct _Inner {
+    #[cfg_attr(feature = "serde1", serde(skip, default = "default_rng"))]
     rng: Xoshiro256Plus,
     ccdf: Vec<f64>,
+}
+
+// Add this function to provide a default RNG
+fn default_rng() -> Xoshiro256Plus {
+    Xoshiro256Plus::from_entropy()
 }
 
 impl _Inner {

@@ -13,7 +13,7 @@ fn bench_ng_postpred(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
     let g = Gaussian::standard();
 
-    group.bench_function(format!("No cache"), |b| {
+    group.bench_function("No cache".to_string(), |b| {
         b.iter_batched(
             || {
                 let stat = {
@@ -33,7 +33,7 @@ fn bench_ng_postpred(c: &mut Criterion) {
         );
     });
 
-    group.bench_function(format!("With cache"), |b| {
+    group.bench_function("With cache".to_string(), |b| {
         b.iter_batched(
             || {
                 let stat = {

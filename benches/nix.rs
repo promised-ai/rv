@@ -13,7 +13,7 @@ fn bench_nix_postpred(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
     let g = Gaussian::standard();
 
-    group.bench_function(format!("No cache"), |b| {
+    group.bench_function("No cache".to_string(), |b| {
         b.iter_batched(
             || {
                 let stat = {
@@ -33,7 +33,7 @@ fn bench_nix_postpred(c: &mut Criterion) {
         );
     });
 
-    group.bench_function(format!("With cache"), |b| {
+    group.bench_function("With cache".to_string(), |b| {
         b.iter_batched(
             || {
                 let stat = {
@@ -59,7 +59,7 @@ fn bench_gauss_stat(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
     let g = Gaussian::standard();
 
-    group.bench_function(format!("Forget"), |b| {
+    group.bench_function("Forget".to_string(), |b| {
         b.iter_batched(
             || {
                 let mut stat = GaussianSuffStat::new();
@@ -72,13 +72,14 @@ fn bench_gauss_stat(c: &mut Criterion) {
                 (x, stat)
             },
             |(x, mut stat)| {
-                black_box(stat.forget(&x));
+                stat.forget(&x);
+                black_box(());
             },
             BatchSize::SmallInput,
         );
     });
 
-    group.bench_function(format!("Observe"), |b| {
+    group.bench_function("Observe".to_string(), |b| {
         b.iter_batched(
             || {
                 let mut stat = GaussianSuffStat::new();
@@ -88,7 +89,8 @@ fn bench_gauss_stat(c: &mut Criterion) {
                 (x, stat)
             },
             |(x, mut stat)| {
-                black_box(stat.observe(&x));
+                stat.observe(&x);
+                black_box(());
             },
             BatchSize::SmallInput,
         );
