@@ -127,7 +127,9 @@ where
         let (alpha, r) =
             self.fold((f64::NEG_INFINITY, 0.0), |(alpha, r), x| {
                 let x = *x.borrow();
-                if x <= alpha {
+                if x == f64::NEG_INFINITY {
+                    return (alpha, r);
+                } else if x <= alpha {
                     (alpha, r + (x - alpha).exp())
                 } else {
                     (x, (alpha - x).exp().mul_add(r, 1.0))
@@ -862,6 +864,27 @@ mod tests {
     fn argmax_repeated_max() {
         let xs: Vec<u8> = vec![1, 2, 3, 4, 5, 4, 5];
         assert_eq!(argmax(&xs), vec![4, 6]);
+    }
+
+    #[test]
+    fn logsumexp_nan_handling() {
+        let a: f64 = -3.0;
+        let b: f64 = -7.0;
+        let target: f64 = logaddexp(a, b);
+        let xs = [
+            -f64::INFINITY,
+            a,
+            -f64::INFINITY,
+            b,
+            -f64::INFINITY,
+            -f64::INFINITY,
+            -f64::INFINITY,
+            -f64::INFINITY,
+            -f64::INFINITY,
+            -f64::INFINITY,
+        ];
+        let result = xs.iter().logsumexp();
+        assert!((result - target).abs() < 1e-12);
     }
 
     proptest! {
