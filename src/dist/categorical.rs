@@ -340,7 +340,7 @@ mod tests {
         let weights: Vec<f64> = vec![2.0, 1.0, 2.0, 3.0, 1.0];
         let cat = Categorical::new(&weights).unwrap();
         assert::close(
-            (cat.ln_weights.iter().map(|&ln_w| ln_w)).logsumexp(),
+            cat.ln_weights.iter().copied().logsumexp(),
             0.0,
             TOL,
         );
@@ -355,7 +355,7 @@ mod tests {
             .iter()
             .for_each(|&ln_w| assert::close(ln_w, ln_weight, TOL));
         assert::close(
-            (cat.ln_weights.iter().map(|&ln_w| ln_w)).logsumexp(),
+            cat.ln_weights.iter().copied().logsumexp(),
             0.0,
             TOL,
         );
