@@ -113,6 +113,12 @@ macro_rules! impl_poisson_suffstat {
                     self.sum_ln_fact = 0.0;
                 }
             }
+
+            fn merge(&mut self, other: Self) {
+                self.n += other.n;
+                self.sum += other.sum;
+                self.sum_ln_fact += other.sum_ln_fact;
+            }
         }
     };
 }

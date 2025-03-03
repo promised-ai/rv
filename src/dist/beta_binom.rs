@@ -9,7 +9,8 @@ use std::fmt;
 use std::sync::OnceLock;
 
 use crate::impl_display;
-use crate::misc::{ln_binom, ln_pflips};
+use crate::misc::ln_gammafn;
+use crate::misc::ln_pflips;
 use crate::traits::*;
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
@@ -61,9 +62,9 @@ pub struct BetaBinomial {
     alpha: f64,
     /// Analogous to Beta Distribution β parameter
     beta: f64,
-    // ln_beta(alpha, beta)
+    // ln_gamma(n+1) - ln_beta(alpha, beta)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_beta_ab: OnceLock<f64>,
+    ln_z: OnceLock<f64>,
 }
 
 pub struct BetaBinomialParameters {
@@ -140,7 +141,7 @@ impl BetaBinomial {
                 n,
                 alpha,
                 beta,
-                ln_beta_ab: OnceLock::new(),
+                ln_z: OnceLock::new(),
             })
         }
     }
@@ -153,16 +154,16 @@ impl BetaBinomial {
             n,
             alpha,
             beta,
-            ln_beta_ab: OnceLock::new(),
+            ln_z: OnceLock::new(),
         }
     }
 
     /// Evaluate or fetch cached log sigma
     #[inline]
-    fn ln_beta_ab(&self) -> f64 {
-        *self
-            .ln_beta_ab
-            .get_or_init(|| self.alpha.ln_beta(self.beta))
+    fn ln_z(&self) -> f64 {
+        *self.ln_z.get_or_init(|| {
+            ln_gammafn(self.n as f64 + 1.0) - self.alpha.ln_beta(self.beta)
+        })
     }
 
     /// Get `n`, the number of trials.
@@ -232,7 +233,7 @@ impl BetaBinomial {
     /// Set alpha without input validation
     #[inline]
     pub fn set_alpha_unchecked(&mut self, alpha: f64) {
-        self.ln_beta_ab = OnceLock::new();
+        self.ln_z = OnceLock::new();
         self.alpha = alpha
     }
 
@@ -288,7 +289,7 @@ impl BetaBinomial {
     /// Set beta without input validation
     #[inline]
     pub fn set_beta_unchecked(&mut self, beta: f64) {
-        self.ln_beta_ab = OnceLock::new();
+        self.ln_z = OnceLock::new();
         self.beta = beta
     }
 
@@ -346,9 +347,9 @@ macro_rules! impl_int_traits {
             fn ln_f(&self, k: &$kind) -> f64 {
                 let nf = f64::from(self.n);
                 let kf = *k as f64;
-                ln_binom(nf, kf)
+                -ln_gammafn(kf + 1.0) - ln_gammafn(nf - kf + 1.0)
                     + (kf + self.alpha).ln_beta(nf - kf + self.beta)
-                    - self.ln_beta_ab()
+                    + self.ln_z()
             }
         }
 

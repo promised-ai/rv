@@ -1,8 +1,9 @@
 use std::collections::BTreeMap;
 use std::f64::consts::LN_2;
 
+use super::dos_to_post;
 use crate::consts::*;
-use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
+use crate::data::{extract_stat, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
@@ -14,34 +15,50 @@ fn ln_z(r: f64, s: f64, v: f64) -> f64 {
     // This is what is should be in clearer, normal, operations
     // (v + 1.0) / 2.0 * LN_2 + HALF_LN_PI - 0.5 * r.ln() - (v / 2.0) * s.ln()
     //     + ln_gammafn(v / 2.0).0
-    // ... and here is what is is when we use mul_add to reduce rounding errors
+    // ... and here is what it is when we use mul_add to reduce rounding errors
     let half_v = 0.5 * v;
     (half_v + 0.5).mul_add(LN_2, HALF_LN_PI)
         - 0.5_f64.mul_add(r.ln(), half_v.mul_add(s.ln(), -ln_gammafn(half_v)))
 }
 
+pub struct PosteriorParameters {
+    pub m: f64,
+    pub r: f64,
+    pub s: f64,
+    pub v: f64,
+}
+
+impl From<PosteriorParameters> for NormalGamma {
+    fn from(PosteriorParameters { m, r, s, v }: PosteriorParameters) -> Self {
+        NormalGamma::new(m, r, s, v).unwrap()
+    }
+}
+
 fn posterior_from_stat(
     ng: &NormalGamma,
     stat: &GaussianSuffStat,
-) -> NormalGamma {
+) -> PosteriorParameters {
     let nf = stat.n() as f64;
     let r = ng.r() + nf;
     let v = ng.v() + nf;
     let m = ng.m().mul_add(ng.r(), stat.sum_x()) / r;
     let s =
         ng.s() + stat.sum_x_sq() + ng.r().mul_add(ng.m() * ng.m(), -r * m * m);
-    NormalGamma::new(m, r, s, v).expect("Invalid posterior params.")
+
+    PosteriorParameters { m, r, s, v }
 }
 
 impl ConjugatePrior<f64, Gaussian> for NormalGamma {
     type Posterior = Self;
     type MCache = f64;
-    type PpCache = (GaussianSuffStat, f64);
+    type PpCache = (PosteriorParameters, f64);
+
+    fn empty_stat(&self) -> <Gaussian as HasSuffStat<f64>>::Stat {
+        GaussianSuffStat::new()
+    }
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
-            posterior_from_stat(self, &stat)
-        })
+        dos_to_post!(self, x).into()
     }
 
     #[inline]
@@ -54,31 +71,36 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
         cache: &Self::MCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
-            let post = posterior_from_stat(self, &stat);
-            let lnz_n = ln_z(post.r, post.s, post.v);
-            (-(stat.n() as f64)).mul_add(HALF_LN_2PI, lnz_n) - cache
-        })
+        let (n, post) = dos_to_post!(# self, x);
+        let lnz_n = ln_z(post.r, post.s, post.v);
+        (-(n as f64)).mul_add(HALF_LN_2PI, lnz_n) - cache
     }
 
-    #[inline]
     fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
-        let stat = extract_stat(x, GaussianSuffStat::new);
-        let post_n = posterior_from_stat(self, &stat);
-        let lnz_n = ln_z(post_n.r, post_n.s, post_n.v);
-        (stat, lnz_n)
+        let stat = extract_stat(self, x);
+
+        let params = posterior_from_stat(self, &stat);
+        let PosteriorParameters { r, s, v, .. } = params;
+
+        let half_v = v / 2.0;
+        let g_ratio = ln_gammafn(half_v + 0.5) - ln_gammafn(half_v);
+        let term = 0.5_f64.mul_add(LN_2, -HALF_LN_2PI)
+            + 0.5_f64.mul_add(
+                (r / (r + 1_f64)).ln(),
+                half_v.mul_add(s.ln(), g_ratio),
+            );
+
+        (params, term)
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
-        let mut stat = cache.0;
-        let lnz_n = cache.1;
+        let PosteriorParameters { m, r, s, v } = cache.0;
 
-        stat.observe(y);
-        let post_m = posterior_from_stat(self, &stat);
-
-        let lnz_m = ln_z(post_m.r(), post_m.s(), post_m.v());
-
-        -HALF_LN_2PI + lnz_m - lnz_n
+        let y = *y;
+        let rn = r + 1.0;
+        let mn = r.mul_add(m, y) / rn;
+        let sn = (rn * mn).mul_add(-mn, (r * m).mul_add(m, y.mul_add(y, s)));
+        ((v + 1.0) / 2.0).mul_add(-sn.ln(), cache.1)
     }
 }
 

@@ -124,6 +124,11 @@ macro_rules! impl_suffstat {
                 self.sum_ln_x -=
                     xs.iter().map(|x| f64::from(*x)).product::<f64>().ln();
             }
+
+            fn merge(&mut self, other: Self) {
+                self.n += other.n;
+                self.sum_ln_x += other.sum_ln_x;
+            }
         }
     };
 }
