@@ -62,7 +62,7 @@ impl PartialEq for BetaPrime {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum BetaPrimeError {
@@ -100,11 +100,7 @@ impl BetaPrime {
         } else if !beta.is_finite() {
             Err(BetaPrimeError::BetaNotFinite { beta })
         } else {
-            Ok(BetaPrime {
-                alpha,
-                beta,
-                ln_beta_ab: OnceLock::new(),
-            })
+            Ok(Self::new_unchecked(alpha, beta))
         }
     }
 
@@ -255,8 +251,10 @@ impl_display!(BetaPrime);
 
 impl HasDensity<f64> for BetaPrime {
     fn ln_f(&self, x: &f64) -> f64 {
-        (self.alpha - 1.0)
-            .mul_add(x.ln(), -((self.alpha + self.beta) * x.ln_1p()))
+        let alpha = self.alpha;
+        let beta = self.beta;
+        (alpha - 1.0)
+            .mul_add(x.ln(), -((alpha + beta) * x.ln_1p()))
             - self.ln_beta_ab()
     }
 }
@@ -280,9 +278,37 @@ impl Sampleable<f64> for BetaPrime {
     }
 }
 
+
+use crate::data::DataOrSuffStat;
+#[cfg(feature = "experimental")]
+use crate::experimental::stick_breaking_process::{
+    StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
+};
+use crate::traits::ConjugatePrior;
+
+use crate::experimental::stick_breaking_process::StickBreaking;
+use crate::prelude::UnitPowerLaw;
+
+
+#[cfg(feature = "experimental")]
+impl Sampleable<StickBreakingDiscrete> for BetaPrime {
+    fn draw<R: Rng>(&self, rng: &mut R) -> StickBreakingDiscrete {
+        // Draw a random alpha from the BetaPrime distribution
+        let alpha: f64 = self.draw(rng);
+
+        // Use the alpha to construct and draw from a StickBreakingProcess
+        let stick_breaking =
+            StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
+        stick_breaking.draw(rng)
+    }
+}
+
+
+
 impl Support<f64> for BetaPrime {
     fn supports(&self, x: &f64) -> bool {
-        x.is_finite() && *x > 0.0
+        // TODO: Should this also check x.isfinite()?
+        *x > 0.0
     }
 }
 
@@ -396,6 +422,67 @@ impl fmt::Display for BetaPrimeError {
     }
 }
 
+
+
+
+
+
+#[cfg(feature = "experimental")]
+impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
+    type Posterior = Self;
+    type MCache = f64;
+    type PpCache = f64;
+
+    fn posterior(
+        &self,
+        data: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+    ) -> Self {
+        match data {
+            DataOrSuffStat::Data(xs) => {
+                let stat = StickBreakingDiscreteSuffStat::from(xs.as_ref());
+                self.posterior(&DataOrSuffStat::SuffStat(&stat))
+            }
+            DataOrSuffStat::SuffStat(stat) => {
+                let mut alpha = self.alpha;
+                let mut beta = self.beta;
+
+                for (j, count) in stat.counts().iter().enumerate() {
+                    alpha += (j * count) as f64;
+                    beta += *count as f64;
+                }
+
+                Self::new_unchecked(alpha, beta)
+            }
+        }
+    }
+
+    fn ln_m_cache(&self) -> Self::MCache {
+        -self.ln_beta_ab()
+    }
+
+    fn ln_m_with_cache(
+        &self,
+        cache: &Self::MCache,
+        data: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+    ) -> f64 {
+        let post = self.posterior(data);
+        post.ln_beta_ab() + cache
+    }
+
+    fn ln_pp_cache(
+        &self,
+        data: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+    ) -> Self::PpCache {
+        let post = self.posterior(data);
+        post.alpha / post.beta
+    }
+
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, _y: &usize) -> f64 {
+        cache.ln()
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -405,11 +492,21 @@ mod tests {
 
     test_basic_impls!(f64, BetaPrime, BetaPrime::new(1.0, 1.0).unwrap());
 
+
     #[test]
     fn new() {
-        let bp = BetaPrime::new(2.0, 3.0).unwrap();
-        assert::close(bp.alpha, 2.0, TOL);
-        assert::close(bp.beta, 3.0, TOL);
+        let bp = BetaPrime::new(1.2, 3.4).unwrap();
+        assert::close(bp.alpha, 1.2, TOL);
+        assert::close(bp.beta, 3.4, TOL);
+
+        assert!(BetaPrime::new(0.0, 1.0).is_err());
+        assert!(BetaPrime::new(-1.0, 1.0).is_err());
+        assert!(BetaPrime::new(1.0, 0.0).is_err());
+        assert!(BetaPrime::new(1.0, -1.0).is_err());
+        assert!(BetaPrime::new(f64::INFINITY, 1.0).is_err());
+        assert!(BetaPrime::new(1.0, f64::INFINITY).is_err());
+        assert!(BetaPrime::new(f64::NAN, 1.0).is_err());
+        assert!(BetaPrime::new(1.0, f64::NAN).is_err());
     }
 
     #[test]
@@ -454,7 +551,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let bp = BetaPrime::new(2.0, 3.0).unwrap();
         for _ in 0..100 {
-            let x = bp.draw(&mut rng);
+            let x: f64 = bp.draw(&mut rng);
             assert!(x > 0.0);
         }
     }
@@ -513,5 +610,18 @@ mod tests {
             // The CDFs should match at these corresponding points
             assert::close(beta.cdf(&x), bp.cdf(&y), 1e-12);
         }
+    }
+
+
+    #[test]
+    fn test_posterior() {
+        let prior = BetaPrime::new(1.0, 1.0).unwrap();
+        let data = vec![1, 2, 1];
+        let posterior = prior.posterior(&DataOrSuffStat::Data(&data));
+
+        // After observing [1,2,1]:
+        // - Two observations of value 1 contribute 0*2 to alpha and 2 to beta
+        // - One observation of value 2 contributes 1*1 to alpha and 1 to beta
+        assert_eq!(posterior, BetaPrime::new(2.0, 4.0).unwrap());
     }
 }
