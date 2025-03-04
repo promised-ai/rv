@@ -1,7 +1,10 @@
 use rv::dist::BetaPrime;
 
+#[cfg(feature = "experimental")]
 use rand::SeedableRng;
+#[cfg(feature = "experimental")]
 use rand_xoshiro::Xoshiro256Plus;
+#[cfg(feature = "experimental")]
 use rv::experimental::stick_breaking_process::{
     StickBreaking, StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
 };
@@ -9,9 +12,10 @@ use rv::prelude::*;
 
 // Simulation-based calibration
 // For details see http://www.stat.columbia.edu/~gelman/research/unpublished/sbc.pdf
+#[cfg(feature = "experimental")]
 fn main() {
     let mut rng = Xoshiro256Plus::seed_from_u64(123);
-    let n_samples = 100000;
+    let n_samples = 10000;
     let n_obs = 10;
     let n_bins = 100;
     let mut hist = vec![0_usize; n_bins + 1];
@@ -52,4 +56,9 @@ fn main() {
 
     // Should be uniform
     println!("{:?}", hist);
+}
+
+#[cfg(not(feature = "experimental"))]
+fn main() {
+    println!("This example requires the 'experimental' feature");
 }
