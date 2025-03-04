@@ -581,6 +581,23 @@ mod tests {
 
     #[cfg(feature = "experimental")]
     #[test]
+    fn test_ln_m_cache_consistency() {
+        let prior = BetaPrime::new(2.0, 3.0).unwrap();
+        let data = StickBreakingDiscreteSuffStat::new();
+        let cache = prior.ln_m_cache();
+
+        // The cache should be the negative of ln_beta_ab
+        assert_eq!(cache, -prior.ln_beta_ab());
+
+        // Using the cache with empty data should give same result
+        let ln_m =
+            prior.ln_m_with_cache(&cache, &DataOrSuffStat::SuffStat(&data));
+        let post = prior.posterior(&DataOrSuffStat::SuffStat(&data));
+        assert_eq!(ln_m, post.ln_beta_ab() - prior.ln_beta_ab());
+    }
+
+    #[cfg(feature = "experimental")]
+    #[test]
     fn test_posterior() {
         let prior = BetaPrime::new(2.0, 1.0).unwrap();
         let data = vec![0, 1, 1, 2, 2, 2]; // This gives counts [2, 2, 3]
@@ -595,5 +612,42 @@ mod tests {
         //
         // See See https://github.com/cscherrer/stick-breaking for details
         assert_eq!(posterior, BetaPrime::new(10.0, 7.0).unwrap());
+    }
+
+    #[cfg(feature = "experimental")]
+    #[test]
+    fn test_posterior_parameter_updates() {
+        let prior = BetaPrime::new(2.0, 3.0).unwrap();
+        let mut stat = StickBreakingDiscreteSuffStat::new();
+
+        // Add some observations
+        let data = vec![0, 1, 1, 2, 2, 2]; // Counts: [1, 2, 3]
+        for x in &data {
+            stat.observe(x);
+        }
+
+        let posterior = prior.posterior(&DataOrSuffStat::SuffStat(&stat));
+
+        // Alpha should increase by sum(j * count[j])
+        // Beta should increase by sum(count[j])
+        assert_eq!(posterior.alpha(), prior.alpha() + 8.0); // 0*1 + 1*2 + 2*3 = 8
+        assert_eq!(posterior.beta(), prior.beta() + 6.0); // 1 + 2 + 3 = 6
+    }
+
+    #[cfg(feature = "experimental")]
+    #[test]
+    fn test_pp_cache_consistency() {
+        let prior = BetaPrime::new(2.0, 3.0).unwrap();
+        let data = StickBreakingDiscreteSuffStat::new();
+
+        let cache = prior.ln_pp_cache(&DataOrSuffStat::SuffStat(&data));
+        let ln_pp = prior.ln_pp_with_cache(&cache, &0);
+
+        // Cache should be posterior alpha/beta ratio
+        let post = prior.posterior(&DataOrSuffStat::SuffStat(&data));
+        assert_eq!(cache, post.alpha() / post.beta());
+
+        // ln_pp should be log of the cache
+        assert_eq!(ln_pp, cache.ln());
     }
 }
