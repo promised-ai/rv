@@ -12,19 +12,23 @@ use rv::prelude::*;
 fn main() {
     let mut rng = Xoshiro256Plus::seed_from_u64(123);
     let n_samples = 100000;
-    let n_obs = 1;
-    let n_bins = 100 ;
+    let n_obs = 10;
+    let n_bins = 100;
     let mut hist = vec![0_usize; n_bins + 1];
 
     let alpha_prior = BetaPrime::new(1.0, 1.0).unwrap();
-    for _ in 0..n_samples {
-        let alpha = alpha_prior.draw(&mut rng);
-        let stick_breaking =
-            StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
-        let sbd: StickBreakingDiscrete = stick_breaking.draw(&mut rng);
 
+    // Comments in this section are from Algorithm 1 of the SBC paper
+    for _ in 0..n_samples {
+        // Draw a prior sample, θ̃ ∼ π(θ)
+        let alpha = alpha_prior.draw(&mut rng);
+        
+        // Draw a simulated data set, ỹ ∼ π(y | θ̃)
         let mut stat = StickBreakingDiscreteSuffStat::new();
         for _ in 0..n_obs {
+            let stick_breaking =
+                StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
+            let sbd: StickBreakingDiscrete = stick_breaking.draw(&mut rng);
             let x = sbd.draw(&mut rng);
             stat.observe(&x);
         }
@@ -33,13 +37,16 @@ fn main() {
 
         let mut q = 0;
         for _ in 0..n_bins {
+            // Draw posterior samples {θ₁, . . . , θₗ} ∼ π(θ | ỹ)
             let alpha_hat: f64 = posterior.draw(&mut rng);
+
+            // Compute the rank statistic 
             if alpha_hat < alpha {
                 q += 1;
             }
         }
 
-        // Increment histogram bin
+        // Increment the histogram
         hist[q] += 1;
     }
 
