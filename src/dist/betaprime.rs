@@ -351,22 +351,6 @@ impl Variance<f64> for BetaPrime {
     }
 }
 
-// TODO: This is correct for non-integers. But for integers, we need to take limits to avoid NaNs
-// impl Entropy for BetaPrime {
-//     fn entropy(&self) -> f64 {
-//         let apb = self.alpha + self.beta;
-//         let pi = std::f64::consts::PI;
-//         let a_pi = self.alpha * pi;
-//         let b_pi = self.beta * pi;
-//         self.ln_beta_ab()
-//             + (self.alpha - 1.0) * (self.beta.digamma() - self.alpha.digamma())
-//             + apb
-//                 * ((1.0 - apb).digamma() - (1.0 - self.beta).digamma()
-//                     + pi * (a_pi.sin()
-//                         / (b_pi.sin() * (a_pi + b_pi).sin())))
-//     }
-// }
-
 impl std::error::Error for BetaPrimeError {}
 
 impl fmt::Display for BetaPrimeError {
@@ -553,14 +537,6 @@ mod tests {
             assert!(x > 0.0);
         }
     }
-
-    // TODO: Uncomment once limiting behavior is corrected
-    // #[test]
-    // fn entropy_finite() {
-    //     let bp = BetaPrime::new(2.0, 3.0).unwrap();
-    //     println!("{}", bp.entropy());
-    //     assert!(bp.entropy().is_finite());
-    // }
 
     #[test]
     fn cdf_values() {
