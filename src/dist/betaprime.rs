@@ -284,7 +284,9 @@ use crate::experimental::stick_breaking_process::{
 };
 use crate::traits::ConjugatePrior;
 
+#[cfg(feature = "experimental")]
 use crate::experimental::stick_breaking_process::StickBreaking;
+
 use crate::prelude::UnitPowerLaw;
 
 #[cfg(feature = "experimental")]
@@ -607,6 +609,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "experimental")]
     #[test]
     fn test_posterior() {
         let prior = BetaPrime::new(2.0, 1.0).unwrap();
