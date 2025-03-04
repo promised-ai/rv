@@ -351,38 +351,6 @@ impl Variance<f64> for BetaPrime {
     }
 }
 
-impl Skewness for BetaPrime {
-    fn skewness(&self) -> Option<f64> {
-        if self.beta > 3.0 {
-            let numer = 2.0 * (2.0_f64.mul_add(self.alpha, self.beta) - 1.0);
-            let denom = (self.beta - 3.0)
-                * ((self.beta - 2.0)
-                    / (self.alpha * (self.alpha + self.beta - 1.0)))
-                    .sqrt();
-            Some(numer / denom)
-        } else {
-            None
-        }
-    }
-}
-
-impl Kurtosis for BetaPrime {
-    fn kurtosis(&self) -> Option<f64> {
-        let a = self.alpha;
-        let b = self.beta;
-        let bm1 = b - 1.0;
-        if b > 4.0 {
-            let numer = 6.0
-                * (a * (a + bm1))
-                    .mul_add(5.0_f64.mul_add(b, -11.0), bm1 * bm1 * (b - 2.0));
-            let denom = a * (a + bm1) * (b - 3.0) * (b - 4.0);
-            Some(numer / denom)
-        } else {
-            None
-        }
-    }
-}
-
 // TODO: This is correct for non-integers. But for integers, we need to take limits to avoid NaNs
 // impl Entropy for BetaPrime {
 //     fn entropy(&self) -> f64 {
@@ -551,37 +519,6 @@ mod tests {
             let x: f64 = bp.draw(&mut rng);
             assert!(x > 0.0);
         }
-    }
-
-    #[test]
-    fn skewness_when_beta_gt_three() {
-        let bp = BetaPrime::new(2.0, 4.0).unwrap();
-        #[allow(clippy::suboptimal_flops)]
-        let expected: f64 = 2.0 * (2.0 * 2.0 + 4.0 - 1.0);
-        assert::close(bp.skewness().unwrap(), expected, TOL);
-    }
-
-    #[test]
-    fn skewness_when_beta_leq_three() {
-        let bp = BetaPrime::new(2.0, 3.0).unwrap();
-        assert!(bp.skewness().is_none());
-    }
-
-    #[test]
-    fn kurtosis_when_beta_gt_four() {
-        let bp = BetaPrime::new(2.0, 5.0).unwrap();
-        #[allow(clippy::suboptimal_flops)]
-        let expected = 6.0
-            * (2.0 * (2.0 + 5.0 - 1.0) * (5.0 * 5.0 - 11.0)
-                + (5.0 - 1.0) * (5.0 - 1.0) * (5.0 - 2.0))
-            / (2.0 * (2.0 + 5.0 - 1.0) * (5.0 - 3.0) * (5.0 - 4.0));
-        assert::close(bp.kurtosis().unwrap(), expected, TOL);
-    }
-
-    #[test]
-    fn kurtosis_when_beta_leq_four() {
-        let bp = BetaPrime::new(2.0, 4.0).unwrap();
-        assert!(bp.kurtosis().is_none());
     }
 
     // TODO: Uncomment once limiting behavior is corrected
