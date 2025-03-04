@@ -193,14 +193,6 @@ impl Sampleable<StickSequence> for StickBreaking {
     }
 }
 
-fn rising_pow(x: f64, n: usize) -> f64 {
-    let mut r = 1.0;
-    for k in 0..n {
-        r *= x + k as f64;
-    }
-    r
-}
-
 fn rising_beta_prod(x: f64, a: usize, y: f64, b: usize) -> f64 {
     let x_y = x + y;
     let mut r = 1.0;

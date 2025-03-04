@@ -103,8 +103,7 @@ impl CovGrad {
         self.slices
             .iter()
             .zip(other.slices.iter())
-            .map(|(a, b)| a.relative_eq(b, rel, abs))
-            .all(|x| x)
+            .all(|(a, b)| a.relative_eq(b, rel, abs))
     }
 
     /// Concatenate columns from another matrix
