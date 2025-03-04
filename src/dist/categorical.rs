@@ -339,11 +339,7 @@ mod tests {
         // weights the def do not sum to 1
         let weights: Vec<f64> = vec![2.0, 1.0, 2.0, 3.0, 1.0];
         let cat = Categorical::new(&weights).unwrap();
-        assert::close(
-            cat.ln_weights.iter().copied().logsumexp(),
-            0.0,
-            TOL,
-        );
+        assert::close(cat.ln_weights.iter().copied().logsumexp(), 0.0, TOL);
     }
 
     #[test]
@@ -354,11 +350,7 @@ mod tests {
         cat.ln_weights
             .iter()
             .for_each(|&ln_w| assert::close(ln_w, ln_weight, TOL));
-        assert::close(
-            cat.ln_weights.iter().copied().logsumexp(),
-            0.0,
-            TOL,
-        );
+        assert::close(cat.ln_weights.iter().copied().logsumexp(), 0.0, TOL);
     }
 
     #[test]

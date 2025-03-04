@@ -424,7 +424,9 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
     type MCache = f64;
     type PpCache = f64;
 
-    fn empty_stat(&self) -> <StickBreakingDiscrete as HasSuffStat<usize>>::Stat {
+    fn empty_stat(
+        &self,
+    ) -> <StickBreakingDiscrete as HasSuffStat<usize>>::Stat {
         StickBreakingDiscreteSuffStat::new()
     }
 
@@ -605,18 +607,17 @@ mod tests {
         }
     }
 
-    
     #[test]
     fn test_posterior() {
         let prior = BetaPrime::new(2.0, 1.0).unwrap();
-        let data = vec![0, 1, 1, 2, 2, 2];  // This gives counts [2, 2, 3]
+        let data = vec![0, 1, 1, 2, 2, 2]; // This gives counts [2, 2, 3]
         let posterior = prior.posterior(&DataOrSuffStat::Data(&data));
         // Our observation is [C₀, C₁, C₂] = [1, 2, 3]
-        // So 
+        // So
         //   ∑ j Cⱼ = 0 * 1 + 1 * 2 + 2 * 3 = 8
-        // and 
+        // and
         //   ∑ Cⱼ = 1 + 2 + 3 = 6
-        // 
+        //
         // So the posterior is BetaPrime(2 + 8, 1 + 6) = BetaPrime(10, 7)
         //
         // See See https://github.com/cscherrer/stick-breaking for details
