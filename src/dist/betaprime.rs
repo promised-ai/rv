@@ -452,7 +452,7 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
 #[cfg(test)]
 mod tests {
     use rand::SeedableRng;
-    use rand_xoshiro::{Xoshiro256Plus};
+    use rand_xoshiro::Xoshiro256Plus;
 
     use super::*;
     use crate::test_basic_impls;
@@ -481,10 +481,10 @@ mod tests {
     fn mean_when_beta_gt_one() {
         let mut rng = Xoshiro256Plus::seed_from_u64(123);
         let bp = BetaPrime::new(2.0, 3.0).unwrap();
-        
+
         // Theoretical mean
         let mu_theory: f64 = bp.mean().unwrap();
-        
+
         // Sample mean
         let n = 1000;
         let mut s = 0.0;
@@ -493,7 +493,7 @@ mod tests {
             s += x;
         }
         let mu_sample = s / n as f64;
-      
+
         assert::close(mu_sample, mu_theory, 0.03);
     }
 
@@ -508,10 +508,9 @@ mod tests {
         let mut rng = Xoshiro256Plus::seed_from_u64(123);
         let bp = BetaPrime::new(10.0, 15.0).unwrap();
 
-        
         // Theoretical variance
         let var_theory: f64 = bp.variance().unwrap();
-        
+
         // Sample variance assuming correct mean
         let mean = bp.mean().unwrap();
         let n = 1000;
@@ -523,7 +522,7 @@ mod tests {
 
         // Calculate variance
         let var_sample: f64 = sse / n as f64;
-        
+
         assert::close(var_sample, var_theory, 0.01);
     }
 
