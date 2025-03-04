@@ -22,7 +22,7 @@ fn main() {
     for _ in 0..n_samples {
         // Draw a prior sample, θ̃ ∼ π(θ)
         let alpha = alpha_prior.draw(&mut rng);
-        
+
         // Draw a simulated data set, ỹ ∼ π(y | θ̃)
         let mut stat = StickBreakingDiscreteSuffStat::new();
         for _ in 0..n_obs {
@@ -40,7 +40,7 @@ fn main() {
             // Draw posterior samples {θ₁, . . . , θₗ} ∼ π(θ | ỹ)
             let alpha_hat: f64 = posterior.draw(&mut rng);
 
-            // Compute the rank statistic 
+            // Compute the rank statistic
             if alpha_hat < alpha {
                 q += 1;
             }
