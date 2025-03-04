@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 
 use crate::consts::HALF_LN_2PI;
-use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
+use crate::data::GaussianSuffStat;
+use crate::dist::normal_gamma::dos_to_post;
 use crate::dist::{Gaussian, NormalInvGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
@@ -10,9 +11,21 @@ use crate::traits::*;
 
 #[inline]
 fn ln_z(v: f64, a: f64, b: f64) -> f64 {
-    // -(a * b.ln() - 0.5 * v.ln() - a.ln_gamma().0)
     let p1 = v.ln().mul_add(0.5, ln_gammafn(a));
     -b.ln().mul_add(a, -p1)
+}
+
+pub struct PosteriorParameters {
+    m: f64,
+    v: f64,
+    a: f64,
+    b: f64,
+}
+
+impl From<PosteriorParameters> for NormalInvGamma {
+    fn from(PosteriorParameters { m, v, a, b }: PosteriorParameters) -> Self {
+        NormalInvGamma::new(m, v, a, b).unwrap()
+    }
 }
 
 // XXX: Check out section 6.3 from Kevin Murphy's paper
@@ -21,7 +34,7 @@ fn ln_z(v: f64, a: f64, b: f64) -> f64 {
 fn posterior_from_stat(
     nig: &NormalInvGamma,
     stat: &GaussianSuffStat,
-) -> NormalInvGamma {
+) -> PosteriorParameters {
     let n = stat.n() as f64;
 
     let super::NormalInvGammaParameters { m, v, a, b } = nig.emit_params();
@@ -30,27 +43,30 @@ fn posterior_from_stat(
 
     let vn_inv = v_inv + n;
     let vn = vn_inv.recip();
-    // let mn = (v_inv * m + stat.sum_x()) * vn;
     let mn = v_inv.mul_add(m, stat.sum_x()) / vn_inv;
-    // let an = a + 0.5 * n;
     let an = n.mul_add(0.5, a);
-    // let bn = b + 0.5 * (m * m * v_inv + stat.sum_x_sq() - mn * mn * vn_inv);
     let p1 = (m * m).mul_add(v_inv, stat.sum_x_sq());
     let bn = (-mn * mn).mul_add(vn_inv, p1).mul_add(0.5, b);
 
-    NormalInvGamma::new(mn, vn, an, bn).expect("Invalid posterior params.")
+    PosteriorParameters {
+        m: mn,
+        v: vn,
+        a: an,
+        b: bn,
+    }
 }
 
 impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
     type Posterior = Self;
     type MCache = f64;
-    type PpCache = (GaussianSuffStat, f64);
-    // type PpCache = NormalInvGamma;
+    type PpCache = (PosteriorParameters, f64);
+
+    fn empty_stat(&self) -> <Gaussian as HasSuffStat<f64>>::Stat {
+        GaussianSuffStat::new()
+    }
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
-            posterior_from_stat(self, &stat)
-        })
+        dos_to_post!(self, x).into()
     }
 
     #[inline]
@@ -63,33 +79,35 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
         cache: &Self::MCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
-            let post = posterior_from_stat(self, &stat);
-            let n = stat.n() as f64;
-            let lnz_n = ln_z(post.v, post.a, post.b);
-            n.mul_add(-HALF_LN_2PI, lnz_n - cache)
-            // lnz_n - cache - n * HALF_LN_PI - n*LN_2
-        })
+        let (n, post) = dos_to_post!(# self, x);
+        let lnz_n = ln_z(post.v, post.a, post.b);
+        (n as f64).mul_add(-HALF_LN_2PI, lnz_n - cache)
     }
 
-    #[inline]
     fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
-        let stat = extract_stat(x, GaussianSuffStat::new);
-        let post_n = posterior_from_stat(self, &stat);
-        let lnz_n = ln_z(post_n.v, post_n.a, post_n.b);
-        (stat, lnz_n)
+        let params = dos_to_post!(self, x);
+        let PosteriorParameters { v, a, b, .. } = params;
+
+        let gamma_ratio = ln_gammafn(a + 0.5) - ln_gammafn(a);
+        let z = (-0.5_f64).mul_add(v.ln_1p(), a * b.ln()) + gamma_ratio
+            - HALF_LN_2PI;
+
+        (params, z)
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
-        let mut stat = cache.0;
-        let lnz_n = cache.1;
+        let PosteriorParameters { m, v, a, b } = cache.0;
 
-        stat.observe(y);
-        let post_m = posterior_from_stat(self, &stat);
+        let y = *y;
+        let v_recip = v.recip();
+        let vn_recip = v_recip + 1.0;
+        let mn = v_recip.mul_add(m, y) / vn_recip;
+        let bn = 0.5_f64.mul_add(
+            (mn * mn).mul_add(-vn_recip, (m * m).mul_add(v_recip, y * y)),
+            b,
+        );
 
-        let lnz_m = ln_z(post_m.v, post_m.a, post_m.b);
-
-        -HALF_LN_2PI + lnz_m - lnz_n
+        (a + 0.5).mul_add(-bn.ln(), cache.1)
     }
 }
 

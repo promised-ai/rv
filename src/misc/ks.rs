@@ -84,7 +84,7 @@ pub enum KsAlternative {
     Greater,
 }
 
-/// Errors when calculating ks_two_sample
+/// Errors when calculating `ks_two_sample`
 #[derive(Debug)]
 pub enum KsError {
     /// Once of the slices given is empty

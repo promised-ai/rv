@@ -8,7 +8,7 @@ fn bench_cat_draw(c: &mut Criterion) {
     let mut group = c.benchmark_group("Categorical draw compare");
     for k in [2, 3, 4, 10, 20, 50] {
         let cat = &Categorical::uniform(k);
-        group.bench_function(&format!("u8, k = {}", k), move |b| {
+        group.bench_function(format!("u8, k = {}", k), move |b| {
             b.iter_batched_ref(
                 rand::thread_rng,
                 |mut rng| {
@@ -17,7 +17,7 @@ fn bench_cat_draw(c: &mut Criterion) {
                 BatchSize::SmallInput,
             )
         });
-        group.bench_function(&format!("usize, k = {}", k), move |b| {
+        group.bench_function(format!("usize, k = {}", k), move |b| {
             b.iter_batched_ref(
                 rand::thread_rng,
                 |mut rng| {

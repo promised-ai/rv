@@ -157,6 +157,12 @@ macro_rules! impl_invgaussian_suffstat {
                     self.sum_ln_x = 0.0;
                 }
             }
+            fn merge(&mut self, other: Self) {
+                self.n += other.n;
+                self.sum_x += other.sum_x;
+                self.sum_inv_x += other.sum_inv_x;
+                self.sum_ln_x += other.sum_ln_x;
+            }
         }
     };
 }

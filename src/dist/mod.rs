@@ -10,6 +10,7 @@
 mod bernoulli;
 mod beta;
 mod beta_binom;
+mod betaprime;
 mod binomial;
 mod categorical;
 mod cauchy;
@@ -53,6 +54,7 @@ mod wishart;
 pub use bernoulli::{Bernoulli, BernoulliError};
 pub use beta::{Beta, BetaError};
 pub use beta_binom::{BetaBinomial, BetaBinomialError};
+pub use betaprime::{BetaPrime, BetaPrimeError};
 pub use binomial::{Binomial, BinomialError};
 pub use categorical::{Categorical, CategoricalError};
 pub use cauchy::{Cauchy, CauchyError};

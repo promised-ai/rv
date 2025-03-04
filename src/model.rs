@@ -109,6 +109,10 @@ where
     fn forget(&mut self, x: &X) {
         self.suffstat.forget(x);
     }
+
+    fn merge(&mut self, other: Self) {
+        self.suffstat.merge(other.suffstat);
+    }
 }
 
 impl<X, Fx, Pr> HasDensity<X> for ConjugateModel<X, Fx, Pr>

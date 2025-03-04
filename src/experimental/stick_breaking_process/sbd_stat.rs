@@ -29,6 +29,10 @@ impl StickBreakingDiscreteSuffStat {
         Self { counts: Vec::new() }
     }
 
+    pub fn from_counts(counts: Vec<usize>) -> Self {
+        Self { counts }
+    }
+
     /// Calculates break pairs for probabilities.
     ///
     /// Returns a vector of pairs where each pair consists of the sum of all counts after the current index and the count at the current index.
@@ -155,6 +159,16 @@ impl SuffStat<usize> for StickBreakingDiscreteSuffStat {
     fn forget(&mut self, i: &usize) {
         assert!(self.counts[*i] > 0, "No observations of {i} to forget.");
         self.counts[*i] -= 1;
+    }
+
+    fn merge(&mut self, other: Self) {
+        if other.counts.len() > self.counts.len() {
+            self.counts.resize(other.counts.len(), 0);
+        }
+        self.counts
+            .iter_mut()
+            .zip(other.counts.iter())
+            .for_each(|(ct_a, &ct_b)| *ct_a += ct_b);
     }
 }
 #[cfg(test)]

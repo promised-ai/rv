@@ -90,9 +90,9 @@ impl NormalInvChiSquared {
     /// # Arguments
     /// - m: The prior mean
     /// - k: How strongly we believe the prior mean (in prior
-    ///      pseudo-observations)
+    ///   pseudo-observations)
     /// - v: How strongly we believe the prior variance (in prior
-    ///      pseudo-observations)
+    ///   pseudo-observations)
     /// - s2: The prior variance
     pub fn new(
         m: f64,

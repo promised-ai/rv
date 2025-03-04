@@ -1,57 +1,77 @@
 use std::collections::BTreeMap;
+use std::f64::consts::PI;
 
 use crate::consts::HALF_LN_PI;
 use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
-
+use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
 use crate::traits::*;
+
+#[derive(Clone, Debug)]
+pub struct PosteriorParameters {
+    pub mn: f64,
+    pub kn: f64,
+    pub vn: f64,
+    pub s2n: f64,
+}
+
+impl From<PosteriorParameters> for NormalInvChiSquared {
+    fn from(
+        PosteriorParameters { mn, kn, vn, s2n }: PosteriorParameters,
+    ) -> Self {
+        NormalInvChiSquared::new(mn, kn, vn, s2n).unwrap()
+    }
+}
 
 // XXX: Check out section 6.3 from Kevin Murphy's paper
 // https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf
 fn posterior_from_stat(
     nix: &NormalInvChiSquared,
     stat: &GaussianSuffStat,
-) -> NormalInvChiSquared {
+) -> PosteriorParameters {
+    let (m, k, v, s2) = nix.params();
+
     if stat.n() == 0 {
-        return nix.clone();
+        return PosteriorParameters {
+            mn: m,
+            kn: k,
+            vn: v,
+            s2n: s2,
+        };
     }
 
     let n = stat.n() as f64;
 
-    let (m, k, v, s2) = nix.params();
-
     let xbar = stat.mean();
-    let sum_x = xbar * n;
-    // Sum (x - xbar)^2
-    //   = Sum[ x*x - 2x*xbar + xbar*xbar ]
-    //   = Sum[x^2] + n * xbar^2 - 2 * xbar + Sum[x]
-    //   = Sum[x^2] + n * xbar^2 - 2 * n *xbar^2
-    //   = Sum[x^2] - n * xbar^2
-    let mid = (n * xbar).mul_add(-xbar, stat.sum_x_sq());
 
     let kn = k + n;
-    let divby_k_plus_n = kn.recip();
+    let kn_recip = kn.recip();
     let vn = v + n;
-    let mn = k.mul_add(m, sum_x) * divby_k_plus_n;
+    let mn = k.mul_add(m, stat.sum_x()) * kn_recip;
     let diff_m_xbar = m - xbar;
-    let s2n = ((n * k * divby_k_plus_n) * diff_m_xbar)
-        .mul_add(diff_m_xbar, v.mul_add(s2, mid))
-        / vn;
+    let s2n = v.mul_add(
+        s2,
+        ((n * k * kn_recip) * diff_m_xbar)
+            .mul_add(diff_m_xbar, stat.sum_sq_diff()),
+    ) / vn;
 
-    NormalInvChiSquared::new(mn, kn, vn, s2n)
-        .expect("Invalid posterior params.")
+    PosteriorParameters { mn, kn, vn, s2n }
 }
 
 impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     type Posterior = Self;
     type MCache = f64;
-    type PpCache = (GaussianSuffStat, f64);
+    type PpCache = (PosteriorParameters, f64);
+
+    fn empty_stat(&self) -> <Gaussian as HasSuffStat<f64>>::Stat {
+        GaussianSuffStat::new()
+    }
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
-            posterior_from_stat(self, &stat)
+        extract_stat_then(self, x, |stat: GaussianSuffStat| {
+            posterior_from_stat(self, &stat).into()
         })
     }
 
@@ -65,33 +85,38 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
         cache: &Self::MCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
+        extract_stat_then(self, x, |stat: GaussianSuffStat| {
             let n = stat.n() as f64;
-            let post = posterior_from_stat(self, &stat);
+            let post: Self = posterior_from_stat(self, &stat).into();
             let lnz_n = post.ln_z();
             n.mul_add(-HALF_LN_PI, lnz_n - cache)
         })
     }
 
-    #[inline]
     fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
-        let stat = extract_stat(x, GaussianSuffStat::new);
-        let post_n = posterior_from_stat(self, &stat);
-        let lnz_n = post_n.ln_z();
-        (stat, lnz_n)
-        // post_n
+        let stat = extract_stat(self, x);
+        let post = posterior_from_stat(self, &stat);
+        let kn = post.kn;
+        let vn = post.vn;
+
+        let z = 0.5_f64.mul_add(
+            (kn / ((kn + 1.0) * PI * vn * post.s2n)).ln(),
+            ln_gammafn((vn + 1.0) / 2.0) - ln_gammafn(vn / 2.0),
+        );
+        (post, z)
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
-        let mut stat = cache.0;
-        let lnz_n = cache.1;
+        let post = &cache.0;
+        let z = cache.1;
+        let kn = post.kn;
 
-        stat.observe(y);
-        let post_m = posterior_from_stat(self, &stat);
+        let diff = y - post.mn;
 
-        let lnz_m = post_m.ln_z();
-
-        -HALF_LN_PI + lnz_m - lnz_n
+        ((post.vn + 1.0) / 2.0).mul_add(
+            -((kn * diff * diff) / ((kn + 1.0) * post.vn * post.s2n)).ln_1p(),
+            z,
+        )
     }
 }
 

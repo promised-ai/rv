@@ -17,6 +17,8 @@ pub use stat::UnitPowerLawSuffStat;
 use crate::dist::{
     Bernoulli, Categorical, Gaussian, InvGamma, InvGaussian, Poisson,
 };
+use crate::traits::ConjugatePrior;
+use crate::traits::HasDensity;
 use crate::traits::{HasSuffStat, SuffStat};
 
 pub type BernoulliData<'a, X> = DataOrSuffStat<'a, X, Bernoulli>;
@@ -159,7 +161,7 @@ where
     pub fn n(&self) -> usize {
         match &self {
             DataOrSuffStat::Data(data) => data.len(),
-            DataOrSuffStat::SuffStat(s) => s.n(),
+            DataOrSuffStat::SuffStat(s) => <Fx::Stat as SuffStat<X>>::n(s),
         }
     }
 
@@ -212,39 +214,35 @@ where
 
 /// Convert a `DataOrSuffStat` into a `Stat`
 #[inline]
-pub fn extract_stat<Fx, X, Ctor>(
-    x: &DataOrSuffStat<X, Fx>,
-    stat_ctor: Ctor,
-) -> Fx::Stat
+pub fn extract_stat<X, Fx, Pr>(pr: &Pr, x: &DataOrSuffStat<X, Fx>) -> Fx::Stat
 where
-    Fx: HasSuffStat<X>,
+    Fx: HasSuffStat<X> + HasDensity<X>,
     Fx::Stat: Clone,
-    Ctor: Fn() -> Fx::Stat,
+    Pr: ConjugatePrior<X, Fx>,
 {
     match x {
         DataOrSuffStat::SuffStat(s) => (*s).clone(),
         DataOrSuffStat::Data(xs) => {
-            let mut stat = stat_ctor();
-            xs.iter().for_each(|y| stat.observe(y));
+            let mut stat = pr.empty_stat();
+            stat.observe_many(xs);
             stat
         }
     }
 }
 
 /// Convert a `DataOrSuffStat` into a `Stat` then do something with it
-#[inline]
-pub fn extract_stat_then<Fx, X, Ctor, Fnx, Y>(
+pub fn extract_stat_then<X, Fx, Pr, Fnx, Y>(
+    pr: &Pr,
     x: &DataOrSuffStat<X, Fx>,
-    stat_ctor: Ctor,
     f_stat: Fnx,
 ) -> Y
 where
-    Fx: HasSuffStat<X>,
+    Fx: HasSuffStat<X> + HasDensity<X>,
     Fx::Stat: Clone,
-    Ctor: Fn() -> Fx::Stat,
+    Pr: ConjugatePrior<X, Fx>,
     Fnx: Fn(Fx::Stat) -> Y,
 {
-    let stat = extract_stat(x, stat_ctor);
+    let stat = extract_stat(pr, x);
     f_stat(stat)
 }
 
