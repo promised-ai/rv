@@ -437,6 +437,7 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
 mod tests {
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
+    use crate::prelude::ChiSquared;
 
     use super::*;
     use crate::test_basic_impls;
@@ -625,5 +626,66 @@ mod tests {
 
         // ln_pp should be log of the cache
         assert_eq!(ln_pp, cache.ln());
+    }
+
+    // Simulation-based calibration
+    // For details see http://www.stat.columbia.edu/~gelman/research/unpublished/sbc.pdf
+    #[cfg(feature = "experimental")]
+    #[test]
+    fn test_sbc() {
+        let mut rng = Xoshiro256Plus::seed_from_u64(123);
+        let n_samples = 2000;
+        let n_obs = 5;
+        let n_bins = 20;
+        let mut hist = vec![0_usize; n_bins + 1];
+    
+        let alpha_prior = BetaPrime::new(1.0, 1.0).unwrap();
+    
+    
+        // Comments in this section are from Algorithm 1 of the SBC paper
+        for _ in 0..n_samples {
+            // Draw a prior sample, θ̃ ∼ π(θ)
+            let alpha = alpha_prior.draw(&mut rng);
+    
+            // Draw a simulated data set, ỹ ∼ π(y | θ̃)
+            let mut stat = StickBreakingDiscreteSuffStat::new();
+            for _ in 0..n_obs {
+                let stick_breaking =
+                    StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
+                let sbd: StickBreakingDiscrete = stick_breaking.draw(&mut rng);
+                let x = sbd.draw(&mut rng);
+                stat.observe(&x);
+            }
+    
+            let posterior = alpha_prior.posterior(&DataOrSuffStat::SuffStat(&stat));
+    
+            let mut q = 0;
+            for _ in 0..n_bins {
+                // Draw posterior samples {θ₁, . . . , θₗ} ∼ π(θ | ỹ)
+                let alpha_hat: f64 = posterior.draw(&mut rng);
+    
+                // Compute the rank statistic
+                if alpha_hat < alpha {
+                    q += 1;
+                }
+            }
+    
+            // Increment the histogram
+            hist[q] += 1;
+        }
+    
+        let mut chisq_stat = 0.0;
+        let df = n_bins - 1;
+    
+        // Null hypothesis is equal weights
+        let expected = n_samples as f64 / n_bins as f64;
+        hist.iter().for_each(|k| {
+            let observed: f64 = *k as f64;
+            chisq_stat += (observed - expected).powi(2) / expected;
+        });
+        let pvalue = 1.0 - ChiSquared::new(df as f64).unwrap().cdf(&chisq_stat);
+    
+        // Make sure we don't reject H₀
+        assert!(pvalue > 0.05);
     }
 }
