@@ -779,29 +779,29 @@ mod tests {
         assert::close(ln_m, mc_est, 1e-2);
     }
 
-    // #[test]
-    // fn ln_pp_vs_monte_carlo() {
-    //     use crate::misc::LogSumExp;
+    #[test]
+    fn ln_pp_vs_monte_carlo() {
+        use crate::misc::LogSumExp;
 
-    //     let n_samples = 1_000_000;
-    //     let xs = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6];  // Changed to positive values
+        let n_samples = 1_000_000;
+        let xs = vec![1, 2, 3, 4, 5];  
 
-    //     let y: f64 = 0.3;  // Changed to positive value
-    //     let (alpha, beta) = (2.0, 3.0);
-    //     let bp = BetaPrime::new(alpha, beta).unwrap();
-    //     let post = bp.posterior(&DataOrSuffStat::<f64, StickBreakingDiscrete>::from(&xs));
-    //     let ln_pp = bp.ln_pp(&y, &DataOrSuffStat::<f64, StickBreakingDiscrete>::from(&xs));
+        let y: usize = 3;  
+        let (alpha, beta) = (2.0, 3.0);
+        let bp = BetaPrime::new(alpha, beta).unwrap();
+        let post = bp.posterior(&DataOrSuffStat::<usize, StickBreakingDiscrete>::from(&xs));
+        let ln_pp = bp.ln_pp(&y, &DataOrSuffStat::<usize, StickBreakingDiscrete>::from(&xs));
 
-    //     let mc_est = {
-    //         post.sample_stream(&mut rand::thread_rng())
-    //             .take(n_samples)
-    //             .map(|sbd: StickBreakingDiscrete| sbd.ln_f(&y))
-    //             .logsumexp()
-    //             - (n_samples as f64).ln()
-    //     };
-    //     // high error tolerance. MC estimation is not the most accurate...
-    //     assert::close(ln_pp, mc_est, 1e-2);
-    // }
+        let mc_est = {
+            post.sample_stream(&mut rand::thread_rng())
+                .take(n_samples)
+                .map(|sbd: StickBreakingDiscrete| sbd.ln_f(&y))
+                .logsumexp()
+                - (n_samples as f64).ln()
+        };
+        // high error tolerance. MC estimation is not the most accurate...
+        assert::close(ln_pp, mc_est, 1e-2);
+    }
 
     #[test]
     fn ln_pp_vs_ln_m_single() {
