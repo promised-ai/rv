@@ -241,7 +241,7 @@ mod tests {
         assert!(!cdvm.supports(&4));
     }
 
-    #[proptest]
+    
     #[test]
     fn ln_f_is_symmetric() {
         let cdvm = Cdvm::new(4, 2.0, 1.0).unwrap();
