@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{CategoricalDatum, CategoricalSuffStat};
 use crate::impl_display;
+use crate::misc::ln_pflip;
 use crate::misc::{argmax, ln_pflips, vec_to_string, LogSumExp};
 use crate::traits::*;
 use rand::Rng;
-use crate::misc::ln_pflip;   
 use std::fmt;
 
 /// [Categorical distribution](https://en.wikipedia.org/wiki/Categorical_distribution)

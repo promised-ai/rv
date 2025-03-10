@@ -325,11 +325,7 @@ pub fn ln_pflips<R: Rng>(
         .collect()
 }
 
-pub fn ln_pflip<R: Rng, I>(
-    ln_weights: I,
-    _normed: bool,
-    rng: &mut R,
-) -> usize 
+pub fn ln_pflip<R: Rng, I>(ln_weights: I, _normed: bool, rng: &mut R) -> usize
 where
     I: IntoIterator,
     I::Item: std::borrow::Borrow<f64>,
