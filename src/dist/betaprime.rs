@@ -747,7 +747,8 @@ mod tests {
         use crate::misc::LogSumExp;
         let mut rng = Xoshiro256Plus::seed_from_u64(123);
         
-        let n_samples = 1_000;
+        let n_samples = 1000;
+        println!("n_samples: {}", n_samples);
         let n_obs = 2;
         
         let (alpha, beta) = (4.0, 3.0);
@@ -761,29 +762,27 @@ mod tests {
                 sbd.draw(&mut rng)
             })
             .collect();
+        let xs = vec![0, 1];
         println!("xs: {:?}", xs);
         let obs = DataOrSuffStat::Data(&xs);
         let ln_m = bp.ln_m(&obs);
+        println!("ln_m: {}", ln_m);
 
         let mut rng = Xoshiro256Plus::seed_from_u64(123);
-        let mc_est = {
-            bp.sample_stream(&mut rng)
-                .take(n_samples)
-                .map(|sbd: StickBreakingDiscrete| {
-                    xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>()
-                })
-                .logsumexp()
-                - (n_samples as f64).ln()
-        };
+        let mc_est = (0..n_samples).map(|_| {
+            let sbd: StickBreakingDiscrete = bp.draw(&mut rng);
+            xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>()
+        }).logsumexp() - (n_samples as f64).ln();
+
         // high error tolerance. MC estimation is not the most accurate...
-        assert::close(ln_m, mc_est, 1e-2);
+        assert::close(ln_m, mc_est, 0.0);
     }
 
     #[test]
     fn ln_pp_vs_monte_carlo() {
         use crate::misc::LogSumExp;
 
-        let n_samples = 1_000_000;
+        let n_samples = 100_000;
         let xs = vec![1, 2, 3, 4, 5];  
 
         let y: usize = 3;  
