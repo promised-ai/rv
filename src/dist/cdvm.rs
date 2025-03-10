@@ -204,13 +204,8 @@ impl Sampleable<usize> for Cdvm {
 mod tests {
     use super::*;
     use proptest::prelude::*;
-    use rand::rngs::StdRng;
-    use rand::SeedableRng;
-    use std::f64::consts::PI;
 
     const TOL: f64 = 1E-12;
-    const N_TRIES: usize = 5;
-    const X2_PVAL: f64 = 0.001;
 
     #[test]
     fn new_should_validate_parameters() {
@@ -244,10 +239,10 @@ mod tests {
     proptest! {
         #[test]
         fn ln_f_symmetry(
-            m in 3..100usize,
-            mu in 0.0..100f64,
-            kappa in 0.1..50.0f64,
-            x in 0..100usize
+            m in 3..100_usize,
+            mu in 0.0..100_f64,
+            kappa in 0.1..50.0_f64,
+            x in 0..100_usize
         ) {
             let mu = mu % (m as f64);
             let cdvm1 = Cdvm::new(m, mu, kappa).unwrap();
@@ -266,9 +261,9 @@ mod tests {
     proptest! {
         #[test]
         fn density_is_normalized(
-            m in 3..100usize,
-            mu in 0.0..100f64,
-            kappa in 0.1..50.0f64,
+            m in 3..100_usize,
+            mu in 0.0..100_f64,
+            kappa in 0.1..50.0_f64,
         ) {
             let cdvm = Cdvm::new(m, mu, kappa).unwrap();
 
@@ -282,10 +277,10 @@ mod tests {
     proptest! {
         #[test]
         fn wrap_around_invariance(
-            m in 3..100usize,
-            mu in 0.0..100f64,
-            kappa in 0.1..50.0f64,
-            x in 0..100usize,
+            m in 3..100_usize,
+            mu in 0.0..100_f64,
+            kappa in 0.1..50.0_f64,
+            x in 0..100_usize,
         ) {
             let mu = mu % (m as f64);
             let x = x % m;
