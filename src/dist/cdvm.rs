@@ -98,7 +98,6 @@ impl Cdvm {
     /// Compute or fetch cached normalization constant
     fn get_log_norm_const(&self) -> f64 {
         *self.log_norm_const.get_or_init(|| {
-            let pi = std::f64::consts::PI;
             let m = self.modulus;
             let mu = self.mu;
             let kappa = self.kappa;
