@@ -325,17 +325,21 @@ pub fn ln_pflips<R: Rng>(
         .collect()
 }
 
-pub fn ln_pflip<R: Rng>(
-    ln_weights: &[f64],
+pub fn ln_pflip<R: Rng, I>(
+    ln_weights: I,
     _normed: bool,
     rng: &mut R,
-) -> usize {
+) -> usize 
+where
+    I: IntoIterator,
+    I::Item: std::borrow::Borrow<f64>,
+{
     ln_weights
-        .iter()
-        .map(|ln_w| (ln_w, rng.gen::<f64>().ln()))
+        .into_iter()
+        .map(|ln_w| (*ln_w.borrow(), rng.gen::<f64>().ln()))
         .enumerate()
         .max_by(|(_, (ln_w1, l1)), (_, (ln_w2, l2))| {
-            l1.partial_cmp(&(l2 * (*ln_w1 - *ln_w2).exp())).unwrap()
+            l1.partial_cmp(&(l2 * (*ln_w2 - *ln_w1).exp())).unwrap()
         })
         .unwrap()
         .0

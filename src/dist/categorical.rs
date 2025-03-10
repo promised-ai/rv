@@ -7,6 +7,7 @@ use crate::impl_display;
 use crate::misc::{argmax, ln_pflips, vec_to_string, LogSumExp};
 use crate::traits::*;
 use rand::Rng;
+use crate::misc::ln_pflip;   
 use std::fmt;
 
 /// [Categorical distribution](https://en.wikipedia.org/wiki/Categorical_distribution)
@@ -213,7 +214,7 @@ impl<X: CategoricalDatum> HasDensity<X> for Categorical {
 
 impl<X: CategoricalDatum> Sampleable<X> for Categorical {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
-        let ix = ln_pflips(&self.ln_weights, 1, true, &mut rng)[0];
+        let ix = ln_pflip(&self.ln_weights, true, &mut rng);
         CategoricalDatum::from_usize(ix)
     }
 
