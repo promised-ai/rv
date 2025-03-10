@@ -3,32 +3,31 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::misc::func::LogSumExp;  
+use crate::misc::func::LogSumExp;
+use crate::misc::ln_pflip;
 use crate::traits::*;
 use rand::Rng;
 use std::f64;
-use std::ops::Neg;       
 use std::fmt;
+use std::ops::Neg;
 use std::sync::OnceLock;
-use crate::misc::ln_pflip;
-
 
 /// [CDVM distribution](https://arxiv.org/pdf/2009.05437),
 /// A distribution over x in (0, m-1) where m is the number of categories.
-/// 
+///
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Cdvm {
     /// Number of categories
     modulus: usize,
-    
+
     /// mean direction (μ)
     mu: f64,
 
     /// concentration parameter (κ)
     kappa: f64,
-    
+
     /// Cached log-normalization constant
     #[cfg_attr(feature = "serde1", serde(skip))]
     log_norm_const: OnceLock<f64>,
@@ -48,11 +47,13 @@ pub enum CdvmError {
     /// The number of categories is less than 2
     InvalidCategories { modulus: usize },
 
-    /// Mu must be in [0, modulus)
-    MuOutOfRange { mu: f64 },
-    
     /// Kappa must be non-negative
     KappaNegative { kappa: f64 },
+}
+
+fn cdvm_kernel(modulus: usize, mu: f64, kappa: f64, x: usize) -> f64 {
+    let twopi = std::f64::consts::TAU;
+    kappa * (twopi * (x as f64 - mu) / modulus as f64).cos()
 }
 
 impl Cdvm {
@@ -67,21 +68,17 @@ impl Cdvm {
         if modulus < 2 {
             return Err(CdvmError::InvalidCategories { modulus });
         }
-        if mu < 0.0 || mu >= modulus as f64 {
-            return Err(CdvmError::MuOutOfRange { mu });
-        }
         if kappa < 0.0 {
             return Err(CdvmError::KappaNegative { kappa });
         }
-        
+
         Ok(Cdvm {
             modulus,
-            mu,
+            mu: mu % modulus as f64,
             kappa,
             log_norm_const: OnceLock::new(),
         })
     }
-
 
     /// Get the number of categories
     pub fn modulus(&self) -> usize {
@@ -107,9 +104,10 @@ impl Cdvm {
             let kappa = self.kappa;
             // For CDVM, the normalization constant is just the von Mises normalizer
             // since the categorical probabilities already sum to 1
-            (0..m).map(|r| {
-                kappa * (((2 * r) as f64).mul_add(pi, -mu) / m as f64).cos()
-            }).logsumexp().neg()
+            (0..m)
+                .map(|r| cdvm_kernel(m, mu, kappa, r))
+                .logsumexp()
+                .neg()
         })
     }
 }
@@ -132,9 +130,9 @@ impl Parameterized for Cdvm {
 
 impl PartialEq for Cdvm {
     fn eq(&self, other: &Cdvm) -> bool {
-        self.modulus == other.modulus 
-        && self.mu == other.mu 
-        && self.kappa == other.kappa 
+        self.modulus == other.modulus
+            && self.mu == other.mu
+            && self.kappa == other.kappa
     }
 }
 
@@ -147,6 +145,18 @@ impl From<&Cdvm> for String {
     }
 }
 
+impl Mean<f64> for Cdvm {
+    fn mean(&self) -> Option<f64> {
+        Some(self.mu)
+    }
+}
+
+impl Mode<usize> for Cdvm {
+    fn mode(&self) -> Option<usize> {
+        Some(self.mu.round() as usize)
+    }
+}
+
 impl_display!(Cdvm);
 
 impl std::error::Error for CdvmError {}
@@ -155,26 +165,25 @@ impl fmt::Display for CdvmError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidCategories { modulus } => {
-                write!(f, "number of categories ({}) must be at least 2", modulus)
-            }
-            Self::MuOutOfRange { mu } => {
-                write!(f, "mu ({}) must be in [0, modulus)", mu)
+                write!(
+                    f,
+                    "number of categories ({}) must be at least 2",
+                    modulus
+                )
             }
             Self::KappaNegative { kappa } => {
                 write!(f, "kappa ({}) must be non-negative", kappa)
             }
-            
         }
     }
 }
 
 impl HasDensity<usize> for Cdvm {
     fn ln_f(&self, x: &usize) -> f64 {
-        let pi = std::f64::consts::PI;
         let m = self.modulus;
         let mu = self.mu;
         let kappa = self.kappa;
-        kappa.mul_add((((2 * x) as f64).mul_add(pi, -mu) / m as f64).cos(), self.get_log_norm_const())
+        cdvm_kernel(m, mu, kappa, *x) + self.get_log_norm_const()
     }
 }
 
@@ -184,8 +193,9 @@ impl Support<usize> for Cdvm {
     }
 }
 
+// TODO: We should be able to speed this up by using an early-exit approach and
+// selecting points in the right order (close to mean first)
 impl Sampleable<usize> for Cdvm {
-
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
         ln_pflip((0..self.modulus).map(|r| self.ln_f(&r)), true, rng)
     }
@@ -194,9 +204,10 @@ impl Sampleable<usize> for Cdvm {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::f64::consts::PI;
-    use rand::SeedableRng;
+    use proptest::prelude::*;
     use rand::rngs::StdRng;
+    use rand::SeedableRng;
+    use std::f64::consts::PI;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
@@ -213,16 +224,6 @@ mod tests {
             Err(CdvmError::InvalidCategories { modulus: 1 })
         ));
 
-        // Invalid mu should fail
-        assert!(matches!(
-            Cdvm::new(3, 3.0, 1.0),
-            Err(CdvmError::MuOutOfRange { mu: 3.0 })
-        ));
-        assert!(matches!(
-            Cdvm::new(3, -1.0, 1.0),
-            Err(CdvmError::MuOutOfRange { mu: -1.0 })
-        ));
-
         // Invalid kappa should fail
         assert!(matches!(
             Cdvm::new(3, 1.5, -1.0),
@@ -233,7 +234,7 @@ mod tests {
     #[test]
     fn supports_correct_range() {
         let cdvm = Cdvm::new(4, 1.5, 1.0).unwrap();
-        
+
         assert!(cdvm.supports(&0));
         assert!(cdvm.supports(&1));
         assert!(cdvm.supports(&2));
@@ -241,73 +242,66 @@ mod tests {
         assert!(!cdvm.supports(&4));
     }
 
-    
-    #[test]
-    fn ln_f_is_symmetric() {
-        let cdvm = Cdvm::new(4, 2.0, 1.0).unwrap();
-        let mu = cdvm.mu();
-        let m = cdvm.modulus();
+    proptest! {
+        #[test]
+        fn ln_f_symmetry(
+            m in 3..100usize,
+            mu in 0.0..100f64,
+            kappa in 0.1..50.0f64,
+            x in 0..100usize
+        ) {
+            let mu = mu % (m as f64);
+            let cdvm1 = Cdvm::new(m, mu, kappa).unwrap();
+            let cdvm2 = Cdvm::new(m, (m as f64) - mu, kappa).unwrap();
 
-        // For points equidistant from mu, ln_f should be equal
-        for i in 0..m/2 {
-            let x1 = ((mu as usize + i) % m) as usize;
-            let x2 = ((mu as usize + m - i) % m) as usize;
-            assert::close(cdvm.ln_f(&x1), cdvm.ln_f(&x2), TOL);
+            let x1 = x % m;
+            let x2 = m - x1;
+
+            let lnf1 = cdvm1.ln_f(&x1);
+            let lnf2 = cdvm2.ln_f(&x2);
+            prop_assert!((lnf1 - lnf2).abs() < TOL,
+                "ln_f not symmetric for m={}, mu={}, kappa={}, x={}, lnf1={}, lnf2={}", m, mu, kappa, x, lnf1, lnf2);
         }
     }
 
-    // #[test]
-    // fn draw_test() {
-    //     let mut rng = StdRng::seed_from_u64(42);
-    //     let cdvm = Cdvm::new(4, 1.5, 2.0).unwrap();
-        
-    //     // Sample a large number of draws and check frequencies
-    //     let n_samples = 1000;
-    //     let mut counts = vec![0; cdvm.modulus()];
-        
-    //     for _ in 0..n_samples {
-    //         let x = cdvm.draw(&mut rng);
-    //         counts[x] += 1;
-    //     }
+    proptest! {
+        #[test]
+        fn density_is_normalized(
+            m in 3..100usize,
+            mu in 0.0..100f64,
+            kappa in 0.1..50.0f64,
+        ) {
+            let cdvm = Cdvm::new(m, mu, kappa).unwrap();
 
-    //     // All samples should be within support
-    //     assert!(counts.iter().enumerate().all(|(i, _)| cdvm.supports(&i)));
+            // For the density to be normalized, the logsum should be zero
+            let logsum = (0..m).map(|x| cdvm.ln_f(&x)).logsumexp();
+            prop_assert!((logsum).abs() < TOL,
+                "density not normalized for m={}, mu={}, kappa={}, logsum={}", m, mu, kappa, logsum);
+        }
+    }
 
-    //     // Frequencies should roughly follow the probability distribution
-    //     // We use chi-square test to verify this
-    //     let expected_probs: Vec<f64> = (0..cdvm.modulus())
-    //         .map(|i| (cdvm.ln_f(&i)).exp())
-    //         .collect();
-
-    //     let sum: f64 = expected_probs.iter().sum();
-    //     let normalized_probs: Vec<f64> = expected_probs.iter()
-    //         .map(|&p| p / sum)
-    //         .collect();
-
-    //     // Convert counts to f64 for chi-square test
-    //     let observed: Vec<u32> = counts.iter()
-    //         .map(|&x| x as u32)
-    //         .collect();
-
-    //     let passes = (0..N_TRIES).fold(0, |acc, _| {
-    //         let (_, p) = x2_test(&observed, &normalized_probs);
-    //         if p > X2_PVAL {
-    //             acc + 1
-    //         } else {
-    //             acc
-    //         }
-    //     });
-
-    //     assert!(passes > 0);
-    // }
+    proptest! {
+        #[test]
+        fn wrap_around_invariance(
+            m in 3..100usize,
+            mu in 0.0..100f64,
+            kappa in 0.1..50.0f64,
+            x in 0..100usize,
+        ) {
+            let mu = mu % (m as f64);
+            let x = x % m;
+            let cdvm = Cdvm::new(m, mu, kappa).unwrap();
+            prop_assert!((cdvm.ln_f(&x) - cdvm.ln_f(&(x + m))).abs() < TOL,
+                "ln_f not invariant to wrap-around for m={}, mu={}, kappa={}, x={}", m, mu, kappa, x);
+        }
+    }
 
     #[test]
     fn parameterized_trait() {
         let original = Cdvm::new(3, 1.5, 1.0).unwrap();
         let params = original.emit_params();
         let reconstructed = Cdvm::from_params(params);
-        
+
         assert_eq!(original, reconstructed);
     }
 }
-
