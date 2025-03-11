@@ -2,6 +2,7 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::data::CdvmSuffStat;
 use crate::impl_display;
 use crate::misc::func::LogSumExp;
 use crate::misc::ln_pflip;
@@ -197,6 +198,25 @@ impl Support<usize> for Cdvm {
 impl Sampleable<usize> for Cdvm {
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
         ln_pflip((0..self.modulus).map(|r| self.ln_f(&r)), true, rng)
+    }
+}
+
+impl HasSuffStat<usize> for Cdvm {
+    type Stat = CdvmSuffStat;
+
+    fn empty_suffstat(&self) -> Self::Stat {
+        CdvmSuffStat::new(self.modulus)
+    }
+
+    fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+        let twopimu_over_m =
+            2.0 * std::f64::consts::PI * self.mu / self.modulus as f64;
+        // TODO: Should we cache twopimu_over_m.cos() and twopimu_over_m.sin()?
+        self.kappa
+            * stat.sum_cos().mul_add(
+                twopimu_over_m.cos(),
+                -(stat.sum_sin() * twopimu_over_m.sin()),
+            )
     }
 }
 

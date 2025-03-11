@@ -214,12 +214,9 @@ impl<X: CategoricalDatum> HasDensity<X> for Categorical {
 
 impl<X: CategoricalDatum> Sampleable<X> for Categorical {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
-        let weights: Vec<f64> = self.ln_weights.iter().map(|&w| w.exp()).collect();
-        let ix = pflip(
-            &weights,
-            Some(1.0),
-            &mut rng,
-        );
+        let weights: Vec<f64> =
+            self.ln_weights.iter().map(|&w| w.exp()).collect();
+        let ix = pflip(&weights, Some(1.0), &mut rng);
         CategoricalDatum::from_usize(ix)
     }
 
