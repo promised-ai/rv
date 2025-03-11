@@ -1,4 +1,6 @@
+#[cfg(feature = "experimental")]
 use rand::SeedableRng;
+#[cfg(feature = "experimental")]
 use rv::prelude::*;
 
 #[cfg(feature = "experimental")]

@@ -1,5 +1,8 @@
+#[cfg(feature = "experimental")]
 use itertools::Either;
+#[cfg(feature = "experimental")]
 use peroxide::statistics::stat::Statistics;
+#[cfg(feature = "experimental")]
 use rv::prelude::*;
 
 #[cfg(feature = "experimental")]

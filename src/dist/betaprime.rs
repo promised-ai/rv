@@ -277,16 +277,19 @@ impl Sampleable<f64> for BetaPrime {
     }
 }
 
+#[cfg(feature = "experimental")]
 use crate::data::DataOrSuffStat;
 #[cfg(feature = "experimental")]
 use crate::experimental::stick_breaking_process::{
     StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
 };
+#[cfg(feature = "experimental")]
 use crate::traits::ConjugatePrior;
 
 #[cfg(feature = "experimental")]
 use crate::experimental::stick_breaking_process::StickBreaking;
 
+#[cfg(feature = "experimental")]
 use crate::prelude::UnitPowerLaw;
 
 #[cfg(feature = "experimental")]

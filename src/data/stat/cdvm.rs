@@ -1,8 +1,6 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::data::DataOrSuffStat;
-use crate::prelude::Cdvm;
 use crate::traits::SuffStat;
 
 /// Cdvm sufficient statistic.
@@ -52,8 +50,15 @@ impl CdvmSuffStat {
     }
 
     /// Create a sufficient statistic from a slice of data
-    pub fn from_data(xs: &[usize]) -> Self {
-        Self::from(xs)
+    ///
+    /// Note that we can't have the usual From trait without const generics
+    /// because we need to know the modulus.
+    pub fn from_data(modulus: usize, xs: &[usize]) -> Self {
+        let mut stat = CdvmSuffStat::new(modulus);
+        for x in xs {
+            stat.observe(x);
+        }
+        stat
     }
 
     /// Get the modulus
@@ -77,54 +82,6 @@ impl CdvmSuffStat {
     #[inline]
     pub fn sum_sin(&self) -> f64 {
         self.sum_sin
-    }
-}
-
-impl<'a> From<&'a CdvmSuffStat> for DataOrSuffStat<'a, usize, Cdvm> {
-    fn from(stat: &'a CdvmSuffStat) -> Self {
-        DataOrSuffStat::SuffStat(stat)
-    }
-}
-
-impl<'a> From<&'a Vec<usize>> for DataOrSuffStat<'a, usize, Cdvm> {
-    fn from(xs: &'a Vec<usize>) -> Self {
-        DataOrSuffStat::Data(xs)
-    }
-}
-
-impl<'a> From<&'a [usize]> for DataOrSuffStat<'a, usize, Cdvm> {
-    fn from(xs: &'a [usize]) -> Self {
-        DataOrSuffStat::Data(xs)
-    }
-}
-
-impl From<&Vec<usize>> for CdvmSuffStat {
-    fn from(xs: &Vec<usize>) -> Self {
-        if xs.is_empty() {
-            CdvmSuffStat::new(2) // Default to minimum valid modulus
-        } else {
-            let modulus = xs.iter().max().map(|x| x + 1).unwrap_or(2);
-            let mut stat = CdvmSuffStat::new(modulus);
-            for x in xs {
-                stat.observe(x);
-            }
-            stat
-        }
-    }
-}
-
-impl From<&[usize]> for CdvmSuffStat {
-    fn from(xs: &[usize]) -> Self {
-        if xs.is_empty() {
-            CdvmSuffStat::new(2) // Default to minimum valid modulus
-        } else {
-            let modulus = xs.iter().max().map(|x| x + 1).unwrap_or(2);
-            let mut stat = CdvmSuffStat::new(modulus);
-            for x in xs {
-                stat.observe(x);
-            }
-            stat
-        }
     }
 }
 
@@ -236,15 +193,15 @@ mod tests {
     #[test]
     fn from_data_empty_vec() {
         let data: Vec<usize> = vec![];
-        let stat = CdvmSuffStat::from_data(&data);
-        assert_eq!(stat.modulus, 2);
+        let stat = CdvmSuffStat::from_data(4, &data);
+        assert_eq!(stat.modulus, 4);
         assert_eq!(stat.n(), 0);
     }
 
     #[test]
     fn from_data_sets_correct_modulus() {
         let data = vec![0, 1, 2, 3];
-        let stat = CdvmSuffStat::from_data(&data);
+        let stat = CdvmSuffStat::from_data(4, &data);
         assert_eq!(stat.modulus, 4);
         assert_eq!(stat.n(), 4);
     }
