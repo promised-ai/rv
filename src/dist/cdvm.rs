@@ -73,12 +73,18 @@ impl Cdvm {
             return Err(CdvmError::KappaNegative { kappa });
         }
 
-        Ok(Cdvm {
+        Ok(Cdvm::new_unchecked(mu, kappa, modulus))
+    }
+
+    /// Creates a new CDVM without checking whether the parameters are valid.
+    #[inline]
+    pub fn new_unchecked(mu: f64, kappa: f64, modulus: usize) -> Self {
+        Cdvm {
             modulus,
-            mu: mu % modulus as f64,
+            mu,
             kappa,
             log_norm_const: OnceLock::new(),
-        })
+        }
     }
 
     /// Get the number of categories
@@ -230,24 +236,24 @@ mod tests {
     #[test]
     fn new_should_validate_parameters() {
         // Valid parameters should work
-        assert!(Cdvm::new(3, 1.5, 1.0).is_ok());
+        assert!(Cdvm::new(1.5, 1.0, 3).is_ok());
 
         // Invalid modulus should fail
         assert!(matches!(
-            Cdvm::new(1, 0.5, 1.0),
+            Cdvm::new(1.5, 1.0, 1),
             Err(CdvmError::InvalidCategories { modulus: 1 })
         ));
 
         // Invalid kappa should fail
         assert!(matches!(
-            Cdvm::new(3, 1.5, -1.0),
+            Cdvm::new(1.5, -1.0, 3),
             Err(CdvmError::KappaNegative { kappa: -1.0 })
         ));
     }
 
     #[test]
     fn supports_correct_range() {
-        let cdvm = Cdvm::new(4, 1.5, 1.0).unwrap();
+        let cdvm = Cdvm::new(1.5, 1.0, 4).unwrap();
 
         assert!(cdvm.supports(&0));
         assert!(cdvm.supports(&1));
@@ -265,8 +271,8 @@ mod tests {
             x in 0..100_usize
         ) {
             let mu = mu % (m as f64);
-            let cdvm1 = Cdvm::new(m, mu, kappa).unwrap();
-            let cdvm2 = Cdvm::new(m, (m as f64) - mu, kappa).unwrap();
+            let cdvm1 = Cdvm::new(mu, kappa, m).unwrap();
+            let cdvm2 = Cdvm::new((m as f64) - mu, kappa, m).unwrap();
 
             let x1 = x % m;
             let x2 = m - x1;
@@ -285,7 +291,7 @@ mod tests {
             mu in 0.0..100_f64,
             kappa in 0.1..50.0_f64,
         ) {
-            let cdvm = Cdvm::new(m, mu, kappa).unwrap();
+            let cdvm = Cdvm::new(mu, kappa, m).unwrap();
 
             // For the density to be normalized, the logsum should be zero
             let logsum = (0..m).map(|x| cdvm.ln_f(&x)).logsumexp();
@@ -304,7 +310,7 @@ mod tests {
         ) {
             let mu = mu % (m as f64);
             let x = x % m;
-            let cdvm = Cdvm::new(m, mu, kappa).unwrap();
+            let cdvm = Cdvm::new(mu, kappa, m).unwrap();
             prop_assert!((cdvm.ln_f(&x) - cdvm.ln_f(&(x + m))).abs() < TOL,
                 "ln_f not invariant to wrap-around for m={}, mu={}, kappa={}, x={}", m, mu, kappa, x);
         }
@@ -312,7 +318,7 @@ mod tests {
 
     #[test]
     fn parameterized_trait() {
-        let original = Cdvm::new(3, 1.5, 1.0).unwrap();
+        let original = Cdvm::new(1.5, 1.0, 3).unwrap();
         let params = original.emit_params();
         let reconstructed = Cdvm::from_params(params);
 
