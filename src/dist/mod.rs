@@ -92,7 +92,7 @@ pub use poisson::{Poisson, PoissonError};
 pub use scaled_inv_chi_squared::{
     ScaledInvChiSquared, ScaledInvChiSquaredError,
 };
-pub use shifted::{Shifted};
+pub use shifted::Shifted;
 pub use skellam::{Skellam, SkellamError};
 pub use students_t::{StudentsT, StudentsTError};
 pub use uniform::{Uniform, UniformError};

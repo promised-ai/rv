@@ -1,8 +1,7 @@
+use crate::traits::*;
+use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use rand::Rng;   
-use crate::traits::*;    
- 
 
 /// Trait for distributions that can be shifted by a constant value
 pub trait Shiftable {
@@ -12,7 +11,10 @@ pub trait Shiftable {
     where
         Self: Sized,
     {
-        Shifted { dist: self, shift }
+        Shifted {
+            parent: self,
+            shift,
+        }
     }
 }
 
@@ -39,11 +41,11 @@ where
     D: HasDensity<f64>,
 {
     fn f(&self, x: &f64) -> f64 {
-        self.parent.f(x - self.shift)
+        self.parent.f(&(x - self.shift))
     }
 
     fn ln_f(&self, x: &f64) -> f64 {
-        self.parent.ln_f(x - self.shift)
+        self.parent.ln_f(&(x - self.shift))
     }
 }
 
@@ -52,7 +54,7 @@ where
     D: Support<f64>,
 {
     fn supports(&self, x: &f64) -> bool {
-        self.parent.supports(x - self.shift)
+        self.parent.supports(&(x - self.shift))
     }
 }
 
@@ -63,11 +65,11 @@ where
     D: Cdf<f64>,
 {
     fn cdf(&self, x: &f64) -> f64 {
-        self.parent.cdf(x - self.shift)
+        self.parent.cdf(&(x - self.shift))
     }
 
     fn sf(&self, x: &f64) -> f64 {
-        self.parent.sf(x - self.shift)
+        self.parent.sf(&(x - self.shift))
     }
 }
 
@@ -85,20 +87,20 @@ where
     }
 }
 
-impl<D> Skewness<f64> for Shifted<D>
+impl<D> Skewness for Shifted<D>
 where
-    D: Skewness<f64>,
+    D: Skewness,
 {
-    fn skewness(&self) -> f64 {
+    fn skewness(&self) -> Option<f64> {
         self.parent.skewness()
     }
 }
 
-impl<D> Kurtosis<f64> for Shifted<D>
+impl<D> Kurtosis for Shifted<D>
 where
-    D: Kurtosis<f64>,
+    D: Kurtosis,
 {
-    fn kurtosis(&self) -> f64 {
+    fn kurtosis(&self) -> Option<f64> {
         self.parent.kurtosis()
     }
 }
@@ -107,12 +109,8 @@ impl<D> Mean<f64> for Shifted<D>
 where
     D: Mean<f64>,
 {
-    fn mean(&self) -> f64 {
-        if let Some(m) = self.parent.mean() {
-            m + self.shift
-        } else {
-            None
-        }
+    fn mean(&self) -> Option<f64> {
+        self.parent.mean().map(|m| m + self.shift)
     }
 }
 
@@ -120,12 +118,8 @@ impl<D> Median<f64> for Shifted<D>
 where
     D: Median<f64>,
 {
-    fn median(&self) -> f64 {
-        if let Some(m) = self.parent.median() {
-            m + self.shift
-        } else {
-            None
-        }
+    fn median(&self) -> Option<f64> {
+        self.parent.median().map(|m| m + self.shift)
     }
 }
 
@@ -133,12 +127,8 @@ impl<D> Mode<f64> for Shifted<D>
 where
     D: Mode<f64>,
 {
-    fn mode(&self) -> f64 {
-        if let Some(m) = self.parent.mode() {
-            m + self.shift
-        } else {
-            None
-        }
+    fn mode(&self) -> Option<f64> {
+        self.parent.mode().map(|m| m + self.shift)
     }
 }
 
@@ -146,12 +136,8 @@ impl<D> Variance<f64> for Shifted<D>
 where
     D: Variance<f64>,
 {
-    fn variance(&self) -> f64 {
-        if let Some(v) = self.parent.variance() {
-            v
-        } else {
-            None
-        }
+    fn variance(&self) -> Option<f64> {
+        self.parent.variance()
     }
 }
 
