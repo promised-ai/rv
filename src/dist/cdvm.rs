@@ -61,10 +61,10 @@ impl Cdvm {
     /// Create a new CDVM distribution
     ///
     /// # Arguments
-    /// * `modulus` - Number of categories
     /// * `mu` - mean direction (must be in [0, modulus))
     /// * `kappa` - concentration (must be non-negative)
-    pub fn new(modulus: usize, mu: f64, kappa: f64) -> Result<Self, CdvmError> {
+    /// * `modulus` - Number of categories
+    pub fn new(mu: f64, kappa: f64, modulus: usize) -> Result<Self, CdvmError> {
         // Validate parameters
         if modulus < 2 {
             return Err(CdvmError::InvalidCategories { modulus });
@@ -124,7 +124,7 @@ impl Parameterized for Cdvm {
     }
 
     fn from_params(params: Self::Parameters) -> Self {
-        Self::new(params.modulus, params.mu, params.kappa).unwrap()
+        Self::new(params.mu, params.kappa, params.modulus).unwrap()
     }
 }
 
