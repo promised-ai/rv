@@ -43,6 +43,7 @@ mod normal_inv_gamma;
 mod pareto;
 mod poisson;
 mod scaled_inv_chi_squared;
+mod shifted;
 mod skellam;
 mod students_t;
 mod uniform;
@@ -91,6 +92,7 @@ pub use poisson::{Poisson, PoissonError};
 pub use scaled_inv_chi_squared::{
     ScaledInvChiSquared, ScaledInvChiSquaredError,
 };
+pub use shifted::{Shifted};
 pub use skellam::{Skellam, SkellamError};
 pub use students_t::{StudentsT, StudentsTError};
 pub use uniform::{Uniform, UniformError};

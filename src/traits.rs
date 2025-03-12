@@ -193,7 +193,7 @@ pub trait ContinuousDistr<X>: HasDensity<X> + Support<X> {
     /// assert_eq!(f, 0.0);
     /// ```
     fn pdf(&self, x: &X) -> f64 {
-        self.ln_pdf(x).exp()
+        self.f(x)
     }
 
     /// The value of the log Probability Density Function (PDF) at `x`

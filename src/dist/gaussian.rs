@@ -13,6 +13,7 @@ use crate::consts::*;
 use crate::data::GaussianSuffStat;
 use crate::impl_display;
 use crate::traits::*;
+use crate::dist::shifted::Shiftable; 
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.
@@ -272,6 +273,14 @@ impl From<&Gaussian> for String {
 }
 
 impl_display!(Gaussian);
+
+impl Shiftable for Gaussian {
+    type Output = Self;
+
+    fn shifted(self, shift: f64) -> Self {
+        Self::new_unchecked(self.mu() + shift, self.sigma())
+    }
+}
 
 macro_rules! impl_traits {
     ($kind:ty) => {
