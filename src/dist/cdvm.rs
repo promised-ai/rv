@@ -14,7 +14,7 @@ use std::sync::OnceLock;
 
 // TODO: This can be *much* more efficient if we replace the modulus with
 // something like this. In particular, the suffstat would only need quick
-// lookups and additions, with no trig functions 
+// lookups and additions, with no trig functions
 //
 // #[derive(Debug, Clone,
 //     PartialEq)] pub struct CdvmModulus { m: usize, twopi_over_m: f64, sines:
@@ -66,7 +66,7 @@ pub struct CdvmParameters {
     pub mu: f64,
     pub kappa: f64,
 }
- 
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -77,8 +77,6 @@ pub enum CdvmError {
     /// Kappa must be non-negative
     KappaNegative { kappa: f64 },
 }
-
-
 
 impl Cdvm {
     /// Create a new CDVM distribution
@@ -112,7 +110,7 @@ impl Cdvm {
     }
 
     fn cdvm_kernel(&self, x: usize) -> f64 {
-        self.kappa * ( (self.twopi_over_m() * (x as f64 - self.mu)).cos())
+        self.kappa * ((self.twopi_over_m() * (x as f64 - self.mu)).cos())
     }
 
     /// Get the number of categories
@@ -132,7 +130,9 @@ impl Cdvm {
 
     /// Get the cached 2π/m
     pub fn twopi_over_m(&self) -> f64 {
-        *self.twopi_over_m.get_or_init(|| 2.0 * std::f64::consts::PI / self.modulus as f64)
+        *self
+            .twopi_over_m
+            .get_or_init(|| 2.0 * std::f64::consts::PI / self.modulus as f64)
     }
 
     /// Compute or fetch cached normalization constant
@@ -140,9 +140,7 @@ impl Cdvm {
         *self.log_norm_const.get_or_init(|| {
             // For CDVM, the normalization constant is just the von Mises normalizer
             // since the categorical probabilities already sum to 1
-            (0..self.modulus)
-                .map(|x| self.cdvm_kernel(x))
-                .logsumexp()
+            (0..self.modulus).map(|x| self.cdvm_kernel(x)).logsumexp()
         })
     }
 }
@@ -241,11 +239,13 @@ impl HasSuffStat<usize> for Cdvm {
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
-        let twopimu_over_m =
-            self.mu * self.twopi_over_m();
+        let twopimu_over_m = self.mu * self.twopi_over_m();
         // TODO: Should we cache twopimu_over_m.cos() and twopimu_over_m.sin()?
 
-        self.kappa * (stat.sum_cos() * twopimu_over_m.cos() + stat.sum_sin() * twopimu_over_m.sin()) - stat.n() as f64 * self.log_norm_const()
+        self.kappa
+            * (stat.sum_cos() * twopimu_over_m.cos()
+                + stat.sum_sin() * twopimu_over_m.sin())
+            - stat.n() as f64 * self.log_norm_const()
     }
 }
 

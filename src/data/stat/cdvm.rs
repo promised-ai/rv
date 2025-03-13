@@ -22,7 +22,7 @@ pub struct CdvmSuffStat {
 
     /// Cached 2π/m
     #[cfg_attr(feature = "serde1", serde(skip))]
-    twopi_over_m: f64
+    twopi_over_m: f64,
 }
 
 impl CdvmSuffStat {
