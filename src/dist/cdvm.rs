@@ -104,7 +104,7 @@ impl Cdvm {
     }
 
     /// Compute or fetch cached normalization constant
-    fn get_log_norm_const(&self) -> f64 {
+    fn log_norm_const(&self) -> f64 {
         *self.log_norm_const.get_or_init(|| {
             let m = self.modulus;
             let mu = self.mu;
@@ -190,7 +190,7 @@ impl HasDensity<usize> for Cdvm {
         let m = self.modulus;
         let mu = self.mu;
         let kappa = self.kappa;
-        cdvm_kernel(m, mu, kappa, *x) + self.get_log_norm_const()
+        cdvm_kernel(m, mu, kappa, *x) + self.log_norm_const()
     }
 }
 
