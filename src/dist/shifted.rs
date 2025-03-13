@@ -1,8 +1,8 @@
+use crate::data::ShiftedSuffStat;
 use crate::traits::*;
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use crate::data::ShiftedSuffStat;  
 
 /// Trait for distributions that can be shifted by a constant value
 pub trait Shiftable {
@@ -159,12 +159,12 @@ where
 }
 
 /// Macro to implement Shiftable for a distribution type
-/// 
+///
 /// This macro automatically implements the Shiftable trait for a given type,
 /// using the default Shifted<T> as the Output type.
 ///
 /// # Example
-/// 
+///
 /// ```
 /// impl_shiftable!(Gaussian);
 /// impl_shiftable!(Beta<T>, T);
@@ -175,15 +175,12 @@ macro_rules! impl_shiftable {
     ($type:ty) => {
         impl Shiftable for $type {
             type Output = Shifted<Self>;
-            
+
             fn shifted(self, dx: f64) -> Self::Output
             where
                 Self: Sized,
             {
-                Shifted {
-                    parent: self,
-                    dx,
-                }
+                Shifted { parent: self, dx }
             }
         }
     };
@@ -195,7 +192,7 @@ use crate::prelude::Cauchy;
 
 impl Shiftable for Cauchy {
     type Output = Cauchy;
-    
+
     fn shifted(self, dx: f64) -> Self::Output
     where
         Self: Sized,
@@ -208,7 +205,7 @@ use crate::prelude::Gev;
 
 impl Shiftable for Gev {
     type Output = Gev;
-    
+
     fn shifted(self, dx: f64) -> Self::Output
     where
         Self: Sized,
@@ -221,7 +218,7 @@ use crate::prelude::Laplace;
 
 impl Shiftable for Laplace {
     type Output = Laplace;
-    
+
     fn shifted(self, dx: f64) -> Self::Output
     where
         Self: Sized,
@@ -230,14 +227,11 @@ impl Shiftable for Laplace {
     }
 }
 
-
-
-
 use crate::prelude::Uniform;
 
 impl Shiftable for Uniform {
     type Output = Uniform;
-    
+
     fn shifted(self, dx: f64) -> Self::Output
     where
         Self: Sized,
@@ -245,7 +239,6 @@ impl Shiftable for Uniform {
         Uniform::new_unchecked(self.a() + dx, self.b() + dx)
     }
 }
-
 
 // For others on ℝ, we'll fall back on Shifted
 use crate::prelude::Beta;
