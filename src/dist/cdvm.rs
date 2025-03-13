@@ -10,8 +10,29 @@ use crate::traits::*;
 use rand::Rng;
 use std::f64;
 use std::fmt;
-use std::ops::Neg;
 use std::sync::OnceLock;
+
+// TODO: This can be *much* more efficient if we replace the modulus with
+// something like this. In particular, the suffstat would only need quick
+// lookups and additions, with no trig functions 
+//
+// #[derive(Debug, Clone,
+//     PartialEq)] pub struct CdvmModulus { m: usize, twopi_over_m: f64, sines:
+//     Vec<f64>, cosines: Vec<f64>, }
+
+// impl CdvmModulus {
+//     fn new(m: usize) -> Self {
+//         let twopi_over_m = 2.0 * std::f64::consts::PI / m as f64;
+//         let sines = (0..m).map(|x| (twopi_over_m * (x as f64)).sin()).collect();
+//         let cosines = (0..m).map(|x| (twopi_over_m * (x as f64)).cos()).collect();
+//         Self {
+//             m,
+//             twopi_over_m,
+//             sines,
+//             cosines,
+//         }
+//     }
+// }
 
 /// [CDVM distribution](https://arxiv.org/pdf/2009.05437),
 /// A unimodal distribution over x in (0, m-1) where m is the number of categories.
@@ -33,6 +54,10 @@ pub struct Cdvm {
     /// Cached log-normalization constant
     #[cfg_attr(feature = "serde1", serde(skip))]
     log_norm_const: OnceLock<f64>,
+
+    /// Cached 2π/m
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    twopi_over_m: OnceLock<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -41,7 +66,7 @@ pub struct CdvmParameters {
     pub mu: f64,
     pub kappa: f64,
 }
-
+ 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -53,10 +78,7 @@ pub enum CdvmError {
     KappaNegative { kappa: f64 },
 }
 
-fn cdvm_kernel(modulus: usize, mu: f64, kappa: f64, x: usize) -> f64 {
-    let twopi = std::f64::consts::TAU;
-    kappa * (twopi * (x as f64 - mu) / modulus as f64).cos()
-}
+
 
 impl Cdvm {
     /// Create a new CDVM distribution
@@ -85,7 +107,12 @@ impl Cdvm {
             mu,
             kappa,
             log_norm_const: OnceLock::new(),
+            twopi_over_m: OnceLock::new(),
         }
+    }
+
+    fn cdvm_kernel(&self, x: usize) -> f64 {
+        self.kappa * ( (self.twopi_over_m() * (x as f64 - self.mu)).cos())
     }
 
     /// Get the number of categories
@@ -103,18 +130,19 @@ impl Cdvm {
         self.kappa
     }
 
+    /// Get the cached 2π/m
+    pub fn twopi_over_m(&self) -> f64 {
+        *self.twopi_over_m.get_or_init(|| 2.0 * std::f64::consts::PI / self.modulus as f64)
+    }
+
     /// Compute or fetch cached normalization constant
     fn log_norm_const(&self) -> f64 {
         *self.log_norm_const.get_or_init(|| {
-            let m = self.modulus;
-            let mu = self.mu;
-            let kappa = self.kappa;
             // For CDVM, the normalization constant is just the von Mises normalizer
             // since the categorical probabilities already sum to 1
-            (0..m)
-                .map(|r| cdvm_kernel(m, mu, kappa, r))
+            (0..self.modulus)
+                .map(|x| self.cdvm_kernel(x))
                 .logsumexp()
-                .neg()
         })
     }
 }
@@ -187,10 +215,7 @@ impl fmt::Display for CdvmError {
 
 impl HasDensity<usize> for Cdvm {
     fn ln_f(&self, x: &usize) -> f64 {
-        let m = self.modulus;
-        let mu = self.mu;
-        let kappa = self.kappa;
-        cdvm_kernel(m, mu, kappa, *x) + self.log_norm_const()
+        self.cdvm_kernel(*x) - self.log_norm_const()
     }
 }
 
@@ -217,13 +242,10 @@ impl HasSuffStat<usize> for Cdvm {
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
         let twopimu_over_m =
-            2.0 * std::f64::consts::PI * self.mu / self.modulus as f64;
+            self.mu * self.twopi_over_m();
         // TODO: Should we cache twopimu_over_m.cos() and twopimu_over_m.sin()?
-        self.kappa
-            * stat.sum_cos().mul_add(
-                twopimu_over_m.cos(),
-                -(stat.sum_sin() * twopimu_over_m.sin()),
-            )
+
+        self.kappa * (stat.sum_cos() * twopimu_over_m.cos() + stat.sum_sin() * twopimu_over_m.sin()) - stat.n() as f64 * self.log_norm_const()
     }
 }
 
