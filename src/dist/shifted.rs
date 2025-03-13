@@ -7,17 +7,17 @@ use crate::data::ShiftedSuffStat;
 /// Trait for distributions that can be shifted by a constant value
 pub trait Shiftable {
     type Output;
-    fn shifted(self, shift: f64) -> Self::Output
+    fn shifted(self, dx: f64) -> Self::Output
     where
         Self: Sized;
 }
-/// A wrapper for distributions that adds a shift parameter
+/// A wrapper for distributions that adds a dx parameter
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Shifted<D> {
     parent: D,
-    shift: f64,
+    dx: f64,
 }
 
 impl<D> Sampleable<f64> for Shifted<D>
@@ -25,7 +25,7 @@ where
     D: Sampleable<f64>,
 {
     fn draw<R: Rng>(&self, rng: &mut R) -> f64 {
-        self.parent.draw(rng) + self.shift
+        self.parent.draw(rng) + self.dx
     }
 }
 
@@ -34,11 +34,11 @@ where
     D: HasDensity<f64>,
 {
     fn f(&self, x: &f64) -> f64 {
-        self.parent.f(&(x - self.shift))
+        self.parent.f(&(x - self.dx))
     }
 
     fn ln_f(&self, x: &f64) -> f64 {
-        self.parent.ln_f(&(x - self.shift))
+        self.parent.ln_f(&(x - self.dx))
     }
 }
 
@@ -47,7 +47,7 @@ where
     D: Support<f64>,
 {
     fn supports(&self, x: &f64) -> bool {
-        self.parent.supports(&(x - self.shift))
+        self.parent.supports(&(x - self.dx))
     }
 }
 
@@ -58,11 +58,11 @@ where
     D: Cdf<f64>,
 {
     fn cdf(&self, x: &f64) -> f64 {
-        self.parent.cdf(&(x - self.shift))
+        self.parent.cdf(&(x - self.dx))
     }
 
     fn sf(&self, x: &f64) -> f64 {
-        self.parent.sf(&(x - self.shift))
+        self.parent.sf(&(x - self.dx))
     }
 }
 
@@ -71,12 +71,12 @@ where
     D: InverseCdf<f64>,
 {
     fn invcdf(&self, p: f64) -> f64 {
-        self.parent.invcdf(p) + self.shift
+        self.parent.invcdf(p) + self.dx
     }
 
     fn interval(&self, p: f64) -> (f64, f64) {
         let (l, r) = self.parent.interval(p);
-        (l + self.shift, r + self.shift)
+        (l + self.dx, r + self.dx)
     }
 }
 
@@ -103,7 +103,7 @@ where
     D: Mean<f64>,
 {
     fn mean(&self) -> Option<f64> {
-        self.parent.mean().map(|m| m + self.shift)
+        self.parent.mean().map(|m| m + self.dx)
     }
 }
 
@@ -112,7 +112,7 @@ where
     D: Median<f64>,
 {
     fn median(&self) -> Option<f64> {
-        self.parent.median().map(|m| m + self.shift)
+        self.parent.median().map(|m| m + self.dx)
     }
 }
 
@@ -121,7 +121,7 @@ where
     D: Mode<f64>,
 {
     fn mode(&self) -> Option<f64> {
-        self.parent.mode().map(|m| m + self.shift)
+        self.parent.mode().map(|m| m + self.dx)
     }
 }
 
@@ -150,7 +150,7 @@ where
     type Stat = ShiftedSuffStat<D::Stat>;
 
     fn empty_suffstat(&self) -> Self::Stat {
-        ShiftedSuffStat::new(self.parent.empty_suffstat(), self.shift)
+        ShiftedSuffStat::new(self.parent.empty_suffstat(), self.dx)
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
@@ -176,26 +176,76 @@ macro_rules! impl_shiftable {
         impl Shiftable for $type {
             type Output = Shifted<Self>;
             
-            fn shifted(self, shift: f64) -> Self::Output
+            fn shifted(self, dx: f64) -> Self::Output
             where
                 Self: Sized,
             {
                 Shifted {
                     parent: self,
-                    shift,
+                    dx,
                 }
             }
         }
     };
 }
 
-// Some distributions can absorb shifting into the parameters.
+// Some distributions can absorb dxing into the parameters.
 // TODO: implement Shiftable in the module for each of these.
 use crate::prelude::Cauchy;
-use crate::prelude::Gaussian;
+
+impl Shiftable for Cauchy {
+    type Output = Cauchy;
+    
+    fn shifted(self, dx: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Cauchy::new_unchecked(self.loc() + dx, self.scale())
+    }
+}
+
 use crate::prelude::Gev;
+
+impl Shiftable for Gev {
+    type Output = Gev;
+    
+    fn shifted(self, dx: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Gev::new_unchecked(self.loc() + dx, self.scale(), self.shape())
+    }
+}
+
 use crate::prelude::Laplace;
+
+impl Shiftable for Laplace {
+    type Output = Laplace;
+    
+    fn shifted(self, dx: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Laplace::new_unchecked(self.mu() + dx, self.b())
+    }
+}
+
+
+
+
 use crate::prelude::Uniform;
+
+impl Shiftable for Uniform {
+    type Output = Uniform;
+    
+    fn shifted(self, dx: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Uniform::new_unchecked(self.a() + dx, self.b() + dx)
+    }
+}
+
 
 // For others on ℝ, we'll fall back on Shifted
 use crate::prelude::Beta;

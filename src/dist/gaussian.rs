@@ -277,8 +277,8 @@ impl_display!(Gaussian);
 impl Shiftable for Gaussian {
     type Output = Self;
 
-    fn shifted(self, shift: f64) -> Self {
-        Self::new_unchecked(self.mu() + shift, self.sigma())
+    fn shifted(self, dx: f64) -> Self {
+        Self::new_unchecked(self.mu() + dx, self.sigma())
     }
 }
 
