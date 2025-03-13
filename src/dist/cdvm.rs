@@ -325,4 +325,32 @@ mod tests {
 
         assert_eq!(original, reconstructed);
     }
+
+    proptest! {
+        #[test]
+        fn ln_f_matches_ln_f_stat(
+            m in 3..100_usize,
+            mu in 0.0..100_f64,
+            kappa in 0.1..50.0_f64,
+            xs in prop::collection::vec(0..100_usize, 1..20),
+        ) {
+            let mu = mu % (m as f64);
+            let xs: Vec<usize> = xs.into_iter().map(|x| x % m).collect();
+            let cdvm = Cdvm::new(mu, kappa, m).unwrap();
+
+            // Calculate ln_f for each x and sum them
+            let ln_f_sum: f64 = xs.iter().map(|x| cdvm.ln_f(x)).sum();
+
+            // Create sufficient statistics from the data
+            let stat = CdvmSuffStat::from_data(m, &xs);
+
+            // Get ln_f_stat
+            let ln_f_stat = cdvm.ln_f_stat(&stat);
+
+            // They should be equal
+            assert!((ln_f_sum - ln_f_stat).abs() < TOL,
+                "ln_f_sum ({}) != ln_f_stat ({}) for m={}, mu={}, kappa={}, xs={:?}",
+                ln_f_sum, ln_f_stat, m, mu, kappa, xs);
+        }
+    }
 }
