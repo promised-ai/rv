@@ -1016,4 +1016,50 @@ mod tests {
         let p = chi2.sf(&t);
         assert!(p > alpha);
     }
+
+    use crate::prelude::Gaussian;
+    use crate::traits::Sampleable;
+    use rand::SeedableRng;
+    #[test]
+    fn ln_pflip_sampling_distribution() {
+        let n_samples = 1_000;
+        let mut rng = rand::rngs::StdRng::seed_from_u64(123);
+
+        // Calculate expected probabilities
+        let ln_weights =
+            Gaussian::new(0.0, 1.0).unwrap().sample(n_samples, &mut rng);
+        let log_normalizer: f64 = ln_weights.iter().logsumexp();
+        let expected: Vec<f64> = ln_weights
+            .iter()
+            .map(|w| (w - log_normalizer).exp() * n_samples as f64)
+            .collect();
+
+        // Collect samples
+        let mut counts = vec![0; ln_weights.len()];
+        for _ in 0..n_samples {
+            let sample = ln_pflip(&ln_weights, false, &mut rng);
+            counts[sample] += 1;
+        }
+        // Compute chi-squared statistic
+        let chi_squared: f64 = counts
+            .iter()
+            .zip(expected.iter())
+            .map(|(obs, exp)| {
+                let diff = *obs as f64 - exp;
+                diff * diff / exp
+            })
+            .sum();
+
+        // Degrees of freedom is number of categories minus 1
+        let dof = ln_weights.len() - 1;
+        let chi2 = ChiSquared::new(dof as f64).unwrap();
+        let p_value = chi2.sf(&chi_squared);
+
+        // Use significance level of 0.001
+        assert!(
+            p_value > 0.01,
+            "Chi-squared test failed: p-value = {}",
+            p_value
+        );
+    }
 }
