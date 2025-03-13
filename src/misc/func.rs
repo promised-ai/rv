@@ -1055,7 +1055,6 @@ mod tests {
         let chi2 = ChiSquared::new(dof as f64).unwrap();
         let p_value = chi2.sf(&chi_squared);
 
-        // Use significance level of 0.001
         assert!(
             p_value > 0.01,
             "Chi-squared test failed: p-value = {}",
