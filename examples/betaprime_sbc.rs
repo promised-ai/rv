@@ -1,4 +1,3 @@
-#[cfg(feature = "experimental")]
 use rv::dist::BetaPrime;
 
 #[cfg(feature = "experimental")]
@@ -9,7 +8,6 @@ use rand_xoshiro::Xoshiro256Plus;
 use rv::experimental::stick_breaking_process::{
     StickBreaking, StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
 };
-#[cfg(feature = "experimental")]
 use rv::prelude::*;
 
 // Simulation-based calibration
