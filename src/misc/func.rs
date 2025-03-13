@@ -335,7 +335,7 @@ where
         .map(|ln_w| (*ln_w.borrow(), rng.gen::<f64>().ln()))
         .enumerate()
         .max_by(|(_, (ln_w1, l1)), (_, (ln_w2, l2))| {
-            l1.partial_cmp(&(l2 * (*ln_w2 - *ln_w1).exp())).unwrap()
+            l1.partial_cmp(&(l2 * (*ln_w1 - *ln_w2).exp())).unwrap()
         })
         .unwrap()
         .0
