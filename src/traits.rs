@@ -711,7 +711,7 @@ pub trait Shiftable {
 macro_rules! impl_shiftable {
     // Simple case for non-generic types
     ($type:ty) => {
-        use crate::prelude::Shifted;
+        use $crate::prelude::Shifted;
 
         impl Shiftable for $type {
             type Output = Shifted<Self>;
@@ -721,6 +721,23 @@ macro_rules! impl_shiftable {
                 Self: Sized,
             {
                 Shifted::new(self, dx)
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! test_shiftable {
+    ($expr:expr) => {
+        proptest! {
+            #[test]
+            fn test_shiftable_composition(dx1 in -100.0..100.0, dx2 in -100.0..100.0) {
+                let g = $expr;
+                let s1 = g.clone().shifted(dx1);
+                let s2 = s1.clone().shifted(dx2);
+                let s3 = g.clone().shifted(dx1 + dx2);
+
+                prop_assert!(s2 == s3);
             }
         }
     };

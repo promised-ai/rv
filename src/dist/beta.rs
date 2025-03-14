@@ -401,6 +401,7 @@ macro_rules! impl_traits {
 use crate::impl_shiftable;
 impl_shiftable!(Beta);
 
+
 impl Variance<f64> for Beta {
     fn variance(&self) -> Option<f64> {
         let apb = self.alpha + self.beta;
@@ -471,12 +472,16 @@ mod tests {
     use super::*;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
+    use crate::test_shiftable;
+    use proptest::prelude::*;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
 
     test_basic_impls!(f64, Beta, Beta::jeffreys());
+
+    test_shiftable!(Beta::new(1.0, 2.0).unwrap());
 
     #[test]
     fn new() {
