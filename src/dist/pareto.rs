@@ -47,7 +47,7 @@ impl Parameterized for Pareto {
     }
 }
 
-use crate::impl_shiftable;     
+use crate::impl_shiftable;
 impl_shiftable!(Pareto);
 
 #[derive(Debug, Clone, PartialEq)]

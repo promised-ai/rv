@@ -53,7 +53,7 @@ impl Parameterized for UnitPowerLaw {
     }
 }
 
-use crate::impl_shiftable;     
+use crate::impl_shiftable;
 impl_shiftable!(UnitPowerLaw);
 
 impl PartialEq for UnitPowerLaw {

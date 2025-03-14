@@ -433,7 +433,7 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
     }
 }
 
-use crate::impl_shiftable;     
+use crate::impl_shiftable;
 impl_shiftable!(BetaPrime);
 
 #[cfg(test)]

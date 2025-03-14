@@ -36,7 +36,7 @@ pub struct ScaledInvChiSquared {
     ln_f_const: OnceLock<f64>,
 }
 
-use crate::impl_shiftable;     
+use crate::impl_shiftable;
 impl_shiftable!(ScaledInvChiSquared);
 
 pub struct ScaledInvChiSquaredParameters {

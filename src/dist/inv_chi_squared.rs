@@ -50,7 +50,7 @@ impl PartialEq for InvChiSquared {
     }
 }
 
-use crate::impl_shiftable;     
+use crate::impl_shiftable;
 impl_shiftable!(InvChiSquared);
 
 #[derive(Debug, Clone, PartialEq)]

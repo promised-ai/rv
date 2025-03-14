@@ -4,7 +4,6 @@ use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-
 /// A wrapper for distributions that adds a dx parameter
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -12,6 +11,12 @@ use serde::{Deserialize, Serialize};
 pub struct Shifted<D> {
     parent: D,
     dx: f64,
+}
+
+impl<D> Shifted<D> {
+    pub fn new(parent: D, dx: f64) -> Self {
+        Shifted { parent, dx }
+    }
 }
 
 impl<D> Sampleable<f64> for Shifted<D>
@@ -152,8 +157,6 @@ where
     }
 }
 
-
-
 // Some distributions can absorb dxing into the parameters.
 // TODO: implement Shiftable in the module for each of these.
 use crate::prelude::Cauchy;
@@ -218,21 +221,9 @@ where
     where
         Self: Sized,
     {
-        Shifted { parent: self.parent, dx: self.dx + dx }
+        Shifted {
+            parent: self.parent,
+            dx: self.dx + dx,
+        }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

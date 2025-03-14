@@ -55,7 +55,7 @@ pub struct Kumaraswamy {
     ab_ln: OnceLock<f64>,
 }
 
-use crate::impl_shiftable;     
+use crate::impl_shiftable;
 impl_shiftable!(Kumaraswamy);
 
 pub struct KumaraswamyParameters {

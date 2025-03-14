@@ -30,7 +30,7 @@ impl Parameterized for StudentsT {
     }
 }
 
-use crate::impl_shiftable;     
+use crate::impl_shiftable;
 impl_shiftable!(StudentsT);
 
 #[derive(Debug, Clone, PartialEq)]

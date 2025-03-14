@@ -49,7 +49,7 @@ impl Parameterized for Exponential {
     }
 }
 
-use crate::impl_shiftable;     
+use crate::impl_shiftable;
 impl_shiftable!(Exponential);
 
 #[derive(Debug, Clone, PartialEq)]

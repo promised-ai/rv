@@ -28,8 +28,7 @@ pub struct InvGamma {
     scale: f64,
 }
 
-
-use crate::impl_shiftable;     
+use crate::impl_shiftable;
 impl_shiftable!(InvGamma);
 
 pub struct InvGammaParameters {

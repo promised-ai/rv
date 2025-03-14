@@ -41,7 +41,7 @@ impl Parameterized for LogNormal {
     }
 }
 
-use crate::impl_shiftable;     
+use crate::impl_shiftable;
 impl_shiftable!(LogNormal);
 
 #[derive(Debug, Clone, PartialEq)]

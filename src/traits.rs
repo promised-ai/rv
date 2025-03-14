@@ -1,7 +1,6 @@
 //! Trait definitions
 pub use crate::data::DataOrSuffStat;
 use rand::Rng;
-use crate::prelude::Shifted;
 
 pub trait Parameterized {
     type Parameters;
@@ -85,8 +84,8 @@ pub trait Sampleable<X> {
     fn sample_stream<'r, R: Rng>(
         &'r self,
         mut rng: &'r mut R,
-    ) -> Box<dyn Iterator<Item = X> + 'r> {
-        Box::new(std::iter::repeat_with(move || self.draw(&mut rng)))
+    ) -> impl Iterator<Item = X> + 'r {
+        std::iter::repeat_with(move || self.draw(&mut rng))
     }
 }
 
@@ -712,6 +711,8 @@ pub trait Shiftable {
 macro_rules! impl_shiftable {
     // Simple case for non-generic types
     ($type:ty) => {
+        use crate::prelude::Shifted;
+
         impl Shiftable for $type {
             type Output = Shifted<Self>;
 
@@ -719,7 +720,7 @@ macro_rules! impl_shiftable {
             where
                 Self: Sized,
             {
-                Shifted { parent: self, dx }
+                Shifted::new(self, dx)
             }
         }
     };
