@@ -84,8 +84,8 @@ pub trait Sampleable<X> {
     fn sample_stream<'r, R: Rng>(
         &'r self,
         mut rng: &'r mut R,
-    ) -> impl Iterator<Item = X> + 'r {
-        std::iter::repeat_with(move || self.draw(&mut rng))
+    ) -> Box<dyn Iterator<Item = X> + 'r> {
+        Box::new(std::iter::repeat_with(move || self.draw(&mut rng)))
     }
 }
 
