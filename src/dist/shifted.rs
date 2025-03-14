@@ -185,31 +185,7 @@ impl Shiftable for Gev {
     }
 }
 
-use crate::prelude::Laplace;
-
-impl Shiftable for Laplace {
-    type Output = Laplace;
-
-    fn shifted(self, dx: f64) -> Self::Output
-    where
-        Self: Sized,
-    {
-        Laplace::new_unchecked(self.mu() + dx, self.b())
-    }
-}
-
 use crate::prelude::Uniform;
-
-impl Shiftable for Uniform {
-    type Output = Uniform;
-
-    fn shifted(self, dx: f64) -> Self::Output
-    where
-        Self: Sized,
-    {
-        Uniform::new_unchecked(self.a() + dx, self.b() + dx)
-    }
-}
 
 impl<D> Shiftable for Shifted<D>
 where
@@ -231,27 +207,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::prelude::Gaussian;
+    use crate::prelude::*;
 
-    #[test]
-    fn test_shifted_composition() {
-        let g = Gaussian::standard();
-        let s1 = g.clone().shifted(1.0);
-        let s2 = s1.shifted(2.0);
-
-        let s3 = g.clone().shifted(3.0);
-
-        // Draw samples from both distributions
-        let mut rng = rand::thread_rng();
-        let n = 1000;
-        let samples_composed: Vec<f64> = s2.sample(n, &mut rng);
-        let samples_direct: Vec<f64> = s3.sample(n, &mut rng);
-
-        // Compare means - they should be approximately equal
-        let mean_composed: f64 =
-            samples_composed.iter().sum::<f64>() / n as f64;
-        let mean_direct: f64 = samples_direct.iter().sum::<f64>() / n as f64;
-
-        assert!((mean_composed - mean_direct).abs() < 0.1);
-    }
+    crate::test_shiftable!(Shifted::new(Uniform::new(0.0, 1.0).unwrap(), 1.0));
 }

@@ -38,6 +38,17 @@ pub struct Uniform {
     lnf: OnceLock<f64>,
 }
 
+impl Shiftable for Uniform {
+    type Output = Uniform;
+
+    fn shifted(self, dx: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Uniform::new_unchecked(self.a() + dx, self.b() + dx)
+    }
+}
+
 impl Parameterized for Uniform {
     type Parameters = (f64, f64);
 
@@ -305,6 +316,8 @@ mod tests {
     const N_TRIES: usize = 5;
 
     test_basic_impls!(f64, Uniform);
+
+    crate::test_shiftable!(Uniform::new(0.0, 1.0).unwrap());
 
     #[test]
     fn new() {

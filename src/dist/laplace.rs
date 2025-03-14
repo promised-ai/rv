@@ -33,6 +33,17 @@ pub struct Laplace {
     b: f64,
 }
 
+impl Shiftable for Laplace {
+    type Output = Laplace;
+
+    fn shifted(self, dx: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Laplace::new_unchecked(self.mu() + dx, self.b())
+    }
+}
+
 pub struct LaplaceParameters {
     pub mu: f64,
     pub b: f64,
@@ -441,4 +452,6 @@ mod tests {
         });
         assert!(passes > 0);
     }
+
+    crate::test_shiftable!(Laplace::new(1.0, 2.0).unwrap());
 }

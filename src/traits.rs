@@ -728,10 +728,14 @@ macro_rules! impl_shiftable {
 
 #[macro_export]
 macro_rules! test_shiftable {
+
+
     ($expr:expr) => {
+        use proptest::prelude::*;
+
         proptest! {
             #[test]
-            fn test_shiftable_composition(dx1 in -100.0..100.0, dx2 in -100.0..100.0) {
+            fn shiftable_composition(dx1 in -100.0..100.0, dx2 in -100.0..100.0) {
                 let dist = $expr;
                 let s1 = dist.clone().shifted(dx1);
                 let s2 = s1.clone().shifted(dx2);
@@ -740,5 +744,78 @@ macro_rules! test_shiftable {
                 prop_assert!(s2 == s3);
             }
         }
+
+        proptest! {
+            #[test]
+            fn shiftable_point_computations(dx in -100.0..100.0) {
+                let mut rng = rand::thread_rng();
+                let dist = $expr;
+                let shifted = dist.clone().shifted(dx);
+
+                let x = shifted.draw(&mut rng);
+                let f_shifted = shifted.f(&x);
+                let f_parent = dist.f(&(x - dx));
+                prop_assert!((f_shifted - f_parent).abs() < 1e-10);
+
+                let ln_f_shifted = shifted.ln_f(&x);
+                let ln_f_parent = dist.ln_f(&(x - dx));
+                prop_assert!((ln_f_shifted - ln_f_parent).abs() < 1e-10);
+
+                let cdf_shifted = shifted.cdf(&x);
+                let cdf_parent = dist.cdf(&(x - dx));
+                prop_assert!((cdf_shifted - cdf_parent).abs() < 1e-10);
+
+                let sf_shifted = shifted.sf(&x);
+                let sf_parent = dist.sf(&(x - dx));
+                prop_assert!((sf_shifted - sf_parent).abs() < 1e-10);
+            }
+        }
+
+        fn prop_close_option(a: Option<f64>, b: Option<f64>) -> bool {
+            match (a, b) {
+                (Some(a), Some(b)) => prop_assert!((a - b).abs() < 1e-10),
+                (None, None) => true,
+                _ => false,
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn shiftable_summaries(dx in -100.0..100.0) {
+                let dist = $expr;
+                let shifted = dist.clone().shifted(dx);
+
+                let mean_shifted = shifted.clone().mean();
+                let mean_parent = dist.clone().mean();
+                prop_close_option(mean_shifted, mean_parent);
+
+                let median_shifted = shifted.clone().median();
+                let median_parent = dist.clone().median();
+                prop_close_option(median_shifted, median_parent);
+
+                let mode_shifted = shifted.clone().mode();
+                let mode_parent = dist.clone().mode();
+                prop_close_option(mode_shifted, mode_parent);
+
+                let variance_shifted = shifted.clone().variance();
+                let variance_parent = dist.clone().variance();
+                prop_close_option(variance_shifted, variance_parent);
+
+                let entropy_shifted = shifted.clone().entropy();
+                let entropy_parent = dist.clone().entropy();
+                prop_close_option(entropy_shifted, entropy_parent);
+
+                let skewness_shifted = shifted.clone().skewness();
+                let skewness_parent = dist.clone().skewness();
+                prop_close_option(skewness_shifted, skewness_parent);
+
+                let kurtosis_shifted = shifted.clone().kurtosis();
+                let kurtosis_parent = dist.clone().kurtosis();
+                prop_close_option(kurtosis_shifted, kurtosis_parent);
+            }
+        }
+
+
+
     };
 }
