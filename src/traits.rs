@@ -732,10 +732,10 @@ macro_rules! test_shiftable {
         proptest! {
             #[test]
             fn test_shiftable_composition(dx1 in -100.0..100.0, dx2 in -100.0..100.0) {
-                let g = $expr;
-                let s1 = g.clone().shifted(dx1);
+                let dist = $expr;
+                let s1 = dist.clone().shifted(dx1);
                 let s2 = s1.clone().shifted(dx2);
-                let s3 = g.clone().shifted(dx1 + dx2);
+                let s3 = dist.clone().shifted(dx1 + dx2);
 
                 prop_assert!(s2 == s3);
             }
