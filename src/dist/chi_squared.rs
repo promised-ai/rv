@@ -194,6 +194,9 @@ macro_rules! impl_traits {
     };
 }
 
+use crate::impl_shiftable;     
+impl_shiftable!(ChiSquared);
+
 impl Skewness for ChiSquared {
     fn skewness(&self) -> Option<f64> {
         Some((8.0 / self.k).sqrt())

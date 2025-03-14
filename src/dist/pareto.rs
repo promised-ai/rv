@@ -47,6 +47,9 @@ impl Parameterized for Pareto {
     }
 }
 
+use crate::impl_shiftable;     
+impl_shiftable!(Pareto);
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]

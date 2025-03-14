@@ -1,6 +1,7 @@
 //! Trait definitions
 pub use crate::data::DataOrSuffStat;
 use rand::Rng;
+use crate::prelude::Shifted;
 
 pub trait Parameterized {
     type Parameters;
@@ -686,4 +687,40 @@ pub trait SuffStat<X> {
 
     /// Combine sufficient statistics
     fn merge(&mut self, other: Self);
+}
+
+/// Trait for distributions that can be shifted by a constant value
+pub trait Shiftable {
+    type Output;
+    fn shifted(self, dx: f64) -> Self::Output
+    where
+        Self: Sized;
+}
+
+/// Macro to implement Shiftable for a distribution type
+///
+/// This macro automatically implements the Shiftable trait for a given type,
+/// using the default Shifted<T> as the Output type.
+///
+/// # Example
+///
+/// ```
+/// impl_shiftable!(Gaussian);
+/// impl_shiftable!(Beta<T>, T);
+/// ```
+#[macro_export]
+macro_rules! impl_shiftable {
+    // Simple case for non-generic types
+    ($type:ty) => {
+        impl Shiftable for $type {
+            type Output = Shifted<Self>;
+
+            fn shifted(self, dx: f64) -> Self::Output
+            where
+                Self: Sized,
+            {
+                Shifted { parent: self, dx }
+            }
+        }
+    };
 }

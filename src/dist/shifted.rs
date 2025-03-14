@@ -4,13 +4,7 @@ use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-/// Trait for distributions that can be shifted by a constant value
-pub trait Shiftable {
-    type Output;
-    fn shifted(self, dx: f64) -> Self::Output
-    where
-        Self: Sized;
-}
+
 /// A wrapper for distributions that adds a dx parameter
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -158,33 +152,7 @@ where
     }
 }
 
-/// Macro to implement Shiftable for a distribution type
-///
-/// This macro automatically implements the Shiftable trait for a given type,
-/// using the default Shifted<T> as the Output type.
-///
-/// # Example
-///
-/// ```
-/// impl_shiftable!(Gaussian);
-/// impl_shiftable!(Beta<T>, T);
-/// ```
-#[macro_export]
-macro_rules! impl_shiftable {
-    // Simple case for non-generic types
-    ($type:ty) => {
-        impl Shiftable for $type {
-            type Output = Shifted<Self>;
 
-            fn shifted(self, dx: f64) -> Self::Output
-            where
-                Self: Sized,
-            {
-                Shifted { parent: self, dx }
-            }
-        }
-    };
-}
 
 // Some distributions can absorb dxing into the parameters.
 // TODO: implement Shiftable in the module for each of these.
@@ -240,45 +208,31 @@ impl Shiftable for Uniform {
     }
 }
 
-// For others on ℝ, we'll fall back on Shifted
-use crate::prelude::Beta;
-impl_shiftable!(Beta);
+impl<D> Shiftable for Shifted<D>
+where
+    D: Shiftable,
+{
+    type Output = Self;
 
-use crate::prelude::BetaPrime;
-impl_shiftable!(BetaPrime);
+    fn shifted(self, dx: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Shifted { parent: self.parent, dx: self.dx + dx }
+    }
+}
 
-use crate::prelude::ChiSquared;
-impl_shiftable!(ChiSquared);
 
-use crate::prelude::Exponential;
-impl_shiftable!(Exponential);
 
-use crate::prelude::Gamma;
-impl_shiftable!(Gamma);
 
-use crate::prelude::Pareto;
-impl_shiftable!(Pareto);
 
-use crate::prelude::InvChiSquared;
-impl_shiftable!(InvChiSquared);
 
-use crate::prelude::InvGamma;
-impl_shiftable!(InvGamma);
 
-use crate::prelude::InvGaussian;
-impl_shiftable!(InvGaussian);
 
-use crate::prelude::LogNormal;
-impl_shiftable!(LogNormal);
 
-use crate::prelude::StudentsT;
-impl_shiftable!(StudentsT);
 
-use crate::prelude::ScaledInvChiSquared;
-impl_shiftable!(ScaledInvChiSquared);
 
-use crate::prelude::UnitPowerLaw;
-impl_shiftable!(UnitPowerLaw);
 
-use crate::prelude::Kumaraswamy;
-impl_shiftable!(Kumaraswamy);
+
+
+

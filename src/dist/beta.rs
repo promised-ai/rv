@@ -398,6 +398,9 @@ macro_rules! impl_traits {
     };
 }
 
+use crate::impl_shiftable;   
+impl_shiftable!(Beta);
+
 impl Variance<f64> for Beta {
     fn variance(&self) -> Option<f64> {
         let apb = self.alpha + self.beta;
