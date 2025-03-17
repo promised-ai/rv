@@ -163,6 +163,8 @@ impl Scalable for Cauchy {
     }
 }
 
+
+
 use crate::prelude::Gev;
 
 impl Scalable for Gev {
@@ -189,9 +191,80 @@ where
         Scaled {
             parent: self.parent,
             scale: self.scale * scale,
-            rate: self.rate * scale.recip(),
+            rate: self.rate / scale,
             logjac: OnceLock::new(),
         }
+    }
+}
+
+fn option_close(a: Option<f64>, b: Option<f64>, tol: f64) -> bool {
+    match (a, b) {
+        (Some(a), Some(b)) => close(a, b, tol),
+        (None, None) => true,
+        _ => false,
+    }
+}
+
+#[macro_export]
+macro_rules! test_scalable_scaled {
+    ($dist:expr) => {
+    {
+        use crate::traits::*;
+        use crate::assert;
+        use rand::thread_rng;
+
+        let mut rng = thread_rng();
+        let dist = $dist;
+        let scale = 2.0;
+
+        let auto = dist.clone().scaled(scale);
+        let manual = Scaled::new(dist.clone(), scale);
+
+
+
+        // Test ln_f matches
+        let rng = thread_rng();
+        let x = auto.draw(&mut rng);
+        assert::close(
+            auto.ln_f(&x),
+            manual.ln_f(&x),
+            1e-12
+        );
+
+        // Test cdf matches
+        assert::close(
+            auto.cdf(&x),
+            manual.cdf(&x),
+            1e-12
+        );
+
+        // Test sf matches
+        assert::close(
+            auto.sf(&x),
+            manual.sf(&x),
+            1e-12
+        );
+
+        // Test mean matches
+        assert!(option_close(auto.mean(), manual.mean(), 1e-12));
+
+        // Test median matches
+        assert!(option_close(auto.median(), manual.median(), 1e-12));
+
+        // Test mode matches
+        assert!(option_close(auto.mode(), manual.mode(), 1e-12));
+        
+        // Test variance matches
+        assert!(option_close(auto.variance(), manual.variance(), 1e-12));
+
+        // Test entropy matches
+        assert::close(
+            auto.entropy(),
+            manual.entropy(),
+            1e-12
+        );
+    }
+
     }
 }
 
@@ -201,4 +274,7 @@ mod tests {
     use crate::prelude::*;
 
     crate::test_scalable!(Scaled::new(Uniform::new(0.0, 1.0).unwrap(), 1.0));
-} 
+
+    test_scalable_scaled!(Cauchy::new_unchecked(1.0, 2.0));
+}
+
