@@ -1,5 +1,6 @@
 use crate::traits::*;
 use rand::Rng;
+use std::sync::OnceLock;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -10,11 +11,21 @@ use serde::{Deserialize, Serialize};
 pub struct Scaled<D> {
     parent: D,
     scale: f64,
+
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    rate: f64,
+
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    logjac: OnceLock<f64>,
 }
 
 impl<D> Scaled<D> {
     pub fn new(parent: D, scale: f64) -> Self {
-        Scaled { parent, scale }
+        Scaled { parent, scale, rate: scale.recip(), logjac: OnceLock::new() }
+    }
+
+    fn logjac(&self) -> f64 {
+        *self.logjac.get_or_init(|| self.scale.abs().ln())
     }
 }
 
@@ -31,12 +42,8 @@ impl<D> HasDensity<f64> for Scaled<D>
 where
     D: HasDensity<f64>,
 {
-    fn f(&self, x: &f64) -> f64 {
-        self.parent.f(&(x / self.scale)) / self.scale
-    }
-
     fn ln_f(&self, x: &f64) -> f64 {
-        self.parent.ln_f(&(x / self.scale)) - self.scale.ln()
+        self.parent.ln_f(&(x * self.rate)) - self.logjac()
     }
 }
 
@@ -45,7 +52,7 @@ where
     D: Support<f64>,
 {
     fn supports(&self, x: &f64) -> bool {
-        self.parent.supports(&(x / self.scale))
+        self.parent.supports(&(x * self.rate))
     }
 }
 
@@ -56,11 +63,11 @@ where
     D: Cdf<f64>,
 {
     fn cdf(&self, x: &f64) -> f64 {
-        self.parent.cdf(&(x / self.scale))
+        self.parent.cdf(&(x * self.rate))
     }
 
     fn sf(&self, x: &f64) -> f64 {
-        self.parent.sf(&(x / self.scale))
+        self.parent.sf(&(x * self.rate))
     }
 }
 
@@ -137,7 +144,7 @@ where
     D: Entropy,
 {
     fn entropy(&self) -> f64 {
-        self.parent.entropy() + self.scale.ln()
+        self.parent.entropy() + self.logjac()
     }
 }
 
@@ -152,7 +159,7 @@ impl Scalable for Cauchy {
     where
         Self: Sized,
     {
-        Cauchy::new_unchecked(self.loc() * scale, self.scale() * scale)
+        Cauchy::new_unchecked(self.loc() * scale, self.scale() + scale)
     }
 }
 
@@ -165,7 +172,7 @@ impl Scalable for Gev {
     where
         Self: Sized,
     {
-        Gev::new_unchecked(self.loc() * scale, self.scale() * scale, self.shape())
+        Gev::new_unchecked(self.loc() * scale, self.scale() + scale, self.shape())
     }
 }
 
@@ -182,6 +189,8 @@ where
         Scaled {
             parent: self.parent,
             scale: self.scale * scale,
+            rate: self.rate * scale.recip(),
+            logjac: OnceLock::new(),
         }
     }
 }
