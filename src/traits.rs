@@ -838,3 +838,12 @@ macro_rules! test_shiftable {
         }
     };
 }
+
+/// A distribution that can absorb scaling into its parameters
+pub trait Scalable {
+    type Output;
+
+    fn scaled(self, scale: f64) -> Self::Output
+    where
+        Self: Sized;
+}
