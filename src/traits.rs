@@ -700,12 +700,6 @@ pub trait Shiftable {
 ///
 /// This macro automatically implements the Shiftable trait for a given type,
 /// using the default Shifted<T> as the Output type.
-///
-/// # Example
-///
-/// ```
-/// impl_shiftable!(Beta);
-/// ```
 #[macro_export]
 macro_rules! impl_shiftable {
     // Simple case for non-generic types
