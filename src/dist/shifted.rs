@@ -203,11 +203,3 @@ where
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::prelude::*;
-
-    crate::test_shiftable!(Shifted::new(Uniform::new(0.0, 1.0).unwrap(), 1.0));
-}

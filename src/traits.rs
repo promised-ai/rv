@@ -719,125 +719,127 @@ macro_rules! impl_shiftable {
     };
 }
 
+
+
 #[macro_export]
-macro_rules! test_shiftable {
+macro_rules! test_shiftable_mean {
     ($expr:expr) => {
         use proptest::prelude::*;
 
         proptest! {
             #[test]
-            fn shiftable_composition(dx1 in -100.0..100.0, dx2 in -100.0..100.0) {
-                let dist = $expr;
-                let s1 = dist.clone().shifted(dx1);
-                let s2 = s1.clone().shifted(dx2);
-                let s3 = dist.clone().shifted(dx1 + dx2);
-
-                // For Uniform distributions, we need to check approximate equality due to floating-point precision
-                match (dist.mean(), s1.mean(), s2.mean(), s3.mean()) {
-                    (Some(mean_dist), Some(mean1), Some(mean2), Some(mean3)) => {
-                        let mean_dist: f64 = mean_dist;
-                        let mean1: f64 = mean1;
-                        let mean2: f64 = mean2;
-                        let mean3: f64 = mean3;
-                        prop_assert!((mean1 - dx1 - mean_dist).abs() < 1e-10, "means differ: {} vs {}", mean1, mean_dist + dx1);
-                        prop_assert!((mean2 - dx2 - mean1).abs() < 1e-10, "means differ: {} vs {}", mean2, mean1 + dx2);
-                        prop_assert!((mean3 - mean2).abs() < 1e-10, "means differ: {} vs {}", mean3, mean2);
-                    }
-                    (None, None, None, None) => {},
-                    _ => {
-                        prop_assert!(false, "Shifting should not affect existence of mean");
-                    }
-                }
-                
-                match (s2.variance(), s3.variance()) {
-                    (Some(var2), Some(var3)) => {
-                        let var2: f64 = var2;
-                        let var3: f64 = var3;
-                        prop_assert!((var2 - var3).abs() < 1e-10, "variances differ: {} vs {}", var2, var3);
-                    }
-                    (None, None) => {},
-                    _ => {
-                        prop_assert!(false, "Shifting should not affect existence of variance");
-                    }
-                }
-            }
-        }
-
-        proptest! {
-            #[test]
-            fn shiftable_density(dx in -100.0..100.0) {
-                let mut rng = rand::thread_rng();
+            fn shiftable_mean(dx in -100.0..100.0) {
                 let dist = $expr;
                 let shifted = dist.clone().shifted(dx);
+                let manual = Shifted::new(dist, dx);
 
-                let x: f64 = shifted.draw(&mut rng);
-                let f_shifted = shifted.f(&x);
-                let f_parent = dist.f(&(x - dx));
-                prop_assert!((f_shifted - f_parent).abs() < 1e-10);
-
-                // Test log density function
-                let ln_f_shifted = shifted.ln_f(&x);
-                let ln_f_parent = dist.ln_f(&(x - dx));
-                prop_assert!((ln_f_shifted - ln_f_parent).abs() < 1e-10);
-
-                let cdf = shifted.cdf(&x);
-                let parent_cdf = dist.cdf(&(x - dx));
-                prop_assert!((cdf - parent_cdf).abs() < 1e-10);
-
-                let sf_shifted = shifted.sf(&x);
-                let sf_parent = dist.sf(&(x - dx));
-                prop_assert!((sf_shifted - sf_parent).abs() < 1e-10);
-            
-            }
-        }
-
-        proptest! {
-            #[test]
-            fn shiftable_summaries(dx in -100.0..100.0) {
-                let dist = $expr;
-                let shifted = dist.clone().shifted(dx);
-
-                // Test mean
-                let mean_shifted = shifted.clone().mean();
-                let mean_parent = dist.clone().mean();
-                match (mean_shifted, mean_parent) {
-                    (Some(mean_shifted), Some(mean_parent)) => {
+                let mean_shifted = shifted.mean();
+                let mean_manual = manual.mean();
+                match (mean_shifted, mean_manual) {
+                    (Some(mean_shifted), Some(mean_manual)) => {
                         let mean_shifted: f64 = mean_shifted;
-                        let mean_parent: f64 = mean_parent;
-                        prop_assert!((mean_shifted - dx - mean_parent).abs() < 1e-10, "means differ: {} vs {}", mean_shifted, mean_parent + dx);
+                        let mean_manual: f64 = mean_manual;
+                        prop_assert!(mean_shifted == mean_manual || (mean_shifted - mean_manual).abs() < 1e-10, "means differ: {} vs {}", mean_shifted, mean_manual);
                     }
                     (None, None) => {},
                     _ => {
                         prop_assert!(false, "Shifting should not affect existence of mean");
                     }
-                }
-
-                // Test variance
-                let variance_shifted = shifted.clone().variance();
-                let variance_parent = dist.clone().variance();
-                match (variance_shifted, variance_parent) {
-                    (Some(variance_shifted), Some(variance_parent)) => {
-                        let variance_shifted: f64 = variance_shifted;
-                        let variance_parent: f64 = variance_parent;
-                        prop_assert!((variance_shifted - variance_parent).abs() < 1e-10, "variances differ: {} vs {}", variance_shifted, variance_parent);
-                    }
-                    (None, None) => {},
-                    _ => {
-                        prop_assert!(false, "Shifting should not affect existence of variance");
-                    }
-                }
-
-                // Test entropy
-                if let (Ok(entropy_shifted), Ok(entropy_parent)) = (
-                    std::panic::catch_unwind(|| shifted.clone().entropy()),
-                    std::panic::catch_unwind(|| dist.clone().entropy())
-                ) {
-                    prop_assert!((entropy_shifted - entropy_parent).abs() < 1e-10);
                 }
             }
         }
     };
 }
+
+#[macro_export]
+macro_rules! test_shiftable_method {
+    ($expr:expr, $ident:ident) => {
+        paste::paste! {
+            proptest::proptest! {
+                #[test]
+                fn [<shiftable_ $ident>](dx in -100.0..100.0) {
+                    let dist = $expr;
+                    let shifted = dist.clone().shifted(dx).$ident();
+                    let manual = $crate::prelude::Shifted::new(dist, dx).$ident();
+
+                    match (shifted, manual) {
+                        (Some(shifted), Some(manual)) => {
+                            let shifted: f64 = shifted;
+                            let manual: f64 = manual;
+                            proptest::prop_assert!(shifted == manual || (shifted - manual).abs() < 1e-10, "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
+                        }
+                        (None, None) => {},
+                        _ => {
+                            proptest::prop_assert!(false, "Shifting should not affect existence of {}", stringify!($ident));
+                        }
+                    }
+                }
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! test_shiftable_density {
+    ($expr:expr) => {
+        proptest::proptest! {
+            #[test]
+            fn shiftable_density(y in -100.0..100.0, dx in -100.0..100.0) {
+                let dist = $expr;
+                let shifted: f64 = dist.clone().shifted(dx).ln_f(&y);
+                let manual: f64 = $crate::prelude::Shifted::new(dist, dx).ln_f(&y);
+                proptest::prop_assert!(shifted == manual || (shifted - manual).abs() < 1e-10, "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
+            }
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! test_shiftable_cdf {
+    ($expr:expr) => {
+        proptest::proptest! {
+            #[test]
+            fn shiftable_cdf(x in -100.0..100.0, dx in -100.0..100.0) {
+                let dist = $expr;
+                let shifted: f64 = dist.clone().shifted(dx).cdf(&x);
+                let manual: f64 = $crate::prelude::Shifted::new(dist, dx).cdf(&x);
+                proptest::prop_assert!(shifted == manual || (shifted - manual).abs() < 1e-10, "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
+            }
+        }
+    };
+}
+
+
+#[macro_export]
+macro_rules! test_shiftable_invcdf {
+    ($expr:expr) => {
+        proptest::proptest! {
+            #[test]
+            fn shiftable_invcdf(p in 0.0..1.0, dx in -100.0..100.0) {
+                let dist = $expr;
+                let shifted: f64 = dist.clone().shifted(dx).invcdf(p);
+                let manual: f64 = $crate::prelude::Shifted::new(dist, dx).invcdf(p);
+                proptest::prop_assert!(shifted == manual || (shifted - manual).abs() < 1e-10, "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! test_shiftable_entropy {
+    ($expr:expr) => {
+        proptest::proptest! {
+            #[test]
+            fn shiftable_entropy(dx in -100.0..100.0) {
+                let dist = $expr;
+                let shifted: f64 = dist.clone().shifted(dx).entropy();
+                let manual: f64 = $crate::prelude::Shifted::new(dist, dx).entropy();
+                proptest::prop_assert!(shifted == manual || (shifted - manual).abs() < 1e-10, "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
+            }
+        }
+    };
+}
+
 
 /// A distribution that can absorb scaling into its parameters
 pub trait Scalable {

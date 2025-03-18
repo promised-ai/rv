@@ -452,6 +452,20 @@ mod tests {
         });
         assert!(passes > 0);
     }
+    use crate::test_shiftable_method;
+    use crate::test_shiftable_invcdf;
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_density;
 
-    crate::test_shiftable!(Laplace::new(1.0, 2.0).unwrap());
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), mean);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), median);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), mode);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), variance);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), skewness);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), kurtosis);
+    test_shiftable_density!(Laplace::new(2.0, 1.0).unwrap());
+    test_shiftable_entropy!(Laplace::new(2.0, 1.0).unwrap());
+    test_shiftable_cdf!(Laplace::new(2.0, 1.0).unwrap());
+
 }

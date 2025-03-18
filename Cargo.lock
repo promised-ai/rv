@@ -922,6 +922,7 @@ dependencies = [
  "nalgebra",
  "num",
  "num-traits",
+ "paste",
  "peroxide",
  "proptest",
  "rand",

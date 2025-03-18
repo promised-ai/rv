@@ -436,12 +436,28 @@ impl fmt::Display for GaussianError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
 
+    use crate::test_basic_impls;
     test_basic_impls!(f64, Gaussian);
+
+    use crate::test_shiftable_method;
+    use crate::test_shiftable_invcdf;
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_density;
+
+    test_shiftable_method!(Gaussian::new(2.0, 1.0).unwrap(), mean);
+    test_shiftable_method!(Gaussian::new(2.0, 1.0).unwrap(), median);
+    test_shiftable_method!(Gaussian::new(2.0, 1.0).unwrap(), mode);
+    test_shiftable_method!(Gaussian::new(2.0, 1.0).unwrap(), variance);
+    test_shiftable_method!(Gaussian::new(2.0, 1.0).unwrap(), skewness);
+    test_shiftable_method!(Gaussian::new(2.0, 1.0).unwrap(), kurtosis);
+    test_shiftable_density!(Gaussian::new(2.0, 1.0).unwrap());
+    test_shiftable_entropy!(Gaussian::new(2.0, 1.0).unwrap());
+    test_shiftable_cdf!(Gaussian::new(2.0, 1.0).unwrap());
+    test_shiftable_invcdf!(Gaussian::new(2.0, 1.0).unwrap());
 
     #[test]
     fn new() {

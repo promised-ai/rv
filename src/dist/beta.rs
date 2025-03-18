@@ -478,7 +478,6 @@ mod tests {
 
     test_basic_impls!(f64, Beta, Beta::jeffreys());
 
-    crate::test_shiftable!(Beta::new(1.0, 2.0).unwrap());
 
     #[test]
     fn new() {

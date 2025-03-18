@@ -9,6 +9,7 @@ use rand::Rng;
 use special::Gamma as _;
 use std::fmt;
 use std::sync::OnceLock;
+use crate::impl_shiftable;
 
 mod poisson_prior;
 
@@ -355,6 +356,8 @@ impl fmt::Display for GammaError {
         }
     }
 }
+
+impl_shiftable!(Gamma);
 
 #[cfg(test)]
 mod tests {

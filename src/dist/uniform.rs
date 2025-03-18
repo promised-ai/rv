@@ -317,7 +317,6 @@ mod tests {
 
     test_basic_impls!(f64, Uniform);
 
-    crate::test_shiftable!(Uniform::new(0.0, 1.0).unwrap());
 
     #[test]
     fn new() {
@@ -417,4 +416,21 @@ mod tests {
         });
         assert!(passes > 0);
     }
+
+
+    use crate::test_shiftable_method;
+    use crate::test_shiftable_invcdf;
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_density;
+
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), mean);
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), median);
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), variance);
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), skewness);
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), kurtosis);
+    test_shiftable_density!(Uniform::new(2.0, 4.0).unwrap());
+    test_shiftable_entropy!(Uniform::new(2.0, 4.0).unwrap());
+    test_shiftable_cdf!(Uniform::new(2.0, 4.0).unwrap());
+    test_shiftable_invcdf!(Uniform::new(2.0, 4.0).unwrap());
 }
