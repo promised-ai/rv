@@ -719,8 +719,6 @@ macro_rules! impl_shiftable {
     };
 }
 
-
-
 #[macro_export]
 macro_rules! test_shiftable_mean {
     ($expr:expr) => {
@@ -809,7 +807,6 @@ macro_rules! test_shiftable_cdf {
     };
 }
 
-
 #[macro_export]
 macro_rules! test_shiftable_invcdf {
     ($expr:expr) => {
@@ -839,7 +836,6 @@ macro_rules! test_shiftable_entropy {
         }
     };
 }
-
 
 /// A distribution that can absorb scaling into its parameters
 pub trait Scalable {

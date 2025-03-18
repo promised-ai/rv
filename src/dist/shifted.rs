@@ -157,7 +157,6 @@ where
     }
 }
 
-
 impl<D> Shiftable for Shifted<D>
 where
     D: Shiftable,

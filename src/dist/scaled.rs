@@ -1,8 +1,8 @@
 use crate::traits::*;
 use rand::Rng;
-use std::sync::OnceLock;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
+use std::sync::OnceLock;
 
 /// A wrapper for distributions that adds a scale parameter
 #[derive(Debug, Clone, PartialEq)]
@@ -21,7 +21,12 @@ pub struct Scaled<D> {
 
 impl<D> Scaled<D> {
     pub fn new(parent: D, scale: f64) -> Self {
-        Scaled { parent, scale, rate: scale.recip(), logjac: OnceLock::new() }
+        Scaled {
+            parent,
+            scale,
+            rate: scale.recip(),
+            logjac: OnceLock::new(),
+        }
     }
 
     fn logjac(&self) -> f64 {
@@ -163,8 +168,6 @@ impl Scalable for Cauchy {
     }
 }
 
-
-
 use crate::prelude::Gev;
 
 impl Scalable for Gev {
@@ -174,7 +177,11 @@ impl Scalable for Gev {
     where
         Self: Sized,
     {
-        Gev::new_unchecked(self.loc() * scale, self.scale() + scale, self.shape())
+        Gev::new_unchecked(
+            self.loc() * scale,
+            self.scale() + scale,
+            self.shape(),
+        )
     }
 }
 
@@ -204,4 +211,3 @@ fn option_close(a: Option<f64>, b: Option<f64>, tol: f64) -> bool {
         _ => false,
     }
 }
-

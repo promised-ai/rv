@@ -452,10 +452,10 @@ mod tests {
         });
         assert!(passes > 0);
     }
-    use crate::test_shiftable_method;
     use crate::test_shiftable_cdf;
-    use crate::test_shiftable_entropy;
     use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_method;
 
     test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), mean);
     test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), median);
@@ -466,5 +466,4 @@ mod tests {
     test_shiftable_density!(Laplace::new(2.0, 1.0).unwrap());
     test_shiftable_entropy!(Laplace::new(2.0, 1.0).unwrap());
     test_shiftable_cdf!(Laplace::new(2.0, 1.0).unwrap());
-
 }

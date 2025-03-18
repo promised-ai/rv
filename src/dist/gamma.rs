@@ -3,13 +3,13 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
+use crate::impl_shiftable;
 use crate::misc::ln_gammafn;
 use crate::traits::*;
 use rand::Rng;
 use special::Gamma as _;
 use std::fmt;
 use std::sync::OnceLock;
-use crate::impl_shiftable;
 
 mod poisson_prior;
 

@@ -437,14 +437,13 @@ impl fmt::Display for GaussianError {
 mod tests {
     use super::*;
     use crate::test_basic_impls;
-    use crate::test_shiftable_method;
-    use crate::test_shiftable_invcdf;
     use crate::test_shiftable_cdf;
-    use crate::test_shiftable_entropy;
     use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_invcdf;
+    use crate::test_shiftable_method;
 
     const TOL: f64 = 1E-12;
-
 
     test_basic_impls!(f64, Gaussian);
 

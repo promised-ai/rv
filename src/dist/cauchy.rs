@@ -430,11 +430,11 @@ mod tests {
         assert!(passes > 0);
     }
 
-    use crate::test_shiftable_method;
-    use crate::test_shiftable_invcdf;
     use crate::test_shiftable_cdf;
-    use crate::test_shiftable_entropy;
     use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_invcdf;
+    use crate::test_shiftable_method;
 
     test_shiftable_method!(Cauchy::new(2.0, 4.0).unwrap(), median);
     test_shiftable_density!(Cauchy::new(2.0, 4.0).unwrap());
