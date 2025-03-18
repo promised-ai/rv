@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{CategoricalDatum, CategoricalSuffStat};
 use crate::impl_display;
+use crate::misc::pflip;
 use crate::misc::{argmax, ln_pflips, vec_to_string, LogSumExp};
 use crate::traits::*;
 use rand::Rng;
@@ -213,10 +214,13 @@ impl<X: CategoricalDatum> HasDensity<X> for Categorical {
 
 impl<X: CategoricalDatum> Sampleable<X> for Categorical {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
-        let ix = ln_pflips(&self.ln_weights, 1, true, &mut rng)[0];
+        let weights: Vec<f64> =
+            self.ln_weights.iter().map(|&w| w.exp()).collect();
+        let ix = pflip(&weights, Some(1.0), &mut rng);
         CategoricalDatum::from_usize(ix)
     }
 
+    // TODO: Should be much faster here to traverse weights together with sorted_uniforms, then shuffle the result
     fn sample<R: Rng>(&self, n: usize, mut rng: &mut R) -> Vec<X> {
         ln_pflips(&self.ln_weights, n, true, &mut rng)
             .iter()
