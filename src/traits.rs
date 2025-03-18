@@ -696,6 +696,7 @@ pub trait Shiftable {
         Self: Sized;
 }
 
+
 /// Macro to implement Shiftable for a distribution type
 ///
 /// This macro automatically implements the Shiftable trait for a given type,
@@ -737,7 +738,7 @@ macro_rules! test_shiftable_mean {
                     (Some(mean_shifted), Some(mean_manual)) => {
                         let mean_shifted: f64 = mean_shifted;
                         let mean_manual: f64 = mean_manual;
-                        prop_assert!(mean_shifted == mean_manual || (mean_shifted - mean_manual).abs() < 1e-10, "means differ: {} vs {}", mean_shifted, mean_manual);
+                        prop_assert!(crate::misc::eq_or_close(mean_shifted, mean_manual, 1e-10), "means differ: {} vs {}", mean_shifted, mean_manual);
                     }
                     (None, None) => {},
                     _ => {
@@ -751,11 +752,17 @@ macro_rules! test_shiftable_mean {
 
 #[macro_export]
 macro_rules! test_shiftable_method {
+    // Base case with no extension
     ($expr:expr, $ident:ident) => {
+        test_shiftable_method!($expr, $ident, );
+    };
+
+    // Main implementation
+    ($expr:expr, $ident:ident, $($ext:ident)?) => {
         paste::paste! {
             proptest::proptest! {
                 #[test]
-                fn [<shiftable_ $ident>](dx in -100.0..100.0) {
+                fn [<shiftable_ $ident $(_ $ext)?>](dx in -100.0..100.0) {
                     let dist = $expr;
                     let shifted = dist.clone().shifted(dx).$ident();
                     let manual = $crate::prelude::Shifted::new(dist, dx).$ident();
@@ -764,11 +771,13 @@ macro_rules! test_shiftable_method {
                         (Some(shifted), Some(manual)) => {
                             let shifted: f64 = shifted;
                             let manual: f64 = manual;
-                            proptest::prop_assert!(shifted == manual || (shifted - manual).abs() < 1e-10, "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
+                            proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10), 
+                                "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
                         }
                         (None, None) => {},
                         _ => {
-                            proptest::prop_assert!(false, "Shifting should not affect existence of {}", stringify!($ident));
+                            proptest::prop_assert!(false, "Shifting should not affect existence of {}", 
+                                stringify!($ident));
                         }
                     }
                 }
@@ -780,28 +789,42 @@ macro_rules! test_shiftable_method {
 #[macro_export]
 macro_rules! test_shiftable_density {
     ($expr:expr) => {
-        proptest::proptest! {
-            #[test]
-            fn shiftable_density(y in -100.0..100.0, dx in -100.0..100.0) {
-                let dist = $expr;
-                let shifted: f64 = dist.clone().shifted(dx).ln_f(&y);
-                let manual: f64 = $crate::prelude::Shifted::new(dist, dx).ln_f(&y);
-                proptest::prop_assert!(shifted == manual || (shifted - manual).abs() < 1e-10, "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
+        test_shiftable_density!($expr, );
+    };
+
+    ($expr:expr, $($ext:ident)?) => {
+        paste::paste! {
+            proptest::proptest! {
+                #[test]
+                fn [<shiftable_density $(_ $ext)?>](y in -100.0..100.0, dx in -100.0..100.0) {
+                    let dist = $expr;
+                    let shifted: f64 = dist.clone().shifted(dx).ln_f(&y);
+                    let manual: f64 = $crate::prelude::Shifted::new(dist, dx).ln_f(&y);
+                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10), 
+                        "densities differ: {} vs {}", shifted, manual);
+                }
             }
         }
-    }
+    };
 }
 
 #[macro_export]
 macro_rules! test_shiftable_cdf {
     ($expr:expr) => {
-        proptest::proptest! {
-            #[test]
-            fn shiftable_cdf(x in -100.0..100.0, dx in -100.0..100.0) {
-                let dist = $expr;
-                let shifted: f64 = dist.clone().shifted(dx).cdf(&x);
-                let manual: f64 = $crate::prelude::Shifted::new(dist, dx).cdf(&x);
-                proptest::prop_assert!(shifted == manual || (shifted - manual).abs() < 1e-10, "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
+        test_shiftable_cdf!($expr, );
+    };
+
+    ($expr:expr, $($ext:ident)?) => {
+        paste::paste! {
+            proptest::proptest! {
+                #[test]
+                fn [<shiftable_cdf $(_ $ext)?>](x in -100.0..100.0, dx in -100.0..100.0) {
+                    let dist = $expr;
+                    let shifted: f64 = dist.clone().shifted(dx).cdf(&x);
+                    let manual: f64 = $crate::prelude::Shifted::new(dist, dx).cdf(&x);
+                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10), 
+                        "cdfs differ: {} vs {}", shifted, manual);
+                }
             }
         }
     };
@@ -810,13 +833,20 @@ macro_rules! test_shiftable_cdf {
 #[macro_export]
 macro_rules! test_shiftable_invcdf {
     ($expr:expr) => {
-        proptest::proptest! {
-            #[test]
-            fn shiftable_invcdf(p in 0.0..1.0, dx in -100.0..100.0) {
-                let dist = $expr;
-                let shifted: f64 = dist.clone().shifted(dx).invcdf(p);
-                let manual: f64 = $crate::prelude::Shifted::new(dist, dx).invcdf(p);
-                proptest::prop_assert!(shifted == manual || (shifted - manual).abs() < 1e-10, "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
+        test_shiftable_invcdf!($expr, );
+    };
+
+    ($expr:expr, $($ext:ident)?) => {
+        paste::paste! {
+            proptest::proptest! {
+                #[test]
+                fn [<shiftable_invcdf $(_ $ext)?>](p in 0.0..1.0, dx in -100.0..100.0) {
+                    let dist = $expr;
+                    let shifted: f64 = dist.clone().shifted(dx).invcdf(p);
+                    let manual: f64 = $crate::prelude::Shifted::new(dist, dx).invcdf(p);
+                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10), 
+                        "invcdfs differ: {} vs {}", shifted, manual);
+                }
             }
         }
     };
@@ -825,13 +855,20 @@ macro_rules! test_shiftable_invcdf {
 #[macro_export]
 macro_rules! test_shiftable_entropy {
     ($expr:expr) => {
-        proptest::proptest! {
-            #[test]
-            fn shiftable_entropy(dx in -100.0..100.0) {
-                let dist = $expr;
-                let shifted: f64 = dist.clone().shifted(dx).entropy();
-                let manual: f64 = $crate::prelude::Shifted::new(dist, dx).entropy();
-                proptest::prop_assert!(shifted == manual || (shifted - manual).abs() < 1e-10, "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
+        test_shiftable_entropy!($expr, );
+    };
+
+    ($expr:expr, $($ext:ident)?) => {
+        paste::paste! {
+            proptest::proptest! {
+                #[test]
+                fn [<shiftable_entropy $(_ $ext)?>](dx in -100.0..100.0) {
+                    let dist = $expr;
+                    let shifted: f64 = dist.clone().shifted(dx).entropy();
+                    let manual: f64 = $crate::prelude::Shifted::new(dist, dx).entropy();
+                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10), 
+                        "entropies differ: {} vs {}", shifted, manual);
+                }
             }
         }
     };
