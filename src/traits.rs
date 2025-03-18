@@ -696,7 +696,6 @@ pub trait Shiftable {
         Self: Sized;
 }
 
-
 /// Macro to implement Shiftable for a distribution type
 ///
 /// This macro automatically implements the Shiftable trait for a given type,
@@ -771,12 +770,12 @@ macro_rules! test_shiftable_method {
                         (Some(shifted), Some(manual)) => {
                             let shifted: f64 = shifted;
                             let manual: f64 = manual;
-                            proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10), 
+                            proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10),
                                 "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
                         }
                         (None, None) => {},
                         _ => {
-                            proptest::prop_assert!(false, "Shifting should not affect existence of {}", 
+                            proptest::prop_assert!(false, "Shifting should not affect existence of {}",
                                 stringify!($ident));
                         }
                     }
@@ -800,7 +799,7 @@ macro_rules! test_shiftable_density {
                     let dist = $expr;
                     let shifted: f64 = dist.clone().shifted(dx).ln_f(&y);
                     let manual: f64 = $crate::prelude::Shifted::new(dist, dx).ln_f(&y);
-                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10), 
+                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10),
                         "densities differ: {} vs {}", shifted, manual);
                 }
             }
@@ -822,7 +821,7 @@ macro_rules! test_shiftable_cdf {
                     let dist = $expr;
                     let shifted: f64 = dist.clone().shifted(dx).cdf(&x);
                     let manual: f64 = $crate::prelude::Shifted::new(dist, dx).cdf(&x);
-                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10), 
+                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10),
                         "cdfs differ: {} vs {}", shifted, manual);
                 }
             }
@@ -844,7 +843,7 @@ macro_rules! test_shiftable_invcdf {
                     let dist = $expr;
                     let shifted: f64 = dist.clone().shifted(dx).invcdf(p);
                     let manual: f64 = $crate::prelude::Shifted::new(dist, dx).invcdf(p);
-                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10), 
+                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10),
                         "invcdfs differ: {} vs {}", shifted, manual);
                 }
             }
@@ -866,7 +865,7 @@ macro_rules! test_shiftable_entropy {
                     let dist = $expr;
                     let shifted: f64 = dist.clone().shifted(dx).entropy();
                     let manual: f64 = $crate::prelude::Shifted::new(dist, dx).entropy();
-                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10), 
+                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10),
                         "entropies differ: {} vs {}", shifted, manual);
                 }
             }

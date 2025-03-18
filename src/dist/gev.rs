@@ -755,12 +755,10 @@ mod tests {
         assert::close(m3, 0.858_407_346_410_206_8, TOL);
     }
 
-
     use crate::test_shiftable_cdf;
     use crate::test_shiftable_density;
     use crate::test_shiftable_entropy;
     use crate::test_shiftable_method;
-
 
     test_shiftable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), mean, a);
     test_shiftable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), median, a);

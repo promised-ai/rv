@@ -437,7 +437,7 @@ impl fmt::Display for GaussianError {
 mod tests {
     use super::*;
     const TOL: f64 = 1E-12;
-    
+
     use crate::test_basic_impls;
     test_basic_impls!(f64, Gaussian);
 
@@ -446,8 +446,6 @@ mod tests {
     use crate::test_shiftable_entropy;
     use crate::test_shiftable_invcdf;
     use crate::test_shiftable_method;
-
-
 
     test_shiftable_method!(Gaussian::new(2.0, 4.0).unwrap(), mean);
     test_shiftable_method!(Gaussian::new(2.0, 4.0).unwrap(), median);
