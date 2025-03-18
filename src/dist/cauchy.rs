@@ -298,6 +298,17 @@ impl fmt::Display for CauchyError {
     }
 }
 
+impl Shiftable for Cauchy {
+    type Output = Cauchy;
+
+    fn shifted(self, dx: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Cauchy::new_unchecked(self.loc() + dx, self.scale())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -418,4 +429,16 @@ mod tests {
 
         assert!(passes > 0);
     }
+
+    use crate::test_shiftable_method;
+    use crate::test_shiftable_invcdf;
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_density;
+
+    test_shiftable_method!(Cauchy::new(2.0, 4.0).unwrap(), median);
+    test_shiftable_density!(Cauchy::new(2.0, 4.0).unwrap());
+    test_shiftable_entropy!(Cauchy::new(2.0, 4.0).unwrap());
+    test_shiftable_cdf!(Cauchy::new(2.0, 4.0).unwrap());
+    test_shiftable_invcdf!(Cauchy::new(2.0, 4.0).unwrap());
 }

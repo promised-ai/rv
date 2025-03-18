@@ -157,35 +157,6 @@ where
     }
 }
 
-// Some distributions can absorb dxing into the parameters.
-// TODO: implement Shiftable in the module for each of these.
-use crate::prelude::Cauchy;
-
-impl Shiftable for Cauchy {
-    type Output = Cauchy;
-
-    fn shifted(self, dx: f64) -> Self::Output
-    where
-        Self: Sized,
-    {
-        Cauchy::new_unchecked(self.loc() + dx, self.scale())
-    }
-}
-
-use crate::prelude::Gev;
-
-impl Shiftable for Gev {
-    type Output = Gev;
-
-    fn shifted(self, dx: f64) -> Self::Output
-    where
-        Self: Sized,
-    {
-        Gev::new_unchecked(self.loc() + dx, self.scale(), self.shape())
-    }
-}
-
-use crate::prelude::Uniform;
 
 impl<D> Shiftable for Shifted<D>
 where

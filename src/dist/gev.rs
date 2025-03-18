@@ -54,6 +54,17 @@ impl Parameterized for Gev {
     }
 }
 
+impl Shiftable for Gev {
+    type Output = Gev;
+
+    fn shifted(self, dx: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Gev::new_unchecked(self.loc() + dx, self.scale(), self.shape())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
