@@ -55,7 +55,6 @@ impl Shiftable for Uniform {
     {
         Uniform::new_unchecked(self.a() + dx, self.b() + dx)
     }
-
 }
 
 impl Parameterized for Uniform {

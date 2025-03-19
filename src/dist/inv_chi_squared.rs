@@ -50,8 +50,8 @@ impl PartialEq for InvChiSquared {
     }
 }
 
-use crate::impl_shiftable;
 use crate::impl_scalable;
+use crate::impl_shiftable;
 impl_shiftable!(InvChiSquared);
 impl_scalable!(InvChiSquared);
 
@@ -437,4 +437,3 @@ mod test {
     test_scalable_density!(InvChiSquared::new(2.0).unwrap());
     test_scalable_cdf!(InvChiSquared::new(2.0).unwrap());
 }
-

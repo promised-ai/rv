@@ -70,7 +70,7 @@ impl Shiftable for Gev {
         Self: Sized,
     {
         Gev::new_unchecked(self.loc() + dx, self.scale(), self.shape())
-}
+    }
 }
 
 impl Scalable for Gev {
@@ -837,6 +837,4 @@ mod tests {
     test_scalable_density!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
     test_scalable_entropy!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
     test_scalable_cdf!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
-
-    
 }

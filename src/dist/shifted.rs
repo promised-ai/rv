@@ -13,7 +13,6 @@ pub struct Shifted<D> {
     dx: f64,
 }
 
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum ShiftedError {
     /// The shift parameter must be a finite number
@@ -33,7 +32,6 @@ impl<D> Shifted<D> {
         Shifted { parent, dx }
     }
 }
-
 
 impl<D> Sampleable<f64> for Shifted<D>
 where
@@ -192,5 +190,53 @@ where
         Self: Sized,
     {
         Shifted::new_unchecked(self.parent, self.dx + dx)
+    }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use crate::prelude::*;
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_invcdf;
+    use crate::test_shiftable_method;
+
+    test_shiftable_method!(
+        Shifted::new(Gaussian::new(2.0, 4.0).unwrap(), 1.0).unwrap(),
+        mean
+    );
+    test_shiftable_method!(
+        Shifted::new(Gaussian::new(2.0, 4.0).unwrap(), 1.0).unwrap(),
+        median
+    );
+    test_shiftable_method!(
+        Shifted::new(Gaussian::new(2.0, 4.0).unwrap(), 1.0).unwrap(),
+        variance
+    );
+    test_shiftable_method!(
+        Shifted::new(Gaussian::new(2.0, 4.0).unwrap(), 1.0).unwrap(),
+        skewness
+    );
+    test_shiftable_method!(
+        Shifted::new(Gaussian::new(2.0, 4.0).unwrap(), 1.0).unwrap(),
+        kurtosis
+    );
+    test_shiftable_density!(Shifted::new(
+        Gaussian::new(2.0, 4.0).unwrap(),
+        1.0
+    )
+    .unwrap());
+    test_shiftable_entropy!(Shifted::new(
+        Gaussian::new(2.0, 4.0).unwrap(),
+        1.0
+    )
+    .unwrap());
+    test_shiftable_cdf!(
+        Shifted::new(Gaussian::new(2.0, 4.0).unwrap(), 1.0).unwrap()
+    );
+    test_shiftable_invcdf!(
+        Shifted::new(Gaussian::new(2.0, 4.0).unwrap(), 1.0).unwrap()
+    );
 }

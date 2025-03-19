@@ -712,7 +712,7 @@ macro_rules! impl_shiftable {
     ($type:ty) => {
         use $crate::prelude::Shifted;
         use $crate::prelude::ShiftedError;
-        
+
         impl Shiftable for $type {
             type Output = Shifted<Self>;
             type Error = ShiftedError;
@@ -731,7 +731,7 @@ macro_rules! impl_shiftable {
                 Shifted::new_unchecked(self, dx)
             }
         }
-    }
+    };
 }
 
 #[macro_export]
