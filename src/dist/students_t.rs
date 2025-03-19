@@ -30,11 +30,8 @@ impl Parameterized for StudentsT {
     }
 }
 
-use crate::impl_shiftable;
-impl_shiftable!(StudentsT);
-
-use crate::impl_scalable;
-impl_scalable!(StudentsT);
+crate::impl_shiftable!(StudentsT);
+crate::impl_scalable!(StudentsT);
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]

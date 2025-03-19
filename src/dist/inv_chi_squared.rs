@@ -50,10 +50,8 @@ impl PartialEq for InvChiSquared {
     }
 }
 
-use crate::impl_scalable;
-use crate::impl_shiftable;
-impl_shiftable!(InvChiSquared);
-impl_scalable!(InvChiSquared);
+crate::impl_shiftable!(InvChiSquared);
+crate::impl_scalable!(InvChiSquared);
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
