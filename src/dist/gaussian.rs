@@ -339,7 +339,7 @@ macro_rules! impl_traits {
 
         impl InverseCdf<$kind> for Gaussian {
             fn invcdf(&self, p: f64) -> $kind {
-                assert!(!((p < 0.0) || (1.0 < p)), "P out of range");
+                assert!((0.0..=1.0).contains(&p), "P out of range");
 
                 let x = (self.sigma * SQRT_2)
                     .mul_add(2.0_f64.mul_add(p, -1.0).inv_error(), self.mu);
