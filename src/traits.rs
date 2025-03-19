@@ -911,12 +911,13 @@ macro_rules! impl_scalable {
     // Simple case for non-generic types
     ($type:ty) => {
         use $crate::prelude::Scaled;
+        use $crate::prelude::ScaledError;
 
         impl Scalable for $type {
             type Error = Result<Scaled<Self>, ScaledError>;
             type Output = Scaled<Self>;
 
-            fn scaled(self, scale: f64) -> Result
+            fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
             where
                 Self: Sized,
             {
@@ -929,7 +930,7 @@ macro_rules! impl_scalable {
             {
                 Scaled::new_unchecked(self, scale)
             }
-        };
+        }
     };
 }
 
