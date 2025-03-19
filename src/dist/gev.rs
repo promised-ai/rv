@@ -786,21 +786,20 @@ mod tests {
     test_shiftable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), mean, a);
     test_shiftable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), median, a);
     test_shiftable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), variance, a);
-
     test_shiftable_density!(Gev::new(2.0, 4.0, 1.0).unwrap(), a);
     test_shiftable_entropy!(Gev::new(2.0, 4.0, 1.0).unwrap(), a);
     test_shiftable_cdf!(Gev::new(2.0, 4.0, 1.0).unwrap(), a);
+
     test_shiftable_method!(Gev::new(2.0, 4.0, 0.0).unwrap(), mean, b);
     test_shiftable_method!(Gev::new(2.0, 4.0, 0.0).unwrap(), median, b);
     test_shiftable_method!(Gev::new(2.0, 4.0, 0.0).unwrap(), variance, b);
-
     test_shiftable_density!(Gev::new(2.0, 4.0, 0.0).unwrap(), b);
     test_shiftable_entropy!(Gev::new(2.0, 4.0, 0.0).unwrap(), b);
     test_shiftable_cdf!(Gev::new(2.0, 4.0, 0.0).unwrap(), b);
+
     test_shiftable_method!(Gev::new(2.0, 4.0, -1.0).unwrap(), mean, c);
     test_shiftable_method!(Gev::new(2.0, 4.0, -1.0).unwrap(), median, c);
     test_shiftable_method!(Gev::new(2.0, 4.0, -1.0).unwrap(), variance, c);
-
     test_shiftable_density!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
     test_shiftable_entropy!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
     test_shiftable_cdf!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
