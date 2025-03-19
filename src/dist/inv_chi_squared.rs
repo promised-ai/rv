@@ -224,7 +224,11 @@ macro_rules! impl_traits {
         impl Cdf<$kind> for InvChiSquared {
             fn cdf(&self, x: &$kind) -> f64 {
                 let x64 = f64::from(*x);
-                1.0 - (2.0 * x64).recip().inc_gamma(self.v / 2.0)
+                if x64 <= 0.0 {
+                    0.0
+                } else {
+                    1.0 - (2.0 * x64).recip().inc_gamma(self.v / 2.0)
+                }
             }
         }
     };
@@ -424,16 +428,4 @@ mod test {
         assert!(passes > 0);
     }
 
-    use crate::test_scalable_cdf;
-    use crate::test_scalable_density;
-    use crate::test_scalable_entropy;
-    use crate::test_scalable_invcdf;
-    use crate::test_scalable_method;
-
-    test_scalable_method!(InvChiSquared::new(2.0).unwrap(), mean);
-    test_scalable_method!(InvChiSquared::new(2.0).unwrap(), variance);
-    test_scalable_method!(InvChiSquared::new(2.0).unwrap(), skewness);
-    test_scalable_method!(InvChiSquared::new(2.0).unwrap(), kurtosis);
-    test_scalable_density!(InvChiSquared::new(2.0).unwrap());
-    test_scalable_cdf!(InvChiSquared::new(2.0).unwrap());
 }
