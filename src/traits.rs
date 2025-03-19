@@ -743,8 +743,8 @@ macro_rules! test_shiftable_mean {
             #[test]
             fn shiftable_mean(dx in -100.0..100.0) {
                 let dist = $expr;
-                let shifted = dist.clone().shifted(dx);
-                let manual = Shifted::new(dist, dx);
+                let shifted = dist.clone().shifted_unchecked(dx);
+                let manual = Shifted::new_unchecked(dist, dx);
 
                 let mean_shifted = shifted.mean();
                 let mean_manual = manual.mean();
@@ -778,8 +778,8 @@ macro_rules! test_shiftable_method {
                 #[test]
                 fn [<shiftable_ $ident $(_ $ext)?>](dx in -100.0..100.0) {
                     let dist = $expr;
-                    let shifted = dist.clone().shifted(dx).$ident();
-                    let manual = $crate::prelude::Shifted::new(dist, dx).$ident();
+                    let shifted = dist.clone().shifted_unchecked(dx).$ident();
+                    let manual = $crate::prelude::Shifted::new_unchecked(dist, dx).$ident();
 
                     match (shifted, manual) {
                         (Some(shifted), Some(manual)) => {
@@ -812,8 +812,8 @@ macro_rules! test_shiftable_density {
                 #[test]
                 fn [<shiftable_density $(_ $ext)?>](y in -100.0..100.0, dx in -100.0..100.0) {
                     let dist = $expr;
-                    let shifted: f64 = dist.clone().shifted(dx).ln_f(&y);
-                    let manual: f64 = $crate::prelude::Shifted::new(dist, dx).ln_f(&y);
+                    let shifted: f64 = dist.clone().shifted_unchecked(dx).ln_f(&y);
+                    let manual: f64 = $crate::prelude::Shifted::new_unchecked(dist, dx).ln_f(&y);
                     proptest::prop_assert!($crate::misc::eq_or_close(shifted, manual, 1e-10),
                         "densities differ: {} vs {}", shifted, manual);
                 }
@@ -834,8 +834,8 @@ macro_rules! test_shiftable_cdf {
                 #[test]
                 fn [<shiftable_cdf $(_ $ext)?>](x in -100.0..100.0, dx in -100.0..100.0) {
                     let dist = $expr;
-                    let shifted: f64 = dist.clone().shifted(dx).cdf(&x);
-                    let manual: f64 = $crate::prelude::Shifted::new(dist, dx).cdf(&x);
+                    let shifted: f64 = dist.clone().shifted_unchecked(dx).cdf(&x);
+                    let manual: f64 = $crate::prelude::Shifted::new_unchecked(dist, dx).cdf(&x);
                     proptest::prop_assert!($crate::misc::eq_or_close(shifted, manual, 1e-10),
                         "cdfs differ: {} vs {}", shifted, manual);
                 }
@@ -856,8 +856,8 @@ macro_rules! test_shiftable_invcdf {
                 #[test]
                 fn [<shiftable_invcdf $(_ $ext)?>](p in 0.0..1.0, dx in -100.0..100.0) {
                     let dist = $expr;
-                    let shifted: f64 = dist.clone().shifted(dx).invcdf(p);
-                    let manual: f64 = $crate::prelude::Shifted::new(dist, dx).invcdf(p);
+                    let shifted: f64 = dist.clone().shifted_unchecked(dx).invcdf(p);
+                    let manual: f64 = $crate::prelude::Shifted::new_unchecked(dist, dx).invcdf(p);
                     proptest::prop_assert!($crate::misc::eq_or_close(shifted, manual, 1e-10),
                         "invcdfs differ: {} vs {}", shifted, manual);
                 }
@@ -878,8 +878,8 @@ macro_rules! test_shiftable_entropy {
                 #[test]
                 fn [<shiftable_entropy $(_ $ext)?>](dx in -100.0..100.0) {
                     let dist = $expr;
-                    let shifted: f64 = dist.clone().shifted(dx).entropy();
-                    let manual: f64 = $crate::prelude::Shifted::new(dist, dx).entropy();
+                    let shifted: f64 = dist.clone().shifted_unchecked(dx).entropy();
+                    let manual: f64 = $crate::prelude::Shifted::new_unchecked(dist, dx).entropy();
                     proptest::prop_assert!($crate::misc::eq_or_close(shifted, manual, 1e-10),
                         "entropies differ: {} vs {}", shifted, manual);
                 }
