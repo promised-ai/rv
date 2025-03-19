@@ -19,8 +19,49 @@ pub struct Scaled<D> {
     logjac: OnceLock<f64>,
 }
 
+/// Error type for scaled distribution creation
+#[derive(Debug, Clone, PartialEq)]
+pub enum ScaledError {
+    /// The scale parameter must be a normal (finite, non-zero, non-subnormal) number
+    NonNormalScale(f64),
+    /// The scale parameter must be positive
+    NegativeScale(f64),
+}
+
 impl<D> Scaled<D> {
-    pub fn new(parent: D, scale: f64) -> Self {
+    /// Creates a new scaled distribution with the given parent distribution and
+    /// scale factor.
+    /// 
+    /// # Errors
+    /// Returns `ScaledError::InvalidScale` if the scale parameter is not a
+    /// normal number (i.e., if it's zero, infinite, or NaN).
+    /// 
+    /// Returns `ScaledError::NegativeScale` if the scale parameter is not
+    /// positive. We could easily allow scale to be negative, which would give
+    /// us "reflected" distributions. But this breaks when we try to allow some
+    /// distributions to absorb the scale parameter, so it's disallowed.
+    pub fn new(parent: D, scale: f64) -> Result<Self, ScaledError> {
+        if !scale.is_normal() {
+            Err(ScaledError::NonNormalScale(scale))
+        } else if scale <= 0.0 {
+            Err(ScaledError::NegativeScale(scale))
+        } else {
+            Ok(Scaled {
+                parent,
+                scale,
+                rate: scale.recip(),
+                logjac: OnceLock::new(),
+            })
+        }
+    }
+
+    /// Creates a new scaled distribution with the given parent distribution and
+    /// scale factor, without checking the scale parameter.
+    /// 
+    /// # Safety
+    /// The scale parameter must be a positive normal (finite, non-zero,
+    /// non-subnormal) number.
+    pub fn new_unchecked(parent: D, scale: f64) -> Self {
         Scaled {
             parent,
             scale,
