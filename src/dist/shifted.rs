@@ -13,11 +13,27 @@ pub struct Shifted<D> {
     dx: f64,
 }
 
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ShiftedError {
+    /// The shift parameter must be a finite number
+    NonFiniteShift(f64),
+}
+
 impl<D> Shifted<D> {
-    pub fn new(parent: D, dx: f64) -> Self {
+    pub fn new(parent: D, dx: f64) -> Result<Self, ShiftedError> {
+        if !dx.is_finite() {
+            Err(ShiftedError::NonFiniteShift(dx))
+        } else {
+            Ok(Shifted { parent, dx })
+        }
+    }
+
+    pub fn new_unchecked(parent: D, dx: f64) -> Self {
         Shifted { parent, dx }
     }
 }
+
 
 impl<D> Sampleable<f64> for Shifted<D>
 where
@@ -161,15 +177,20 @@ impl<D> Shiftable for Shifted<D>
 where
     D: Shiftable,
 {
+    type OutputResult = Result<Self, ShiftedError>;
     type Output = Self;
 
-    fn shifted(self, dx: f64) -> Self::Output
+    fn shifted(self, dx: f64) -> Self::OutputResult
     where
         Self: Sized,
     {
-        Shifted {
-            parent: self.parent,
-            dx: self.dx + dx,
-        }
+        Shifted::new(self.parent, self.dx + dx)
     }
+
+    fn shifted_unchecked(self, dx: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Shifted::new_unchecked(self.parent, self.dx + dx)
+}
 }

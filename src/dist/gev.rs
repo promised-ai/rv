@@ -55,14 +55,22 @@ impl Parameterized for Gev {
 }
 
 impl Shiftable for Gev {
+    type OutputResult = Result<Gev, GevError>;
     type Output = Gev;
 
-    fn shifted(self, dx: f64) -> Self::Output
+    fn shifted(self, dx: f64) -> Self::OutputResult
+    where
+        Self: Sized,
+    {
+        Gev::new(self.loc() + dx, self.scale(), self.shape())
+    }
+
+    fn shifted_unchecked(self, dx: f64) -> Self::Output
     where
         Self: Sized,
     {
         Gev::new_unchecked(self.loc() + dx, self.scale(), self.shape())
-    }
+}
 }
 
 impl Scalable for Gev {

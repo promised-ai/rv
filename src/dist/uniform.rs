@@ -39,14 +39,23 @@ pub struct Uniform {
 }
 
 impl Shiftable for Uniform {
+    type OutputResult = Result<Uniform, UniformError>;
     type Output = Uniform;
 
-    fn shifted(self, dx: f64) -> Self::Output
+    fn shifted(self, dx: f64) -> Self::OutputResult
+    where
+        Self: Sized,
+    {
+        Uniform::new(self.a() + dx, self.b() + dx)
+    }
+
+    fn shifted_unchecked(self, dx: f64) -> Self::Output
     where
         Self: Sized,
     {
         Uniform::new_unchecked(self.a() + dx, self.b() + dx)
     }
+
 }
 
 impl Parameterized for Uniform {

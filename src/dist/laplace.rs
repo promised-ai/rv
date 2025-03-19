@@ -34,9 +34,17 @@ pub struct Laplace {
 }
 
 impl Shiftable for Laplace {
+    type OutputResult = Result<Laplace, LaplaceError>       ;
     type Output = Laplace;
 
-    fn shifted(self, dx: f64) -> Self::Output
+    fn shifted(self, dx: f64) -> Self::OutputResult
+    where
+        Self: Sized,
+    {
+        Laplace::new(self.mu() + dx, self.b())
+    }
+
+    fn shifted_unchecked(self, dx: f64) -> Self::Output
     where
         Self: Sized,
     {

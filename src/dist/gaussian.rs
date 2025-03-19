@@ -274,9 +274,20 @@ impl From<&Gaussian> for String {
 impl_display!(Gaussian);
 
 impl Shiftable for Gaussian {
+    type OutputResult = Result<Self, GaussianError>;
     type Output = Self;
 
-    fn shifted(self, dx: f64) -> Self {
+    fn shifted(self, dx: f64) -> Self::OutputResult
+    where
+        Self: Sized,
+    {
+        Self::new(self.mu() + dx, self.sigma())
+    }
+
+    fn shifted_unchecked(self, dx: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
         Self::new_unchecked(self.mu() + dx, self.sigma())
     }
 }

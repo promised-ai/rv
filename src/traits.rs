@@ -690,8 +690,14 @@ pub trait SuffStat<X> {
 
 /// Trait for distributions that can be shifted by a constant value
 pub trait Shiftable {
+    type OutputResult;
     type Output;
-    fn shifted(self, dx: f64) -> Self::Output
+
+    fn shifted(self, dx: f64) -> Self::OutputResult
+    where
+        Self: Sized;
+
+    fn shifted_unchecked(self, dx: f64) -> Self::Output
     where
         Self: Sized;
 }
@@ -705,18 +711,27 @@ macro_rules! impl_shiftable {
     // Simple case for non-generic types
     ($type:ty) => {
         use $crate::prelude::Shifted;
-
+        use $crate::prelude::ShiftedError;
+        
         impl Shiftable for $type {
+            type OutputResult = Result<Shifted<Self>, ShiftedError>;
             type Output = Shifted<Self>;
 
-            fn shifted(self, dx: f64) -> Self::Output
+            fn shifted(self, dx: f64) -> Self::OutputResult
             where
                 Self: Sized,
             {
                 Shifted::new(self, dx)
             }
+
+            fn shifted_unchecked(self, dx: f64) -> Self::Output
+            where
+                Self: Sized,
+            {
+                Shifted::new_unchecked(self, dx)
         }
-    };
+    }
+}
 }
 
 #[macro_export]

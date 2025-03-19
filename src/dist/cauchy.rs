@@ -298,16 +298,23 @@ impl fmt::Display for CauchyError {
 }
 
 impl Shiftable for Cauchy {
+    type OutputResult = Result<Cauchy, CauchyError> ;
     type Output = Cauchy;
 
-    fn shifted(self, dx: f64) -> Self::Output
+    fn shifted(self, dx: f64) -> Self::OutputResult
+    where
+        Self: Sized,
+    {
+        Cauchy::new(self.loc() + dx, self.scale())
+    }
+
+    fn shifted_unchecked(self, dx: f64) -> Self::Output
     where
         Self: Sized,
     {
         Cauchy::new_unchecked(self.loc() + dx, self.scale())
     }
 }
-
 impl Scalable for Cauchy {
     type OutputResult = Result<Cauchy, CauchyError>;
     type Output = Cauchy;
