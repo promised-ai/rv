@@ -734,6 +734,8 @@ macro_rules! impl_shiftable {
     };
 }
 
+#[cfg(test)]
+mod test {
 #[macro_export]
 macro_rules! test_shiftable_mean {
     ($expr:expr) => {
@@ -1086,4 +1088,5 @@ macro_rules! test_scalable_entropy {
             }
         }
     };
+}
 }
