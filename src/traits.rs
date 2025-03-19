@@ -729,9 +729,9 @@ macro_rules! impl_shiftable {
                 Self: Sized,
             {
                 Shifted::new_unchecked(self, dx)
+            }
         }
     }
-}
 }
 
 #[macro_export]
@@ -914,8 +914,8 @@ macro_rules! impl_scalable {
         use $crate::prelude::ScaledError;
 
         impl Scalable for $type {
-            type Error = Result<Scaled<Self>, ScaledError>;
             type Output = Scaled<Self>;
+            type Error = ScaledError;
 
             fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
             where
