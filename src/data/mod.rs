@@ -13,6 +13,7 @@ pub use stat::InvGaussianSuffStat;
 pub use stat::MvGaussianSuffStat;
 pub use stat::PoissonSuffStat;
 pub use stat::ShiftedSuffStat;
+pub use stat::ScaledSuffStat;
 pub use stat::UnitPowerLawSuffStat;
 
 use crate::dist::{

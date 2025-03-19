@@ -65,6 +65,22 @@ impl Shiftable for Gev {
     }
 }
 
+
+impl Scalable for Gev {
+    type Output = Gev;
+
+    fn scaled(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Gev::new_unchecked(
+            self.loc() * scale,
+            self.scale() + scale,
+            self.shape(),
+        )
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]

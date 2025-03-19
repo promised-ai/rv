@@ -34,6 +34,23 @@ impl<D> Scaled<D> {
     }
 }
 
+use crate::data::ScaledSuffStat;
+
+impl<D> HasSuffStat<f64> for Scaled<D>
+where
+    D: HasSuffStat<f64>,
+{
+    type Stat = ScaledSuffStat<D::Stat>;
+
+    fn empty_suffstat(&self) -> Self::Stat {
+        ScaledSuffStat ::new(self.parent.empty_suffstat(), self.scale)
+    }
+
+    fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+        self.parent.ln_f_stat(stat.parent())
+    }
+}
+
 impl<D> Sampleable<f64> for Scaled<D>
 where
     D: Sampleable<f64>,
@@ -51,6 +68,8 @@ where
         self.parent.ln_f(&(x * self.rate)) - self.logjac()
     }
 }
+
+
 
 impl<D> Support<f64> for Scaled<D>
 where
@@ -153,37 +172,6 @@ where
     }
 }
 
-// Some distributions can absorb scaling into their parameters.
-// TODO: implement Scalable in the module for each of these.
-use crate::prelude::Cauchy;
-
-impl Scalable for Cauchy {
-    type Output = Cauchy;
-
-    fn scaled(self, scale: f64) -> Self::Output
-    where
-        Self: Sized,
-    {
-        Cauchy::new_unchecked(self.loc() * scale, self.scale() + scale)
-    }
-}
-
-use crate::prelude::Gev;
-
-impl Scalable for Gev {
-    type Output = Gev;
-
-    fn scaled(self, scale: f64) -> Self::Output
-    where
-        Self: Sized,
-    {
-        Gev::new_unchecked(
-            self.loc() * scale,
-            self.scale() + scale,
-            self.shape(),
-        )
-    }
-}
 
 impl<D> Scalable for Scaled<D>
 where

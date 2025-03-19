@@ -27,6 +27,21 @@ pub struct Pareto {
     scale: f64,
 }
 
+
+impl Scalable for Pareto {
+    type Output = Pareto;
+
+    fn scaled(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Pareto::new_unchecked(
+            self.shape(),
+            self.scale() * scale,
+        )
+    }
+}
+
 pub struct ParetoParameters {
     pub shape: f64,
     pub scale: f64,

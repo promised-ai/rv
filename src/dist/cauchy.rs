@@ -31,7 +31,6 @@ pub struct Cauchy {
     /// scale, γ, in (0, ∞)
     scale: f64,
 }
-
 pub struct CauchyParameters {
     pub loc: f64,
     pub scale: f64,
@@ -306,6 +305,17 @@ impl Shiftable for Cauchy {
         Self: Sized,
     {
         Cauchy::new_unchecked(self.loc() + dx, self.scale())
+    }
+}
+
+impl Scalable for Cauchy {
+    type Output = Cauchy;
+
+    fn scaled(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Cauchy::new_unchecked(self.loc() * scale, self.scale() + scale)
     }
 }
 

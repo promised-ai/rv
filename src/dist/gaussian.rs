@@ -281,6 +281,14 @@ impl Shiftable for Gaussian {
     }
 }
 
+impl Scalable for Gaussian {
+    type Output = Self;
+
+    fn scaled(self, scale: f64) -> Self {
+        Self::new_unchecked(self.mu() * scale, self.sigma() * scale)
+    }
+}
+
 macro_rules! impl_traits {
     ($kind:ty) => {
         impl HasDensity<$kind> for Gaussian {
@@ -320,7 +328,7 @@ macro_rules! impl_traits {
 
         impl InverseCdf<$kind> for Gaussian {
             fn invcdf(&self, p: f64) -> $kind {
-                assert!(!((p <= 0.0) || (1.0 <= p)), "P out of range");
+                assert!(!((p < 0.0) || (1.0 < p)), "P out of range");
 
                 let x = (self.sigma * SQRT_2)
                     .mul_add(2.0_f64.mul_add(p, -1.0).inv_error(), self.mu);
@@ -456,6 +464,23 @@ mod tests {
     test_shiftable_entropy!(Gaussian::new(2.0, 4.0).unwrap());
     test_shiftable_cdf!(Gaussian::new(2.0, 4.0).unwrap());
     test_shiftable_invcdf!(Gaussian::new(2.0, 4.0).unwrap());
+
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_invcdf;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Gaussian::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(Gaussian::new(2.0, 4.0).unwrap(), median);
+    test_scalable_method!(Gaussian::new(2.0, 4.0).unwrap(), variance);
+    test_scalable_method!(Gaussian::new(2.0, 4.0).unwrap(), skewness);
+    test_scalable_method!(Gaussian::new(2.0, 4.0).unwrap(), kurtosis);
+    test_scalable_density!(Gaussian::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(Gaussian::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(Gaussian::new(2.0, 4.0).unwrap());
+    test_scalable_invcdf!(Gaussian::new(2.0, 4.0).unwrap());
 
     #[test]
     fn new() {

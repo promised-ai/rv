@@ -881,3 +881,181 @@ pub trait Scalable {
     where
         Self: Sized;
 }
+
+
+/// Macro to implement Scalable for a distribution type
+///
+/// This macro automatically implements the Scalable trait for a given type,
+/// using the default Scaled<T> as the Output type.
+#[macro_export]
+macro_rules! impl_scalable {
+    // Simple case for non-generic types
+    ($type:ty) => {
+        use $crate::prelude::Scaled;
+
+        impl Scalable for $type {
+            type Output = Scaled<Self>;
+
+            fn shifted(self, dx: f64) -> Self::Output
+            where
+                Self: Sized,
+            {
+                Scaled::new(self, dx)
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! test_scalable_mean {
+    ($expr:expr) => {
+        use proptest::prelude::*;
+
+        proptest! {
+            #[test]
+            fn scalable_mean(dx in -100.0..100.0) {
+                let dist = $expr;
+                let shifted = dist.clone().shifted(dx);
+                let manual = Scaled::new(dist, dx);
+
+                let mean_shifted = shifted.mean();
+                let mean_manual = manual.mean();
+                match (mean_shifted, mean_manual) {
+                    (Some(mean_shifted), Some(mean_manual)) => {
+                        let mean_shifted: f64 = mean_shifted;
+                        let mean_manual: f64 = mean_manual;
+                        prop_assert!(crate::misc::eq_or_close(mean_shifted, mean_manual, 1e-10), "means differ: {} vs {}", mean_shifted, mean_manual);
+                    }
+                    (None, None) => {},
+                    _ => {
+                        prop_assert!(false, "Shifting should not affect existence of mean");
+                    }
+                }
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! test_scalable_method {
+    // Base case with no extension
+    ($expr:expr, $ident:ident) => {
+        test_scalable_method!($expr, $ident, );
+    };
+
+    // Main implementation
+    ($expr:expr, $ident:ident, $($ext:ident)?) => {
+        paste::paste! {
+            proptest::proptest! {
+                #[test]
+                fn [<scalable_ $ident $(_ $ext)?>](dx in -100.0..100.0) {
+                    let dist = $expr;
+                    let shifted = dist.clone().shifted(dx).$ident();
+                    let manual = $crate::prelude::Scaled::new(dist, dx).$ident();
+
+                    match (shifted, manual) {
+                        (Some(shifted), Some(manual)) => {
+                            let shifted: f64 = shifted;
+                            let manual: f64 = manual;
+                            proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10),
+                                "{}s differ: {} vs {}", stringify!($ident), shifted, manual);
+                        }
+                        (None, None) => {},
+                        _ => {
+                            proptest::prop_assert!(false, "Shifting should not affect existence of {}",
+                                stringify!($ident));
+                        }
+                    }
+                }
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! test_scalable_density {
+    ($expr:expr) => {
+        test_scalable_density!($expr, );
+    };
+
+    ($expr:expr, $($ext:ident)?) => {
+        paste::paste! {
+            proptest::proptest! {
+                #[test]
+                fn [<scalable_density $(_ $ext)?>](y in -100.0..100.0, dx in -100.0..100.0) {
+                    let dist = $expr;
+                    let shifted: f64 = dist.clone().shifted(dx).ln_f(&y);
+                    let manual: f64 = $crate::prelude::Scaled::new(dist, dx).ln_f(&y);
+                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10),
+                        "densities differ: {} vs {}", shifted, manual);
+                }
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! test_scalable_cdf {
+    ($expr:expr) => {
+        test_scalable_cdf!($expr, );
+    };
+
+    ($expr:expr, $($ext:ident)?) => {
+        paste::paste! {
+            proptest::proptest! {
+                #[test]
+                fn [<scalable_cdf $(_ $ext)?>](x in -100.0..100.0, dx in -100.0..100.0) {
+                    let dist = $expr;
+                    let shifted: f64 = dist.clone().shifted(dx).cdf(&x);
+                    let manual: f64 = $crate::prelude::Scaled::new(dist, dx).cdf(&x);
+                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10),
+                        "cdfs differ: {} vs {}", shifted, manual);
+                }
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! test_scalable_invcdf {
+    ($expr:expr) => {
+        test_scalable_invcdf!($expr, );
+    };
+
+    ($expr:expr, $($ext:ident)?) => {
+        paste::paste! {
+            proptest::proptest! {
+                #[test]
+                fn [<scalable_invcdf $(_ $ext)?>](p in 0.0..1.0, dx in -100.0..100.0) {
+                    let dist = $expr;
+                    let shifted: f64 = dist.clone().shifted(dx).invcdf(p);
+                    let manual: f64 = $crate::prelude::Scaled::new(dist, dx).invcdf(p);
+                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10),
+                        "invcdfs differ: {} vs {}", shifted, manual);
+                }
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! test_scalable_entropy {
+    ($expr:expr) => {
+        test_scalable_entropy!($expr, );
+    };
+
+    ($expr:expr, $($ext:ident)?) => {
+        paste::paste! {
+            proptest::proptest! {
+                #[test]
+                fn [<scalable_entropy $(_ $ext)?>](dx in -100.0..100.0) {
+                    let dist = $expr;
+                    let shifted: f64 = dist.clone().shifted(dx).entropy();
+                    let manual: f64 = $crate::prelude::Scaled::new(dist, dx).entropy();
+                    proptest::prop_assert!(crate::misc::eq_or_close(shifted, manual, 1e-10),
+                        "entropies differ: {} vs {}", shifted, manual);
+                }
+            }
+        }
+    };
+}

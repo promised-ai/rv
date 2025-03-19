@@ -31,6 +31,19 @@ pub struct Exponential {
     rate: f64,
 }
 
+impl Scalable for Exponential {
+    type Output = Exponential;
+
+    fn scaled(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Exponential::new_unchecked(
+            self.rate() / scale,
+        )
+    }
+}
+
 impl Default for Exponential {
     fn default() -> Self {
         Self::new_unchecked(1.0)

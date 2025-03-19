@@ -44,6 +44,21 @@ impl Shiftable for Laplace {
     }
 }
 
+
+impl Scalable for Laplace {
+    type Output = Laplace;
+
+    fn scaled(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Laplace::new_unchecked(
+            self.mu() * scale,
+            self.b() + scale,
+        )
+    }
+}
+
 pub struct LaplaceParameters {
     pub mu: f64,
     pub b: f64,

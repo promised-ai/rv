@@ -21,6 +21,21 @@ pub struct LogNormal {
     sigma: f64,
 }
 
+
+impl Scalable for LogNormal {
+    type Output = LogNormal;
+
+    fn scaled(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        LogNormal::new_unchecked(
+            self.mu() + scale.ln(),
+            self.sigma(),
+        )
+    }
+}
+
 pub struct LogNormalParameters {
     pub mu: f64,
     pub sigma: f64,

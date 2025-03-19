@@ -31,6 +31,20 @@ pub struct InvGamma {
 use crate::impl_shiftable;
 impl_shiftable!(InvGamma);
 
+
+impl Scalable for InvGamma {
+    type Output = InvGamma;
+
+    fn scaled(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        InvGamma::new_unchecked(
+            self.shape(),
+            self.scale() * scale,
+        )
+    }
+}
 pub struct InvGammaParameters {
     pub shape: f64,
     pub scale: f64,

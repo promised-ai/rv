@@ -33,6 +33,11 @@ impl<S> ScaledSuffStat<S> {
     pub fn scale(&self) -> f64 {
         self.scale
     }
+
+    /// Get the rate parameter
+    pub fn rate(&self) -> f64 {
+        self.rate
+    }
 }
 
 impl<S> SuffStat<f64> for ScaledSuffStat<S>
