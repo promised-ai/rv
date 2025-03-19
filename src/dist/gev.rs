@@ -80,7 +80,11 @@ impl Scalable for Gev {
     where
         Self: Sized,
     {
-        Gev::new_unchecked(self.loc() * scale, self.scale() * scale, self.shape())
+        Gev::new_unchecked(
+            self.loc() * scale,
+            self.scale() * scale,
+            self.shape(),
+        )
     }
 }
 

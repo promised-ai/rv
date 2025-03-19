@@ -223,7 +223,6 @@ where
         Self: Sized,
     {
         Scaled::new(self.parent, self.scale * scale)
-        
     }
 
     fn scaled_unchecked(self, scale: f64) -> Self::Output
