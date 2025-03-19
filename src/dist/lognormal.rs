@@ -21,8 +21,7 @@ pub struct LogNormal {
     sigma: f64,
 }
 
-use crate::impl_shiftable;
-impl_shiftable!(LogNormal);
+crate::impl_shiftable!(LogNormal);
 
 impl Scalable for LogNormal {
     type Output = LogNormal;

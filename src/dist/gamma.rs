@@ -3,7 +3,6 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::impl_shiftable;
 use crate::misc::ln_gammafn;
 use crate::traits::*;
 use rand::Rng;
@@ -361,7 +360,7 @@ impl fmt::Display for GammaError {
     }
 }
 
-impl_shiftable!(Gamma);
+crate::impl_shiftable!(Gamma);
 
 impl Scalable for Gamma {
     type Output = Gamma;

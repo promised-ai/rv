@@ -734,6 +734,53 @@ macro_rules! impl_shiftable {
     };
 }
 
+
+/// A distribution that can absorb scaling into its parameters
+pub trait Scalable {
+    type Output;
+    type Error;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized;
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized;
+}
+
+/// Macro to implement Scalable for a distribution type
+///
+/// This macro automatically implements the Scalable trait for a given type,
+/// using the default Scaled<T> as the Output type.
+#[macro_export]
+macro_rules! impl_scalable {
+    // Simple case for non-generic types
+    ($type:ty) => {
+        use $crate::prelude::Scaled;
+        use $crate::prelude::ScaledError;
+
+        impl Scalable for $type {
+            type Output = Scaled<Self>;
+            type Error = ScaledError;
+
+            fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+            where
+                Self: Sized,
+            {
+                Scaled::new(self, scale)
+            }
+
+            fn scaled_unchecked(self, scale: f64) -> Self::Output
+            where
+                Self: Sized,
+            {
+                Scaled::new_unchecked(self, scale)
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
 #[macro_export]
@@ -890,51 +937,6 @@ macro_rules! test_shiftable_entropy {
     };
 }
 
-/// A distribution that can absorb scaling into its parameters
-pub trait Scalable {
-    type Output;
-    type Error;
-
-    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
-    where
-        Self: Sized;
-
-    fn scaled_unchecked(self, scale: f64) -> Self::Output
-    where
-        Self: Sized;
-}
-
-/// Macro to implement Scalable for a distribution type
-///
-/// This macro automatically implements the Scalable trait for a given type,
-/// using the default Scaled<T> as the Output type.
-#[macro_export]
-macro_rules! impl_scalable {
-    // Simple case for non-generic types
-    ($type:ty) => {
-        use $crate::prelude::Scaled;
-        use $crate::prelude::ScaledError;
-
-        impl Scalable for $type {
-            type Output = Scaled<Self>;
-            type Error = ScaledError;
-
-            fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
-            where
-                Self: Sized,
-            {
-                Scaled::new(self, scale)
-            }
-
-            fn scaled_unchecked(self, scale: f64) -> Self::Output
-            where
-                Self: Sized,
-            {
-                Scaled::new_unchecked(self, scale)
-            }
-        }
-    };
-}
 
 #[macro_export]
 macro_rules! test_scalable_mean {
