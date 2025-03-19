@@ -1,6 +1,7 @@
 mod bernoulli;
 mod beta;
 mod categorical;
+mod cdvm;
 mod gaussian;
 mod invgamma;
 mod invgaussian;
@@ -14,6 +15,7 @@ mod unit_powerlaw;
 pub use bernoulli::*;
 pub use beta::*;
 pub use categorical::*;
+pub use cdvm::*;
 pub use gaussian::*;
 pub use invgamma::*;
 pub use invgaussian::*;
