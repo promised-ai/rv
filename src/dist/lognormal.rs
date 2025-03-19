@@ -534,4 +534,19 @@ mod tests {
         let lognorm = LogNormal::standard();
         assert::close(lognorm.entropy(), 1.418_938_533_204_672_7, TOL);
     }
+
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_method;
+
+    test_shiftable_method!(LogNormal::new(2.0, 1.0).unwrap(), mean);
+    test_shiftable_method!(LogNormal::new(2.0, 1.0).unwrap(), median);
+    test_shiftable_method!(LogNormal::new(2.0, 1.0).unwrap(), mode);
+    test_shiftable_method!(LogNormal::new(2.0, 1.0).unwrap(), variance);
+    test_shiftable_method!(LogNormal::new(2.0, 1.0).unwrap(), skewness);
+    test_shiftable_method!(LogNormal::new(2.0, 1.0).unwrap(), kurtosis);
+    test_shiftable_density!(LogNormal::new(2.0, 1.0).unwrap());
+    test_shiftable_entropy!(LogNormal::new(2.0, 1.0).unwrap());
+    test_shiftable_cdf!(LogNormal::new(2.0, 1.0).unwrap());
 }

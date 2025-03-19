@@ -493,4 +493,19 @@ mod tests {
     test_shiftable_density!(Laplace::new(2.0, 1.0).unwrap());
     test_shiftable_entropy!(Laplace::new(2.0, 1.0).unwrap());
     test_shiftable_cdf!(Laplace::new(2.0, 1.0).unwrap());
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), mean);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), median);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), mode);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), variance);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), skewness);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), kurtosis);
+    test_scalable_density!(Laplace::new(2.0, 1.0).unwrap());
+    test_scalable_entropy!(Laplace::new(2.0, 1.0).unwrap());
+    test_scalable_cdf!(Laplace::new(2.0, 1.0).unwrap());
 }

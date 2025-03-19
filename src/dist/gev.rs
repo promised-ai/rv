@@ -811,4 +811,32 @@ mod tests {
     test_shiftable_density!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
     test_shiftable_entropy!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
     test_shiftable_cdf!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), mean, a);
+    test_scalable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), median, a);
+    test_scalable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), variance, a);
+    test_scalable_density!(Gev::new(2.0, 4.0, 1.0).unwrap(), a);
+    test_scalable_entropy!(Gev::new(2.0, 4.0, 1.0).unwrap(), a);
+    test_scalable_cdf!(Gev::new(2.0, 4.0, 1.0).unwrap(), a);
+
+    test_scalable_method!(Gev::new(2.0, 4.0, 0.0).unwrap(), mean, b);
+    test_scalable_method!(Gev::new(2.0, 4.0, 0.0).unwrap(), median, b);
+    test_scalable_method!(Gev::new(2.0, 4.0, 0.0).unwrap(), variance, b);
+    test_scalable_density!(Gev::new(2.0, 4.0, 0.0).unwrap(), b);
+    test_scalable_entropy!(Gev::new(2.0, 4.0, 0.0).unwrap(), b);
+    test_scalable_cdf!(Gev::new(2.0, 4.0, 0.0).unwrap(), b);
+
+    test_scalable_method!(Gev::new(2.0, 4.0, -1.0).unwrap(), mean, c);
+    test_scalable_method!(Gev::new(2.0, 4.0, -1.0).unwrap(), median, c);
+    test_scalable_method!(Gev::new(2.0, 4.0, -1.0).unwrap(), variance, c);
+    test_scalable_density!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
+    test_scalable_entropy!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
+    test_scalable_cdf!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
+
+    
 }

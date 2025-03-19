@@ -56,7 +56,9 @@ pub struct Kumaraswamy {
 }
 
 use crate::impl_shiftable;
+use crate::impl_scalable;
 impl_shiftable!(Kumaraswamy);
+impl_scalable!(Kumaraswamy);
 
 pub struct KumaraswamyParameters {
     pub a: f64,

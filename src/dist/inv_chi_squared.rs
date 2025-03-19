@@ -51,7 +51,9 @@ impl PartialEq for InvChiSquared {
 }
 
 use crate::impl_shiftable;
+use crate::impl_scalable;
 impl_shiftable!(InvChiSquared);
+impl_scalable!(InvChiSquared);
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -421,4 +423,18 @@ mod test {
 
         assert!(passes > 0);
     }
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_invcdf;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(InvChiSquared::new(2.0).unwrap(), mean);
+    test_scalable_method!(InvChiSquared::new(2.0).unwrap(), variance);
+    test_scalable_method!(InvChiSquared::new(2.0).unwrap(), skewness);
+    test_scalable_method!(InvChiSquared::new(2.0).unwrap(), kurtosis);
+    test_scalable_density!(InvChiSquared::new(2.0).unwrap());
+    test_scalable_cdf!(InvChiSquared::new(2.0).unwrap());
 }
+
