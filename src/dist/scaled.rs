@@ -237,14 +237,6 @@ where
     }
 }
 
-fn option_close(a: Option<f64>, b: Option<f64>, tol: f64) -> bool {
-    match (a, b) {
-        (Some(a), Some(b)) => (a - b).abs() < tol,
-        (None, None) => true,
-        _ => false,
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
