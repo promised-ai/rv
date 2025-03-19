@@ -22,9 +22,17 @@ pub struct LogNormal {
 }
 
 impl Scalable for LogNormal {
+    type OutputResult = Result<LogNormal, LogNormalError>;
     type Output = LogNormal;
 
-    fn scaled(self, scale: f64) -> Self::Output
+    fn scaled(self, scale: f64) -> Self::OutputResult
+    where
+        Self: Sized,
+    {
+        LogNormal::new(self.mu() + scale.ln(), self.sigma())
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
     where
         Self: Sized,
     {

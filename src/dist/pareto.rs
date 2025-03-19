@@ -28,9 +28,17 @@ pub struct Pareto {
 }
 
 impl Scalable for Pareto {
+    type OutputResult = Result<Pareto, ParetoError>;
     type Output = Pareto;
 
-    fn scaled(self, scale: f64) -> Self::Output
+    fn scaled(self, scale: f64) -> Self::OutputResult
+    where
+        Self: Sized,
+    {
+        Pareto::new(self.shape(), self.scale() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
     where
         Self: Sized,
     {

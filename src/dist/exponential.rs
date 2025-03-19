@@ -32,9 +32,17 @@ pub struct Exponential {
 }
 
 impl Scalable for Exponential {
+    type OutputResult = Result<Exponential, ExponentialError>;
     type Output = Exponential;
 
-    fn scaled(self, scale: f64) -> Self::Output
+    fn scaled(self, scale: f64) -> Self::OutputResult
+    where
+        Self: Sized,
+    {
+        Exponential::new(self.rate() / scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
     where
         Self: Sized,
     {

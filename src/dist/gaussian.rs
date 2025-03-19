@@ -282,9 +282,20 @@ impl Shiftable for Gaussian {
 }
 
 impl Scalable for Gaussian {
+    type OutputResult = Result<Self, GaussianError>;
     type Output = Self;
 
-    fn scaled(self, scale: f64) -> Self {
+    fn scaled(self, scale: f64) -> Self::OutputResult
+    where
+        Self: Sized,
+    {
+        Self::new(self.mu() * scale, self.sigma() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
         Self::new_unchecked(self.mu() * scale, self.sigma() * scale)
     }
 }

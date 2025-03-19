@@ -32,9 +32,17 @@ use crate::impl_shiftable;
 impl_shiftable!(InvGamma);
 
 impl Scalable for InvGamma {
+    type OutputResult = Result<InvGamma, InvGammaError>;
     type Output = InvGamma;
 
-    fn scaled(self, scale: f64) -> Self::Output
+    fn scaled(self, scale: f64) -> Self::OutputResult
+    where
+        Self: Sized,
+    {
+        InvGamma::new(self.shape(), self.scale() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
     where
         Self: Sized,
     {

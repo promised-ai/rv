@@ -215,9 +215,18 @@ impl<D> Scalable for Scaled<D>
 where
     D: Scalable,
 {
+    type OutputResult = Result<Self, ScaledError>;
     type Output = Self;
 
-    fn scaled(self, scale: f64) -> Self::Output
+    fn scaled(self, scale: f64) -> Self::OutputResult
+    where
+        Self: Sized,
+    {
+        Scaled::new(self.parent, self.scale * scale)
+        
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
     where
         Self: Sized,
     {

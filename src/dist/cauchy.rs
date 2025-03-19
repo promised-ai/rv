@@ -309,13 +309,21 @@ impl Shiftable for Cauchy {
 }
 
 impl Scalable for Cauchy {
+    type OutputResult = Result<Cauchy, CauchyError>;
     type Output = Cauchy;
 
-    fn scaled(self, scale: f64) -> Self::Output
+    fn scaled(self, scale: f64) -> Self::OutputResult
     where
         Self: Sized,
     {
-        Cauchy::new_unchecked(self.loc() * scale, self.scale() + scale)
+        Cauchy::new(self.loc() * scale, self.scale() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Cauchy::new_unchecked(self.loc() * scale, self.scale() * scale)
     }
 }
 

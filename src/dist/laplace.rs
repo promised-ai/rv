@@ -45,13 +45,21 @@ impl Shiftable for Laplace {
 }
 
 impl Scalable for Laplace {
+    type OutputResult = Result<Laplace, LaplaceError>;
     type Output = Laplace;
 
-    fn scaled(self, scale: f64) -> Self::Output
+    fn scaled(self, scale: f64) -> Self::OutputResult
     where
         Self: Sized,
     {
-        Laplace::new_unchecked(self.mu() * scale, self.b() + scale)
+        Laplace::new(self.mu() * scale, self.b() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Laplace::new_unchecked(self.mu() * scale, self.b() * scale)
     }
 }
 

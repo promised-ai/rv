@@ -66,17 +66,21 @@ impl Shiftable for Gev {
 }
 
 impl Scalable for Gev {
+    type OutputResult = Result<Gev, GevError>;
     type Output = Gev;
 
-    fn scaled(self, scale: f64) -> Self::Output
+    fn scaled(self, scale: f64) -> Self::OutputResult
     where
         Self: Sized,
     {
-        Gev::new_unchecked(
-            self.loc() * scale,
-            self.scale() + scale,
-            self.shape(),
-        )
+        Gev::new(self.loc() * scale, self.scale() * scale, self.shape())
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Gev::new_unchecked(self.loc() * scale, self.scale() * scale, self.shape())
     }
 }
 
