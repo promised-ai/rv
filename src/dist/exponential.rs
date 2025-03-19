@@ -31,6 +31,8 @@ pub struct Exponential {
     rate: f64,
 }
 
+crate::impl_shiftable!(Exponential);
+
 impl Scalable for Exponential {
     type Output = Exponential;
     type Error = ExponentialError;
