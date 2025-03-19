@@ -194,7 +194,6 @@ macro_rules! impl_traits {
     };
 }
 
-
 crate::impl_shiftable!(ChiSquared);
 crate::impl_scalable!(ChiSquared);
 
