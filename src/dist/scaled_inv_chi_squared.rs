@@ -47,14 +47,14 @@ impl Scalable for ScaledInvChiSquared {
     where
         Self: Sized,
     {
-        ScaledInvChiSquared::new(self.v(), self.t2() * scale * scale)
+        ScaledInvChiSquared::new(self.v(), self.t2() * scale)
     }
 
     fn scaled_unchecked(self, scale: f64) -> Self::Output
     where
         Self: Sized,
     {
-        ScaledInvChiSquared::new_unchecked(self.v(), self.t2() * scale * scale)
+        ScaledInvChiSquared::new_unchecked(self.v(), self.t2() * scale)
     }
 }
 
@@ -334,8 +334,13 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for ScaledInvChiSquared {
             fn cdf(&self, x: &$kind) -> f64 {
-                let x64 = f64::from(*x);
-                1.0 - (self.v * self.t2 / (2.0 * x64)).inc_gamma(self.v / 2.0)
+                if *x <= 0.0 {
+                    0.0
+                } else {
+                    let x64 = f64::from(*x);
+                    1.0 - (self.v * self.t2 / (2.0 * x64))
+                        .inc_gamma(self.v / 2.0)
+                }
             }
         }
     };
