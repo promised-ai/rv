@@ -875,13 +875,17 @@ macro_rules! test_shiftable_entropy {
 
 /// A distribution that can absorb scaling into its parameters
 pub trait Scalable {
+    type OutputResult;
     type Output;
 
-    fn scaled(self, scale: f64) -> Self::Output
+    fn scaled(self, scale: f64) -> Self::OutputResult
+    where
+        Self: Sized;
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
     where
         Self: Sized;
 }
-
 
 /// Macro to implement Scalable for a distribution type
 ///
@@ -894,15 +898,23 @@ macro_rules! impl_scalable {
         use $crate::prelude::Scaled;
 
         impl Scalable for $type {
+            type OutputResult = Result<Scaled<Self>, ScaledError>;
             type Output = Scaled<Self>;
 
-            fn scaled(self, dx: f64) -> Self::Output
+            fn scaled(self, scale: f64) -> Self::OutputResult
             where
                 Self: Sized,
             {
-                Scaled::new(self, dx)
+                Scaled::new(self, scale)
             }
-        }
+
+            fn scaled_unchecked(self, scale: f64) -> Self::Output
+            where
+                Self: Sized,
+            {
+                Scaled::new_unchecked(self, scale)
+            }
+        };
     };
 }
 
@@ -913,10 +925,10 @@ macro_rules! test_scalable_mean {
 
         proptest! {
             #[test]
-            fn scalable_mean(dx in -100.0..100.0) {
+            fn scalable_mean(scale in -100.0..100.0) {
                 let dist = $expr;
-                let scaled = dist.clone().scaled(dx);
-                let manual = Scaled::new(dist, dx);
+                let scaled = dist.clone().scaled(scale);
+                let manual = Scaled::new(dist, scale);
 
                 let mean_scaled = scaled.mean();
                 let mean_manual = manual.mean();
@@ -948,10 +960,10 @@ macro_rules! test_scalable_method {
         paste::paste! {
             proptest::proptest! {
                 #[test]
-                fn [<scalable_ $ident $(_ $ext)?>](dx in -100.0..100.0) {
+                fn [<scalable_ $ident $(_ $ext)?>](scale in -100.0..100.0) {
                     let dist = $expr;
-                    let scaled = dist.clone().scaled(dx).$ident();
-                    let manual = $crate::prelude::Scaled::new(dist, dx).$ident();
+                    let scaled = dist.clone().scaled(scale).$ident();
+                    let manual = $crate::prelude::Scaled::new(dist, scale).$ident();
 
                     match (scaled, manual) {
                         (Some(scaled), Some(manual)) => {
@@ -982,10 +994,10 @@ macro_rules! test_scalable_density {
         paste::paste! {
             proptest::proptest! {
                 #[test]
-                fn [<scalable_density $(_ $ext)?>](y in -100.0..100.0, dx in -100.0..100.0) {
+                fn [<scalable_density $(_ $ext)?>](y in -100.0..100.0, scale in -100.0..100.0) {
                     let dist = $expr;
-                    let scaled: f64 = dist.clone().scaled(dx).ln_f(&y);
-                    let manual: f64 = $crate::prelude::Scaled::new(dist, dx).ln_f(&y);
+                    let scaled: f64 = dist.clone().scaled(scale).ln_f(&y);
+                    let manual: f64 = $crate::prelude::Scaled::new(dist, scale).ln_f(&y);
                     proptest::prop_assert!(crate::misc::eq_or_close(scaled, manual, 1e-10),
                         "densities differ: {} vs {}", scaled, manual);
                 }
@@ -1004,10 +1016,10 @@ macro_rules! test_scalable_cdf {
         paste::paste! {
             proptest::proptest! {
                 #[test]
-                fn [<scalable_cdf $(_ $ext)?>](x in -100.0..100.0, dx in -100.0..100.0) {
+                fn [<scalable_cdf $(_ $ext)?>](x in -100.0..100.0, scale in -100.0..100.0) {
                     let dist = $expr;
-                    let scaled: f64 = dist.clone().scaled(dx).cdf(&x);
-                    let manual: f64 = $crate::prelude::Scaled::new(dist, dx).cdf(&x);
+                    let scaled: f64 = dist.clone().scaled(scale).cdf(&x);
+                    let manual: f64 = $crate::prelude::Scaled::new(dist, scale).cdf(&x);
                     proptest::prop_assert!(crate::misc::eq_or_close(scaled, manual, 1e-10),
                         "cdfs differ: {} vs {}", scaled, manual);
                 }
@@ -1026,10 +1038,10 @@ macro_rules! test_scalable_invcdf {
         paste::paste! {
             proptest::proptest! {
                 #[test]
-                fn [<scalable_invcdf $(_ $ext)?>](p in 0.0..1.0, dx in -100.0..100.0) {
+                fn [<scalable_invcdf $(_ $ext)?>](p in 0.0..1.0, scale in -100.0..100.0) {
                     let dist = $expr;
-                    let scaled: f64 = dist.clone().scaled(dx).invcdf(p);
-                    let manual: f64 = $crate::prelude::Scaled::new(dist, dx).invcdf(p);
+                    let scaled: f64 = dist.clone().scaled(scale).invcdf(p);
+                    let manual: f64 = $crate::prelude::Scaled::new(dist, scale).invcdf(p);
                     proptest::prop_assert!(crate::misc::eq_or_close(scaled, manual, 1e-10),
                         "invcdfs differ: {} vs {}", scaled, manual);
                 }
@@ -1048,10 +1060,10 @@ macro_rules! test_scalable_entropy {
         paste::paste! {
             proptest::proptest! {
                 #[test]
-                fn [<scalable_entropy $(_ $ext)?>](dx in -100.0..100.0) {
+                fn [<scalable_entropy $(_ $ext)?>](scale in -100.0..100.0) {
                     let dist = $expr;
-                    let scaled: f64 = dist.clone().scaled(dx).entropy();
-                    let manual: f64 = $crate::prelude::Scaled::new(dist, dx).entropy();
+                    let scaled: f64 = dist.clone().scaled(scale).entropy();
+                    let manual: f64 = $crate::prelude::Scaled::new(dist, scale).entropy();
                     proptest::prop_assert!(crate::misc::eq_or_close(scaled, manual, 1e-10),
                         "entropies differ: {} vs {}", scaled, manual);
                 }

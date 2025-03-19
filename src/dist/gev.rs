@@ -65,7 +65,6 @@ impl Shiftable for Gev {
     }
 }
 
-
 impl Scalable for Gev {
     type Output = Gev;
 

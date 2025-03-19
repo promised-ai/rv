@@ -31,11 +31,11 @@ pub enum ScaledError {
 impl<D> Scaled<D> {
     /// Creates a new scaled distribution with the given parent distribution and
     /// scale factor.
-    /// 
+    ///
     /// # Errors
     /// Returns `ScaledError::InvalidScale` if the scale parameter is not a
     /// normal number (i.e., if it's zero, infinite, or NaN).
-    /// 
+    ///
     /// Returns `ScaledError::NegativeScale` if the scale parameter is not
     /// positive. We could easily allow scale to be negative, which would give
     /// us "reflected" distributions. But this breaks when we try to allow some
@@ -57,7 +57,7 @@ impl<D> Scaled<D> {
 
     /// Creates a new scaled distribution with the given parent distribution and
     /// scale factor, without checking the scale parameter.
-    /// 
+    ///
     /// # Safety
     /// The scale parameter must be a positive normal (finite, non-zero,
     /// non-subnormal) number.
@@ -84,7 +84,7 @@ where
     type Stat = ScaledSuffStat<D::Stat>;
 
     fn empty_suffstat(&self) -> Self::Stat {
-        ScaledSuffStat ::new(self.parent.empty_suffstat(), self.scale)
+        ScaledSuffStat::new(self.parent.empty_suffstat(), self.scale)
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
@@ -109,8 +109,6 @@ where
         self.parent.ln_f(&(x * self.rate)) - self.logjac()
     }
 }
-
-
 
 impl<D> Support<f64> for Scaled<D>
 where
@@ -212,7 +210,6 @@ where
         self.parent.entropy() + self.logjac()
     }
 }
-
 
 impl<D> Scalable for Scaled<D>
 where

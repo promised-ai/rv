@@ -39,7 +39,6 @@ pub struct ScaledInvChiSquared {
 use crate::impl_shiftable;
 impl_shiftable!(ScaledInvChiSquared);
 
-
 impl Scalable for ScaledInvChiSquared {
     type Output = ScaledInvChiSquared;
 
@@ -47,10 +46,7 @@ impl Scalable for ScaledInvChiSquared {
     where
         Self: Sized,
     {
-        ScaledInvChiSquared::new_unchecked(
-            self.v(),
-            self.t2() * scale * scale,
-        )
+        ScaledInvChiSquared::new_unchecked(self.v(), self.t2() * scale * scale)
     }
 }
 

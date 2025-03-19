@@ -465,7 +465,6 @@ mod tests {
     test_shiftable_cdf!(Gaussian::new(2.0, 4.0).unwrap());
     test_shiftable_invcdf!(Gaussian::new(2.0, 4.0).unwrap());
 
-
     use crate::test_scalable_cdf;
     use crate::test_scalable_density;
     use crate::test_scalable_entropy;

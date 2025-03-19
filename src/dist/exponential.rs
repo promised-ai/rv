@@ -38,9 +38,7 @@ impl Scalable for Exponential {
     where
         Self: Sized,
     {
-        Exponential::new_unchecked(
-            self.rate() / scale,
-        )
+        Exponential::new_unchecked(self.rate() / scale)
     }
 }
 

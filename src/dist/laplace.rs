@@ -44,7 +44,6 @@ impl Shiftable for Laplace {
     }
 }
 
-
 impl Scalable for Laplace {
     type Output = Laplace;
 
@@ -52,10 +51,7 @@ impl Scalable for Laplace {
     where
         Self: Sized,
     {
-        Laplace::new_unchecked(
-            self.mu() * scale,
-            self.b() + scale,
-        )
+        Laplace::new_unchecked(self.mu() * scale, self.b() + scale)
     }
 }
 

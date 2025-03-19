@@ -21,7 +21,6 @@ pub struct LogNormal {
     sigma: f64,
 }
 
-
 impl Scalable for LogNormal {
     type Output = LogNormal;
 
@@ -29,10 +28,7 @@ impl Scalable for LogNormal {
     where
         Self: Sized,
     {
-        LogNormal::new_unchecked(
-            self.mu() + scale.ln(),
-            self.sigma(),
-        )
+        LogNormal::new_unchecked(self.mu() + scale.ln(), self.sigma())
     }
 }
 
