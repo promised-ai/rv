@@ -53,11 +53,8 @@ impl Parameterized for UnitPowerLaw {
     }
 }
 
-use crate::impl_shiftable;
-impl_shiftable!(UnitPowerLaw);
-
-use crate::impl_scaleable;
-impl_scaleable!(UnitPowerLaw);
+crate::impl_shiftable!(UnitPowerLaw);
+crate::impl_scalable!(UnitPowerLaw);
 
 impl PartialEq for UnitPowerLaw {
     fn eq(&self, other: &UnitPowerLaw) -> bool {
