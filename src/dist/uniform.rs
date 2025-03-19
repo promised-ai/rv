@@ -39,10 +39,10 @@ pub struct Uniform {
 }
 
 impl Shiftable for Uniform {
-    type OutputResult = Result<Uniform, UniformError>;
     type Output = Uniform;
+    type Error = UniformError;
 
-    fn shifted(self, dx: f64) -> Self::OutputResult
+    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {

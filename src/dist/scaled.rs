@@ -19,7 +19,6 @@ pub struct Scaled<D> {
     logjac: OnceLock<f64>,
 }
 
-/// Error type for scaled distribution creation
 #[derive(Debug, Clone, PartialEq)]
 pub enum ScaledError {
     /// The scale parameter must be a normal (finite, non-zero, non-subnormal) number
@@ -215,10 +214,10 @@ impl<D> Scalable for Scaled<D>
 where
     D: Scalable,
 {
-    type OutputResult = Result<Self, ScaledError>;
     type Output = Self;
+    type Error = ScaledError;
 
-    fn scaled(self, scale: f64) -> Self::OutputResult
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {

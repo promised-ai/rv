@@ -34,10 +34,10 @@ pub struct Laplace {
 }
 
 impl Shiftable for Laplace {
-    type OutputResult = Result<Laplace, LaplaceError>       ;
     type Output = Laplace;
+    type Error = LaplaceError;
 
-    fn shifted(self, dx: f64) -> Self::OutputResult
+    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {
@@ -53,10 +53,10 @@ impl Shiftable for Laplace {
 }
 
 impl Scalable for Laplace {
-    type OutputResult = Result<Laplace, LaplaceError>;
     type Output = Laplace;
+    type Error = LaplaceError;
 
-    fn scaled(self, scale: f64) -> Self::OutputResult
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {

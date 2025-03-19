@@ -55,10 +55,10 @@ impl Parameterized for Gev {
 }
 
 impl Shiftable for Gev {
-    type OutputResult = Result<Gev, GevError>;
     type Output = Gev;
+    type Error = GevError;
 
-    fn shifted(self, dx: f64) -> Self::OutputResult
+    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {
@@ -74,10 +74,10 @@ impl Shiftable for Gev {
 }
 
 impl Scalable for Gev {
-    type OutputResult = Result<Gev, GevError>;
     type Output = Gev;
+    type Error = GevError;
 
-    fn scaled(self, scale: f64) -> Self::OutputResult
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {

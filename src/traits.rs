@@ -690,10 +690,10 @@ pub trait SuffStat<X> {
 
 /// Trait for distributions that can be shifted by a constant value
 pub trait Shiftable {
-    type OutputResult;
     type Output;
+    type Error;
 
-    fn shifted(self, dx: f64) -> Self::OutputResult
+    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized;
 
@@ -714,10 +714,10 @@ macro_rules! impl_shiftable {
         use $crate::prelude::ShiftedError;
         
         impl Shiftable for $type {
-            type OutputResult = Result<Shifted<Self>, ShiftedError>;
             type Output = Shifted<Self>;
+            type Error = ShiftedError;
 
-            fn shifted(self, dx: f64) -> Self::OutputResult
+            fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
             where
                 Self: Sized,
             {
@@ -890,10 +890,10 @@ macro_rules! test_shiftable_entropy {
 
 /// A distribution that can absorb scaling into its parameters
 pub trait Scalable {
-    type OutputResult;
     type Output;
+    type Error;
 
-    fn scaled(self, scale: f64) -> Self::OutputResult
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized;
 
@@ -913,10 +913,10 @@ macro_rules! impl_scalable {
         use $crate::prelude::Scaled;
 
         impl Scalable for $type {
-            type OutputResult = Result<Scaled<Self>, ScaledError>;
+            type Error = Result<Scaled<Self>, ScaledError>;
             type Output = Scaled<Self>;
 
-            fn scaled(self, scale: f64) -> Self::OutputResult
+            fn scaled(self, scale: f64) -> Result
             where
                 Self: Sized,
             {

@@ -40,10 +40,10 @@ use crate::impl_shiftable;
 impl_shiftable!(ScaledInvChiSquared);
 
 impl Scalable for ScaledInvChiSquared {
-    type OutputResult = Result<ScaledInvChiSquared, ScaledInvChiSquaredError>;
     type Output = ScaledInvChiSquared;
+    type Error = ScaledInvChiSquaredError;
 
-    fn scaled(self, scale: f64) -> Self::OutputResult
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {

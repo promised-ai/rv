@@ -177,10 +177,10 @@ impl<D> Shiftable for Shifted<D>
 where
     D: Shiftable,
 {
-    type OutputResult = Result<Self, ShiftedError>;
     type Output = Self;
+    type Error = ShiftedError;
 
-    fn shifted(self, dx: f64) -> Self::OutputResult
+    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {

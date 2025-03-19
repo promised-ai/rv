@@ -32,10 +32,10 @@ use crate::impl_shiftable;
 impl_shiftable!(InvGamma);
 
 impl Scalable for InvGamma {
-    type OutputResult = Result<InvGamma, InvGammaError>;
     type Output = InvGamma;
+    type Error = InvGammaError;
 
-    fn scaled(self, scale: f64) -> Self::OutputResult
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {

@@ -28,10 +28,10 @@ pub struct Pareto {
 }
 
 impl Scalable for Pareto {
-    type OutputResult = Result<Pareto, ParetoError>;
     type Output = Pareto;
+    type Error = ParetoError;
 
-    fn scaled(self, scale: f64) -> Self::OutputResult
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {

@@ -32,10 +32,10 @@ pub struct Exponential {
 }
 
 impl Scalable for Exponential {
-    type OutputResult = Result<Exponential, ExponentialError>;
     type Output = Exponential;
+    type Error = ExponentialError;
 
-    fn scaled(self, scale: f64) -> Self::OutputResult
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {

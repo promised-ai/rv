@@ -274,10 +274,10 @@ impl From<&Gaussian> for String {
 impl_display!(Gaussian);
 
 impl Shiftable for Gaussian {
-    type OutputResult = Result<Self, GaussianError>;
     type Output = Self;
+    type Error = GaussianError;
 
-    fn shifted(self, dx: f64) -> Self::OutputResult
+    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {
@@ -293,10 +293,10 @@ impl Shiftable for Gaussian {
 }
 
 impl Scalable for Gaussian {
-    type OutputResult = Result<Self, GaussianError>;
     type Output = Self;
+    type Error = GaussianError;
 
-    fn scaled(self, scale: f64) -> Self::OutputResult
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {
