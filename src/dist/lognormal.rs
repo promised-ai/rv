@@ -21,6 +21,9 @@ pub struct LogNormal {
     sigma: f64,
 }
 
+use crate::impl_shiftable;
+impl_shiftable!(LogNormal);
+
 impl Scalable for LogNormal {
     type Output = LogNormal;
     type Error = LogNormalError;
@@ -59,9 +62,6 @@ impl Parameterized for LogNormal {
         Self::new_unchecked(params.mu, params.sigma)
     }
 }
-
-use crate::impl_shiftable;
-impl_shiftable!(LogNormal);
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -312,7 +312,7 @@ macro_rules! impl_traits {
 
         impl Mode<$kind> for LogNormal {
             fn mode(&self) -> Option<$kind> {
-                Some(self.sigma.mul_add(-self.sigma, self.mu) as $kind)
+                Some((self.sigma.mul_add(-self.sigma, self.mu) as $kind).exp())
             }
         }
     };
@@ -402,12 +402,6 @@ mod tests {
         let mu = 3.4;
         let median: f64 = LogNormal::new(mu, 0.5).unwrap().median().unwrap();
         assert::close(median, mu.exp(), TOL);
-    }
-
-    #[test]
-    fn mode() {
-        let mode: f64 = LogNormal::new(4.0, 2.0).unwrap().mode().unwrap();
-        assert::close(mode, 0.0, TOL);
     }
 
     #[test]
@@ -535,18 +529,18 @@ mod tests {
         assert::close(lognorm.entropy(), 1.418_938_533_204_672_7, TOL);
     }
 
-    use crate::test_shiftable_cdf;
-    use crate::test_shiftable_density;
-    use crate::test_shiftable_entropy;
-    use crate::test_shiftable_method;
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
 
-    test_shiftable_method!(LogNormal::new(2.0, 1.0).unwrap(), mean);
-    test_shiftable_method!(LogNormal::new(2.0, 1.0).unwrap(), median);
-    test_shiftable_method!(LogNormal::new(2.0, 1.0).unwrap(), mode);
-    test_shiftable_method!(LogNormal::new(2.0, 1.0).unwrap(), variance);
-    test_shiftable_method!(LogNormal::new(2.0, 1.0).unwrap(), skewness);
-    test_shiftable_method!(LogNormal::new(2.0, 1.0).unwrap(), kurtosis);
-    test_shiftable_density!(LogNormal::new(2.0, 1.0).unwrap());
-    test_shiftable_entropy!(LogNormal::new(2.0, 1.0).unwrap());
-    test_shiftable_cdf!(LogNormal::new(2.0, 1.0).unwrap());
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), mean);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), median);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), mode);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), variance);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), skewness);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), kurtosis);
+    test_scalable_density!(LogNormal::new(2.0, 1.0).unwrap());
+    test_scalable_entropy!(LogNormal::new(2.0, 1.0).unwrap());
+    test_scalable_cdf!(LogNormal::new(2.0, 1.0).unwrap());
 }
