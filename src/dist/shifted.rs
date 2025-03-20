@@ -1,6 +1,6 @@
 use crate::data::ShiftedSuffStat;
-use crate::traits::*;
 use crate::prelude::Scaled;
+use crate::traits::*;
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
