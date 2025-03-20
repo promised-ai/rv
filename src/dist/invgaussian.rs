@@ -33,6 +33,7 @@ pub struct InvGaussianParameters {
 }
 
 crate::impl_shiftable!(InvGaussian);
+crate::impl_scalable!(InvGaussian);
 
 impl Parameterized for InvGaussian {
     type Parameters = InvGaussianParameters;
