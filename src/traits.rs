@@ -734,7 +734,6 @@ macro_rules! impl_shiftable {
     };
 }
 
-
 /// A distribution that can absorb scaling into its parameters
 pub trait Scalable {
     type Output;
@@ -783,8 +782,8 @@ macro_rules! impl_scalable {
 
 #[cfg(test)]
 mod test {
-#[macro_export]
-macro_rules! test_shiftable_mean {
+    #[macro_export]
+    macro_rules! test_shiftable_mean {
     ($expr:expr) => {
         use proptest::prelude::*;
 
@@ -813,8 +812,8 @@ macro_rules! test_shiftable_mean {
     };
 }
 
-#[macro_export]
-macro_rules! test_shiftable_method {
+    #[macro_export]
+    macro_rules! test_shiftable_method {
     // Base case with no extension
     ($expr:expr, $ident:ident) => {
         test_shiftable_method!($expr, $ident, );
@@ -849,8 +848,8 @@ macro_rules! test_shiftable_method {
     };
 }
 
-#[macro_export]
-macro_rules! test_shiftable_density {
+    #[macro_export]
+    macro_rules! test_shiftable_density {
     ($expr:expr) => {
         test_shiftable_density!($expr, );
     };
@@ -871,8 +870,8 @@ macro_rules! test_shiftable_density {
     };
 }
 
-#[macro_export]
-macro_rules! test_shiftable_cdf {
+    #[macro_export]
+    macro_rules! test_shiftable_cdf {
     ($expr:expr) => {
         test_shiftable_cdf!($expr, );
     };
@@ -893,8 +892,8 @@ macro_rules! test_shiftable_cdf {
     };
 }
 
-#[macro_export]
-macro_rules! test_shiftable_invcdf {
+    #[macro_export]
+    macro_rules! test_shiftable_invcdf {
     ($expr:expr) => {
         test_shiftable_invcdf!($expr, );
     };
@@ -915,8 +914,8 @@ macro_rules! test_shiftable_invcdf {
     };
 }
 
-#[macro_export]
-macro_rules! test_shiftable_entropy {
+    #[macro_export]
+    macro_rules! test_shiftable_entropy {
     ($expr:expr) => {
         test_shiftable_entropy!($expr, );
     };
@@ -937,9 +936,8 @@ macro_rules! test_shiftable_entropy {
     };
 }
 
-
-#[macro_export]
-macro_rules! test_scalable_mean {
+    #[macro_export]
+    macro_rules! test_scalable_mean {
     ($expr:expr) => {
         use proptest::prelude::*;
 
@@ -968,8 +966,8 @@ macro_rules! test_scalable_mean {
     };
 }
 
-#[macro_export]
-macro_rules! test_scalable_method {
+    #[macro_export]
+    macro_rules! test_scalable_method {
     // Base case with no extension
     ($expr:expr, $ident:ident) => {
         test_scalable_method!($expr, $ident, );
@@ -1004,8 +1002,8 @@ macro_rules! test_scalable_method {
     };
 }
 
-#[macro_export]
-macro_rules! test_scalable_density {
+    #[macro_export]
+    macro_rules! test_scalable_density {
     ($expr:expr) => {
         test_scalable_density!($expr, );
     };
@@ -1026,8 +1024,8 @@ macro_rules! test_scalable_density {
     };
 }
 
-#[macro_export]
-macro_rules! test_scalable_cdf {
+    #[macro_export]
+    macro_rules! test_scalable_cdf {
     ($expr:expr) => {
         test_scalable_cdf!($expr, );
     };
@@ -1048,8 +1046,8 @@ macro_rules! test_scalable_cdf {
     };
 }
 
-#[macro_export]
-macro_rules! test_scalable_invcdf {
+    #[macro_export]
+    macro_rules! test_scalable_invcdf {
     ($expr:expr) => {
         test_scalable_invcdf!($expr, );
     };
@@ -1070,8 +1068,8 @@ macro_rules! test_scalable_invcdf {
     };
 }
 
-#[macro_export]
-macro_rules! test_scalable_entropy {
+    #[macro_export]
+    macro_rules! test_scalable_entropy {
     ($expr:expr) => {
         test_scalable_entropy!($expr, );
     };
