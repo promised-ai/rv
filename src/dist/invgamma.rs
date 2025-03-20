@@ -279,7 +279,11 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for InvGamma {
             fn cdf(&self, x: &$kind) -> f64 {
-                1.0 - (self.scale / f64::from(*x)).inc_gamma(self.shape)
+                if *x <= 0.0 {
+                    0.0
+                } else {
+                    1.0 - (self.scale / f64::from(*x)).inc_gamma(self.shape)
+                }
             }
         }
 
