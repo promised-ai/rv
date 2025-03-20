@@ -623,4 +623,18 @@ mod tests {
 
         assert::close(ln_f_base, ln_f_stat, 1e-12);
     }
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(InvGamma::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(InvGamma::new(2.0, 4.0).unwrap(), variance);
+    test_scalable_method!(InvGamma::new(2.0, 4.0).unwrap(), skewness);
+    test_scalable_method!(InvGamma::new(2.0, 4.0).unwrap(), kurtosis);
+    test_scalable_density!(InvGamma::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(InvGamma::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(InvGamma::new(2.0, 4.0).unwrap());
+
 }
