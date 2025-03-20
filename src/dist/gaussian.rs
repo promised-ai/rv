@@ -277,18 +277,18 @@ impl Shiftable for Gaussian {
     type Output = Self;
     type Error = GaussianError;
 
-    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {
-        Self::new(self.mu() + dx, self.sigma())
+        Self::new(self.mu() + shift, self.sigma())
     }
 
-    fn shifted_unchecked(self, dx: f64) -> Self::Output
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
     where
         Self: Sized,
     {
-        Self::new_unchecked(self.mu() + dx, self.sigma())
+        Self::new_unchecked(self.mu() + shift, self.sigma())
     }
 }
 

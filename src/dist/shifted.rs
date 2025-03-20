@@ -1,16 +1,17 @@
 use crate::data::ShiftedSuffStat;
 use crate::traits::*;
+use crate::prelude::Scaled;
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-/// A wrapper for distributions that adds a dx parameter
+/// A wrapper for distributions that adds a shift parameter
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Shifted<D> {
     parent: D,
-    dx: f64,
+    shift: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -20,16 +21,16 @@ pub enum ShiftedError {
 }
 
 impl<D> Shifted<D> {
-    pub fn new(parent: D, dx: f64) -> Result<Self, ShiftedError> {
-        if !dx.is_finite() {
-            Err(ShiftedError::NonFiniteShift(dx))
+    pub fn new(parent: D, shift: f64) -> Result<Self, ShiftedError> {
+        if !shift.is_finite() {
+            Err(ShiftedError::NonFiniteShift(shift))
         } else {
-            Ok(Shifted { parent, dx })
+            Ok(Shifted { parent, shift })
         }
     }
 
-    pub fn new_unchecked(parent: D, dx: f64) -> Self {
-        Shifted { parent, dx }
+    pub fn new_unchecked(parent: D, shift: f64) -> Self {
+        Shifted { parent, shift }
     }
 }
 
@@ -38,7 +39,7 @@ where
     D: Sampleable<f64>,
 {
     fn draw<R: Rng>(&self, rng: &mut R) -> f64 {
-        self.parent.draw(rng) + self.dx
+        self.parent.draw(rng) + self.shift
     }
 }
 
@@ -47,11 +48,11 @@ where
     D: HasDensity<f64>,
 {
     fn f(&self, x: &f64) -> f64 {
-        self.parent.f(&(x - self.dx))
+        self.parent.f(&(x - self.shift))
     }
 
     fn ln_f(&self, x: &f64) -> f64 {
-        self.parent.ln_f(&(x - self.dx))
+        self.parent.ln_f(&(x - self.shift))
     }
 }
 
@@ -60,7 +61,7 @@ where
     D: Support<f64>,
 {
     fn supports(&self, x: &f64) -> bool {
-        self.parent.supports(&(x - self.dx))
+        self.parent.supports(&(x - self.shift))
     }
 }
 
@@ -71,11 +72,11 @@ where
     D: Cdf<f64>,
 {
     fn cdf(&self, x: &f64) -> f64 {
-        self.parent.cdf(&(x - self.dx))
+        self.parent.cdf(&(x - self.shift))
     }
 
     fn sf(&self, x: &f64) -> f64 {
-        self.parent.sf(&(x - self.dx))
+        self.parent.sf(&(x - self.shift))
     }
 }
 
@@ -84,12 +85,12 @@ where
     D: InverseCdf<f64>,
 {
     fn invcdf(&self, p: f64) -> f64 {
-        self.parent.invcdf(p) + self.dx
+        self.parent.invcdf(p) + self.shift
     }
 
     fn interval(&self, p: f64) -> (f64, f64) {
         let (l, r) = self.parent.interval(p);
-        (l + self.dx, r + self.dx)
+        (l + self.shift, r + self.shift)
     }
 }
 
@@ -116,7 +117,7 @@ where
     D: Mean<f64>,
 {
     fn mean(&self) -> Option<f64> {
-        self.parent.mean().map(|m| m + self.dx)
+        self.parent.mean().map(|m| m + self.shift)
     }
 }
 
@@ -125,7 +126,7 @@ where
     D: Median<f64>,
 {
     fn median(&self) -> Option<f64> {
-        self.parent.median().map(|m| m + self.dx)
+        self.parent.median().map(|m| m + self.shift)
     }
 }
 
@@ -134,7 +135,7 @@ where
     D: Mode<f64>,
 {
     fn mode(&self) -> Option<f64> {
-        self.parent.mode().map(|m| m + self.dx)
+        self.parent.mode().map(|m| m + self.shift)
     }
 }
 
@@ -163,7 +164,7 @@ where
     type Stat = ShiftedSuffStat<D::Stat>;
 
     fn empty_suffstat(&self) -> Self::Stat {
-        ShiftedSuffStat::new(self.parent.empty_suffstat(), self.dx)
+        ShiftedSuffStat::new(self.parent.empty_suffstat(), self.shift)
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
@@ -178,18 +179,18 @@ where
     type Output = Self;
     type Error = ShiftedError;
 
-    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {
-        Shifted::new(self.parent, self.dx + dx)
+        Shifted::new(self.parent, self.shift + shift)
     }
 
-    fn shifted_unchecked(self, dx: f64) -> Self::Output
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
     where
         Self: Sized,
     {
-        Shifted::new_unchecked(self.parent, self.dx + dx)
+        Shifted::new_unchecked(self.parent, self.shift + shift)
     }
 }
 

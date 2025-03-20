@@ -693,11 +693,11 @@ pub trait Shiftable {
     type Output;
     type Error;
 
-    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized;
 
-    fn shifted_unchecked(self, dx: f64) -> Self::Output
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
     where
         Self: Sized;
 }
@@ -717,18 +717,18 @@ macro_rules! impl_shiftable {
             type Output = Shifted<Self>;
             type Error = ShiftedError;
 
-            fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
+            fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
             where
                 Self: Sized,
             {
-                Shifted::new(self, dx)
+                Shifted::new(self, shift)
             }
 
-            fn shifted_unchecked(self, dx: f64) -> Self::Output
+            fn shifted_unchecked(self, shift: f64) -> Self::Output
             where
                 Self: Sized,
             {
-                Shifted::new_unchecked(self, dx)
+                Shifted::new_unchecked(self, shift)
             }
         }
     };
@@ -789,10 +789,10 @@ mod test {
 
         proptest! {
             #[test]
-            fn shiftable_mean(dx in -100.0..100.0) {
+            fn shiftable_mean(shift in -100.0..100.0) {
                 let dist = $expr;
-                let shifted = dist.clone().shifted_unchecked(dx);
-                let manual = Shifted::new_unchecked(dist, dx);
+                let shifted = dist.clone().shifted_unchecked(shift);
+                let manual = Shifted::new_unchecked(dist, shift);
 
                 let mean_shifted = shifted.mean();
                 let mean_manual = manual.mean();
@@ -824,10 +824,10 @@ mod test {
         paste::paste! {
             proptest::proptest! {
                 #[test]
-                fn [<shiftable_ $ident $(_ $ext)?>](dx in -100.0..100.0) {
+                fn [<shiftable_ $ident $(_ $ext)?>](shift in -100.0..100.0) {
                     let dist = $expr;
-                    let shifted = dist.clone().shifted_unchecked(dx).$ident();
-                    let manual = $crate::prelude::Shifted::new_unchecked(dist, dx).$ident();
+                    let shifted = dist.clone().shifted_unchecked(shift).$ident();
+                    let manual = $crate::prelude::Shifted::new_unchecked(dist, shift).$ident();
 
                     match (shifted, manual) {
                         (Some(shifted), Some(manual)) => {
@@ -858,10 +858,10 @@ mod test {
         paste::paste! {
             proptest::proptest! {
                 #[test]
-                fn [<shiftable_density $(_ $ext)?>](y in -100.0..100.0, dx in -100.0..100.0) {
+                fn [<shiftable_density $(_ $ext)?>](y in -100.0..100.0, shift in -100.0..100.0) {
                     let dist = $expr;
-                    let shifted: f64 = dist.clone().shifted_unchecked(dx).ln_f(&y);
-                    let manual: f64 = $crate::prelude::Shifted::new_unchecked(dist, dx).ln_f(&y);
+                    let shifted: f64 = dist.clone().shifted_unchecked(shift).ln_f(&y);
+                    let manual: f64 = $crate::prelude::Shifted::new_unchecked(dist, shift).ln_f(&y);
                     proptest::prop_assert!($crate::misc::eq_or_close(shifted, manual, 1e-10),
                         "densities differ: {} vs {}", shifted, manual);
                 }
@@ -880,10 +880,10 @@ mod test {
         paste::paste! {
             proptest::proptest! {
                 #[test]
-                fn [<shiftable_cdf $(_ $ext)?>](x in -100.0..100.0, dx in -100.0..100.0) {
+                fn [<shiftable_cdf $(_ $ext)?>](x in -100.0..100.0, shift in -100.0..100.0) {
                     let dist = $expr;
-                    let shifted: f64 = dist.clone().shifted_unchecked(dx).cdf(&x);
-                    let manual: f64 = $crate::prelude::Shifted::new_unchecked(dist, dx).cdf(&x);
+                    let shifted: f64 = dist.clone().shifted_unchecked(shift).cdf(&x);
+                    let manual: f64 = $crate::prelude::Shifted::new_unchecked(dist, shift).cdf(&x);
                     proptest::prop_assert!($crate::misc::eq_or_close(shifted, manual, 1e-10),
                         "cdfs differ: {} vs {}", shifted, manual);
                 }
@@ -902,10 +902,10 @@ mod test {
         paste::paste! {
             proptest::proptest! {
                 #[test]
-                fn [<shiftable_invcdf $(_ $ext)?>](p in 0.0..1.0, dx in -100.0..100.0) {
+                fn [<shiftable_invcdf $(_ $ext)?>](p in 0.0..1.0, shift in -100.0..100.0) {
                     let dist = $expr;
-                    let shifted: f64 = dist.clone().shifted_unchecked(dx).invcdf(p);
-                    let manual: f64 = $crate::prelude::Shifted::new_unchecked(dist, dx).invcdf(p);
+                    let shifted: f64 = dist.clone().shifted_unchecked(shift).invcdf(p);
+                    let manual: f64 = $crate::prelude::Shifted::new_unchecked(dist, shift).invcdf(p);
                     proptest::prop_assert!($crate::misc::eq_or_close(shifted, manual, 1e-10),
                         "invcdfs differ: {} vs {}", shifted, manual);
                 }
@@ -924,10 +924,10 @@ mod test {
         paste::paste! {
             proptest::proptest! {
                 #[test]
-                fn [<shiftable_entropy $(_ $ext)?>](dx in -100.0..100.0) {
+                fn [<shiftable_entropy $(_ $ext)?>](shift in -100.0..100.0) {
                     let dist = $expr;
-                    let shifted: f64 = dist.clone().shifted_unchecked(dx).entropy();
-                    let manual: f64 = $crate::prelude::Shifted::new_unchecked(dist, dx).entropy();
+                    let shifted: f64 = dist.clone().shifted_unchecked(shift).entropy();
+                    let manual: f64 = $crate::prelude::Shifted::new_unchecked(dist, shift).entropy();
                     proptest::prop_assert!($crate::misc::eq_or_close(shifted, manual, 1e-10),
                         "entropies differ: {} vs {}", shifted, manual);
                 }

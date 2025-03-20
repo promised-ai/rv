@@ -58,18 +58,18 @@ impl Shiftable for Gev {
     type Output = Gev;
     type Error = GevError;
 
-    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {
-        Gev::new(self.loc() + dx, self.scale(), self.shape())
+        Gev::new(self.loc() + shift, self.scale(), self.shape())
     }
 
-    fn shifted_unchecked(self, dx: f64) -> Self::Output
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
     where
         Self: Sized,
     {
-        Gev::new_unchecked(self.loc() + dx, self.scale(), self.shape())
+        Gev::new_unchecked(self.loc() + shift, self.scale(), self.shape())
     }
 }
 

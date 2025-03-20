@@ -37,18 +37,18 @@ impl Shiftable for Laplace {
     type Output = Laplace;
     type Error = LaplaceError;
 
-    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {
-        Laplace::new(self.mu() + dx, self.b())
+        Laplace::new(self.mu() + shift, self.b())
     }
 
-    fn shifted_unchecked(self, dx: f64) -> Self::Output
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
     where
         Self: Sized,
     {
-        Laplace::new_unchecked(self.mu() + dx, self.b())
+        Laplace::new_unchecked(self.mu() + shift, self.b())
     }
 }
 

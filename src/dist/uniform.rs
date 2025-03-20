@@ -42,18 +42,18 @@ impl Shiftable for Uniform {
     type Output = Uniform;
     type Error = UniformError;
 
-    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {
-        Uniform::new(self.a() + dx, self.b() + dx)
+        Uniform::new(self.a() + shift, self.b() + shift)
     }
 
-    fn shifted_unchecked(self, dx: f64) -> Self::Output
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
     where
         Self: Sized,
     {
-        Uniform::new_unchecked(self.a() + dx, self.b() + dx)
+        Uniform::new_unchecked(self.a() + shift, self.b() + shift)
     }
 }
 

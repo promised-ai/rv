@@ -301,18 +301,18 @@ impl Shiftable for Cauchy {
     type Output = Cauchy;
     type Error = CauchyError;
 
-    fn shifted(self, dx: f64) -> Result<Self::Output, Self::Error>
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
     where
         Self: Sized,
     {
-        Cauchy::new(self.loc() + dx, self.scale())
+        Cauchy::new(self.loc() + shift, self.scale())
     }
 
-    fn shifted_unchecked(self, dx: f64) -> Self::Output
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
     where
         Self: Sized,
     {
-        Cauchy::new_unchecked(self.loc() + dx, self.scale())
+        Cauchy::new_unchecked(self.loc() + shift, self.scale())
     }
 }
 impl Scalable for Cauchy {
