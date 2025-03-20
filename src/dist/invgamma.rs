@@ -636,5 +636,4 @@ mod tests {
     test_scalable_density!(InvGamma::new(2.0, 4.0).unwrap());
     test_scalable_entropy!(InvGamma::new(2.0, 4.0).unwrap());
     test_scalable_cdf!(InvGamma::new(2.0, 4.0).unwrap());
-
 }
