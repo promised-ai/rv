@@ -194,6 +194,41 @@ where
     }
 }
 
+// TODO: We should be able to do something like this, and similarly for Shiftable
+// Haven't hit any snags yet, just need to crank through it
+// TODO: Remember to add tests for this
+//
+// d.shifted(shift).scaled(scale) -> d.scaled(scale).shifted(shift * scale)
+// This prevents the possibility of chains of alternating shifts and scales
+// impl<D> Scalable for Shifted<D>
+// where
+//     D: Scalable + Shiftable,
+// {
+//     type Output = Self;
+//     type Error = Either<ShiftedError,  <D as Shiftable>::Error>;
+
+//     fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+//     where
+//         Self: Sized,
+//     {
+//         match self.parent.scaled(scale) {
+//             Ok(scaled_parent) => match Shifted::new(scaled_parent, self.shift * scale) {
+//                 Ok(d) => Ok(d),
+//                 Err(e) => Err(Either::Left(e)),
+//             },
+//             Err(e) => Err(Either::Right(e)),
+//         }
+//     }
+
+//     fn scaled_unchecked(self, scale: f64) -> Self::Output
+//     where
+//         Self: Sized,
+//     {
+//         let scaled_parent = self.parent.scaled_unchecked(scale);
+//         Shifted::new_unchecked(scaled_parent, self.shift * scale)
+//     }
+// }
+
 #[cfg(test)]
 mod tests {
 
