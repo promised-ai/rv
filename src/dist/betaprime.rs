@@ -433,6 +433,9 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
     }
 }
 
+crate::impl_shiftable!(BetaPrime);
+crate::impl_scalable!(BetaPrime);
+
 #[cfg(test)]
 mod tests {
     use rand::SeedableRng;

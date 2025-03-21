@@ -50,6 +50,9 @@ impl PartialEq for InvChiSquared {
     }
 }
 
+crate::impl_shiftable!(InvChiSquared);
+crate::impl_scalable!(InvChiSquared);
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -219,7 +222,11 @@ macro_rules! impl_traits {
         impl Cdf<$kind> for InvChiSquared {
             fn cdf(&self, x: &$kind) -> f64 {
                 let x64 = f64::from(*x);
-                1.0 - (2.0 * x64).recip().inc_gamma(self.v / 2.0)
+                if x64 <= 0.0 {
+                    0.0
+                } else {
+                    1.0 - (2.0 * x64).recip().inc_gamma(self.v / 2.0)
+                }
             }
         }
     };

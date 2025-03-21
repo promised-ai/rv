@@ -469,6 +469,13 @@ pub fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
     xs
 }
 
+pub(crate) fn eq_or_close(a: f64, b: f64, tol: f64) -> bool {
+    a == b                                           // Really equal, or both -Inf or Inf
+        || a.is_nan() && b.is_nan()                  // Both NaN
+        || (a - b).abs() < tol                       // Small absolute difference
+        || 2.0 * (a - b).abs() / (a + b).abs() < tol // Small relative difference
+}
+
 const LN_FACT: [f64; 255] = [
     0.000_000_000_000_000,
     0.000_000_000_000_000,

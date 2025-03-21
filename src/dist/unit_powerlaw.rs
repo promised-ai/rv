@@ -53,6 +53,9 @@ impl Parameterized for UnitPowerLaw {
     }
 }
 
+crate::impl_shiftable!(UnitPowerLaw);
+crate::impl_scalable!(UnitPowerLaw);
+
 impl PartialEq for UnitPowerLaw {
     fn eq(&self, other: &UnitPowerLaw) -> bool {
         self.alpha == other.alpha

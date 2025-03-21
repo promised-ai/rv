@@ -21,6 +21,27 @@ pub struct LogNormal {
     sigma: f64,
 }
 
+crate::impl_shiftable!(LogNormal);
+
+impl Scalable for LogNormal {
+    type Output = LogNormal;
+    type Error = LogNormalError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        LogNormal::new(self.mu() + scale.ln(), self.sigma())
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        LogNormal::new_unchecked(self.mu() + scale.ln(), self.sigma())
+    }
+}
+
 pub struct LogNormalParameters {
     pub mu: f64,
     pub sigma: f64,
@@ -290,7 +311,7 @@ macro_rules! impl_traits {
 
         impl Mode<$kind> for LogNormal {
             fn mode(&self) -> Option<$kind> {
-                Some(self.sigma.mul_add(-self.sigma, self.mu) as $kind)
+                Some((self.sigma.mul_add(-self.sigma, self.mu) as $kind).exp())
             }
         }
     };
@@ -380,12 +401,6 @@ mod tests {
         let mu = 3.4;
         let median: f64 = LogNormal::new(mu, 0.5).unwrap().median().unwrap();
         assert::close(median, mu.exp(), TOL);
-    }
-
-    #[test]
-    fn mode() {
-        let mode: f64 = LogNormal::new(4.0, 2.0).unwrap().mode().unwrap();
-        assert::close(mode, 0.0, TOL);
     }
 
     #[test]
@@ -512,4 +527,19 @@ mod tests {
         let lognorm = LogNormal::standard();
         assert::close(lognorm.entropy(), 1.418_938_533_204_672_7, TOL);
     }
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), mean);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), median);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), mode);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), variance);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), skewness);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), kurtosis);
+    test_scalable_density!(LogNormal::new(2.0, 1.0).unwrap());
+    test_scalable_entropy!(LogNormal::new(2.0, 1.0).unwrap());
+    test_scalable_cdf!(LogNormal::new(2.0, 1.0).unwrap());
 }

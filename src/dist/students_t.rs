@@ -30,6 +30,9 @@ impl Parameterized for StudentsT {
     }
 }
 
+crate::impl_shiftable!(StudentsT);
+crate::impl_scalable!(StudentsT);
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]

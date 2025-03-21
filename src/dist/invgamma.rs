@@ -28,6 +28,26 @@ pub struct InvGamma {
     scale: f64,
 }
 
+crate::impl_shiftable!(InvGamma);
+
+impl Scalable for InvGamma {
+    type Output = InvGamma;
+    type Error = InvGammaError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        InvGamma::new(self.shape(), self.scale() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        InvGamma::new_unchecked(self.shape(), self.scale() * scale)
+    }
+}
 pub struct InvGammaParameters {
     pub shape: f64,
     pub scale: f64,
@@ -259,7 +279,11 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for InvGamma {
             fn cdf(&self, x: &$kind) -> f64 {
-                1.0 - (self.scale / f64::from(*x)).inc_gamma(self.shape)
+                if *x <= 0.0 {
+                    0.0
+                } else {
+                    1.0 - (self.scale / f64::from(*x)).inc_gamma(self.shape)
+                }
             }
         }
 
@@ -603,4 +627,17 @@ mod tests {
 
         assert::close(ln_f_base, ln_f_stat, 1e-12);
     }
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(InvGamma::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(InvGamma::new(2.0, 4.0).unwrap(), variance);
+    test_scalable_method!(InvGamma::new(2.0, 4.0).unwrap(), skewness);
+    test_scalable_method!(InvGamma::new(2.0, 4.0).unwrap(), kurtosis);
+    test_scalable_density!(InvGamma::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(InvGamma::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(InvGamma::new(2.0, 4.0).unwrap());
 }

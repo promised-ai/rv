@@ -283,7 +283,11 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for Gamma {
             fn cdf(&self, x: &$kind) -> f64 {
-                (self.rate * f64::from(*x)).inc_gamma(self.shape)
+                if *x <= 0.0 {
+                    0.0
+                } else {
+                    (self.rate * f64::from(*x)).inc_gamma(self.shape)
+                }
             }
         }
 
@@ -353,6 +357,21 @@ impl fmt::Display for GammaError {
                 write!(f, "non-finite rate: {}", rate)
             }
         }
+    }
+}
+
+crate::impl_shiftable!(Gamma);
+
+impl Scalable for Gamma {
+    type Output = Gamma;
+    type Error = GammaError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error> {
+        Ok(Gamma::new_unchecked(self.shape, self.rate / scale))
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output {
+        Gamma::new_unchecked(self.shape, self.rate / scale)
     }
 }
 
@@ -523,4 +542,17 @@ mod tests {
 
         assert!(passes > 0);
     }
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Gamma::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(Gamma::new(2.0, 4.0).unwrap(), variance);
+    test_scalable_method!(Gamma::new(2.0, 4.0).unwrap(), skewness);
+    test_scalable_method!(Gamma::new(2.0, 4.0).unwrap(), kurtosis);
+    test_scalable_density!(Gamma::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(Gamma::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(Gamma::new(2.0, 4.0).unwrap());
 }

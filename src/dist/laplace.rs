@@ -33,6 +33,44 @@ pub struct Laplace {
     b: f64,
 }
 
+impl Shiftable for Laplace {
+    type Output = Laplace;
+    type Error = LaplaceError;
+
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Laplace::new(self.mu() + shift, self.b())
+    }
+
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Laplace::new_unchecked(self.mu() + shift, self.b())
+    }
+}
+
+impl Scalable for Laplace {
+    type Output = Laplace;
+    type Error = LaplaceError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Laplace::new(self.mu() * scale, self.b() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Laplace::new_unchecked(self.mu() * scale, self.b() * scale)
+    }
+}
+
 pub struct LaplaceParameters {
     pub mu: f64,
     pub b: f64,
@@ -441,4 +479,33 @@ mod tests {
         });
         assert!(passes > 0);
     }
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_method;
+
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), mean);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), median);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), mode);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), variance);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), skewness);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), kurtosis);
+    test_shiftable_density!(Laplace::new(2.0, 1.0).unwrap());
+    test_shiftable_entropy!(Laplace::new(2.0, 1.0).unwrap());
+    test_shiftable_cdf!(Laplace::new(2.0, 1.0).unwrap());
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), mean);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), median);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), mode);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), variance);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), skewness);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), kurtosis);
+    test_scalable_density!(Laplace::new(2.0, 1.0).unwrap());
+    test_scalable_entropy!(Laplace::new(2.0, 1.0).unwrap());
+    test_scalable_cdf!(Laplace::new(2.0, 1.0).unwrap());
 }

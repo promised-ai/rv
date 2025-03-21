@@ -27,6 +27,25 @@ pub struct Pareto {
     scale: f64,
 }
 
+impl Scalable for Pareto {
+    type Output = Pareto;
+    type Error = ParetoError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Pareto::new(self.shape(), self.scale() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Pareto::new_unchecked(self.shape(), self.scale() * scale)
+    }
+}
+
 pub struct ParetoParameters {
     pub shape: f64,
     pub scale: f64,
@@ -46,6 +65,8 @@ impl Parameterized for Pareto {
         Self::new_unchecked(params.shape, params.scale)
     }
 }
+
+crate::impl_shiftable!(Pareto);
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -279,7 +300,7 @@ impl Variance<f64> for Pareto {
 
 impl Entropy for Pareto {
     fn entropy(&self) -> f64 {
-        ((self.scale / self.shape) * (1.0 + 1.0 / self.shape).exp()).log10()
+        (self.scale / self.shape).ln() + 1.0 + self.shape.recip()
     }
 }
 
@@ -600,14 +621,6 @@ mod tests {
     }
 
     #[test]
-    fn entropy() {
-        let par1 = Pareto::new(1.0, 1.0).unwrap();
-        let par2 = Pareto::new(1.2, 3.4).unwrap();
-        assert::close(par1.entropy(), 0.868_588_963_806_503_6, TOL);
-        assert::close(par2.entropy(), 1.248_504_221_150_592_1, TOL);
-    }
-
-    #[test]
     fn draw_test() {
         let mut rng = rand::thread_rng();
         let par = Pareto::new(1.2, 3.4).unwrap();
@@ -626,4 +639,17 @@ mod tests {
 
         assert!(passes > 0);
     }
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Pareto::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(Pareto::new(2.0, 4.0).unwrap(), variance);
+    test_scalable_method!(Pareto::new(2.0, 4.0).unwrap(), skewness);
+    test_scalable_method!(Pareto::new(2.0, 4.0).unwrap(), kurtosis);
+    test_scalable_density!(Pareto::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(Pareto::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(Pareto::new(2.0, 4.0).unwrap());
 }

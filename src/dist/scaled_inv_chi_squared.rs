@@ -36,6 +36,27 @@ pub struct ScaledInvChiSquared {
     ln_f_const: OnceLock<f64>,
 }
 
+crate::impl_shiftable!(ScaledInvChiSquared);
+
+impl Scalable for ScaledInvChiSquared {
+    type Output = ScaledInvChiSquared;
+    type Error = ScaledInvChiSquaredError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        ScaledInvChiSquared::new(self.v(), self.t2() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        ScaledInvChiSquared::new_unchecked(self.v(), self.t2() * scale)
+    }
+}
+
 pub struct ScaledInvChiSquaredParameters {
     pub v: f64,
     pub t2: f64,
@@ -312,8 +333,13 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for ScaledInvChiSquared {
             fn cdf(&self, x: &$kind) -> f64 {
-                let x64 = f64::from(*x);
-                1.0 - (self.v * self.t2 / (2.0 * x64)).inc_gamma(self.v / 2.0)
+                if *x <= 0.0 {
+                    0.0
+                } else {
+                    let x64 = f64::from(*x);
+                    1.0 - (self.v * self.t2 / (2.0 * x64))
+                        .inc_gamma(self.v / 2.0)
+                }
             }
         }
     };
@@ -587,4 +613,24 @@ mod test {
         3.4,
         0.2
     );
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(ScaledInvChiSquared::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(
+        ScaledInvChiSquared::new(2.0, 4.0).unwrap(),
+        variance
+    );
+    test_scalable_method!(
+        ScaledInvChiSquared::new(2.0, 4.0).unwrap(),
+        skewness
+    );
+    test_scalable_method!(
+        ScaledInvChiSquared::new(2.0, 4.0).unwrap(),
+        kurtosis
+    );
+    test_scalable_density!(ScaledInvChiSquared::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(ScaledInvChiSquared::new(2.0, 4.0).unwrap());
 }

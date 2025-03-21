@@ -8,6 +8,8 @@ mod invgaussian;
 #[cfg(feature = "arraydist")]
 mod mvg;
 mod poisson;
+mod scaled;
+mod shifted;
 mod unit_powerlaw;
 
 pub use bernoulli::*;
@@ -20,4 +22,6 @@ pub use invgaussian::*;
 #[cfg(feature = "arraydist")]
 pub use mvg::*;
 pub use poisson::*;
+pub use scaled::*;
+pub use shifted::*;
 pub use unit_powerlaw::*;

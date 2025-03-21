@@ -38,6 +38,38 @@ pub struct Uniform {
     lnf: OnceLock<f64>,
 }
 
+impl Shiftable for Uniform {
+    type Output = Uniform;
+    type Error = UniformError;
+
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Uniform::new(self.a() + shift, self.b() + shift)
+    }
+
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Uniform::new_unchecked(self.a() + shift, self.b() + shift)
+    }
+}
+
+impl Scalable for Uniform {
+    type Output = Uniform;
+    type Error = UniformError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error> {
+        Uniform::new(self.a() * scale, self.b() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output {
+        Uniform::new_unchecked(self.a() * scale, self.b() * scale)
+    }
+}
+
 impl Parameterized for Uniform {
     type Parameters = (f64, f64);
 
@@ -404,4 +436,36 @@ mod tests {
         });
         assert!(passes > 0);
     }
+
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_invcdf;
+    use crate::test_shiftable_method;
+
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), mean);
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), median);
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), variance);
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), skewness);
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), kurtosis);
+    test_shiftable_density!(Uniform::new(2.0, 4.0).unwrap());
+    test_shiftable_entropy!(Uniform::new(2.0, 4.0).unwrap());
+    test_shiftable_cdf!(Uniform::new(2.0, 4.0).unwrap());
+    test_shiftable_invcdf!(Uniform::new(2.0, 4.0).unwrap());
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_invcdf;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Uniform::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(Uniform::new(2.0, 4.0).unwrap(), median);
+    test_scalable_method!(Uniform::new(2.0, 4.0).unwrap(), variance);
+    test_scalable_method!(Uniform::new(2.0, 4.0).unwrap(), skewness);
+    test_scalable_method!(Uniform::new(2.0, 4.0).unwrap(), kurtosis);
+    test_scalable_density!(Uniform::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(Uniform::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(Uniform::new(2.0, 4.0).unwrap());
+    test_scalable_invcdf!(Uniform::new(2.0, 4.0).unwrap());
 }

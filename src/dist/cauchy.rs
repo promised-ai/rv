@@ -31,7 +31,6 @@ pub struct Cauchy {
     /// scale, γ, in (0, ∞)
     scale: f64,
 }
-
 pub struct CauchyParameters {
     pub loc: f64,
     pub scale: f64,
@@ -298,6 +297,43 @@ impl fmt::Display for CauchyError {
     }
 }
 
+impl Shiftable for Cauchy {
+    type Output = Cauchy;
+    type Error = CauchyError;
+
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Cauchy::new(self.loc() + shift, self.scale())
+    }
+
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Cauchy::new_unchecked(self.loc() + shift, self.scale())
+    }
+}
+impl Scalable for Cauchy {
+    type Output = Cauchy;
+    type Error = CauchyError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Cauchy::new(self.loc() * scale, self.scale() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Cauchy::new_unchecked(self.loc() * scale, self.scale() * scale)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -418,4 +454,28 @@ mod tests {
 
         assert!(passes > 0);
     }
+
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_invcdf;
+    use crate::test_shiftable_method;
+
+    test_shiftable_method!(Cauchy::new(2.0, 4.0).unwrap(), median);
+    test_shiftable_density!(Cauchy::new(2.0, 4.0).unwrap());
+    test_shiftable_entropy!(Cauchy::new(2.0, 4.0).unwrap());
+    test_shiftable_cdf!(Cauchy::new(2.0, 4.0).unwrap());
+    test_shiftable_invcdf!(Cauchy::new(2.0, 4.0).unwrap());
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_invcdf;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Cauchy::new(2.0, 4.0).unwrap(), median);
+    test_scalable_density!(Cauchy::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(Cauchy::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(Cauchy::new(2.0, 4.0).unwrap());
+    test_scalable_invcdf!(Cauchy::new(2.0, 4.0).unwrap());
 }
