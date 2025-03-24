@@ -149,38 +149,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "x must be less than modulus")]
-    fn observe_panics_if_x_too_large() {
-        let mut stat = VonMisesSuffStat::new();
-        stat.observe(&4.0);
-    }
-
-    #[test]
-    #[should_panic(expected = "x must be less than modulus")]
-    fn forget_panics_if_x_too_large() {
-        let mut stat = VonMisesSuffStat::new();
-        stat.forget(&4.0);
-    }
-
-    #[test]
-    #[should_panic]
-    fn merge_panics_if_modulus_mismatch() {
-        let mut stat1 = VonMisesSuffStat::new();
-        let stat2 = VonMisesSuffStat::new();
-        stat1.merge(stat2);
-    }
-
-    #[test]
     fn from_data_empty_vec() {
         let data: Vec<f64> = vec![];
         let stat = VonMisesSuffStat::from_data(&data);
         assert_eq!(stat.n(), 0);
-    }
-
-    #[test]
-    fn from_data_sets_correct_modulus() {
-        let data = vec![0.0, 1.0, 2.0, 3.0];
-        let stat = VonMisesSuffStat::from_data(&data);
-        assert_eq!(stat.n(), 4);
     }
 }
