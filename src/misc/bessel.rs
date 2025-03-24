@@ -1084,7 +1084,7 @@ mod tests {
         assert::close(i, 2.883_277_090_649_164e-7, TOL);
         assert::close(k, 1.487_001_275_494_647_4e4, TOL);
     }
-    
+
     #[test]
     fn proptest_i0_vs_log_i0() {
         use proptest::prelude::*;
@@ -1092,7 +1092,7 @@ mod tests {
         proptest!(|(x: f64)| {
             // Skip NaN/infinite inputs
             prop_assume!(x.is_finite());
-            
+
             let i0_val = i0(x);
             let log_i0_val = log_i0(x);
 
