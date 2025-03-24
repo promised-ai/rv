@@ -13,9 +13,9 @@ use crate::traits::SuffStat;
 pub struct VonMisesSuffStat {
     /// Number of observations
     n: usize,
-    /// ∑ⱼ cos(2πxⱼ/m)
+    /// ∑ⱼ cos(xⱼ)
     sum_cos: f64,
-    /// ∑ⱼ sin(2πxⱼ/m)
+    /// ∑ⱼ sin(xⱼ)
     sum_sin: f64,
 }
 
