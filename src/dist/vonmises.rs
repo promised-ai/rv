@@ -246,7 +246,6 @@ macro_rules! impl_traits {
     ($kind:ty) => {
         impl HasDensity<$kind> for VonMises {
             fn ln_f(&self, x: &$kind) -> f64 {
-                // TODO: could also cache ln(i0_k)
                 let xf = f64::from(*x);
                 self.k.mul_add((xf - self.mu).cos(), -LN_2PI) - self.log_i0_k
             }
