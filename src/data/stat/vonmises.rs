@@ -189,19 +189,19 @@ mod tests {
 
     #[test]
     fn from_vec() {
-        let data = vec![0.0, std::f64::consts::PI/2.0, std::f64::consts::PI];
+        let data = vec![0.0, std::f64::consts::PI / 2.0, std::f64::consts::PI];
         let stat = VonMisesSuffStat::from(&data);
         assert_eq!(stat.n(), 3);
-        assert::close(stat.sum_cos(), 0.0, 1e-14);  // cos(0) + cos(π/2) + cos(π) = 1 + 0 + (-1) = 0
-        assert::close(stat.sum_sin(), 1.0, 1e-14);  // sin(0) + sin(π/2) + sin(π) = 0 + 1 + 0 = 1
+        assert::close(stat.sum_cos(), 0.0, 1e-14); // cos(0) + cos(π/2) + cos(π) = 1 + 0 + (-1) = 0
+        assert::close(stat.sum_sin(), 1.0, 1e-14); // sin(0) + sin(π/2) + sin(π) = 0 + 1 + 0 = 1
     }
 
     #[test]
     fn from_slice() {
-        let data = [0.0, std::f64::consts::PI/2.0, std::f64::consts::PI];
+        let data = [0.0, std::f64::consts::PI / 2.0, std::f64::consts::PI];
         let stat = VonMisesSuffStat::from(data.as_slice());
         assert_eq!(stat.n(), 3);
-        assert::close(stat.sum_cos(), 0.0, 1e-14);  // cos(0) + cos(π/2) + cos(π) = 1 + 0 + (-1) = 0
-        assert::close(stat.sum_sin(), 1.0, 1e-14);  // sin(0) + sin(π/2) + sin(π) = 0 + 1 + 0 = 1
+        assert::close(stat.sum_cos(), 0.0, 1e-14); // cos(0) + cos(π/2) + cos(π) = 1 + 0 + (-1) = 0
+        assert::close(stat.sum_sin(), 1.0, 1e-14); // sin(0) + sin(π/2) + sin(π) = 0 + 1 + 0 = 1
     }
 }
