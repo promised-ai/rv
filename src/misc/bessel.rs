@@ -150,6 +150,19 @@ pub fn i0(x: f64) -> f64 {
     }
 }
 
+/// Logarithm of Modified Bessel function, `log I<sub>0</sub>(x)`
+pub fn log_i0(x: f64) -> f64 {
+    let ax = x.abs();
+
+    if ax <= 8.0 {
+        let y = ax.mul_add(0.5, -2.0);
+        ax + chbevl(y, &BESSI0_COEFFS_A).ln()
+    } else {
+        ax + chbevl(32.0_f64.mul_add(ax.recip(), -2.0), &BESSI0_COEFFS_B).ln()
+            - 0.5 * ax.ln()
+    }
+}
+
 /// Modified Bessel function, I<sub>1</sub>(x)
 pub fn i1(x: f64) -> f64 {
     let z = x.abs();
@@ -1070,5 +1083,24 @@ mod tests {
         let (i, k) = bessel_ikv_asymptotic_uniform(100.0, 60.0).unwrap();
         assert::close(i, 2.883_277_090_649_164e-7, TOL);
         assert::close(k, 1.487_001_275_494_647_4e4, TOL);
+    }
+    
+    #[test]
+    fn proptest_i0_vs_log_i0() {
+        use proptest::prelude::*;
+
+        proptest!(|(x: f64)| {
+            // Skip NaN/infinite inputs
+            prop_assume!(x.is_finite());
+            
+            let i0_val = i0(x);
+            let log_i0_val = log_i0(x);
+
+            // i0 should equal exp(log_i0) within tolerance
+            // Only check when values are in reasonable range to avoid overflow
+            if i0_val.is_finite() && log_i0_val.is_finite() && log_i0_val < 700.0 {
+                assert::close(i0_val.ln(), log_i0_val, 1e-10);
+            }
+        });
     }
 }
