@@ -2,6 +2,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::consts::LN_2PI;
+use crate::data::VonMisesSuffStat;
 use crate::impl_display;
 use crate::misc::bessel;
 use crate::traits::*;
@@ -37,7 +38,8 @@ pub struct VonMises {
     /// Sort of like precision. Higher k implies lower variance.
     k: f64,
     // bessel:i0(k), save some cycles
-    i0_k: f64,
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    log_i0_k: f64,
 }
 
 pub struct VonMisesParameters {
@@ -86,8 +88,8 @@ impl VonMises {
         } else if !k.is_finite() {
             Err(VonMisesError::KNotFinite { k })
         } else {
-            let i0_k = bessel::i0(k);
-            Ok(VonMises { mu, k, i0_k })
+            let log_i0_k = bessel::log_i0(k);
+            Ok(VonMises { mu, k, log_i0_k })
         }
     }
 
@@ -95,8 +97,8 @@ impl VonMises {
     /// valid.
     #[inline]
     pub fn new_unchecked(mu: f64, k: f64) -> Self {
-        let i0_k = bessel::i0(k);
-        VonMises { mu, k, i0_k }
+        let log_i0_k = bessel::log_i0(k);
+        VonMises { mu, k, log_i0_k }
     }
 
     /// Get the mean parameter, mu
@@ -222,7 +224,7 @@ impl VonMises {
     #[inline]
     pub fn set_k_unchecked(&mut self, k: f64) {
         self.k = k;
-        self.i0_k = bessel::i0(k);
+        self.log_i0_k = bessel::log_i0(k);
     }
 }
 
@@ -246,7 +248,7 @@ macro_rules! impl_traits {
             fn ln_f(&self, x: &$kind) -> f64 {
                 // TODO: could also cache ln(i0_k)
                 let xf = f64::from(*x);
-                self.k.mul_add((xf - self.mu).cos(), -LN_2PI) - self.i0_k.ln()
+                self.k.mul_add((xf - self.mu).cos(), -LN_2PI) - self.log_i0_k
             }
         }
 
@@ -333,16 +335,32 @@ macro_rules! impl_traits {
         // This is the circular variance
         impl Variance<$kind> for VonMises {
             fn variance(&self) -> Option<$kind> {
-                let v: f64 = 1.0 - bessel::i1(self.k) / self.i0_k;
+                let v: f64 = 1.0 - bessel::i1(self.k) / self.log_i0_k.exp();
                 Some(v as $kind)
             }
         }
     };
 }
 
+impl HasSuffStat<f64> for VonMises {
+    type Stat = VonMisesSuffStat;
+
+    fn empty_suffstat(&self) -> Self::Stat {
+        VonMisesSuffStat::new()
+    }
+
+    fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+        self.k
+            * (stat.sum_cos() * self.mu.cos() + stat.sum_sin() * self.mu.sin())
+            - stat.n() as f64 * self.log_i0_k
+    }
+}
+
 impl Entropy for VonMises {
     fn entropy(&self) -> f64 {
-        -self.k * bessel::i1(self.k) / self.i0_k + LN_2PI + self.i0_k.ln()
+        -self.k * bessel::i1(self.k) / self.log_i0_k.exp()
+            + LN_2PI
+            + self.log_i0_k
     }
 }
 

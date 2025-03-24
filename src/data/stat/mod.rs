@@ -11,6 +11,7 @@ mod poisson;
 mod scaled;
 mod shifted;
 mod unit_powerlaw;
+mod vonmises;
 
 pub use bernoulli::*;
 pub use beta::*;
@@ -25,3 +26,4 @@ pub use poisson::*;
 pub use scaled::*;
 pub use shifted::*;
 pub use unit_powerlaw::*;
+pub use vonmises::*;

@@ -16,6 +16,7 @@ pub use stat::PoissonSuffStat;
 pub use stat::ScaledSuffStat;
 pub use stat::ShiftedSuffStat;
 pub use stat::UnitPowerLawSuffStat;
+pub use stat::VonMisesSuffStat;
 
 use crate::dist::{
     Bernoulli, Categorical, Gaussian, InvGamma, InvGaussian, Poisson,
