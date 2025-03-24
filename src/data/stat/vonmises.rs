@@ -77,6 +77,24 @@ impl Default for VonMisesSuffStat {
     }
 }
 
+impl From<&Vec<f64>> for VonMisesSuffStat {
+    fn from(xs: &Vec<f64>) -> Self {
+        Self::from_data(xs)
+    }
+}
+
+impl From<&[f64]> for VonMisesSuffStat {
+    fn from(xs: &[f64]) -> Self {
+        Self::from_data(xs)
+    }
+}
+
+impl<const N: usize> From<&[f64; N]> for VonMisesSuffStat {
+    fn from(xs: &[f64; N]) -> Self {
+        Self::from_data(xs)
+    }
+}
+
 impl SuffStat<f64> for VonMisesSuffStat {
     fn n(&self) -> usize {
         self.n
@@ -153,5 +171,37 @@ mod tests {
         let data: Vec<f64> = vec![];
         let stat = VonMisesSuffStat::from_data(&data);
         assert_eq!(stat.n(), 0);
+    }
+
+    #[test]
+    fn from_empty_vec() {
+        let data: Vec<f64> = vec![];
+        let stat = VonMisesSuffStat::from(&data);
+        assert_eq!(stat.n(), 0);
+    }
+
+    #[test]
+    fn from_empty_slice() {
+        let data: &[f64] = &[];
+        let stat = VonMisesSuffStat::from(data);
+        assert_eq!(stat.n(), 0);
+    }
+
+    #[test]
+    fn from_vec() {
+        let data = vec![0.0, std::f64::consts::PI/2.0, std::f64::consts::PI];
+        let stat = VonMisesSuffStat::from(&data);
+        assert_eq!(stat.n(), 3);
+        assert::close(stat.sum_cos(), 0.0, 1e-14);  // cos(0) + cos(π/2) + cos(π) = 1 + 0 + (-1) = 0
+        assert::close(stat.sum_sin(), 1.0, 1e-14);  // sin(0) + sin(π/2) + sin(π) = 0 + 1 + 0 = 1
+    }
+
+    #[test]
+    fn from_slice() {
+        let data = [0.0, std::f64::consts::PI/2.0, std::f64::consts::PI];
+        let stat = VonMisesSuffStat::from(data.as_slice());
+        assert_eq!(stat.n(), 3);
+        assert::close(stat.sum_cos(), 0.0, 1e-14);  // cos(0) + cos(π/2) + cos(π) = 1 + 0 + (-1) = 0
+        assert::close(stat.sum_sin(), 1.0, 1e-14);  // sin(0) + sin(π/2) + sin(π) = 0 + 1 + 0 = 1
     }
 }
