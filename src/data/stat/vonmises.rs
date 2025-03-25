@@ -41,9 +41,6 @@ impl VonMisesSuffStat {
     }
 
     /// Create a sufficient statistic from a slice of data
-    ///
-    /// Note that we can't have the usual From trait without const generics
-    /// because we need to know the modulus.
     pub fn from_data(xs: &[f64]) -> Self {
         let mut stat = VonMisesSuffStat::new();
         for x in xs {
