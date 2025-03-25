@@ -1,11 +1,35 @@
 # Changelog
 
-## [0.19.0]
+## [0.19.0] - 2024-12-25
+
+### Added
+- New traits: `ConvergentSequence`, `Parameterized`, `Process`, `HasDensity`, `Sampleable`
+- New implementations for various distributions
+- Experimental module with stick_breaking_process submodule
+- Tests for new trait implementations
+- Chad Scherrer to authors
 
 ### Changed
+- Updated dependencies including ahash, aho-corasick, anyhow, argmin, argmin-math, autocfg, bit-vec
+- Refactored ConjugatePrior with changes to cache names
+- Updated import statements to use wildcards for rv::traits module
+- Changed random number generator in examples to Xoshiro256Plus
+- Renamed LnMCache and LnPpCache to MCache and PpCache in conjugate prior implementations
+- Updated code examples in documentation
+- Made minor stylistic changes suggested by Clippy
+- Updated test profile for proptest with opt-level 3
 - Merry Christmas
 - `NormalInvChiSquared`, `NormalGamma`, and `NormalInvGamme` `PpCache` for Gaussian conjugate analysis changed. `ln_pp_with_cache` is much faster.
 - `Gamma` `PpCache` for Poisson conjugate analysis has been optimized. `ln_pp_with_cache` is faster.
+
+### Removed
+- datum module and related code
+- Distribution enum and ProductDistribution struct
+- Rv trait implementation for various distributions
+
+### Fixed
+- Various typos in comments and documentation
+- Incorrect usages of std::f64 constants
 
 ## [0.18.1] - 2025-02-28
 
