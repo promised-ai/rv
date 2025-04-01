@@ -49,6 +49,16 @@ impl StickBreaking {
         }
     }
 
+    pub fn new_with_prefix(
+        break_prefix: Vec<Beta>,
+        break_tail: UnitPowerLaw,
+    ) -> Self {
+        Self {
+            break_prefix,
+            break_tail,
+        }
+    }
+
     pub fn from_alpha(alpha: f64) -> Result<Self, UnitPowerLawError> {
         let breaker = UnitPowerLaw::new(alpha)?;
         Ok(Self::new(breaker))
