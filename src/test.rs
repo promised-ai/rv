@@ -506,20 +506,21 @@ macro_rules! test_conjugate_prior {
     };
 }
 
-
 use crate::prelude::ChiSquared;
-use crate::traits::Cdf; 
+use crate::traits::Cdf;
 /// # Arguments
 /// * `samples` - The data samples to test
 /// * `density_fn` - A function that returns the unnormalized density at a given point
 /// * `num_bins` - Number of constant-width bins to use
-/// 
+/// * `normalized` - Whether the given density is normalized
+///
 /// # Returns
-/// * A tuple containing (chi_square_statistic, p_value, degrees_of_freedom)
+/// * Result<f64, Box<dyn std::error::Error>>
 pub fn density_histogram_test<F>(
     samples: &[f64],
     num_bins: usize,
     density_fn: F,
+    normalized: bool,
 ) -> Result<f64, Box<dyn std::error::Error>>
 where
     F: Fn(f64) -> f64,
@@ -535,68 +536,74 @@ where
     let min_val = samples.iter().fold(f64::INFINITY, |a, &b| a.min(b));
     let max_val = samples.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
     let range = max_val - min_val;
-    
+
     // Create histogram with constant width bins
     let mut hist: Vec<usize> = vec![0; num_bins];
-    
+
     // Fill histogram with samples
     for &sample in samples {
         let u = (sample - min_val) / range; // 0 ≤ u ≤ 1
         let histix = (u * num_bins as f64) as usize;
         hist[histix] += 1;
     }
-    
+
     // Calculate bin width for Simpson's rule
     let bin_width = (max_val - min_val) / num_bins as f64;
-    
+
     // Calculate expected frequencies using Simpson's rule to integrate the density function
     let mut expected_counts = Vec::with_capacity(num_bins);
     let mut total_integral = 0.0;
-    
+
     for bin_ix in 0..num_bins {
         let bin_start = min_val + bin_ix as f64 * bin_width;
         let bin_mid = bin_start + bin_width / 2.0;
         let bin_end = bin_start + bin_width;
-        
+
         // Apply Simpson's rule for each bin
-        let integral = (bin_width / 6.0) * 
-            (density_fn(bin_start) + 4.0 * density_fn(bin_mid) + density_fn(bin_end));
-        
+        let integral = (bin_width / 6.0)
+            * (density_fn(bin_start)
+                + 4.0 * density_fn(bin_mid)
+                + density_fn(bin_end));
+
         expected_counts.push(integral);
         total_integral += integral;
     }
-    
+
     // Scale the expected counts so the total matches the number of samples
-    let scale_factor = samples.len() as f64 / total_integral;
+    let scale_factor = if normalized {
+        samples.len() as f64
+    } else {
+        samples.len() as f64 / total_integral
+    };
     for expected in &mut expected_counts {
         *expected *= scale_factor;
     }
-    
+
     // Calculate chi-square statistic
     let mut test_stat = 0.0;
     let mut valid_bins = 0;
-    
+
     for bin_ix in 0..num_bins {
         let observed = hist[bin_ix];
         let expected = expected_counts[bin_ix];
-        
+
         // Skip bins with expected count less than 5 (chi-square assumption)
         if expected >= 5.0 {
             test_stat += (observed as f64 - expected).powi(2) / expected;
             valid_bins += 1;
         }
     }
-    
+
     // Degrees of freedom = number of bins - 1
     let df = valid_bins - 1;
-    
+
     if df <= 0 {
         return Err("Not enough valid bins (with expected count >= 5) for chi-square test".into());
     }
-    
+
     // Calculate p-value
     let chi_dist = ChiSquared::new(df as f64)?;
     let p_value = 1.0 - chi_dist.cdf(&test_stat);
-    
+
     Ok(p_value)
 }
