@@ -543,8 +543,8 @@ where
     // Fill histogram with samples
     for &sample in samples {
         let u = (sample - min_val) / range; // 0 ≤ u ≤ 1
-        let histix = (u * num_bins as f64) as usize;
-        hist[histix] += 1;
+        let bin_ix = ((u * num_bins as f64) as usize).min(num_bins - 1);
+        hist[bin_ix] += 1;
     }
 
     // Calculate bin width for Simpson's rule
