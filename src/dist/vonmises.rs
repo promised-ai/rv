@@ -66,8 +66,6 @@ impl Parameterized for VonMises {
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum VonMisesError {
-    /// The mu parameter is less than zero or greater than `2*PI`
-    MuOutOfBounds { mu: f64 },
     /// The mu parameter is infinite or NaN
     MuNotFinite { mu: f64 },
     /// The k parameter is less than or equal to zero
@@ -79,9 +77,7 @@ pub enum VonMisesError {
 impl VonMises {
     /// Create a new VonMises distribution with mean mu, and precision, k.
     pub fn new(mu: f64, k: f64) -> Result<Self, VonMisesError> {
-        if !(0.0..=2.0 * PI).contains(&mu) {
-            Err(VonMisesError::MuOutOfBounds { mu })
-        } else if !mu.is_finite() {
+        if !mu.is_finite() {
             Err(VonMisesError::MuNotFinite { mu })
         } else if k <= 0.0 {
             Err(VonMisesError::KTooLow { k })
@@ -89,7 +85,7 @@ impl VonMises {
             Err(VonMisesError::KNotFinite { k })
         } else {
             let log_i0_k = bessel::log_i0(k);
-            Ok(VonMises { mu, k, log_i0_k })
+            Ok(VonMises { mu: mu % (2.0 * PI), k, log_i0_k })
         }
     }
 
@@ -148,10 +144,8 @@ impl VonMises {
     pub fn set_mu(&mut self, mu: f64) -> Result<(), VonMisesError> {
         if !mu.is_finite() {
             Err(VonMisesError::MuNotFinite { mu })
-        } else if !(0.0..=2.0 * PI).contains(&mu) {
-            Err(VonMisesError::MuOutOfBounds { mu })
-        } else {
-            self.set_mu_unchecked(mu);
+        } else  {
+            self.set_mu_unchecked(mu % (2.0 * PI));
             Ok(())
         }
     }
@@ -373,9 +367,6 @@ impl fmt::Display for VonMisesError {
         match self {
             Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
             Self::KNotFinite { k } => write!(f, "non-finite k: {}", k),
-            Self::MuOutOfBounds { mu } => {
-                write!(f, "mu was {} but must be in range [0, 2*PI]", mu)
-            }
             Self::KTooLow { k } => {
                 write!(f, "k ({}) must be greater than zero", k)
             }
