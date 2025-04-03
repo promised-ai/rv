@@ -45,15 +45,10 @@ rand_xoshiro = "0.6"
 
 [features]
 default = []
-# Enable serde serialization/deserialization
 serde1 = ["serde", "nalgebra?/serde-serialize"]
-# Enable array distributions requiring nalgebra
 arraydist = ["nalgebra"]
-# Enable process module (requires serde1 and arraydist)
 process = ["serde1", "arraydist", "argmin", "argmin-math"]
-# Enable experimental features
 experimental = []
-# Enable datum feature
 datum = []
 
 [package.metadata.docs.rs]
