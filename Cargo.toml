@@ -48,7 +48,7 @@ serde1 = ["serde", "nalgebra/serde-serialize"]
 arraydist = ["nalgebra"]
 process = ["serde", "nalgebra/serde-serialize", "argmin", "argmin-math", "arraydist"]
 datum = []
-
+experimental = []
 
 [package.metadata.docs.rs]
 all-features = true
