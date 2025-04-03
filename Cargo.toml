@@ -25,7 +25,7 @@ nalgebra = { version = "0.32", optional = true }
 num = "0.4"
 rand = { version = "0.8", features = ["small_rng"] }
 rand_distr = "0.4"
-serde = {version = "1", features = ["derive"], optional = true}
+serde = { version = "1", features = ["derive"], optional = true }
 special = "0.10"
 num-traits = "0.2"
 rand_xoshiro = { version = "0.6", features = ["serde1"] }
@@ -44,14 +44,21 @@ approx = "0.5"
 rand_xoshiro = "0.6"
 
 [features]
-serde1 = ["serde", "nalgebra/serde-serialize"]
+default = []
+# Enable serde serialization/deserialization
+serde1 = ["serde", "nalgebra?/serde-serialize"]
+# Enable array distributions requiring nalgebra
 arraydist = ["nalgebra"]
-process = ["serde", "nalgebra/serde-serialize", "argmin", "argmin-math", "arraydist"]
+# Enable process module (requires serde1 and arraydist)
+process = ["serde1", "arraydist", "argmin", "argmin-math"]
+# Enable experimental features
+experimental = []
+# Enable datum feature
 datum = []
-
 
 [package.metadata.docs.rs]
 all-features = true
+
 [profile.test.package.proptest]
 opt-level = 3
 
