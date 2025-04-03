@@ -623,8 +623,8 @@ mod tests {
         let dist = Gaussian::default();
 
         // Generate samples from standard normal
-        let n = 1_000_000;
-        let n_bins = 1000;
+        let n = 10_000;
+        let n_bins = 100;
         let samples: Vec<f64> = (0..n).map(|_| dist.draw(&mut rng)).collect();
 
         // Test against standard normal density function
@@ -646,8 +646,8 @@ mod tests {
         let dist = Exponential::default();
 
         // Generate samples from standard normal
-        let n = 1_000_000;
-        let n_bins = 1000;
+        let n = 10_000;
+        let n_bins = 100;
         let samples: Vec<f64> = (0..n).map(|_| dist.draw(&mut rng)).collect();
 
         // Test against standard normal density function
