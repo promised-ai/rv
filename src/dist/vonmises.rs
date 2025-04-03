@@ -85,7 +85,11 @@ impl VonMises {
             Err(VonMisesError::KNotFinite { k })
         } else {
             let log_i0_k = bessel::log_i0(k);
-            Ok(VonMises { mu: mu % (2.0 * PI), k, log_i0_k })
+            Ok(VonMises {
+                mu: mu % (2.0 * PI),
+                k,
+                log_i0_k,
+            })
         }
     }
 
@@ -144,7 +148,7 @@ impl VonMises {
     pub fn set_mu(&mut self, mu: f64) -> Result<(), VonMisesError> {
         if !mu.is_finite() {
             Err(VonMisesError::MuNotFinite { mu })
-        } else  {
+        } else {
             self.set_mu_unchecked(mu % (2.0 * PI));
             Ok(())
         }
