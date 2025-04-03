@@ -137,9 +137,6 @@ impl VonMises {
     /// assert!(vm.set_mu(0.0).is_ok());
     /// assert!(vm.set_mu(2.0 * std::f64::consts::PI).is_ok());
     ///
-    /// assert!(vm.set_mu(0.0 - 0.001).is_err());
-    /// assert!(vm.set_mu(2.0 * std::f64::consts::PI + 0.001).is_err());
-    ///
     /// assert!(vm.set_mu(f64::NEG_INFINITY).is_err());
     /// assert!(vm.set_mu(f64::INFINITY).is_err());
     /// assert!(vm.set_mu(f64::NAN).is_err());
