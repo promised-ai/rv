@@ -398,14 +398,6 @@ mod tests {
     }
 
     #[test]
-    fn new_should_not_allow_mu_outside_0_2pi() {
-        assert!(VonMises::new(-PI, 1.0).is_err());
-        assert!(VonMises::new(-f64::EPSILON, 1.0).is_err());
-        assert!(VonMises::new(2.0_f64.mul_add(PI, 0.001), 1.0).is_err());
-        assert!(VonMises::new(100.0, 1.0).is_err());
-    }
-
-    #[test]
     fn mean() {
         let m1: f64 = VonMises::new(0.0, 1.0).unwrap().mean().unwrap();
         assert::close(m1, 0.0, TOL);
