@@ -607,3 +607,59 @@ where
 
     Ok(p_value)
 }
+
+mod tests {
+    use super::*;
+    use crate::dist::Exponential;
+    use crate::dist::Gaussian;
+    use crate::traits::HasDensity;
+    use crate::traits::Sampleable;
+    use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256Plus;
+
+    #[test]
+    fn test_density_histogram_gaussian() {
+        let mut rng = Xoshiro256Plus::seed_from_u64(1);
+        let dist = Gaussian::default();
+
+        // Generate samples from standard normal
+        let n = 1_000_000;
+        let n_bins = 1000;
+        let samples: Vec<f64> = (0..n).map(|_| dist.draw(&mut rng)).collect();
+
+        // Test against standard normal density function
+        let density_fn = |x: f64| dist.f(&x);
+
+        for normalized in [true, false] {
+            let p_value = density_histogram_test(
+                &samples, n_bins, density_fn, normalized,
+            )
+            .unwrap();
+
+            assert!(p_value > 0.05);
+        }
+    }
+
+    #[test]
+    fn test_density_histogram_exponential() {
+        let mut rng = Xoshiro256Plus::seed_from_u64(1);
+        let dist = Exponential::default();
+
+        // Generate samples from standard normal
+        let n = 1_000_000;
+        let n_bins = 1000;
+        let samples: Vec<f64> = (0..n).map(|_| dist.draw(&mut rng)).collect();
+
+        // Test against standard normal density function
+        let density_fn = |x: f64| dist.f(&x);
+
+        for normalized in [true, false] {
+            let p_value = density_histogram_test(
+                &samples, n_bins, density_fn, normalized,
+            )
+            .unwrap();
+
+            assert!(p_value > 0.05);
+        }
+    }
+}
