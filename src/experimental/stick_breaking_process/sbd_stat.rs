@@ -1,5 +1,5 @@
 use crate::experimental::stick_breaking_process::sbd::StickBreakingDiscrete;
-use crate::traits::{HasSuffStat, SuffStat};
+use crate::traits::{DataOrSuffStat, HasSuffStat, SuffStat};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -171,6 +171,23 @@ impl SuffStat<usize> for StickBreakingDiscreteSuffStat {
             .for_each(|(ct_a, &ct_b)| *ct_a += ct_b);
     }
 }
+
+impl<'a> From<&'a [usize]>
+    for DataOrSuffStat<'a, usize, StickBreakingDiscrete>
+{
+    fn from(data: &'a [usize]) -> Self {
+        DataOrSuffStat::Data(data)
+    }
+}
+
+impl<'a> From<&'a Vec<usize>>
+    for DataOrSuffStat<'a, usize, StickBreakingDiscrete>
+{
+    fn from(data: &'a Vec<usize>) -> Self {
+        DataOrSuffStat::Data(data)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

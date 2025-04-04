@@ -9,6 +9,7 @@ use special::Beta;
 use std::f64;
 use std::fmt;
 use std::sync::OnceLock;
+use crate::misc::ln_gammafn;
 
 /// [Beta prime distribution](https://en.wikipedia.org/wiki/Beta_prime_distribution),
 /// BetaPrime(α, β) over x in (0, ∞).
@@ -376,7 +377,8 @@ impl fmt::Display for BetaPrimeError {
 impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
     type Posterior = Self;
     type MCache = f64;
-    type PpCache = f64;
+
+    type PpCache = Self; 
 
     fn empty_stat(
         &self,
@@ -408,7 +410,7 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
     }
 
     fn ln_m_cache(&self) -> Self::MCache {
-        -self.ln_beta_ab()
+        self.ln_beta_ab()
     }
 
     fn ln_m_with_cache(
@@ -417,19 +419,18 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
         data: &DataOrSuffStat<usize, StickBreakingDiscrete>,
     ) -> f64 {
         let post = self.posterior(data);
-        post.ln_beta_ab() + cache
+        post.ln_beta_ab() - cache
     }
 
     fn ln_pp_cache(
         &self,
         data: &DataOrSuffStat<usize, StickBreakingDiscrete>,
     ) -> Self::PpCache {
-        let post = self.posterior(data);
-        post.alpha / post.beta
+        self.posterior(data)
     }
 
-    fn ln_pp_with_cache(&self, cache: &Self::PpCache, _y: &usize) -> f64 {
-        cache.ln()
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &usize) -> f64 {
+        cache.ln_m(&DataOrSuffStat::Data(&[*y]))
     }
 }
 
@@ -438,6 +439,10 @@ crate::impl_scalable!(BetaPrime);
 
 #[cfg(test)]
 mod tests {
+    use crate::experimental::stick_breaking_process::sbd::StickBreakingDiscrete;
+    use crate::experimental::stick_breaking_process::sbd_stat::StickBreakingDiscreteSuffStat;
+    use crate::misc::func::LogSumExp;
+    use crate::prelude::ChiSquared;
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
 
@@ -565,9 +570,6 @@ mod tests {
         let data = StickBreakingDiscreteSuffStat::new();
         let cache = prior.ln_m_cache();
 
-        // The cache should be the negative of ln_beta_ab
-        assert_eq!(cache, -prior.ln_beta_ab());
-
         // Using the cache with empty data should give same result
         let ln_m =
             prior.ln_m_with_cache(&cache, &DataOrSuffStat::SuffStat(&data));
@@ -595,6 +597,49 @@ mod tests {
 
     #[cfg(feature = "experimental")]
     #[test]
+    fn test_bayes_law() {
+        let n_samples = 10000;
+        let mut rng = Xoshiro256Plus::seed_from_u64(123);
+
+        // Prior
+        let prior = BetaPrime::new(2.0, 3.0).unwrap();
+        let alpha: f64 = prior.draw(&mut rng);
+
+        let x: usize = {
+            let upowlaw = UnitPowerLaw::new(alpha).unwrap();
+            let sb: StickBreaking = StickBreaking::new(upowlaw);
+            let sbd: StickBreakingDiscrete = Sampleable::draw(&sb, &mut rng);
+            Sampleable::draw(&sbd, &mut rng)
+        };
+
+        // log P(α)
+        let prior_logf = prior.ln_f(&alpha);
+
+        // log P(x|α)
+        // P(x|α) = ∫P(x,s|α)ds = ∫P(x|s)P(s|α)ds
+        let lik_logf = (0..n_samples)
+            .map(|_| {
+                let upowlaw = UnitPowerLaw::new(alpha).unwrap();
+                let sb: StickBreaking = StickBreaking::new(upowlaw.clone());
+                let sbd: StickBreakingDiscrete = sb.draw(&mut rng);
+                sbd.ln_f(&x)
+            })
+            .logsumexp()
+            - (n_samples as f64).ln();
+
+        // log P(x)
+        let log_ev = prior.ln_m(&DataOrSuffStat::Data(&[x]));
+
+        // log P(α|x)
+        let post = prior.posterior(&DataOrSuffStat::Data(&[x]));
+        let post_logf = post.ln_f(&alpha);
+
+        // Verify Bayes' law: log P(α|x) = log P(α) + log P(x|α) - log P(x)
+        assert::close(post_logf, prior_logf + lik_logf - log_ev, 1e-2);
+    }
+
+    #[cfg(feature = "experimental")]
+    #[test]
     fn test_posterior_parameter_updates() {
         let prior = BetaPrime::new(2.0, 3.0).unwrap();
         let mut stat = StickBreakingDiscreteSuffStat::new();
@@ -613,20 +658,195 @@ mod tests {
         assert_eq!(posterior.beta(), prior.beta() + 6.0); // 1 + 2 + 3 = 6
     }
 
+
+    // Simulation-based calibration
+    // For details see http://www.stat.columbia.edu/~gelman/research/unpublished/sbc.pdf
     #[cfg(feature = "experimental")]
     #[test]
-    fn test_pp_cache_consistency() {
-        let prior = BetaPrime::new(2.0, 3.0).unwrap();
-        let data = StickBreakingDiscreteSuffStat::new();
+    fn test_sbc() {
+        let mut rng = Xoshiro256Plus::seed_from_u64(123);
+        let n_samples = 2000;
+        let n_obs = 5;
+        let n_bins = 20;
+        let mut hist = vec![0_usize; n_bins + 1];
 
-        let cache = prior.ln_pp_cache(&DataOrSuffStat::SuffStat(&data));
-        let ln_pp = prior.ln_pp_with_cache(&cache, &0);
+        let alpha_prior = BetaPrime::new(1.0, 1.0).unwrap();
 
-        // Cache should be posterior alpha/beta ratio
-        let post = prior.posterior(&DataOrSuffStat::SuffStat(&data));
-        assert_eq!(cache, post.alpha() / post.beta());
+        // Comments in this section are from Algorithm 1 of the SBC paper
+        for _ in 0..n_samples {
+            // Draw a prior sample, θ̃ ∼ π(θ)
+            let alpha = alpha_prior.draw(&mut rng);
 
-        // ln_pp should be log of the cache
-        assert_eq!(ln_pp, cache.ln());
+            // Draw a simulated data set, ỹ ∼ π(y | θ̃)
+            let mut stat = StickBreakingDiscreteSuffStat::new();
+            for _ in 0..n_obs {
+                let stick_breaking =
+                    StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
+                let sbd: StickBreakingDiscrete = stick_breaking.draw(&mut rng);
+                let x = sbd.draw(&mut rng);
+                stat.observe(&x);
+            }
+
+            let posterior =
+                alpha_prior.posterior(&DataOrSuffStat::SuffStat(&stat));
+
+            let mut q = 0;
+            for _ in 0..n_bins {
+                // Draw posterior samples {θ₁, . . . , θₗ} ∼ π(θ | ỹ)
+                let alpha_hat: f64 = posterior.draw(&mut rng);
+
+                // Compute the rank statistic
+                if alpha_hat < alpha {
+                    q += 1;
+                }
+            }
+
+            // Increment the histogram
+            hist[q] += 1;
+        }
+
+        let mut chisq_stat = 0.0;
+        let df = n_bins - 1;
+
+        // Null hypothesis is equal weights
+        let expected = n_samples as f64 / n_bins as f64;
+        hist.iter().for_each(|k| {
+            let observed: f64 = *k as f64;
+            chisq_stat += (observed - expected).powi(2) / expected;
+        });
+        let pvalue = 1.0 - ChiSquared::new(df as f64).unwrap().cdf(&chisq_stat);
+
+        // Make sure we don't reject H₀
+        assert!(pvalue > 0.05);
     }
+
+    #[test]
+    fn ln_m_single_datum_vs_monte_carlo() {
+        use crate::misc::LogSumExp;
+
+        let n_samples = 1_000_000;
+        let x: usize = 5;
+        let xs = vec![x];
+
+        let (alpha, beta) = (2.0, 3.0);
+        let bp = BetaPrime::new(alpha, beta).unwrap();
+        let ln_m =
+            bp.ln_m(&DataOrSuffStat::<usize, StickBreakingDiscrete>::from(&xs));
+
+        let mut rng = Xoshiro256Plus::seed_from_u64(123);
+        let mc_est = {
+            bp.sample_stream(&mut rng)
+                .take(n_samples)
+                .map(|sbd: StickBreakingDiscrete| sbd.ln_f(&x))
+                .logsumexp()
+                - (n_samples as f64).ln()
+        };
+        // high error tolerance. MC estimation is not the most accurate...
+        assert::close(ln_m, mc_est, 1e-2);
+    }
+
+    #[test]
+    fn ln_m_vs_monte_carlo() {
+        use crate::misc::LogSumExp;
+        let mut rng = Xoshiro256Plus::seed_from_u64(123);
+        
+        let n_samples = 1000;
+        println!("n_samples: {}", n_samples);
+        let n_obs = 2;
+        
+        let (alpha, beta) = (4.0, 3.0);
+        let bp = BetaPrime::new(alpha, beta).unwrap();
+
+        let xs: Vec<usize> = (0..n_obs)
+            .map(|_| {
+                let upowlaw = UnitPowerLaw::new(alpha).unwrap();
+                let sb: StickBreaking = StickBreaking::new(upowlaw);
+                let sbd: StickBreakingDiscrete = sb.draw(&mut rng);
+                sbd.draw(&mut rng)
+            })
+            .collect();
+        let xs = vec![0, 1];
+        println!("xs: {:?}", xs);
+        let obs = DataOrSuffStat::Data(&xs);
+        let ln_m = bp.ln_m(&obs);
+        println!("ln_m: {}", ln_m);
+
+        let mut rng = Xoshiro256Plus::seed_from_u64(123);
+        let mc_est = (0..n_samples).map(|_| {
+            let sbd: StickBreakingDiscrete = bp.draw(&mut rng);
+            xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>()
+        }).logsumexp() - (n_samples as f64).ln();
+
+        // high error tolerance. MC estimation is not the most accurate...
+        assert::close(ln_m, mc_est, 0.0);
+    }
+
+    #[test]
+    fn ln_pp_vs_monte_carlo() {
+        use crate::misc::LogSumExp;
+
+        let n_samples = 100_000;
+        let xs = vec![1, 2, 3, 4, 5];  
+
+        let y: usize = 3;  
+        let (alpha, beta) = (2.0, 3.0);
+        let bp = BetaPrime::new(alpha, beta).unwrap();
+        let post = bp.posterior(&DataOrSuffStat::<usize, StickBreakingDiscrete>::from(&xs));
+        let ln_pp = bp.ln_pp(&y, &DataOrSuffStat::<usize, StickBreakingDiscrete>::from(&xs));
+
+        let mc_est = {
+            post.sample_stream(&mut rand::thread_rng())
+                .take(n_samples)
+                .map(|sbd: StickBreakingDiscrete| sbd.ln_f(&y))
+                .logsumexp()
+                - (n_samples as f64).ln()
+        };
+        // high error tolerance. MC estimation is not the most accurate...
+        assert::close(ln_pp, mc_est, 1e-2);
+    }
+
+    #[test]
+    fn ln_pp_vs_ln_m_single() {
+        // The log posterior predictive of p(x | nothing) should be the same as
+        // p(x).
+        let x = 5;
+
+        let (alpha, beta) = (2.0, 3.0);
+        let bp = BetaPrime::new(alpha, beta).unwrap();
+
+        let (ln_pp, ln_m) = {
+            let xs = vec![x];
+            let empty = Vec::new();
+            let empty_data = DataOrSuffStat::<usize, StickBreakingDiscrete>::from(&empty);
+            let x_data = DataOrSuffStat::<usize, StickBreakingDiscrete>::from(&xs);
+            (bp.ln_pp(&x, &empty_data), bp.ln_m(&x_data))
+        };
+        assert::close(ln_m, ln_pp, TOL);
+    }
+
+    #[test]
+    fn ln_pp_single_vs_monte_carlo() {
+        use crate::misc::LogSumExp;
+
+        let n_samples = 1_000_000;
+        let x = 5;
+
+        let (alpha, beta) = (2.0, 3.0);
+        let bp = BetaPrime::new(alpha, beta).unwrap();
+        let ln_pp = bp.ln_pp(
+            &x,
+            &DataOrSuffStat::<usize, StickBreakingDiscrete>::from(&vec![]),
+        );
+
+        let mc_est = {
+            bp.sample_stream(&mut rand::thread_rng())
+                .take(n_samples)
+                .map(|sbd: StickBreakingDiscrete| sbd.ln_f(&x))
+                .logsumexp()
+                - (n_samples as f64).ln()
+        };
+        // high error tolerance. MC estimation is not the most accurate...
+        assert::close(ln_pp, mc_est, 1e-2);
+    }
+
 }
