@@ -13,10 +13,10 @@ use crate::traits::SuffStat;
 pub struct VonMisesSuffStat {
     /// Number of observations
     n: usize,
-    /// ∑ⱼ cos(xⱼ)
-    sum_cos: f64,
     /// ∑ⱼ sin(xⱼ)
     sum_sin: f64,
+    /// ∑ⱼ cos(xⱼ)
+    sum_cos: f64,
 }
 
 impl VonMisesSuffStat {
@@ -24,8 +24,8 @@ impl VonMisesSuffStat {
     pub fn new() -> Self {
         VonMisesSuffStat {
             n: 0,
-            sum_cos: 0.0,
             sum_sin: 0.0,
+            sum_cos: 0.0,
         }
     }
 
@@ -35,8 +35,8 @@ impl VonMisesSuffStat {
     pub fn from_parts_unchecked(n: usize, sum_cos: f64, sum_sin: f64) -> Self {
         VonMisesSuffStat {
             n,
-            sum_cos,
             sum_sin,
+            sum_cos,
         }
     }
 
@@ -98,14 +98,16 @@ impl SuffStat<f64> for VonMisesSuffStat {
     }
 
     fn observe(&mut self, x: &f64) {
-        self.sum_cos += x.cos();
-        self.sum_sin += x.sin();
+        let (sin_x, cos_x) = x.sin_cos();
+        self.sum_sin += sin_x;
+        self.sum_cos += cos_x;
         self.n += 1;
     }
 
     fn forget(&mut self, x: &f64) {
-        self.sum_cos -= x.cos();
-        self.sum_sin -= x.sin();
+        let (sin_x, cos_x) = x.sin_cos();
+        self.sum_sin -= sin_x;
+        self.sum_cos -= cos_x;
         self.n -= 1;
     }
 
@@ -114,8 +116,8 @@ impl SuffStat<f64> for VonMisesSuffStat {
             return;
         }
         self.n += other.n;
-        self.sum_cos += other.sum_cos;
         self.sum_sin += other.sum_sin;
+        self.sum_cos += other.sum_cos;
     }
 }
 

@@ -15,10 +15,10 @@ pub struct CdvmSuffStat {
     modulus: usize,
     /// Number of observations
     n: usize,
-    /// ∑ⱼ cos(2πxⱼ/m)
-    sum_cos: f64,
     /// ∑ⱼ sin(2πxⱼ/m)
     sum_sin: f64,
+    /// ∑ⱼ cos(2πxⱼ/m)
+    sum_cos: f64,
 
     /// Cached 2π/m
     #[cfg_attr(feature = "serde1", serde(skip))]
@@ -31,8 +31,8 @@ impl CdvmSuffStat {
         CdvmSuffStat {
             modulus,
             n: 0,
-            sum_cos: 0.0,
             sum_sin: 0.0,
+            sum_cos: 0.0,
             twopi_over_m: 2.0 * std::f64::consts::PI / modulus as f64,
         }
     }
@@ -49,8 +49,8 @@ impl CdvmSuffStat {
         CdvmSuffStat {
             modulus,
             n,
-            sum_cos,
             sum_sin,
+            sum_cos,
             twopi_over_m: 2.0 * std::f64::consts::PI / modulus as f64,
         }
     }
@@ -101,8 +101,9 @@ impl SuffStat<usize> for CdvmSuffStat {
             panic!("x must be less than modulus");
         }
         let angle = self.twopi_over_m * (*x as f64);
-        self.sum_cos += angle.cos();
-        self.sum_sin += angle.sin();
+        let (sin_x, cos_x) = angle.sin_cos();
+        self.sum_sin += sin_x;
+        self.sum_cos += cos_x;
         self.n += 1;
     }
 
@@ -111,8 +112,9 @@ impl SuffStat<usize> for CdvmSuffStat {
             panic!("x must be less than modulus");
         }
         let angle = self.twopi_over_m * (*x as f64);
-        self.sum_cos -= angle.cos();
-        self.sum_sin -= angle.sin();
+        let (sin_x, cos_x) = angle.sin_cos();
+        self.sum_sin -= sin_x;
+        self.sum_cos -= cos_x;
         self.n -= 1;
     }
 
