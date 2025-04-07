@@ -40,6 +40,10 @@ pub struct VonMises {
     // bessel:i0(k), save some cycles
     #[cfg_attr(feature = "serde1", serde(skip))]
     log_i0_k: f64,
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    sin_mu: f64,
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    cos_mu: f64,
 }
 
 pub struct VonMisesParameters {
@@ -84,11 +88,15 @@ impl VonMises {
         } else if !k.is_finite() {
             Err(VonMisesError::KNotFinite { k })
         } else {
+            let mu = mu % (2.0 * PI);
             let log_i0_k = bessel::log_i0(k);
+            let (sin_mu, cos_mu) = mu.sin_cos();
             Ok(VonMises {
-                mu: mu % (2.0 * PI),
+                mu,
                 k,
                 log_i0_k,
+                sin_mu,
+                cos_mu,
             })
         }
     }
@@ -98,7 +106,14 @@ impl VonMises {
     #[inline]
     pub fn new_unchecked(mu: f64, k: f64) -> Self {
         let log_i0_k = bessel::log_i0(k);
-        VonMises { mu, k, log_i0_k }
+        let (sin_mu, cos_mu) = mu.sin_cos();
+        VonMises {
+            mu,
+            k,
+            log_i0_k,
+            sin_mu,
+            cos_mu,
+        }
     }
 
     /// Get the mean parameter, mu
@@ -113,6 +128,14 @@ impl VonMises {
     #[inline]
     pub fn mu(&self) -> f64 {
         self.mu
+    }
+
+    pub fn sin_mu(&self) -> f64 {
+        self.sin_mu
+    }
+
+    pub fn cos_mu(&self) -> f64 {
+        self.cos_mu
     }
 
     /// Set the value of mu
