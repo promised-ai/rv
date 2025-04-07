@@ -368,7 +368,7 @@ impl HasSuffStat<f64> for VonMises {
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
         self.k
-            * (stat.sum_cos() * self.mu.cos() + stat.sum_sin() * self.mu.sin())
+            * (stat.sum_cos() * self.cos_mu() + stat.sum_sin() * self.sin_mu())
             - stat.n() as f64 * self.log_i0_k
     }
 }
