@@ -130,6 +130,14 @@ impl VonMises {
         self.mu
     }
 
+    pub fn sin_mu(&self) -> f64 {
+        self.sin_mu
+    }
+
+    pub fn cos_mu(&self) -> f64 {
+        self.cos_mu
+    }
+
     /// Set the value of mu
     ///
     /// # Example
