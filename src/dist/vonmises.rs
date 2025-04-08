@@ -6,11 +6,11 @@ use crate::data::VonMisesSuffStat;
 use crate::impl_display;
 use crate::misc::bessel;
 use crate::traits::*;
+use num::Zero;
 use rand::Rng;
+use rand_distr::Normal;
 use std::f64::consts::PI;
 use std::fmt;
-use num::Zero;
-use rand_distr::Normal;
 
 /// [VonMises distribution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
 /// on the circular interval (0, 2π]
@@ -282,8 +282,8 @@ macro_rules! impl_traits {
                     let normal = Normal::new(self.mu, 1.0 / self.k).unwrap();
                     return rng.sample(normal) as $kind;
                 } else {
-
-                    let tau = 1.0 + 4.0_f64.mul_add(self.k * self.k, 1.0).sqrt();
+                    let tau =
+                        1.0 + 4.0_f64.mul_add(self.k * self.k, 1.0).sqrt();
                     let rho = (tau - (2.0 * tau).sqrt()) / (2.0 * self.k);
                     let r = rho.mul_add(rho, 1.0) / (2.0 * rho);
                     let mut f;
@@ -303,12 +303,13 @@ macro_rules! impl_traits {
                         let z = (1.0 - t) / (1.0 + t);
                         f = (1.0 + r * z) / (r + z);
                         let c = self.k * (r - f);
-                        if (c.mul_add(2.0 - c, -u) > 0.0) || ((c / u).ln() + 1.0 - c >= 0.0)
+                        if (c.mul_add(2.0 - c, -u) > 0.0)
+                            || ((c / u).ln() + 1.0 - c >= 0.0)
                         {
-                           break;
-                        } 
+                            break;
+                        }
                     }
-                    
+
                     let acf = f.acos();
                     let x = if rng.gen_bool(0.5) {
                         self.mu + acf
@@ -419,8 +420,8 @@ impl fmt::Display for VonMisesError {
 mod tests {
     use super::*;
     use crate::misc::ks_test;
-    use crate::test_basic_impls;
     use crate::test::density_histogram_test;
+    use crate::test_basic_impls;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
@@ -567,7 +568,9 @@ mod tests {
         let density_fn = |x: f64| (k * (x - mu).cos()).exp();
         let normalized = false;
         let num_bins = 100;
-        let p_value = density_histogram_test(&xs, num_bins, density_fn, normalized).unwrap();
+        let p_value =
+            density_histogram_test(&xs, num_bins, density_fn, normalized)
+                .unwrap();
         dbg!(p_value);
         assert!(p_value > 0.01);
     }
