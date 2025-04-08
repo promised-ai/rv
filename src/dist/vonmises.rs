@@ -9,6 +9,8 @@ use crate::traits::*;
 use rand::Rng;
 use std::f64::consts::PI;
 use std::fmt;
+use num::Zero;
+use rand_distr::Normal;
 
 /// [VonMises distribution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
 /// on the circular interval (0, 2π]
@@ -72,7 +74,7 @@ impl Parameterized for VonMises {
 pub enum VonMisesError {
     /// The mu parameter is infinite or NaN
     MuNotFinite { mu: f64 },
-    /// The k parameter is less than or equal to zero
+    /// The k parameter is less than zero
     KTooLow { k: f64 },
     /// The k parameter is infinite or NaN
     KNotFinite { k: f64 },
@@ -83,7 +85,7 @@ impl VonMises {
     pub fn new(mu: f64, k: f64) -> Result<Self, VonMisesError> {
         if !mu.is_finite() {
             Err(VonMisesError::MuNotFinite { mu })
-        } else if k <= 0.0 {
+        } else if k < 0.0 {
             Err(VonMisesError::KTooLow { k })
         } else if !k.is_finite() {
             Err(VonMisesError::KNotFinite { k })
@@ -228,7 +230,7 @@ impl VonMises {
     /// ```
     #[inline]
     pub fn set_k(&mut self, k: f64) -> Result<(), VonMisesError> {
-        if k <= 0.0 {
+        if k < 0.0 {
             Err(VonMisesError::KTooLow { k })
         } else if !k.is_finite() {
             Err(VonMisesError::KNotFinite { k })
@@ -274,31 +276,46 @@ macro_rules! impl_traits {
             //     von Mises distribution. Applied Statistics, 152-157.
             // https://www.researchgate.net/publication/246035131_Efficient_Simulation_of_the_von_Mises_Distribution
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let u = rand::distributions::Open01;
-                let tau = 1.0 + 4.0_f64.mul_add(self.k * self.k, 1.0).sqrt();
-                let rho = (tau * (2.0 * tau).sqrt()) / (2.0 * self.k);
-                let r = rho.mul_add(rho, 1.0) / (2.0 * rho);
+                if self.k.is_zero() {
+                    return rng.gen_range(0.0..=2.0 * PI) as $kind;
+                } else if self.k > 700.0 {
+                    let normal = Normal::new(self.mu, 1.0 / self.k).unwrap();
+                    return rng.sample(normal) as $kind;
+                } else {
 
-                loop {
-                    let u1: f64 = rng.sample(u);
-                    let u2: f64 = rng.sample(u);
-
-                    let z: f64 = (PI * u1).cos();
-                    let f = r.mul_add(z, 1.0) / (r + z);
-                    let c = self.k * (r - f);
-
-                    if (c.mul_add(2.0 - c, -u2) >= 0.0)
-                        || ((c / u2).ln() + 1.0 - c >= 0.0)
-                    {
-                        let u3: f64 = rng.sample(u);
-                        let y = (u3 - 0.5).signum().mul_add(f.acos(), self.mu);
-                        let x = y.rem_euclid(2.0 * PI) as $kind;
-                        if self.supports(&x) {
-                            return x;
-                        } else {
-                            panic!("VonMises does not support {}", x);
+                    let tau = 1.0 + 4.0_f64.mul_add(self.k * self.k, 1.0).sqrt();
+                    let rho = (tau - (2.0 * tau).sqrt()) / (2.0 * self.k);
+                    let r = rho.mul_add(rho, 1.0) / (2.0 * rho);
+                    let mut f;
+                    loop {
+                        let t;
+                        let u;
+                        loop {
+                            let d: f64 = (rng.gen::<f64>() - 0.5).powi(2);
+                            let e: f64 = (rng.gen::<f64>() - 0.5).powi(2);
+                            let s: f64 = d + e;
+                            if s <= 0.25 {
+                                t = d / e;
+                                u = 4.0 * s;
+                                break;
+                            }
                         }
+                        let z = (1.0 - t) / (1.0 + t);
+                        f = (1.0 + r * z) / (r + z);
+                        let c = self.k * (r - f);
+                        if (c.mul_add(2.0 - c, -u) > 0.0) || ((c / u).ln() + 1.0 - c >= 0.0)
+                        {
+                           break;
+                        } 
                     }
+                    
+                    let acf = f.acos();
+                    let x = if rng.gen_bool(0.5) {
+                        self.mu + acf
+                    } else {
+                        self.mu - acf
+                    };
+                    (x % (2.0 * PI)) as $kind
                 }
             }
         }
@@ -403,6 +420,7 @@ mod tests {
     use super::*;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
+    use crate::test::density_histogram_test;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
@@ -537,5 +555,20 @@ mod tests {
         });
 
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn vm_density_test() {
+        let mut rng = rand::thread_rng();
+        let mu = 1.0;
+        let k = 100.2;
+        let vm = VonMises::new(mu, k).unwrap();
+        let xs: Vec<f64> = vm.sample(10_000, &mut rng);
+        let density_fn = |x: f64| (k * (x - mu).cos()).exp();
+        let normalized = false;
+        let num_bins = 100;
+        let p_value = density_histogram_test(&xs, num_bins, density_fn, normalized).unwrap();
+        dbg!(p_value);
+        assert!(p_value > 0.01);
     }
 }
