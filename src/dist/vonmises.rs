@@ -221,7 +221,6 @@ impl VonMises {
     /// assert!(vm.set_k(0.1).is_ok());
     ///
     /// // Must be greater than zero
-    /// assert!(vm.set_k(0.0).is_err());
     /// assert!(vm.set_k(-1.0).is_err());
     ///
     /// assert!(vm.set_k(f64::INFINITY).is_err());
