@@ -246,6 +246,36 @@ impl VonMises {
         self.k = k;
         self.log_i0_k = bessel::log_i0(k);
     }
+
+    /// Perform a slice sampling step for the VonMises distribution
+    /// 
+    /// # Arguments
+    /// 
+    /// * `x` - The current value of x
+    /// * `mu` - The mean of the distribution
+    /// * `k` - The concentration parameter
+    /// * `rng` - The random number generator
+    /// 
+    /// # Returns
+    /// 
+    /// The new value of x
+    /// 
+    /// # Note
+    /// 
+    /// This sampler returns x in the interval [π, π]. If you need x in the
+    /// interval [0, 2π), you can use `x % (2.0 * PI)` to wrap it.
+    #[inline]
+    pub fn slice_step<R: Rng>(x: f64, mu: f64, k: f64, rng: &mut R) -> f64 {
+        // y ~ Uniform(0, exp(k * cos(x - μ)))
+        let logy = rng.gen::<f64>().ln() + k * (x - mu).cos();
+        // Need to solve for x in k cos(x) = logy
+        // If logy < -k, then we're below the cos curve
+        // In that case, sample uniformly on the circle
+        let xmax = if logy < -k { PI } else { (logy / k).acos() };
+        // Sample uniformly on [-xmax, xmax] and add μ
+        let x = xmax * (2.0 * rng.gen::<f64>() - 1.0) + mu;
+        x
+    }
 }
 
 impl Default for VonMises {
