@@ -259,11 +259,7 @@ impl VonMises {
     /// # Returns
     /// 
     /// The new value of x
-    /// 
-    /// # Note
-    /// 
-    /// This sampler returns x in the interval [π, π]. If you need x in the
-    /// interval [0, 2π), you can use `x % (2.0 * PI)` to wrap it.
+
     #[inline]
     pub fn slice_step<R: Rng>(x: f64, mu: f64, k: f64, rng: &mut R) -> f64 {
         // y ~ Uniform(0, exp(k * cos(x - μ)))
@@ -274,7 +270,7 @@ impl VonMises {
         let xmax = if logy < -k { PI } else { (logy / k).acos() };
         // Sample uniformly on [-xmax, xmax] and add μ
         let x = xmax * (2.0 * rng.gen::<f64>() - 1.0) + mu;
-        x
+        x % (2.0 * PI)
     }
 }
 
