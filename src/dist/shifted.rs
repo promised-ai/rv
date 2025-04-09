@@ -1,5 +1,4 @@
 use crate::data::ShiftedSuffStat;
-use crate::prelude::Scaled;
 use crate::traits::*;
 use rand::Rng;
 #[cfg(feature = "serde1")]
