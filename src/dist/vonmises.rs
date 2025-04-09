@@ -269,7 +269,7 @@ impl VonMises {
         // In that case, sample uniformly on the circle
         let xmax = if logy < -k { PI } else { (logy / k).acos() };
         // Sample uniformly on [-xmax, xmax] and add μ
-        let x = xmax * (2.0 * rng.gen::<f64>() - 1.0) + mu;
+        let x = xmax * rng.gen_range(-1.0..=1.0) + mu;
         x % (2.0 * PI)
     }
 }
