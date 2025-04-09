@@ -180,6 +180,9 @@ impl VonMises {
     #[inline]
     pub fn set_mu_unchecked(&mut self, mu: f64) {
         self.mu = mu;
+        let (sin_mu, cos_mu) = mu.sin_cos();
+        self.sin_mu = sin_mu;
+        self.cos_mu = cos_mu;
     }
 
     /// Get the precision parameter, k
