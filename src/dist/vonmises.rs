@@ -248,16 +248,16 @@ impl VonMises {
     }
 
     /// Perform a slice sampling step for the VonMises distribution
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `x` - The current value of x
     /// * `mu` - The mean of the distribution
     /// * `k` - The concentration parameter
     /// * `rng` - The random number generator
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// The new value of x
 
     #[inline]
@@ -591,10 +591,10 @@ mod tests {
         let mu = 1.5;
         let k = 2.0;
         let vm = VonMises::new(mu, k).unwrap();
-        
+
         // Generate samples using draw method
         let draw_samples: Vec<f64> = vm.sample(n_samples, &mut rng);
-        
+
         // Generate samples using slice_step method
         let mut slice_samples = Vec::with_capacity(n_samples);
         let mut x = PI; // Start at a reasonable value
@@ -602,13 +602,23 @@ mod tests {
             x = VonMises::slice_step(x, mu, k, &mut rng);
             slice_samples.push(x);
         }
-        
+
         // Use the existing two-sample KS test
-        use crate::misc::{ks_two_sample, KsMode, KsAlternative};
-        let (_, p_value) = ks_two_sample(&draw_samples, &slice_samples, KsMode::Auto, KsAlternative::TwoSided).unwrap();
-        
+        use crate::misc::{ks_two_sample, KsAlternative, KsMode};
+        let (_, p_value) = ks_two_sample(
+            &draw_samples,
+            &slice_samples,
+            KsMode::Auto,
+            KsAlternative::TwoSided,
+        )
+        .unwrap();
+
         dbg!(p_value);
-        assert!(p_value > 0.05, "Slice step sampling failed KS test with p-value {}", p_value);
+        assert!(
+            p_value > 0.05,
+            "Slice step sampling failed KS test with p-value {}",
+            p_value
+        );
     }
 
     #[test]
