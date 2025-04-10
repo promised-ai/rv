@@ -11,7 +11,6 @@ use rand::Rng;
 use rand_distr::Normal;
 use std::f64::consts::PI;
 use std::fmt;
-use std::sync::OnceLock;
 
 /// [VonMises distribution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
 /// on the circular interval [0, 2π)
