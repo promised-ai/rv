@@ -355,7 +355,6 @@ macro_rules! impl_traits {
                     };
                     x.rem_euclid(2.0 * PI) as $kind
                 }
-                
             }
         }
 
