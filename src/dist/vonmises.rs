@@ -13,7 +13,7 @@ use std::f64::consts::PI;
 use std::fmt;
 
 /// [VonMises distribution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
-/// on the circular interval (0, 2π]
+/// on the circular interval [0, 2π)
 ///
 /// # Example
 ///
@@ -31,7 +31,7 @@ use std::fmt;
 /// let xs: Vec<f64> = vm.sample(103, &mut rng);
 /// assert_eq!(xs.len(), 103);
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct VonMises {
@@ -40,12 +40,15 @@ pub struct VonMises {
     /// Sort of like precision. Higher k implies lower variance.
     k: f64,
     // bessel:i0(k), save some cycles
-    #[cfg_attr(feature = "serde1", serde(skip))]
     log_i0_k: f64,
-    #[cfg_attr(feature = "serde1", serde(skip))]
     sin_mu: f64,
-    #[cfg_attr(feature = "serde1", serde(skip))]
     cos_mu: f64,
+}
+
+impl PartialEq for VonMises {
+    fn eq(&self, other: &Self) -> bool {
+        self.mu == other.mu && self.k == other.k
+    }
 }
 
 pub struct VonMisesParameters {
@@ -90,9 +93,9 @@ impl VonMises {
         } else if !k.is_finite() {
             Err(VonMisesError::KNotFinite { k })
         } else {
-            let mu = mu % (2.0 * PI);
-            let log_i0_k = bessel::log_i0(k);
+            let mu = mu.rem_euclid(2.0 * PI);
             let (sin_mu, cos_mu) = mu.sin_cos();
+            let log_i0_k = bessel::log_i0(k);
             Ok(VonMises {
                 mu,
                 k,
@@ -107,8 +110,8 @@ impl VonMises {
     /// valid.
     #[inline]
     pub fn new_unchecked(mu: f64, k: f64) -> Self {
-        let log_i0_k = bessel::log_i0(k);
         let (sin_mu, cos_mu) = mu.sin_cos();
+        let log_i0_k = bessel::log_i0(k);
         VonMises {
             mu,
             k,
@@ -138,6 +141,11 @@ impl VonMises {
 
     pub fn cos_mu(&self) -> f64 {
         self.cos_mu
+    }
+
+    #[inline]
+    fn log_i0_k(&self) -> f64 {
+        self.log_i0_k
     }
 
     /// Set the value of mu
@@ -171,7 +179,7 @@ impl VonMises {
         if !mu.is_finite() {
             Err(VonMisesError::MuNotFinite { mu })
         } else {
-            self.set_mu_unchecked(mu % (2.0 * PI));
+            self.set_mu_unchecked(mu.rem_euclid(2.0 * PI));
             Ok(())
         }
     }
@@ -180,6 +188,9 @@ impl VonMises {
     #[inline]
     pub fn set_mu_unchecked(&mut self, mu: f64) {
         self.mu = mu;
+        let (sin_mu, cos_mu) = mu.sin_cos();
+        self.sin_mu = sin_mu;
+        self.cos_mu = cos_mu;
     }
 
     /// Get the precision parameter, k
@@ -269,13 +280,14 @@ impl VonMises {
         let xmax = if logy < -k { PI } else { (logy / k).acos() };
         // Sample uniformly on [-xmax, xmax] and add μ
         let x = xmax * rng.gen_range(-1.0..=1.0) + mu;
-        x % (2.0 * PI)
+        // Ensure result is in [0, 2π)
+        x.rem_euclid(2.0 * PI)
     }
 }
 
 impl Default for VonMises {
     fn default() -> Self {
-        VonMises::new(PI, 1.0).unwrap()
+        VonMises::new(0.0, 0.0).unwrap()
     }
 }
 
@@ -292,7 +304,7 @@ macro_rules! impl_traits {
         impl HasDensity<$kind> for VonMises {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let xf = f64::from(*x);
-                self.k.mul_add((xf - self.mu).cos(), -LN_2PI) - self.log_i0_k
+                self.k.mul_add((xf - self.mu).cos(), -LN_2PI) - self.log_i0_k()
             }
         }
 
@@ -302,10 +314,10 @@ macro_rules! impl_traits {
             // https://www.researchgate.net/publication/246035131_Efficient_Simulation_of_the_von_Mises_Distribution
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 if self.k.is_zero() {
-                    return rng.gen_range(0.0..=2.0 * PI) as $kind;
+                    rng.gen_range(0.0..=2.0 * PI) as $kind
                 } else if self.k > 700.0 {
                     let normal = Normal::new(self.mu, 1.0 / self.k).unwrap();
-                    return rng.sample(normal) as $kind;
+                    rng.sample(normal).rem_euclid(2.0 * PI) as $kind
                 } else {
                     let tau =
                         1.0 + 4.0_f64.mul_add(self.k * self.k, 1.0).sqrt();
@@ -341,7 +353,7 @@ macro_rules! impl_traits {
                     } else {
                         self.mu - acf
                     };
-                    (x % (2.0 * PI)) as $kind
+                    x.rem_euclid(2.0 * PI) as $kind
                 }
             }
         }
@@ -395,7 +407,7 @@ macro_rules! impl_traits {
         // This is the circular variance
         impl Variance<$kind> for VonMises {
             fn variance(&self) -> Option<$kind> {
-                let v: f64 = 1.0 - bessel::i1(self.k) / self.log_i0_k.exp();
+                let v: f64 = 1.0 - bessel::i1(self.k) / self.log_i0_k().exp();
                 Some(v as $kind)
             }
         }
@@ -412,15 +424,15 @@ impl HasSuffStat<f64> for VonMises {
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
         self.k
             * (stat.sum_cos() * self.cos_mu() + stat.sum_sin() * self.sin_mu())
-            - stat.n() as f64 * self.log_i0_k
+            - stat.n() as f64 * (self.log_i0_k() + LN_2PI)
     }
 }
 
 impl Entropy for VonMises {
     fn entropy(&self) -> f64 {
-        -self.k * bessel::i1(self.k) / self.log_i0_k.exp()
+        -self.k * bessel::i1(self.k) / self.log_i0_k().exp()
             + LN_2PI
-            + self.log_i0_k
+            + self.log_i0_k()
     }
 }
 
@@ -447,6 +459,10 @@ mod tests {
     use crate::misc::ks_test;
     use crate::test::density_histogram_test;
     use crate::test_basic_impls;
+
+    use proptest::prelude::*;
+    use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256Plus;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
@@ -563,9 +579,7 @@ mod tests {
         assert!(xs.iter().all(|x| vm.supports(x)));
     }
 
-    // TODO: Why is this failing?
     #[test]
-    #[ignore]
     fn vm_draw_test() {
         let mut rng = rand::thread_rng();
         let vm = VonMises::new(1.0, 1.2).unwrap();
@@ -637,5 +651,53 @@ mod tests {
                 .unwrap();
         dbg!(p_value);
         assert!(p_value > 0.01);
+    }
+
+    #[test]
+    fn ln_f_vs_ln_f_stat_test() {
+        // Create a VonMises distribution
+        let mut rng = rand::thread_rng();
+        let mu = 1.5;
+        let k = 2.0;
+        let vm = VonMises::new(mu, k).unwrap();
+
+        // 1. Generate a sample
+        let sample_size = 100;
+        let xs: Vec<f64> = vm.sample(sample_size, &mut rng);
+
+        // 2. Find the ln_f of the sample (direct log-likelihood)
+        let ln_f_sum: f64 = xs.iter().map(|x| vm.ln_f(x)).sum();
+
+        // 3. Aggregate the sample into a suffstat
+        let mut stat = vm.empty_suffstat();
+        for x in &xs {
+            stat.observe(x);
+        }
+
+        // 4. Compute ln_f_stat
+        let ln_f_stat_result = vm.ln_f_stat(&stat);
+
+        // 5. Assert that they are close
+        assert::close(ln_f_sum, ln_f_stat_result, 1e-10);
+    }
+
+    proptest! {
+        #[test]
+        fn vonmises_draw_produces_valid_range(
+            mu in -10.0..10.0,
+            k in 0.0..10000.0,
+            seed: u64
+        ) {
+            let vm = VonMises::new(mu, k).unwrap();
+            let mut rng = Xoshiro256Plus::seed_from_u64(seed);
+
+            let sample: f64 = vm.draw(&mut rng);
+
+            prop_assert!(
+                sample >= 0.0 && sample < 2.0 * std::f64::consts::PI,
+                "Sample {} not in range [0, 2π) for VonMises({}, {})",
+                sample, mu, k
+            );
+        }
     }
 }
