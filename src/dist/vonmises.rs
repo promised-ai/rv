@@ -13,7 +13,7 @@ use std::f64::consts::PI;
 use std::fmt;
 
 /// [VonMises distribution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
-/// on the circular interval (0, 2π]
+/// on the circular interval [0, 2π)
 ///
 /// # Example
 ///
