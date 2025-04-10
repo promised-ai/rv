@@ -11,6 +11,7 @@ use rand::Rng;
 use rand_distr::Normal;
 use std::f64::consts::PI;
 use std::fmt;
+use std::sync::OnceLock;
 
 /// [VonMises distribution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
 /// on the circular interval [0, 2π)
@@ -31,7 +32,7 @@ use std::fmt;
 /// let xs: Vec<f64> = vm.sample(103, &mut rng);
 /// assert_eq!(xs.len(), 103);
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct VonMises {
@@ -41,11 +42,17 @@ pub struct VonMises {
     k: f64,
     // bessel:i0(k), save some cycles
     #[cfg_attr(feature = "serde1", serde(skip))]
-    log_i0_k: f64,
+    log_i0_k: OnceLock<f64>,
     #[cfg_attr(feature = "serde1", serde(skip))]
     sin_mu: f64,
     #[cfg_attr(feature = "serde1", serde(skip))]
     cos_mu: f64,
+}
+
+impl PartialEq for VonMises {
+    fn eq(&self, other: &Self) -> bool {
+        self.mu == other.mu && self.k == other.k
+    }
 }
 
 pub struct VonMisesParameters {
@@ -91,12 +98,11 @@ impl VonMises {
             Err(VonMisesError::KNotFinite { k })
         } else {
             let mu = mu.rem_euclid(2.0 * PI);
-            let log_i0_k = bessel::log_i0(k);
             let (sin_mu, cos_mu) = mu.sin_cos();
             Ok(VonMises {
                 mu,
                 k,
-                log_i0_k,
+                log_i0_k: OnceLock::new(),
                 sin_mu,
                 cos_mu,
             })
@@ -107,12 +113,11 @@ impl VonMises {
     /// valid.
     #[inline]
     pub fn new_unchecked(mu: f64, k: f64) -> Self {
-        let log_i0_k = bessel::log_i0(k);
         let (sin_mu, cos_mu) = mu.sin_cos();
         VonMises {
             mu,
             k,
-            log_i0_k,
+            log_i0_k: OnceLock::new(),
             sin_mu,
             cos_mu,
         }
@@ -138,6 +143,11 @@ impl VonMises {
 
     pub fn cos_mu(&self) -> f64 {
         self.cos_mu
+    }
+
+    #[inline]
+    fn log_i0_k(&self) -> f64 {
+        *self.log_i0_k.get_or_init(|| bessel::log_i0(self.k))
     }
 
     /// Set the value of mu
@@ -246,7 +256,7 @@ impl VonMises {
     #[inline]
     pub fn set_k_unchecked(&mut self, k: f64) {
         self.k = k;
-        self.log_i0_k = bessel::log_i0(k);
+        self.log_i0_k = OnceLock::new();
     }
 
     /// Perform a slice sampling step for the VonMises distribution
@@ -296,7 +306,7 @@ macro_rules! impl_traits {
         impl HasDensity<$kind> for VonMises {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let xf = f64::from(*x);
-                self.k.mul_add((xf - self.mu).cos(), -LN_2PI) - self.log_i0_k
+                self.k.mul_add((xf - self.mu).cos(), -LN_2PI) - self.log_i0_k()
             }
         }
 
@@ -399,7 +409,7 @@ macro_rules! impl_traits {
         // This is the circular variance
         impl Variance<$kind> for VonMises {
             fn variance(&self) -> Option<$kind> {
-                let v: f64 = 1.0 - bessel::i1(self.k) / self.log_i0_k.exp();
+                let v: f64 = 1.0 - bessel::i1(self.k) / self.log_i0_k().exp();
                 Some(v as $kind)
             }
         }
@@ -416,15 +426,15 @@ impl HasSuffStat<f64> for VonMises {
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
         self.k
             * (stat.sum_cos() * self.cos_mu() + stat.sum_sin() * self.sin_mu())
-            - stat.n() as f64 * self.log_i0_k
+            - stat.n() as f64 * self.log_i0_k()
     }
 }
 
 impl Entropy for VonMises {
     fn entropy(&self) -> f64 {
-        -self.k * bessel::i1(self.k) / self.log_i0_k.exp()
+        -self.k * bessel::i1(self.k) / self.log_i0_k().exp()
             + LN_2PI
-            + self.log_i0_k
+            + self.log_i0_k()
     }
 }
 
