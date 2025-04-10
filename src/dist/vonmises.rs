@@ -90,7 +90,7 @@ impl VonMises {
         } else if !k.is_finite() {
             Err(VonMisesError::KNotFinite { k })
         } else {
-            let mu = mu % (2.0 * PI);
+            let mu = mu.rem_euclid(2.0 * PI);
             let log_i0_k = bessel::log_i0(k);
             let (sin_mu, cos_mu) = mu.sin_cos();
             Ok(VonMises {
@@ -171,7 +171,7 @@ impl VonMises {
         if !mu.is_finite() {
             Err(VonMisesError::MuNotFinite { mu })
         } else {
-            self.set_mu_unchecked(mu % (2.0 * PI));
+            self.set_mu_unchecked(mu.rem_euclid(2.0 * PI));
             Ok(())
         }
     }
@@ -272,7 +272,8 @@ impl VonMises {
         let xmax = if logy < -k { PI } else { (logy / k).acos() };
         // Sample uniformly on [-xmax, xmax] and add μ
         let x = xmax * rng.gen_range(-1.0..=1.0) + mu;
-        x % (2.0 * PI)
+        // Ensure result is in [0, 2π)
+        x.rem_euclid(2.0 * PI)
     }
 }
 
@@ -304,11 +305,11 @@ macro_rules! impl_traits {
             //     von Mises distribution. Applied Statistics, 152-157.
             // https://www.researchgate.net/publication/246035131_Efficient_Simulation_of_the_von_Mises_Distribution
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                if self.k.is_zero() {
-                    return rng.gen_range(0.0..=2.0 * PI) as $kind;
+                let x = if self.k.is_zero() {
+                    rng.gen_range(0.0..=2.0 * PI) 
                 } else if self.k > 700.0 {
                     let normal = Normal::new(self.mu, 1.0 / self.k).unwrap();
-                    return rng.sample(normal) as $kind;
+                    rng.sample(normal) 
                 } else {
                     let tau =
                         1.0 + 4.0_f64.mul_add(self.k * self.k, 1.0).sqrt();
@@ -339,13 +340,14 @@ macro_rules! impl_traits {
                     }
 
                     let acf = f.acos();
-                    let x = if rng.gen_bool(0.5) {
+                    if rng.gen_bool(0.5) {
                         self.mu + acf
                     } else {
                         self.mu - acf
-                    };
-                    (x % (2.0 * PI)) as $kind
-                }
+                    }
+                    
+                };
+                x.rem_euclid(2.0 * PI) as $kind
             }
         }
 
@@ -450,6 +452,10 @@ mod tests {
     use crate::misc::ks_test;
     use crate::test::density_histogram_test;
     use crate::test_basic_impls;
+    
+    use rand_xoshiro::Xoshiro256Plus;
+    use rand::SeedableRng;
+    use proptest::prelude::*;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
@@ -568,7 +574,6 @@ mod tests {
 
     // TODO: Why is this failing?
     #[test]
-    #[ignore]
     fn vm_draw_test() {
         let mut rng = rand::thread_rng();
         let vm = VonMises::new(1.0, 1.2).unwrap();
@@ -640,5 +645,26 @@ mod tests {
                 .unwrap();
         dbg!(p_value);
         assert!(p_value > 0.01);
+    }
+
+
+    proptest! {
+        #[test]
+        fn vonmises_draw_produces_valid_range(
+            mu in -10.0..10.0,
+            k in 0.0..10000.0,
+            seed: u64
+        ) {
+            let vm = VonMises::new(mu, k).unwrap();
+            let mut rng = Xoshiro256Plus::seed_from_u64(seed);
+            
+            let sample: f64 = vm.draw(&mut rng);
+            
+            prop_assert!(
+                sample >= 0.0 && sample < 2.0 * std::f64::consts::PI,
+                "Sample {} not in range [0, 2π) for VonMises({}, {})",
+                sample, mu, k
+            );
+        }
     }
 }
