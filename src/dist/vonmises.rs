@@ -662,23 +662,23 @@ mod tests {
         let mu = 1.5;
         let k = 2.0;
         let vm = VonMises::new(mu, k).unwrap();
-        
+
         // 1. Generate a sample
         let sample_size = 100;
         let xs: Vec<f64> = vm.sample(sample_size, &mut rng);
-        
+
         // 2. Find the ln_f of the sample (direct log-likelihood)
         let ln_f_sum: f64 = xs.iter().map(|x| vm.ln_f(x)).sum();
-        
+
         // 3. Aggregate the sample into a suffstat
         let mut stat = vm.empty_suffstat();
         for x in &xs {
             stat.observe(x);
         }
-        
+
         // 4. Compute ln_f_stat
         let ln_f_stat_result = vm.ln_f_stat(&stat);
-        
+
         // 5. Assert that they are close
         assert::close(ln_f_sum, ln_f_stat_result, 1e-10);
     }
