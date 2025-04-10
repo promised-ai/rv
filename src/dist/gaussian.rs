@@ -7,7 +7,6 @@ use rand_distr::Normal;
 use special::Error as _;
 use std::f64::consts::SQRT_2;
 use std::fmt;
-use std::sync::OnceLock;
 
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
@@ -39,14 +38,15 @@ use crate::traits::*;
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+#[cfg_attr(feature = "serde1", serde(try_from = "GaussianParameters"))]
+#[cfg_attr(feature = "serde1", serde(into = "GaussianParameters"))]
 pub struct Gaussian {
     /// Mean
     mu: f64,
     /// Standard deviation
     sigma: f64,
     /// Cached log(sigma)
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_sigma: OnceLock<f64>,
+    ln_sigma: f64,
 }
 
 impl PartialEq for Gaussian {
@@ -55,9 +55,28 @@ impl PartialEq for Gaussian {
     }
 }
 
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct GaussianParameters {
     pub mu: f64,
     pub sigma: f64,
+}
+
+impl TryFrom<GaussianParameters> for Gaussian {
+    type Error = GaussianError;
+
+    fn try_from(params: GaussianParameters) -> Result<Self, Self::Error> {
+        Gaussian::new(params.mu, params.sigma)
+    }
+}
+
+impl From<Gaussian> for GaussianParameters {
+    fn from(gauss: Gaussian) -> Self {
+        GaussianParameters {
+            mu: gauss.mu,
+            sigma: gauss.sigma,
+        }
+    }
 }
 
 impl Parameterized for Gaussian {
@@ -104,7 +123,7 @@ impl Gaussian {
             Ok(Gaussian {
                 mu,
                 sigma,
-                ln_sigma: OnceLock::new(),
+                ln_sigma: sigma.ln(),
             })
         }
     }
@@ -116,7 +135,7 @@ impl Gaussian {
         Gaussian {
             mu,
             sigma,
-            ln_sigma: OnceLock::new(),
+            ln_sigma: sigma.ln(),
         }
     }
 
@@ -135,7 +154,7 @@ impl Gaussian {
         Gaussian {
             mu: 0.0,
             sigma: 1.0,
-            ln_sigma: OnceLock::from(0.0),
+            ln_sigma: 0.0,
         }
     }
 
@@ -249,13 +268,7 @@ impl Gaussian {
     #[inline]
     pub fn set_sigma_unchecked(&mut self, sigma: f64) {
         self.sigma = sigma;
-        self.ln_sigma = OnceLock::new();
-    }
-
-    /// Evaluate or fetch cached log sigma
-    #[inline]
-    fn ln_sigma(&self) -> f64 {
-        *self.ln_sigma.get_or_init(|| self.sigma.ln())
+        self.ln_sigma = sigma.ln();
     }
 }
 
@@ -316,7 +329,7 @@ macro_rules! impl_traits {
         impl HasDensity<$kind> for Gaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k = (f64::from(*x) - self.mu) / self.sigma;
-                (0.5 * k).mul_add(-k, -self.ln_sigma()) - HALF_LN_2PI
+                (0.5 * k).mul_add(-k, -self.ln_sigma) - HALF_LN_2PI
             }
         }
 
@@ -392,7 +405,7 @@ macro_rules! impl_traits {
                     + self
                         .mu
                         .mul_add(-2.0 * stat.sum_x(), n * self.mu * self.mu);
-                -n.mul_add(self.ln_sigma() + HALF_LN_2PI, z * expterm)
+                -n.mul_add(self.ln_sigma + HALF_LN_2PI, z * expterm)
             }
         }
     };
@@ -406,7 +419,7 @@ impl Variance<f64> for Gaussian {
 
 impl Entropy for Gaussian {
     fn entropy(&self) -> f64 {
-        HALF_LN_2PI_E + self.ln_sigma()
+        HALF_LN_2PI_E + self.ln_sigma
     }
 }
 
@@ -753,4 +766,7 @@ mod tests {
 
         assert::close(ln_f_base, ln_f_stat, TOL);
     }
+
+    #[cfg(feature = "serde1")]
+    crate::test_serde_params!(Gaussian::new(-1.3, 2.4).unwrap(), Gaussian, f64);
 }

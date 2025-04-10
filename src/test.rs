@@ -4,6 +4,34 @@ use approx::RelativeEq;
 use crate::traits::Rv;
 use std::collections::BTreeMap;
 
+#[cfg(feature = "serde1")]
+#[macro_export]
+macro_rules! test_serde_params {
+    ($fx: expr, $fx_ty: ty, $x_ty: ty) => {
+        #[test]
+        fn test_serde_ln_f() {
+            use ::serde::Deserialize;
+            use ::serde::Serialize;
+            use $crate::traits::HasDensity;
+            use $crate::traits::Sampleable;
+
+            let mut rng = ::rand::thread_rng();
+
+            let fx = $fx;
+            let xs: Vec<$x_ty> = fx.sample(100, &mut rng);
+            let ln_fs: Vec<f64> = xs.iter().map(|x| fx.ln_f(x)).collect();
+
+            let json = ::serde_json::to_string(&fx).unwrap();
+            let fx_2: $fx_ty = ::serde_json::from_str(&json).unwrap();
+
+            for (x, ln_f) in xs.iter().zip(ln_fs.iter()) {
+                let ln_f_2 = fx_2.ln_f(x);
+                ::assert::close(*ln_f, ln_f_2, 1e-14);
+            }
+        }
+    };
+}
+
 // tests that Clone, Debug, and PartialEq are implemented for a distribution
 // Tests that partial eq is not sensitive to OnceCell initialization, which
 // often happens in ln_f is called
