@@ -289,7 +289,7 @@ impl VonMises {
 
 impl Default for VonMises {
     fn default() -> Self {
-        VonMises::new(PI, 1.0).unwrap()
+        VonMises::new(0.0, 0.0).unwrap()
     }
 }
 
