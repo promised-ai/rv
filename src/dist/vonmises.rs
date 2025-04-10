@@ -306,10 +306,10 @@ macro_rules! impl_traits {
             // https://www.researchgate.net/publication/246035131_Efficient_Simulation_of_the_von_Mises_Distribution
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let x = if self.k.is_zero() {
-                    rng.gen_range(0.0..=2.0 * PI) 
+                    rng.gen_range(0.0..=2.0 * PI)
                 } else if self.k > 700.0 {
                     let normal = Normal::new(self.mu, 1.0 / self.k).unwrap();
-                    rng.sample(normal) 
+                    rng.sample(normal)
                 } else {
                     let tau =
                         1.0 + 4.0_f64.mul_add(self.k * self.k, 1.0).sqrt();
@@ -345,7 +345,6 @@ macro_rules! impl_traits {
                     } else {
                         self.mu - acf
                     }
-                    
                 };
                 x.rem_euclid(2.0 * PI) as $kind
             }
@@ -452,10 +451,10 @@ mod tests {
     use crate::misc::ks_test;
     use crate::test::density_histogram_test;
     use crate::test_basic_impls;
-    
-    use rand_xoshiro::Xoshiro256Plus;
-    use rand::SeedableRng;
+
     use proptest::prelude::*;
+    use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256Plus;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
@@ -572,7 +571,6 @@ mod tests {
         assert!(xs.iter().all(|x| vm.supports(x)));
     }
 
-    // TODO: Why is this failing?
     #[test]
     fn vm_draw_test() {
         let mut rng = rand::thread_rng();
@@ -647,7 +645,6 @@ mod tests {
         assert!(p_value > 0.01);
     }
 
-
     proptest! {
         #[test]
         fn vonmises_draw_produces_valid_range(
@@ -657,9 +654,9 @@ mod tests {
         ) {
             let vm = VonMises::new(mu, k).unwrap();
             let mut rng = Xoshiro256Plus::seed_from_u64(seed);
-            
+
             let sample: f64 = vm.draw(&mut rng);
-            
+
             prop_assert!(
                 sample >= 0.0 && sample < 2.0 * std::f64::consts::PI,
                 "Sample {} not in range [0, 2π) for VonMises({}, {})",
