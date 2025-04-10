@@ -38,6 +38,8 @@ use crate::traits::*;
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+#[cfg_attr(feature = "serde1", serde(try_from = "GaussianParameters"))]
+#[cfg_attr(feature = "serde1", serde(into = "GaussianParameters"))]
 pub struct Gaussian {
     /// Mean
     mu: f64,
@@ -53,9 +55,28 @@ impl PartialEq for Gaussian {
     }
 }
 
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct GaussianParameters {
     pub mu: f64,
     pub sigma: f64,
+}
+
+impl TryFrom<GaussianParameters> for Gaussian {
+    type Error = GaussianError;
+
+    fn try_from(params: GaussianParameters) -> Result<Self, Self::Error> {
+        Gaussian::new(params.mu, params.sigma)
+    }
+}
+
+impl From<Gaussian> for GaussianParameters {
+    fn from(gauss: Gaussian) -> Self {
+        GaussianParameters {
+            mu: gauss.mu,
+            sigma: gauss.sigma,
+        }
+    }
 }
 
 impl Parameterized for Gaussian {
