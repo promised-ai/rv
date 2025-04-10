@@ -41,11 +41,8 @@ pub struct VonMises {
     /// Sort of like precision. Higher k implies lower variance.
     k: f64,
     // bessel:i0(k), save some cycles
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    log_i0_k: OnceLock<f64>,
-    #[cfg_attr(feature = "serde1", serde(skip))]
+    log_i0_k: f64,
     sin_mu: f64,
-    #[cfg_attr(feature = "serde1", serde(skip))]
     cos_mu: f64,
 }
 
@@ -99,10 +96,11 @@ impl VonMises {
         } else {
             let mu = mu.rem_euclid(2.0 * PI);
             let (sin_mu, cos_mu) = mu.sin_cos();
+            let log_i0_k = bessel::log_i0(k);
             Ok(VonMises {
                 mu,
                 k,
-                log_i0_k: OnceLock::new(),
+                log_i0_k,
                 sin_mu,
                 cos_mu,
             })
@@ -114,10 +112,11 @@ impl VonMises {
     #[inline]
     pub fn new_unchecked(mu: f64, k: f64) -> Self {
         let (sin_mu, cos_mu) = mu.sin_cos();
+        let log_i0_k = bessel::log_i0(k);
         VonMises {
             mu,
             k,
-            log_i0_k: OnceLock::new(),
+            log_i0_k,
             sin_mu,
             cos_mu,
         }
@@ -147,7 +146,7 @@ impl VonMises {
 
     #[inline]
     fn log_i0_k(&self) -> f64 {
-        *self.log_i0_k.get_or_init(|| bessel::log_i0(self.k))
+        self.log_i0_k
     }
 
     /// Set the value of mu
@@ -256,7 +255,7 @@ impl VonMises {
     #[inline]
     pub fn set_k_unchecked(&mut self, k: f64) {
         self.k = k;
-        self.log_i0_k = OnceLock::new();
+        self.log_i0_k = bessel::log_i0(k);
     }
 
     /// Perform a slice sampling step for the VonMises distribution
