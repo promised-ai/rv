@@ -314,11 +314,11 @@ macro_rules! impl_traits {
             //     von Mises distribution. Applied Statistics, 152-157.
             // https://www.researchgate.net/publication/246035131_Efficient_Simulation_of_the_von_Mises_Distribution
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let x = if self.k.is_zero() {
-                    rng.gen_range(0.0..=2.0 * PI)
+                if self.k.is_zero() {
+                    rng.gen_range(0.0..=2.0 * PI) as $kind
                 } else if self.k > 700.0 {
                     let normal = Normal::new(self.mu, 1.0 / self.k).unwrap();
-                    rng.sample(normal)
+                    rng.sample(normal).rem_euclid(2.0 * PI) as $kind
                 } else {
                     let tau =
                         1.0 + 4.0_f64.mul_add(self.k * self.k, 1.0).sqrt();
@@ -349,13 +349,14 @@ macro_rules! impl_traits {
                     }
 
                     let acf = f.acos();
-                    if rng.gen_bool(0.5) {
+                    let x = if rng.gen_bool(0.5) {
                         self.mu + acf
                     } else {
                         self.mu - acf
-                    }
-                };
-                x.rem_euclid(2.0 * PI) as $kind
+                    };
+                    x.rem_euclid(2.0 * PI) as $kind
+                }
+                
             }
         }
 
