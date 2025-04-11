@@ -298,6 +298,7 @@ impl From<&VonMises> for String {
 }
 
 impl_display!(VonMises);
+crate::impl_scalable!(VonMises);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
