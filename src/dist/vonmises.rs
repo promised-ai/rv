@@ -269,7 +269,6 @@ impl VonMises {
     /// # Returns
     ///
     /// The new value of x
-
     #[inline]
     pub fn slice_step<R: Rng>(x: f64, mu: f64, k: f64, rng: &mut R) -> f64 {
         // y ~ Uniform(0, exp(k * cos(x - μ)))

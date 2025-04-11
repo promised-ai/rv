@@ -2,6 +2,7 @@ use crate::traits::*;
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::sync::OnceLock;
 
 /// A wrapper for distributions that adds a scale parameter
@@ -25,6 +26,21 @@ pub enum ScaledError {
     NonNormalScale(f64),
     /// The scale parameter must be positive
     NegativeScale(f64),
+}
+
+impl std::error::Error for ScaledError {}
+
+impl fmt::Display for ScaledError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NonNormalScale(scale) => {
+                write!(f, "non-normal scale: {}", scale)
+            }
+            Self::NegativeScale(scale) => {
+                write!(f, "negative scale: {}", scale)
+            }
+        }
+    }
 }
 
 impl<D> Scaled<D> {
@@ -67,6 +83,18 @@ impl<D> Scaled<D> {
             rate: scale.recip(),
             logjac: OnceLock::new(),
         }
+    }
+
+    pub fn parent(&self) -> &D {
+        &self.parent
+    }
+
+    pub fn scale(&self) -> f64 {
+        self.scale
+    }
+
+    pub fn rate(&self) -> f64 {
+        self.rate
     }
 
     fn logjac(&self) -> f64 {
