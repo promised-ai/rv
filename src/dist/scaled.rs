@@ -301,11 +301,12 @@ where
     where
         Self: Sized,
     {
+        let new_scale = self.scale * scale;
         Scaled {
             parent: self.parent,
-            scale: self.scale * scale,
+            scale: new_scale,
             rate: self.rate / scale,
-            logjac: self.scale.abs().ln(),
+            logjac: new_scale.ln(),
         }
     }
 }
