@@ -81,7 +81,12 @@ impl<D> Scaled<D> {
         }
     }
 
-    pub fn from_parts_unchecked(parent: D, scale: f64, rate: f64, logjac: f64) -> Self {
+    pub fn from_parts_unchecked(
+        parent: D,
+        scale: f64,
+        rate: f64,
+        logjac: f64,
+    ) -> Self {
         Scaled {
             parent,
             scale,

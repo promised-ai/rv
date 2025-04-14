@@ -8,6 +8,19 @@ pub trait Parameterized {
     fn emit_params(&self) -> Self::Parameters;
 
     fn from_params(params: Self::Parameters) -> Self;
+
+    // TODO: If Self: Sized ok here? Should this be a requirement for the whole trait?
+    fn map_params(
+        &self,
+        f: impl Fn(Self::Parameters) -> Self::Parameters,
+    ) -> Self
+    where
+        Self: Sized,
+    {
+        let params = self.emit_params();
+        let new_params = f(params);
+        Self::from_params(new_params)
+    }
 }
 
 pub trait Sampleable<X> {

@@ -122,7 +122,13 @@ impl VonMises {
     }
 
     #[inline]
-    pub fn from_parts_unchecked(mu: f64, k: f64, log_i0_k: f64, sin_mu: f64, cos_mu: f64) -> Self {
+    pub fn from_parts_unchecked(
+        mu: f64,
+        k: f64,
+        log_i0_k: f64,
+        sin_mu: f64,
+        cos_mu: f64,
+    ) -> Self {
         VonMises {
             mu,
             k,
@@ -136,7 +142,11 @@ impl VonMises {
         let mu0 = self.mu();
         let k0 = self.k();
         let (mu, k) = f(mu0, k0);
-        let log_i0_k = if k == k0 { self.log_i0_k() } else { bessel::log_i0(k) };
+        let log_i0_k = if k == k0 {
+            self.log_i0_k()
+        } else {
+            bessel::log_i0(k)
+        };
         let (sin_mu, cos_mu) = if mu == mu0 {
             (self.sin_mu(), self.cos_mu())
         } else {
