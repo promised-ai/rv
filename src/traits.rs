@@ -505,8 +505,8 @@ pub trait KlDivergence {
 ///
 /// // Get predictions from predictive distribution using the cache
 /// let t_cache = {
-///     let t_start = Instant::now();
 ///     let cache = symdir.ln_pp_cache(&stat);
+///     let t_start = Instant::now();
 ///     // Argmax
 ///     let k_max = (0..ncats).fold((0, f64::NEG_INFINITY), |(ix, f), y| {
 ///             let f_r = symdir.ln_pp_with_cache(&cache, &y);
