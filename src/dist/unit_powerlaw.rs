@@ -14,6 +14,15 @@ use std::sync::OnceLock;
 
 pub mod bernoulli_prior;
 
+/// Parameters for the UnitPowerLaw distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct UnitPowerLawParameters {
+    /// Shape parameter
+    pub alpha: f64,
+}
+
 /// UnitPowerLaw(α) over x in (0, 1).
 ///
 /// # Examples
@@ -42,14 +51,16 @@ pub struct UnitPowerLaw {
 }
 
 impl Parameterized for UnitPowerLaw {
-    type Parameters = f64;
+    type Parameters = UnitPowerLawParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.alpha()
+        Self::Parameters {
+            alpha: self.alpha(),
+        }
     }
 
-    fn from_params(alpha: Self::Parameters) -> Self {
-        Self::new_unchecked(alpha)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.alpha)
     }
 }
 

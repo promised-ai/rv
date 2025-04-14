@@ -27,6 +27,18 @@ use std::sync::OnceLock;
 /// assert!((u.cdf(&3.0_f64) - y(3.0)).abs() < 1E-12);
 /// assert!((u.cdf(&3.2_f64) - y(3.2)).abs() < 1E-12);
 /// ```
+
+/// Parameters for the Uniform distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct UniformParameters {
+    /// Lower bound
+    pub a: f64,
+    /// Upper bound
+    pub b: f64,
+}
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -71,14 +83,17 @@ impl Scalable for Uniform {
 }
 
 impl Parameterized for Uniform {
-    type Parameters = (f64, f64);
+    type Parameters = UniformParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        (self.a(), self.b())
+        Self::Parameters {
+            a: self.a(),
+            b: self.b(),
+        }
     }
 
-    fn from_params((a, b): Self::Parameters) -> Self {
-        Self::new_unchecked(a, b)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.a, params.b)
     }
 }
 

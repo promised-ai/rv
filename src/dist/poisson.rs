@@ -63,6 +63,16 @@ use std::sync::OnceLock;
 ///
 /// assert_eq!(mode, 2)
 /// ```
+
+/// Parameters for the Poisson distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct PoissonParameters {
+    /// Rate parameter
+    pub rate: f64,
+}
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -74,14 +84,16 @@ pub struct Poisson {
 }
 
 impl Parameterized for Poisson {
-    type Parameters = f64;
+    type Parameters = PoissonParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.rate()
+        Self::Parameters {
+            rate: self.rate(),
+        }
     }
 
-    fn from_params(rate: Self::Parameters) -> Self {
-        Self::new_unchecked(rate)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.rate)
     }
 }
 

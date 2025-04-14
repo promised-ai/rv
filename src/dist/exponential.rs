@@ -23,6 +23,16 @@ use std::fmt;
 /// let expon = Exponential::new(1.5).unwrap();
 /// let interval: (f64, f64) = expon.interval(0.5);  // (0.19, 0.92)
 /// ```
+
+/// Parameters for the Exponential distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct ExponentialParameters {
+    /// λ > 0, rate or inverse scale
+    pub rate: f64,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -59,14 +69,16 @@ impl Default for Exponential {
 }
 
 impl Parameterized for Exponential {
-    type Parameters = f64;
+    type Parameters = ExponentialParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.rate()
+        Self::Parameters {
+            rate: self.rate(),
+        }
     }
 
-    fn from_params(rate: Self::Parameters) -> Self {
-        Self::new_unchecked(rate)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.rate)
     }
 }
 

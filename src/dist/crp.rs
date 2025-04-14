@@ -18,6 +18,17 @@ use crate::traits::*;
 use rand::Rng;
 use std::fmt;
 
+/// Parameters for the Chinese Restaurant Process distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct CrpParameters {
+    /// Discount parameter
+    pub alpha: f64,
+    /// number of items in the partition
+    pub n: usize,
+}
+
 /// [Chinese Restaurant Process](https://en.wikipedia.org/wiki/Chinese_restaurant_process),
 /// a distribution over partitions.
 ///
@@ -262,6 +273,21 @@ impl fmt::Display for CrpError {
             }
             Self::NIsZero => write!(f, "n must be greater than zero"),
         }
+    }
+}
+
+impl Parameterized for Crp {
+    type Parameters = CrpParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        CrpParameters {
+            alpha: self.alpha,
+            n: self.n,
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.alpha, params.n)
     }
 }
 

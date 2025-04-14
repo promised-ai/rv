@@ -8,6 +8,15 @@ use rand::Rng;
 use std::f64::consts::PI;
 use std::fmt;
 
+/// Parameters for Student's T distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct StudentsTParameters {
+    /// Degrees of freedom, ν, in (0, ∞)
+    pub v: f64,
+}
+
 /// [Student's T distribution](https://en.wikipedia.org/wiki/Student%27s_t-distribution)
 /// over x in (-∞, ∞).
 #[derive(Debug, Clone, PartialEq)]
@@ -19,14 +28,16 @@ pub struct StudentsT {
 }
 
 impl Parameterized for StudentsT {
-    type Parameters = f64;
+    type Parameters = StudentsTParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.v()
+        Self::Parameters {
+            v: self.v(),
+        }
     }
 
-    fn from_params(v: Self::Parameters) -> Self {
-        Self::new_unchecked(v)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.v)
     }
 }
 
