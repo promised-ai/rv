@@ -132,7 +132,7 @@ impl VonMises {
         }
     }
 
-    pub fn mutate_unchecked(&self, f: impl Fn(f64, f64) -> (f64, f64)) -> VonMises {
+    pub fn map_params(&self, f: impl Fn(f64, f64) -> (f64, f64)) -> VonMises {
         let mu0 = self.mu();
         let k0 = self.k();
         let (mu, k) = f(mu0, k0);
