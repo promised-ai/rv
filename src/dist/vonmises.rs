@@ -132,6 +132,19 @@ impl VonMises {
         }
     }
 
+    pub fn mutate_unchecked(&self, f: impl Fn(f64, f64) -> (f64, f64)) -> VonMises {
+        let mu0 = self.mu();
+        let k0 = self.k();
+        let (mu, k) = f(mu0, k0);
+        let log_i0_k = if k == k0 { self.log_i0_k() } else { bessel::log_i0(k) };
+        let (sin_mu, cos_mu) = if mu == mu0 {
+            (self.sin_mu(), self.cos_mu())
+        } else {
+            mu.sin_cos()
+        };
+        VonMises::from_parts_unchecked(mu, k, log_i0_k, sin_mu, cos_mu)
+    }
+
     /// Get the mean parameter, mu
     ///
     /// # Example
