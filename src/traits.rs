@@ -860,7 +860,7 @@ mod test {
             }
         };
     }
-    
+
     #[macro_export]
     macro_rules! test_shiftable_density {
         ($expr:expr) => {
@@ -882,7 +882,7 @@ mod test {
             }
         };
     }
-    
+
     #[macro_export]
     macro_rules! test_shiftable_cdf {
         ($expr:expr) => {
@@ -904,13 +904,13 @@ mod test {
             }
         };
     }
-    
+
     #[macro_export]
     macro_rules! test_shiftable_invcdf {
         ($expr:expr) => {
             test_shiftable_invcdf!($expr, );
         };
-        
+
         ($expr:expr, $($ext:ident)?) => {
             paste::paste! {
                 proptest::proptest! {
@@ -926,13 +926,13 @@ mod test {
             }
         };
     }
-    
+
     #[macro_export]
     macro_rules! test_shiftable_entropy {
         ($expr:expr) => {
             test_shiftable_entropy!($expr, );
         };
-    
+
         ($expr:expr, $($ext:ident)?) => {
             paste::paste! {
                 proptest::proptest! {
@@ -948,19 +948,19 @@ mod test {
             }
         };
     }
-    
+
     #[macro_export]
     macro_rules! test_scalable_mean {
         ($expr:expr) => {
             use proptest::prelude::*;
-    
+
             proptest! {
                 #[test]
                 fn scalable_mean(scale in -100.0..100.0) {
                     let dist = $expr;
                     let scaled = dist.clone().scaled(scale);
                     let manual = Scaled::new(dist, scale);
-    
+
                     let mean_scaled = scaled.mean();
                     let mean_manual = manual.mean();
                     match (mean_scaled, mean_manual) {
@@ -978,14 +978,14 @@ mod test {
             }
         };
     }
-    
+
     #[macro_export]
     macro_rules! test_scalable_method {
         // Base case with no extension
         ($expr:expr, $ident:ident) => {
             test_scalable_method!($expr, $ident, );
         };
-    
+
         // Main implementation
         ($expr:expr, $ident:ident, $($ext:ident)?) => {
             paste::paste! {
@@ -995,7 +995,7 @@ mod test {
                         let dist = $expr;
                         let scaled = dist.clone().scaled_unchecked(scale).$ident();
                         let manual = $crate::prelude::Scaled::new_unchecked(dist, scale).$ident();
-    
+
                         match (scaled, manual) {
                             (Some(scaled), Some(manual)) => {
                                 let scaled: f64 = scaled;
@@ -1014,13 +1014,13 @@ mod test {
             }
         };
     }
-    
+
     #[macro_export]
     macro_rules! test_scalable_density {
         ($expr:expr) => {
             test_scalable_density!($expr, );
         };
-    
+
         ($expr:expr, $($ext:ident)?) => {
             paste::paste! {
                 proptest::proptest! {
@@ -1036,13 +1036,13 @@ mod test {
             }
         };
     }
-    
+
     #[macro_export]
     macro_rules! test_scalable_cdf {
         ($expr:expr) => {
             test_scalable_cdf!($expr, );
         };
-    
+
         ($expr:expr, $($ext:ident)?) => {
             paste::paste! {
                 proptest::proptest! {
@@ -1058,13 +1058,13 @@ mod test {
             }
         };
     }
-    
+
     #[macro_export]
     macro_rules! test_scalable_invcdf {
         ($expr:expr) => {
             test_scalable_invcdf!($expr, );
         };
-    
+
         ($expr:expr, $($ext:ident)?) => {
             paste::paste! {
                 proptest::proptest! {
@@ -1080,13 +1080,13 @@ mod test {
             }
         };
     }
-    
+
     #[macro_export]
     macro_rules! test_scalable_entropy {
         ($expr:expr) => {
             test_scalable_entropy!($expr, );
         };
-    
+
         ($expr:expr, $($ext:ident)?) => {
             paste::paste! {
                 proptest::proptest! {
