@@ -121,6 +121,17 @@ impl VonMises {
         }
     }
 
+    #[inline]
+    pub fn from_parts_unchecked(mu: f64, k: f64, log_i0_k: f64, sin_mu: f64, cos_mu: f64) -> Self {
+        VonMises {
+            mu,
+            k,
+            log_i0_k,
+            sin_mu,
+            cos_mu,
+        }
+    }
+
     /// Get the mean parameter, mu
     ///
     /// # Example
