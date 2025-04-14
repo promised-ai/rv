@@ -305,7 +305,7 @@ where
         Scaled {
             parent: self.parent,
             scale: new_scale,
-            rate: self.rate / scale,
+            rate: new_scale.recip(),
             logjac: new_scale.ln(),
         }
     }
