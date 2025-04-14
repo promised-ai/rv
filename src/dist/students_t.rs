@@ -31,9 +31,7 @@ impl Parameterized for StudentsT {
     type Parameters = StudentsTParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        Self::Parameters {
-            v: self.v(),
-        }
+        Self::Parameters { v: self.v() }
     }
 
     fn from_params(params: Self::Parameters) -> Self {

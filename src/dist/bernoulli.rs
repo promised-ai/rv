@@ -52,9 +52,7 @@ impl Parameterized for Bernoulli {
     type Parameters = BernoulliParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        Self::Parameters {
-            p: self.p(),
-        }
+        Self::Parameters { p: self.p() }
     }
 
     fn from_params(params: Self::Parameters) -> Self {

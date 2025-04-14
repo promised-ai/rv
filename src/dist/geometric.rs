@@ -49,14 +49,11 @@ pub struct Geometric {
     ln_1mp: OnceLock<f64>,
 }
 
-
 impl Parameterized for Geometric {
     type Parameters = GeometricParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        Self::Parameters {
-            p: self.p(),
-        }
+        Self::Parameters { p: self.p() }
     }
 
     fn from_params(params: Self::Parameters) -> Self {
@@ -311,7 +308,6 @@ impl Entropy for Geometric {
             / self.p
     }
 }
-
 
 impl std::error::Error for GeometricError {}
 

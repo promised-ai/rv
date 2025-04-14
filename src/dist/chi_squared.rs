@@ -42,9 +42,7 @@ impl Parameterized for ChiSquared {
     type Parameters = ChiSquaredParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        Self::Parameters {
-            k: self.k(),
-        }
+        Self::Parameters { k: self.k() }
     }
 
     fn from_params(params: Self::Parameters) -> Self {

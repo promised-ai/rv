@@ -72,9 +72,7 @@ impl Parameterized for Exponential {
     type Parameters = ExponentialParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        Self::Parameters {
-            rate: self.rate(),
-        }
+        Self::Parameters { rate: self.rate() }
     }
 
     fn from_params(params: Self::Parameters) -> Self {

@@ -204,8 +204,8 @@ where
     }
 }
 
-impl<D> Parameterized for Shifted<D> 
-where 
+impl<D> Parameterized for Shifted<D>
+where
     D: Parameterized,
 {
     type Parameters = ShiftedParameters<D>;
