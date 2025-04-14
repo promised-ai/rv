@@ -69,6 +69,29 @@ impl Parameterized for VonMises {
     fn from_params(params: Self::Parameters) -> Self {
         Self::new_unchecked(params.mu, params.k)
     }
+
+    fn map_params(
+        &self,
+        f: impl Fn(Self::Parameters) -> Self::Parameters,
+    ) -> VonMises {
+        let params0 = self.emit_params();
+        let (mu0, k0) = (params0.mu, params0.k);
+        let (mu, k) = {
+            let params = f(params0);
+            (params.mu, params.k)
+        };
+        let log_i0_k = if k == k0 {
+            self.log_i0_k()
+        } else {
+            bessel::log_i0(k)
+        };
+        let (sin_mu, cos_mu) = if mu == mu0 {
+            (self.sin_mu(), self.cos_mu())
+        } else {
+            mu.sin_cos()
+        };
+        VonMises::from_parts_unchecked(mu, k, log_i0_k, sin_mu, cos_mu)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -136,23 +159,6 @@ impl VonMises {
             sin_mu,
             cos_mu,
         }
-    }
-
-    pub fn map_params(&self, f: impl Fn(f64, f64) -> (f64, f64)) -> VonMises {
-        let mu0 = self.mu();
-        let k0 = self.k();
-        let (mu, k) = f(mu0, k0);
-        let log_i0_k = if k == k0 {
-            self.log_i0_k()
-        } else {
-            bessel::log_i0(k)
-        };
-        let (sin_mu, cos_mu) = if mu == mu0 {
-            (self.sin_mu(), self.cos_mu())
-        } else {
-            mu.sin_cos()
-        };
-        VonMises::from_parts_unchecked(mu, k, log_i0_k, sin_mu, cos_mu)
     }
 
     /// Get the mean parameter, mu
