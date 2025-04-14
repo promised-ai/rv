@@ -12,12 +12,8 @@ use std::sync::OnceLock;
 pub struct Scaled<D> {
     parent: D,
     scale: f64,
-
-    #[cfg_attr(feature = "serde1", serde(skip))]
     rate: f64,
-
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    logjac: OnceLock<f64>,
+    logjac: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -65,7 +61,7 @@ impl<D> Scaled<D> {
                 parent,
                 scale,
                 rate: scale.recip(),
-                logjac: OnceLock::new(),
+                logjac: scale.abs().ln(),
             })
         }
     }
@@ -81,10 +77,18 @@ impl<D> Scaled<D> {
             parent,
             scale,
             rate: scale.recip(),
-            logjac: OnceLock::new(),
+            logjac: scale.abs().ln(),
         }
     }
 
+    pub fn from_parts_unchecked(parent: D, scale: f64, rate: f64, logjac: f64) -> Self {
+        Scaled {
+            parent,
+            scale,
+            rate,
+            logjac,
+        }
+    }
     pub fn parent(&self) -> &D {
         &self.parent
     }
@@ -98,7 +102,7 @@ impl<D> Scaled<D> {
     }
 
     fn logjac(&self) -> f64 {
-        *self.logjac.get_or_init(|| self.scale.abs().ln())
+        self.logjac
     }
 }
 
@@ -260,7 +264,7 @@ where
             parent: self.parent,
             scale: self.scale * scale,
             rate: self.rate / scale,
-            logjac: OnceLock::new(),
+            logjac: self.scale.abs().ln(),
         }
     }
 }
