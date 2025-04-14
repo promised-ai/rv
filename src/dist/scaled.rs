@@ -101,7 +101,7 @@ impl<D> Scaled<D> {
         self.rate
     }
 
-    fn logjac(&self) -> f64 {
+    pub fn logjac(&self) -> f64 {
         self.logjac
     }
 }
