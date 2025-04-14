@@ -50,7 +50,7 @@ mod skellam;
 mod students_t;
 mod uniform;
 mod unit_powerlaw;
-mod vonmises;
+pub mod vonmises;
 #[cfg(feature = "arraydist")]
 mod wishart;
 

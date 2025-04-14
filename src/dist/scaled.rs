@@ -4,6 +4,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::sync::OnceLock;
+use crate::traits::Parameterized;
 
 /// A wrapper for distributions that adds a scale parameter
 #[derive(Debug, Clone, PartialEq)]
@@ -109,6 +110,47 @@ impl<D> Scaled<D> {
     pub fn logjac(&self) -> f64 {
         self.logjac
     }
+}
+
+pub struct ScaledParameters<D: Parameterized> {
+    parent: D::Parameters,
+    scale: f64,
+}
+
+impl<D> Parameterized for Scaled<D>
+where
+    D: Parameterized,
+{
+    type Parameters = ScaledParameters<D>;
+
+    fn emit_params(&self) -> Self::Parameters {
+        ScaledParameters {
+            parent: self.parent.emit_params(),
+            scale: self.scale,
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        let parent = D::from_params(params.parent);
+        Self::new_unchecked(parent, params.scale)
+    }
+
+    // TODO: This is no good. For efficiency, we need to be able to call the
+    // parent's map_params Also need to build Self from parts. e.g. maybe the
+    // scale didn't change, in which case we reuse the scale, rate, and logjac
+    // of the old Self.
+    fn map_params(
+        &self,
+        f: impl Fn(Self::Parameters) -> Self::Parameters,
+    ) -> Self
+    where
+        Self: Sized,
+    {
+        let params = self.emit_params();
+        let new_params = f(params);
+        Self::from_params(new_params)
+    }
+
 }
 
 use crate::data::ScaledSuffStat;
