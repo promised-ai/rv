@@ -637,14 +637,6 @@ where
 }
 
 mod tests {
-    use super::*;
-    use crate::dist::Exponential;
-    use crate::dist::Gaussian;
-    use crate::traits::HasDensity;
-    use crate::traits::Sampleable;
-    use rand::SeedableRng;
-    use rand_xoshiro::Xoshiro256Plus;
-
     #[test]
     fn test_density_histogram_gaussian() {
         let mut rng = Xoshiro256Plus::seed_from_u64(1);

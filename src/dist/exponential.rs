@@ -23,7 +23,7 @@ use std::fmt;
 /// let expon = Exponential::new(1.5).unwrap();
 /// let interval: (f64, f64) = expon.interval(0.5);  // (0.19, 0.92)
 /// ```
-
+///
 /// Parameters for the Exponential distribution
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]

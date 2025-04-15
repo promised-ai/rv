@@ -27,7 +27,7 @@ use std::sync::OnceLock;
 /// assert!((u.cdf(&3.0_f64) - y(3.0)).abs() < 1E-12);
 /// assert!((u.cdf(&3.2_f64) - y(3.2)).abs() < 1E-12);
 /// ```
-
+///
 /// Parameters for the Uniform distribution
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]

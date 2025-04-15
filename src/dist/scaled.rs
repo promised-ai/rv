@@ -4,7 +4,6 @@ use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::sync::OnceLock;
 
 /// A wrapper for distributions that adds a scale parameter
 #[derive(Debug, Clone, PartialEq)]

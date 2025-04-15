@@ -26,7 +26,7 @@ use std::sync::OnceLock;
 /// let xs: Vec<u32> = geom.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
-
+///
 /// Parameters for the Geometric distribution
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]

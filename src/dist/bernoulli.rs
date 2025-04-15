@@ -30,7 +30,7 @@ use std::fmt;
 ///
 /// b.pmf(&2_u8); // panics
 /// ```
-
+///
 /// Parameters struct for Bernoulli distribution
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]

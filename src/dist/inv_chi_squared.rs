@@ -21,7 +21,7 @@ use std::sync::OnceLock;
 ///
 /// let ix2 = InvChiSquared::new(2.0).unwrap();
 /// ```
-
+///
 /// Parameters for the Inverse Chi-squared distribution
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]

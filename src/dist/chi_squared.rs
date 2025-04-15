@@ -20,7 +20,7 @@ use std::fmt;
 ///
 /// let x2 = ChiSquared::new(2.0).unwrap();
 /// ```
-
+///
 /// Parameters struct for the Chi-squared distribution
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]

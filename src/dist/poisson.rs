@@ -63,7 +63,7 @@ use std::sync::OnceLock;
 ///
 /// assert_eq!(mode, 2)
 /// ```
-
+///
 /// Parameters for the Poisson distribution
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
