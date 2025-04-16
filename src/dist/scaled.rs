@@ -98,6 +98,10 @@ impl<D> Scaled<D> {
         &self.parent
     }
 
+    pub fn parent_mut(&mut self) -> &mut D {
+        &mut self.parent
+    }
+
     pub fn scale(&self) -> f64 {
         self.scale
     }
