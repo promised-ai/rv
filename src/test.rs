@@ -637,9 +637,9 @@ where
 }
 
 mod tests {
-    use super::*;
-    use crate::dist::Exponential;
-    use crate::dist::Gaussian;
+    use crate::prelude::Exponential;
+    use crate::prelude::Gaussian;
+    use crate::test::density_histogram_test;
     use crate::traits::HasDensity;
     use crate::traits::Sampleable;
     use rand::SeedableRng;

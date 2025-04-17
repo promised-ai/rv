@@ -1,8 +1,9 @@
+use crate::traits::Parameterized;
 use crate::traits::*;
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use std::sync::OnceLock;
+use std::fmt;
 
 /// A wrapper for distributions that adds a scale parameter
 #[derive(Debug, Clone, PartialEq)]
@@ -11,12 +12,8 @@ use std::sync::OnceLock;
 pub struct Scaled<D> {
     parent: D,
     scale: f64,
-
-    #[cfg_attr(feature = "serde1", serde(skip))]
     rate: f64,
-
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    logjac: OnceLock<f64>,
+    logjac: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -25,6 +22,21 @@ pub enum ScaledError {
     NonNormalScale(f64),
     /// The scale parameter must be positive
     NegativeScale(f64),
+}
+
+impl std::error::Error for ScaledError {}
+
+impl fmt::Display for ScaledError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NonNormalScale(scale) => {
+                write!(f, "non-normal scale: {}", scale)
+            }
+            Self::NegativeScale(scale) => {
+                write!(f, "negative scale: {}", scale)
+            }
+        }
+    }
 }
 
 impl<D> Scaled<D> {
@@ -49,7 +61,7 @@ impl<D> Scaled<D> {
                 parent,
                 scale,
                 rate: scale.recip(),
-                logjac: OnceLock::new(),
+                logjac: scale.abs().ln(),
             })
         }
     }
@@ -65,12 +77,76 @@ impl<D> Scaled<D> {
             parent,
             scale,
             rate: scale.recip(),
-            logjac: OnceLock::new(),
+            logjac: scale.abs().ln(),
         }
     }
 
-    fn logjac(&self) -> f64 {
-        *self.logjac.get_or_init(|| self.scale.abs().ln())
+    pub fn from_parts_unchecked(
+        parent: D,
+        scale: f64,
+        rate: f64,
+        logjac: f64,
+    ) -> Self {
+        Scaled {
+            parent,
+            scale,
+            rate,
+            logjac,
+        }
+    }
+    pub fn parent(&self) -> &D {
+        &self.parent
+    }
+
+    pub fn parent_mut(&mut self) -> &mut D {
+        &mut self.parent
+    }
+
+    pub fn scale(&self) -> f64 {
+        self.scale
+    }
+
+    pub fn rate(&self) -> f64 {
+        self.rate
+    }
+
+    pub fn logjac(&self) -> f64 {
+        self.logjac
+    }
+
+    pub fn map_parent_params(
+        &self,
+        f: impl Fn(D::Parameters) -> D::Parameters,
+    ) -> Self
+    where
+        D: Parameterized,
+    {
+        let parent = self.parent.map_params(f);
+        Self::from_parts_unchecked(parent, self.scale, self.rate, self.logjac)
+    }
+}
+
+pub struct ScaledParameters<D: Parameterized> {
+    parent: D::Parameters,
+    scale: f64,
+}
+
+impl<D> Parameterized for Scaled<D>
+where
+    D: Parameterized,
+{
+    type Parameters = ScaledParameters<D>;
+
+    fn emit_params(&self) -> Self::Parameters {
+        ScaledParameters {
+            parent: self.parent.emit_params(),
+            scale: self.scale,
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        let parent = D::from_params(params.parent);
+        Self::new_unchecked(parent, params.scale)
     }
 }
 
@@ -228,11 +304,12 @@ where
     where
         Self: Sized,
     {
+        let new_scale = self.scale * scale;
         Scaled {
             parent: self.parent,
-            scale: self.scale * scale,
-            rate: self.rate / scale,
-            logjac: OnceLock::new(),
+            scale: new_scale,
+            rate: new_scale.recip(),
+            logjac: new_scale.ln(),
         }
     }
 }

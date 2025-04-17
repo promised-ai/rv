@@ -26,6 +26,16 @@ use std::sync::OnceLock;
 /// let xs: Vec<u32> = geom.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
+///
+/// Parameters for the Geometric distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct GeometricParameters {
+    /// Success probability
+    pub p: f64,
+}
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -40,14 +50,14 @@ pub struct Geometric {
 }
 
 impl Parameterized for Geometric {
-    type Parameters = f64;
+    type Parameters = GeometricParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.p()
+        Self::Parameters { p: self.p() }
     }
 
-    fn from_params(p: Self::Parameters) -> Self {
-        Self::new_unchecked(p)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.p)
     }
 }
 

@@ -69,6 +69,29 @@ impl Parameterized for VonMises {
     fn from_params(params: Self::Parameters) -> Self {
         Self::new_unchecked(params.mu, params.k)
     }
+
+    fn map_params(
+        &self,
+        f: impl Fn(Self::Parameters) -> Self::Parameters,
+    ) -> VonMises {
+        let params0 = self.emit_params();
+        let (mu0, k0) = (params0.mu, params0.k);
+        let (mu, k) = {
+            let params = f(params0);
+            (params.mu, params.k)
+        };
+        let log_i0_k = if k == k0 {
+            self.log_i0_k()
+        } else {
+            bessel::log_i0(k)
+        };
+        let (sin_mu, cos_mu) = if mu == mu0 {
+            (self.sin_mu(), self.cos_mu())
+        } else {
+            mu.sin_cos()
+        };
+        VonMises::from_parts_unchecked(mu, k, log_i0_k, sin_mu, cos_mu)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -112,6 +135,23 @@ impl VonMises {
     pub fn new_unchecked(mu: f64, k: f64) -> Self {
         let (sin_mu, cos_mu) = mu.sin_cos();
         let log_i0_k = bessel::log_i0(k);
+        VonMises {
+            mu,
+            k,
+            log_i0_k,
+            sin_mu,
+            cos_mu,
+        }
+    }
+
+    #[inline]
+    pub fn from_parts_unchecked(
+        mu: f64,
+        k: f64,
+        log_i0_k: f64,
+        sin_mu: f64,
+        cos_mu: f64,
+    ) -> Self {
         VonMises {
             mu,
             k,
@@ -269,7 +309,6 @@ impl VonMises {
     /// # Returns
     ///
     /// The new value of x
-
     #[inline]
     pub fn slice_step<R: Rng>(x: f64, mu: f64, k: f64, rng: &mut R) -> f64 {
         // y ~ Uniform(0, exp(k * cos(x - μ)))
@@ -298,6 +337,7 @@ impl From<&VonMises> for String {
 }
 
 impl_display!(VonMises);
+crate::impl_scalable!(VonMises);
 
 macro_rules! impl_traits {
     ($kind:ty) => {

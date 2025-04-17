@@ -20,6 +20,16 @@ use std::fmt;
 ///
 /// let x2 = ChiSquared::new(2.0).unwrap();
 /// ```
+///
+/// Parameters struct for the Chi-squared distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct ChiSquaredParameters {
+    /// Degrees of freedom in (0, ∞)
+    pub k: f64,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -29,14 +39,14 @@ pub struct ChiSquared {
 }
 
 impl Parameterized for ChiSquared {
-    type Parameters = f64;
+    type Parameters = ChiSquaredParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.k()
+        Self::Parameters { k: self.k() }
     }
 
-    fn from_params(k: Self::Parameters) -> Self {
-        Self::new_unchecked(k)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.k)
     }
 }
 

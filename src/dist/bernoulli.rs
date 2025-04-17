@@ -30,6 +30,15 @@ use std::fmt;
 ///
 /// b.pmf(&2_u8); // panics
 /// ```
+///
+/// Parameters struct for Bernoulli distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct BernoulliParameters {
+    /// Probability of a success (x=1)
+    pub p: f64,
+}
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -40,14 +49,14 @@ pub struct Bernoulli {
 }
 
 impl Parameterized for Bernoulli {
-    type Parameters = f64;
+    type Parameters = BernoulliParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.p()
+        Self::Parameters { p: self.p() }
     }
 
     fn from_params(params: Self::Parameters) -> Self {
-        Self::new_unchecked(params)
+        Self::new_unchecked(params.p)
     }
 }
 

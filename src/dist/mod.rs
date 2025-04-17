@@ -54,53 +54,67 @@ mod vonmises;
 #[cfg(feature = "arraydist")]
 mod wishart;
 
-pub use bernoulli::{Bernoulli, BernoulliError};
-pub use beta::{Beta, BetaError};
-pub use beta_binom::{BetaBinomial, BetaBinomialError};
-pub use betaprime::{BetaPrime, BetaPrimeError};
-pub use binomial::{Binomial, BinomialError};
-pub use categorical::{Categorical, CategoricalError};
-pub use cauchy::{Cauchy, CauchyError};
-pub use cdvm::{Cdvm, CdvmError};
-pub use chi_squared::{ChiSquared, ChiSquaredError};
-pub use crp::{Crp, CrpError};
-pub use dirichlet::{Dirichlet, DirichletError, SymmetricDirichlet};
-pub use discrete_uniform::{DiscreteUniform, DiscreteUniformError};
+pub use bernoulli::{Bernoulli, BernoulliError, BernoulliParameters};
+pub use beta::{Beta, BetaError, BetaParameters};
+pub use beta_binom::{BetaBinomial, BetaBinomialError, BetaBinomialParameters};
+pub use betaprime::{BetaPrime, BetaPrimeError, BetaPrimeParameters};
+pub use binomial::{Binomial, BinomialError, BinomialParameters};
+pub use categorical::{Categorical, CategoricalError, CategoricalParameters};
+pub use cauchy::{Cauchy, CauchyError, CauchyParameters};
+pub use cdvm::{Cdvm, CdvmError, CdvmParameters};
+pub use chi_squared::{ChiSquared, ChiSquaredError, ChiSquaredParameters};
+pub use crp::{Crp, CrpError, CrpParameters};
+pub use dirichlet::{
+    Dirichlet, DirichletError, SymmetricDirichlet, SymmetricDirichletParameters,
+};
+pub use discrete_uniform::{
+    DiscreteUniform, DiscreteUniformError, DiscreteUniformParameters,
+};
 pub use empirical::Empirical;
-pub use exponential::{Exponential, ExponentialError};
-pub use gamma::{Gamma, GammaError};
-pub use gaussian::{Gaussian, GaussianError};
-pub use geometric::{Geometric, GeometricError};
-pub use gev::{Gev, GevError};
-pub use inv_chi_squared::{InvChiSquared, InvChiSquaredError};
-pub use invgamma::{InvGamma, InvGammaError};
-pub use invgaussian::{InvGaussian, InvGaussianError};
+pub use exponential::{Exponential, ExponentialError, ExponentialParameters};
+pub use gamma::{Gamma, GammaError, GammaParameters};
+pub use gaussian::{Gaussian, GaussianError, GaussianParameters};
+pub use geometric::{Geometric, GeometricError, GeometricParameters};
+pub use gev::{Gev, GevError, GevParameters};
+pub use inv_chi_squared::{
+    InvChiSquared, InvChiSquaredError, InvChiSquaredParameters,
+};
+pub use invgamma::{InvGamma, InvGammaError, InvGammaParameters};
+pub use invgaussian::{InvGaussian, InvGaussianError, InvGaussianParameters};
 pub use ks::KsTwoAsymptotic;
-pub use kumaraswamy::{Kumaraswamy, KumaraswamyError};
-pub use laplace::{Laplace, LaplaceError};
-pub use lognormal::{LogNormal, LogNormalError};
-pub use mixture::{Mixture, MixtureError};
+pub use kumaraswamy::{Kumaraswamy, KumaraswamyError, KumaraswamyParameters};
+pub use laplace::{Laplace, LaplaceError, LaplaceParameters};
+pub use lognormal::{LogNormal, LogNormalError, LogNormalParameters};
+pub use mixture::{Mixture, MixtureError, MixtureParameters};
 #[cfg(feature = "arraydist")]
-pub use mvg::{MvGaussian, MvGaussianError};
-pub use neg_binom::{NegBinomial, NegBinomialError};
+pub use mvg::{MvGaussian, MvGaussianError, MvGaussianParameters};
+pub use neg_binom::{NegBinomial, NegBinomialError, NegBinomialParameters};
 #[cfg(feature = "arraydist")]
-pub use niw::{NormalInvWishart, NormalInvWishartError};
-pub use normal_gamma::{NormalGamma, NormalGammaError};
+pub use niw::{
+    NormalInvWishart, NormalInvWishartError, NormalInvWishartParameters,
+};
+pub use normal_gamma::{NormalGamma, NormalGammaError, NormalGammaParameters};
 pub use normal_inv_chi_squared::{
     NormalInvChiSquared, NormalInvChiSquaredError,
+    NormalInvChiSquaredParameters,
 };
-pub use normal_inv_gamma::{NormalInvGamma, NormalInvGammaError};
-pub use pareto::{Pareto, ParetoError};
-pub use poisson::{Poisson, PoissonError};
-pub use scaled::{Scaled, ScaledError};
+pub use normal_inv_gamma::{
+    NormalInvGamma, NormalInvGammaError, NormalInvGammaParameters,
+};
+pub use pareto::{Pareto, ParetoError, ParetoParameters};
+pub use poisson::{Poisson, PoissonError, PoissonParameters};
+pub use scaled::{Scaled, ScaledError, ScaledParameters};
 pub use scaled_inv_chi_squared::{
     ScaledInvChiSquared, ScaledInvChiSquaredError,
+    ScaledInvChiSquaredParameters,
 };
-pub use shifted::{Shifted, ShiftedError};
-pub use skellam::{Skellam, SkellamError};
-pub use students_t::{StudentsT, StudentsTError};
-pub use uniform::{Uniform, UniformError};
-pub use unit_powerlaw::{UnitPowerLaw, UnitPowerLawError};
-pub use vonmises::{VonMises, VonMisesError};
+pub use shifted::{Shifted, ShiftedError, ShiftedParameters};
+pub use skellam::{Skellam, SkellamError, SkellamParameters};
+pub use students_t::{StudentsT, StudentsTError, StudentsTParameters};
+pub use uniform::{Uniform, UniformError, UniformParameters};
+pub use unit_powerlaw::{
+    UnitPowerLaw, UnitPowerLawError, UnitPowerLawParameters,
+};
+pub use vonmises::{VonMises, VonMisesError, VonMisesParameters};
 #[cfg(feature = "arraydist")]
-pub use wishart::{InvWishart, InvWishartError};
+pub use wishart::{InvWishart, InvWishartError, InvWishartParameters};

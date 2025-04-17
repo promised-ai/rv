@@ -287,6 +287,42 @@ mod tests {
             assert!(z);
         }
 
+        #[test]
+        fn categorical_datum_edge_cases() {
+            // Test with zero
+            let zero_u8: u8 = CategoricalDatum::from_usize(0);
+            assert_eq!(zero_u8, 0);
+            assert_eq!(zero_u8.into_usize(), 0);
+
+            let zero_u16: u16 = CategoricalDatum::from_usize(0);
+            assert_eq!(zero_u16, 0);
+            assert_eq!(zero_u16.into_usize(), 0);
+
+            let zero_u32: u32 = CategoricalDatum::from_usize(0);
+            assert_eq!(zero_u32, 0);
+            assert_eq!(zero_u32.into_usize(), 0);
+
+            // Test with values close to type limits
+            // Maximum values for different types
+            let max_u8_value = u8::MAX as usize;
+            let u8_val: u8 = CategoricalDatum::from_usize(max_u8_value);
+            assert_eq!(u8_val, u8::MAX);
+            assert_eq!(u8_val.into_usize(), max_u8_value);
+
+            let max_u16_value = u16::MAX as usize;
+            let u16_val: u16 = CategoricalDatum::from_usize(max_u16_value);
+            assert_eq!(u16_val, u16::MAX);
+            assert_eq!(u16_val.into_usize(), max_u16_value);
+
+            // Test overflow behavior - type limits are respected
+            // When converting a value larger than the type can hold, it will truncate
+            let overflow_u8: u8 = CategoricalDatum::from_usize(256); // 256 = 2^8, so this will overflow u8
+            assert_eq!(overflow_u8, 0); // Should truncate to 0
+
+            let overflow_u16: u16 = CategoricalDatum::from_usize(65536); // 65536 = 2^16, so this will overflow u16
+            assert_eq!(overflow_u16, 0); // Should truncate to 0
+        }
+
         macro_rules! catdatum_test {
             ($type: ty, $from_test: ident, $into_test: ident) => {
                 #[test]
@@ -347,5 +383,342 @@ mod tests {
         booleable_test!(i32, impl_i32_from_bool, impl_i32_try_into_bool);
         booleable_test!(i64, impl_i64_from_bool, impl_i64_try_into_bool);
         booleable_test!(isize, impl_isize_from_bool, impl_isize_try_into_bool);
+
+        #[test]
+        fn impl_bool_into_bool() {
+            let t = true;
+            let f = false;
+            assert_eq!(t.into_bool(), true);
+            assert_eq!(f.into_bool(), false);
+        }
+
+        #[test]
+        fn verify_into_bool_error_handling() {
+            // For each numeric type, test that invalid values (not 0 or 1) cause panic
+            // when using into_bool but return None with try_into_bool
+
+            // u8
+            let invalid_u8: u8 = 2;
+            assert_eq!(invalid_u8.try_into_bool(), None);
+
+            // u16
+            let invalid_u16: u16 = 2;
+            assert_eq!(invalid_u16.try_into_bool(), None);
+
+            // u32
+            let invalid_u32: u32 = 2;
+            assert_eq!(invalid_u32.try_into_bool(), None);
+
+            // u64
+            let invalid_u64: u64 = 2;
+            assert_eq!(invalid_u64.try_into_bool(), None);
+
+            // usize
+            let invalid_usize: usize = 2;
+            assert_eq!(invalid_usize.try_into_bool(), None);
+
+            // i8
+            let invalid_i8: i8 = 2;
+            assert_eq!(invalid_i8.try_into_bool(), None);
+
+            // i16
+            let invalid_i16: i16 = 2;
+            assert_eq!(invalid_i16.try_into_bool(), None);
+
+            // i32
+            let invalid_i32: i32 = 2;
+            assert_eq!(invalid_i32.try_into_bool(), None);
+
+            // i64
+            let invalid_i64: i64 = 2;
+            assert_eq!(invalid_i64.try_into_bool(), None);
+
+            // isize
+            let invalid_isize: isize = 2;
+            assert_eq!(invalid_isize.try_into_bool(), None);
+        }
+
+        #[test]
+        #[should_panic(expected = "could not convert into bool")]
+        fn verify_into_bool_panics_for_invalid_value() {
+            let invalid: u8 = 2;
+            let _ = invalid.into_bool(); // This should panic
+        }
+
+        #[test]
+        fn verify_from_bool_consistency() {
+            // Test that from_bool followed by try_into_bool is an identity function
+            // for all types
+
+            // Test true
+            let true_u8 = u8::from_bool(true);
+            assert_eq!(true_u8.try_into_bool(), Some(true));
+
+            let true_u16 = u16::from_bool(true);
+            assert_eq!(true_u16.try_into_bool(), Some(true));
+
+            let true_u32 = u32::from_bool(true);
+            assert_eq!(true_u32.try_into_bool(), Some(true));
+
+            let true_u64 = u64::from_bool(true);
+            assert_eq!(true_u64.try_into_bool(), Some(true));
+
+            let true_usize = usize::from_bool(true);
+            assert_eq!(true_usize.try_into_bool(), Some(true));
+
+            let true_i8 = i8::from_bool(true);
+            assert_eq!(true_i8.try_into_bool(), Some(true));
+
+            let true_i16 = i16::from_bool(true);
+            assert_eq!(true_i16.try_into_bool(), Some(true));
+
+            let true_i32 = i32::from_bool(true);
+            assert_eq!(true_i32.try_into_bool(), Some(true));
+
+            let true_i64 = i64::from_bool(true);
+            assert_eq!(true_i64.try_into_bool(), Some(true));
+
+            let true_isize = isize::from_bool(true);
+            assert_eq!(true_isize.try_into_bool(), Some(true));
+
+            // Test false
+            let false_u8 = u8::from_bool(false);
+            assert_eq!(false_u8.try_into_bool(), Some(false));
+
+            let false_u16 = u16::from_bool(false);
+            assert_eq!(false_u16.try_into_bool(), Some(false));
+
+            let false_u32 = u32::from_bool(false);
+            assert_eq!(false_u32.try_into_bool(), Some(false));
+
+            let false_u64 = u64::from_bool(false);
+            assert_eq!(false_u64.try_into_bool(), Some(false));
+
+            let false_usize = usize::from_bool(false);
+            assert_eq!(false_usize.try_into_bool(), Some(false));
+
+            let false_i8 = i8::from_bool(false);
+            assert_eq!(false_i8.try_into_bool(), Some(false));
+
+            let false_i16 = i16::from_bool(false);
+            assert_eq!(false_i16.try_into_bool(), Some(false));
+
+            let false_i32 = i32::from_bool(false);
+            assert_eq!(false_i32.try_into_bool(), Some(false));
+
+            let false_i64 = i64::from_bool(false);
+            assert_eq!(false_i64.try_into_bool(), Some(false));
+
+            let false_isize = isize::from_bool(false);
+            assert_eq!(false_isize.try_into_bool(), Some(false));
+        }
+    }
+
+    mod dataorsuffstat {
+        use super::*;
+        use crate::data::GaussianSuffStat;
+        use crate::dist::Gaussian;
+        use crate::traits::{
+            ConjugatePrior, HasSuffStat, Sampleable, SuffStat,
+        };
+        use rand::Rng;
+
+        struct MockConjPrior;
+
+        impl Sampleable<Gaussian> for MockConjPrior {
+            fn draw<R: Rng>(&self, _rng: &mut R) -> Gaussian {
+                Gaussian::standard()
+            }
+        }
+
+        // For the tests, we use a simple wrapper around Gaussian
+        // that satisfies the Sampleable<Gaussian> trait
+        #[derive(Debug, Clone, PartialEq)]
+        struct MockPosterior(Gaussian);
+
+        impl Sampleable<Gaussian> for MockPosterior {
+            fn draw<R: Rng>(&self, rng: &mut R) -> Gaussian {
+                self.0.clone()
+            }
+        }
+
+        impl ConjugatePrior<f64, Gaussian> for MockConjPrior {
+            type Posterior = MockPosterior;
+            type MCache = ();
+            type PpCache = ();
+
+            fn posterior(
+                &self,
+                _x: &crate::data::GaussianData<f64>,
+            ) -> Self::Posterior {
+                MockPosterior(Gaussian::standard())
+            }
+
+            fn ln_m(&self, _x: &crate::data::GaussianData<f64>) -> f64 {
+                0.0
+            }
+
+            fn ln_m_cache(&self) -> Self::MCache {}
+
+            fn ln_m_with_cache(
+                &self,
+                _cache: &Self::MCache,
+                _x: &crate::data::GaussianData<f64>,
+            ) -> f64 {
+                0.0
+            }
+
+            fn ln_pp(
+                &self,
+                _y: &f64,
+                _x: &crate::data::GaussianData<f64>,
+            ) -> f64 {
+                0.0
+            }
+
+            fn ln_pp_cache(
+                &self,
+                _x: &crate::data::GaussianData<f64>,
+            ) -> Self::PpCache {
+                ()
+            }
+
+            fn ln_pp_with_cache(
+                &self,
+                _cache: &Self::PpCache,
+                _y: &f64,
+            ) -> f64 {
+                0.0
+            }
+
+            fn empty_stat(&self) -> <Gaussian as HasSuffStat<f64>>::Stat {
+                GaussianSuffStat::new()
+            }
+        }
+
+        #[test]
+        fn extract_stat_from_suffstat() {
+            let pr = MockConjPrior;
+            let mut stats = GaussianSuffStat::new();
+            stats.observe(&1.0);
+            stats.observe(&2.0);
+
+            let data: DataOrSuffStat<f64, Gaussian> =
+                DataOrSuffStat::SuffStat(&stats);
+
+            let extracted = extract_stat(&pr, &data);
+            assert_eq!(extracted.n(), 2);
+            assert_eq!(extracted.sum_x(), 3.0);
+        }
+
+        #[test]
+        fn extract_stat_from_data() {
+            let pr = MockConjPrior;
+            let data_vec = vec![1.0, 2.0, 3.0];
+
+            let data: DataOrSuffStat<f64, Gaussian> =
+                DataOrSuffStat::Data(&data_vec);
+
+            let extracted = extract_stat(&pr, &data);
+            assert_eq!(extracted.n(), 3);
+            assert_eq!(extracted.sum_x(), 6.0);
+        }
+
+        #[test]
+        fn extract_stat_then_from_suffstat() {
+            let pr = MockConjPrior;
+            let mut stats = GaussianSuffStat::new();
+            stats.observe(&1.0);
+            stats.observe(&2.0);
+
+            let data: DataOrSuffStat<f64, Gaussian> =
+                DataOrSuffStat::SuffStat(&stats);
+
+            let result = extract_stat_then(&pr, &data, |stat| {
+                stat.n() * 10 + (stat.sum_x() as usize)
+            });
+
+            assert_eq!(result, 23); // 2 * 10 + 3
+        }
+
+        #[test]
+        fn extract_stat_then_from_data() {
+            let pr = MockConjPrior;
+            let data_vec = vec![1.0, 2.0, 3.0];
+
+            let data: DataOrSuffStat<f64, Gaussian> =
+                DataOrSuffStat::Data(&data_vec);
+
+            let result = extract_stat_then(&pr, &data, |stat| {
+                stat.n() * 10 + (stat.sum_x() as usize)
+            });
+
+            assert_eq!(result, 36); // 3 * 10 + 6
+        }
+
+        #[test]
+        fn test_n_method_with_data() {
+            // Test n() with Data variant
+            let data_vec = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+            let data = DataOrSuffStat::<f64, Gaussian>::Data(&data_vec);
+
+            assert_eq!(data.n(), 5);
+
+            // Empty data case
+            let empty_vec: Vec<f64> = vec![];
+            let empty_data = DataOrSuffStat::<f64, Gaussian>::Data(&empty_vec);
+
+            assert_eq!(empty_data.n(), 0);
+        }
+
+        #[test]
+        fn test_n_method_with_suffstat() {
+            // Test n() with SuffStat variant
+            let mut stats = GaussianSuffStat::new();
+            stats.observe(&1.0);
+            stats.observe(&2.0);
+            stats.observe(&3.0);
+
+            let suffstat = DataOrSuffStat::<f64, Gaussian>::SuffStat(&stats);
+
+            assert_eq!(suffstat.n(), 3);
+
+            // Empty suffstat case
+            let empty_stats = GaussianSuffStat::new();
+            let empty_suffstat =
+                DataOrSuffStat::<f64, Gaussian>::SuffStat(&empty_stats);
+
+            assert_eq!(empty_suffstat.n(), 0);
+        }
+
+        #[test]
+        fn test_is_data_method() {
+            // Test is_data() returns true for Data variant
+            let data_vec = vec![1.0, 2.0, 3.0];
+            let data = DataOrSuffStat::<f64, Gaussian>::Data(&data_vec);
+
+            assert!(data.is_data());
+
+            // Test is_data() returns false for SuffStat variant
+            let stats = GaussianSuffStat::new();
+            let suffstat = DataOrSuffStat::<f64, Gaussian>::SuffStat(&stats);
+
+            assert!(!suffstat.is_data());
+        }
+
+        #[test]
+        fn test_is_suffstat_method() {
+            // Test is_suffstat() returns true for SuffStat variant
+            let stats = GaussianSuffStat::new();
+            let suffstat = DataOrSuffStat::<f64, Gaussian>::SuffStat(&stats);
+
+            assert!(suffstat.is_suffstat());
+
+            // Test is_suffstat() returns false for Data variant
+            let data_vec = vec![1.0, 2.0, 3.0];
+            let data = DataOrSuffStat::<f64, Gaussian>::Data(&data_vec);
+
+            assert!(!data.is_suffstat());
+        }
     }
 }

@@ -21,6 +21,16 @@ use std::sync::OnceLock;
 ///
 /// let ix2 = InvChiSquared::new(2.0).unwrap();
 /// ```
+///
+/// Parameters for the Inverse Chi-squared distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct InvChiSquaredParameters {
+    /// Degrees of freedom in (0, ∞)
+    pub v: f64,
+}
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -33,14 +43,14 @@ pub struct InvChiSquared {
 }
 
 impl Parameterized for InvChiSquared {
-    type Parameters = f64;
+    type Parameters = InvChiSquaredParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.v()
+        Self::Parameters { v: self.v() }
     }
 
-    fn from_params(v: Self::Parameters) -> Self {
-        Self::new_unchecked(v)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.v)
     }
 }
 

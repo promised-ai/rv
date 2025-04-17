@@ -4,6 +4,17 @@ use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+/// Parameters for the Shifted distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct ShiftedParameters<D: Parameterized> {
+    /// The parent distribution's parameters
+    pub parent: D::Parameters,
+    /// The shift parameter
+    pub shift: f64,
+}
+
 /// A wrapper for distributions that adds a shift parameter
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -190,6 +201,24 @@ where
         Self: Sized,
     {
         Shifted::new_unchecked(self.parent, self.shift + shift)
+    }
+}
+
+impl<D> Parameterized for Shifted<D>
+where
+    D: Parameterized,
+{
+    type Parameters = ShiftedParameters<D>;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            parent: self.parent.emit_params(),
+            shift: self.shift,
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(D::from_params(params.parent), params.shift)
     }
 }
 
