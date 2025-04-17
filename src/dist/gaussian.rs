@@ -11,6 +11,7 @@ use std::fmt;
 use crate::consts::*;
 use crate::data::GaussianSuffStat;
 use crate::impl_display;
+use crate::traits::HasDensity;
 use crate::traits::*;
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
