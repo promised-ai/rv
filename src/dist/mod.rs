@@ -45,6 +45,7 @@ mod pareto;
 mod poisson;
 mod scaled;
 mod scaled_inv_chi_squared;
+mod scaled_prior;
 mod shifted;
 mod skellam;
 mod students_t;
@@ -108,6 +109,7 @@ pub use scaled_inv_chi_squared::{
     ScaledInvChiSquared, ScaledInvChiSquaredError,
     ScaledInvChiSquaredParameters,
 };
+pub use scaled_prior::{ScaledPrior, ScaledPriorError};
 pub use shifted::{Shifted, ShiftedError, ShiftedParameters};
 pub use skellam::{Skellam, SkellamError, SkellamParameters};
 pub use students_t::{StudentsT, StudentsTError, StudentsTParameters};
