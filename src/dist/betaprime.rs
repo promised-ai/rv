@@ -10,6 +10,9 @@ use std::f64;
 use std::fmt;
 use std::sync::OnceLock;
 
+#[cfg(feature = "experimental")]
+use std::marker::PhantomData;
+
 /// [Beta prime distribution](https://en.wikipedia.org/wiki/Beta_prime_distribution),
 /// BetaPrime(α, β) over x in (0, ∞).
 ///
@@ -373,38 +376,47 @@ impl fmt::Display for BetaPrimeError {
 }
 
 #[cfg(feature = "experimental")]
-impl LegacyConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
+// Helper struct to avoid type parameter issues
+struct BetaPrimeConjugate {
+    inner: BetaPrime,
+    _phantom: PhantomData<usize>,
+}
+
+#[cfg(feature = "experimental")]
+impl BetaPrimeConjugate {
+    fn new(inner: BetaPrime) -> Self {
+        Self {
+            inner,
+            _phantom: PhantomData,
+        }
+    }
+    
+    fn posterior(&self, stat: &StickBreakingDiscreteSuffStat) -> BetaPrime {
+        let mut alpha = self.inner.alpha;
+        let mut beta = self.inner.beta;
+
+        for (j, count) in stat.counts().iter().enumerate() {
+            alpha += (j * count) as f64;
+            beta += *count as f64;
+        }
+
+        BetaPrime::new_unchecked(alpha, beta)
+    }
+}
+
+#[cfg(feature = "experimental")]
+impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
     type Posterior = Self;
     type MCache = f64;
     type PpCache = f64;
 
-    fn empty_stat(
-        &self,
-    ) -> <StickBreakingDiscrete as HasSuffStat<usize>>::Stat {
+    fn empty_stat(&self) -> StickBreakingDiscreteSuffStat {
         StickBreakingDiscreteSuffStat::new()
     }
 
-    fn posterior(
-        &self,
-        data: &DataOrSuffStat<usize, StickBreakingDiscrete>,
-    ) -> Self {
-        match data {
-            DataOrSuffStat::Data(xs) => {
-                let stat = StickBreakingDiscreteSuffStat::from(xs.as_ref());
-                self.posterior(&DataOrSuffStat::SuffStat(&stat))
-            }
-            DataOrSuffStat::SuffStat(stat) => {
-                let mut alpha = self.alpha;
-                let mut beta = self.beta;
-
-                for (j, count) in stat.counts().iter().enumerate() {
-                    alpha += (j * count) as f64;
-                    beta += *count as f64;
-                }
-
-                Self::new_unchecked(alpha, beta)
-            }
-        }
+    fn posterior(&self, stat: &StickBreakingDiscreteSuffStat) -> Self {
+        let helper = BetaPrimeConjugate::new(self.clone());
+        helper.posterior(stat)
     }
 
     fn ln_m_cache(&self) -> Self::MCache {
@@ -414,17 +426,19 @@ impl LegacyConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
     fn ln_m_with_cache(
         &self,
         cache: &Self::MCache,
-        data: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+        stat: &StickBreakingDiscreteSuffStat,
     ) -> f64 {
-        let post = self.posterior(data);
+        let helper = BetaPrimeConjugate::new(self.clone());
+        let post = helper.posterior(stat);
         post.ln_beta_ab() + cache
     }
 
     fn ln_pp_cache(
         &self,
-        data: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+        stat: &StickBreakingDiscreteSuffStat,
     ) -> Self::PpCache {
-        let post = self.posterior(data);
+        let helper = BetaPrimeConjugate::new(self.clone());
+        let post = helper.posterior(stat);
         post.alpha / post.beta
     }
 
@@ -569,9 +583,8 @@ mod tests {
         assert_eq!(cache, -prior.ln_beta_ab());
 
         // Using the cache with empty data should give same result
-        let ln_m =
-            prior.ln_m_with_cache(&cache, &DataOrSuffStat::SuffStat(&data));
-        let post = prior.posterior(&DataOrSuffStat::SuffStat(&data));
+        let ln_m = prior.ln_m_with_cache(&cache, &data);
+        let post = prior.posterior(&data);
         assert_eq!(ln_m, post.ln_beta_ab() - prior.ln_beta_ab());
     }
 
@@ -579,8 +592,15 @@ mod tests {
     #[test]
     fn test_posterior() {
         let prior = BetaPrime::new(2.0, 1.0).unwrap();
-        let data = vec![0, 1, 1, 2, 2, 2]; // This gives counts [2, 2, 3]
-        let posterior = prior.posterior(&DataOrSuffStat::Data(&data));
+        
+        // Create suffstat from data
+        let mut stat = StickBreakingDiscreteSuffStat::new();
+        let data = vec![0, 1, 1, 2, 2, 2]; // This gives counts [1, 2, 3]
+        for &x in &data {
+            stat.observe(&x);
+        }
+        
+        let posterior = prior.posterior(&stat);
         // Our observation is [C₀, C₁, C₂] = [1, 2, 3]
         // So
         //   ∑ j Cⱼ = 0 * 1 + 1 * 2 + 2 * 3 = 8
@@ -601,11 +621,11 @@ mod tests {
 
         // Add some observations
         let data = vec![0, 1, 1, 2, 2, 2]; // Counts: [1, 2, 3]
-        for x in &data {
-            stat.observe(x);
+        for &x in &data {
+            stat.observe(&x);
         }
 
-        let posterior = prior.posterior(&DataOrSuffStat::SuffStat(&stat));
+        let posterior = prior.posterior(&stat);
 
         // Alpha should increase by sum(j * count[j])
         // Beta should increase by sum(count[j])
@@ -619,11 +639,11 @@ mod tests {
         let prior = BetaPrime::new(2.0, 3.0).unwrap();
         let data = StickBreakingDiscreteSuffStat::new();
 
-        let cache = prior.ln_pp_cache(&DataOrSuffStat::SuffStat(&data));
+        let cache = prior.ln_pp_cache(&data);
         let ln_pp = prior.ln_pp_with_cache(&cache, &0);
 
         // Cache should be posterior alpha/beta ratio
-        let post = prior.posterior(&DataOrSuffStat::SuffStat(&data));
+        let post = prior.posterior(&data);
         assert_eq!(cache, post.alpha() / post.beta());
 
         // ln_pp should be log of the cache
