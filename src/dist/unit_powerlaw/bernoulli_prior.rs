@@ -1,7 +1,8 @@
 use rand::Rng;
 use special::Beta as SBeta;
+use std::marker::PhantomData;
 
-use crate::data::{BernoulliSuffStat, Booleable};
+use crate::data::{Booleable, BernoulliSuffStat};
 use crate::dist::{Bernoulli, Beta, UnitPowerLaw};
 use crate::traits::*;
 
@@ -26,32 +27,46 @@ impl Support<Bernoulli> for UnitPowerLaw {
 
 impl ContinuousDistr<Bernoulli> for UnitPowerLaw {}
 
-impl<X: Booleable> LegacyConjugatePrior<X, Bernoulli> for UnitPowerLaw {
+// Helper struct to avoid the Booleable type parameter issue
+struct UnitPowerLawConjugate<X: Booleable> {
+    inner: UnitPowerLaw,
+    _phantom: PhantomData<X>,
+}
+
+impl<X: Booleable> UnitPowerLawConjugate<X> {
+    fn new(inner: UnitPowerLaw) -> Self {
+        Self {
+            inner,
+            _phantom: PhantomData,
+        }
+    }
+    
+    fn posterior(&self, stat: &BernoulliSuffStat) -> Beta {
+        let (n, k) = (<BernoulliSuffStat as SuffStat<X>>::n(stat), stat.k());
+
+        let a = self.inner.alpha() + k as f64;
+        let b = (1 + (n - k)) as f64;
+
+        Beta::new(a, b).expect("Invalid posterior parameters")
+    }
+}
+
+impl<X> ConjugatePrior<X, Bernoulli> for UnitPowerLaw 
+where 
+    X: Booleable,
+{
     type Posterior = Beta;
     type MCache = f64;
     type PpCache = (f64, f64);
 
-    fn empty_stat(&self) -> <Bernoulli as HasSuffStat<X>>::Stat {
+    fn empty_stat(&self) -> BernoulliSuffStat {
         BernoulliSuffStat::new()
     }
 
     #[allow(clippy::many_single_char_names)]
-    fn posterior(&self, x: &DataOrSuffStat<X, Bernoulli>) -> Beta {
-        let (n, k) = match x {
-            DataOrSuffStat::Data(xs) => {
-                let mut stat = BernoulliSuffStat::new();
-                xs.iter().for_each(|x| stat.observe(x));
-                (stat.n(), stat.k())
-            }
-            DataOrSuffStat::SuffStat(stat) => {
-                (<BernoulliSuffStat as SuffStat<X>>::n(stat), stat.k())
-            }
-        };
-
-        let a = self.alpha() + k as f64;
-        let b = (1 + (n - k)) as f64;
-
-        Beta::new(a, b).expect("Invalid posterior parameters")
+    fn posterior(&self, stat: &BernoulliSuffStat) -> Beta {
+        let helper = UnitPowerLawConjugate::<X>::new(self.clone());
+        helper.posterior(stat)
     }
 
     #[inline]
@@ -62,16 +77,18 @@ impl<X: Booleable> LegacyConjugatePrior<X, Bernoulli> for UnitPowerLaw {
     fn ln_m_with_cache(
         &self,
         cache: &Self::MCache,
-        x: &DataOrSuffStat<X, Bernoulli>,
+        stat: &BernoulliSuffStat,
     ) -> f64 {
-        let post = self.posterior(x);
+        let helper = UnitPowerLawConjugate::<X>::new(self.clone());
+        let post: Beta = helper.posterior(stat);
         post.alpha().ln_beta(post.beta()) - cache
     }
 
     #[inline]
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<X, Bernoulli>) -> Self::PpCache {
+    fn ln_pp_cache(&self, stat: &BernoulliSuffStat) -> Self::PpCache {
         //  P(y=1 | xs) happens to be the posterior mean
-        let post = self.posterior(x);
+        let helper = UnitPowerLawConjugate::<X>::new(self.clone());
+        let post = helper.posterior(stat);
         let p: f64 = post.mean().expect("Mean undefined");
         (p.ln(), (1.0 - p).ln())
     }
@@ -89,15 +106,21 @@ impl<X: Booleable> LegacyConjugatePrior<X, Bernoulli> for UnitPowerLaw {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::data::BernoulliSuffStat;
 
     const TOL: f64 = 1E-12;
 
     #[test]
     fn posterior_from_data_bool() {
         let data = vec![false, true, false, true, true];
-        let xs = DataOrSuffStat::Data::<bool, Bernoulli>(&data);
+        
+        // Create sufficient statistic from the data
+        let mut stat = BernoulliSuffStat::new();
+        stat.observe_many(&data);
 
-        let posterior = UnitPowerLaw::new(1.0).unwrap().posterior(&xs);
+        // Use turbofish syntax to specify the type parameter
+        let prior: UnitPowerLaw = UnitPowerLaw::new(1.0).unwrap();
+        let posterior = <UnitPowerLaw as ConjugatePrior<bool, Bernoulli>>::posterior(&prior, &stat);
 
         assert::close(posterior.alpha(), 4.0, TOL);
         assert::close(posterior.beta(), 3.0, TOL);
@@ -106,9 +129,14 @@ mod tests {
     #[test]
     fn posterior_from_data_u16() {
         let data: Vec<u16> = vec![0, 1, 0, 1, 1];
-        let xs = DataOrSuffStat::Data::<u16, Bernoulli>(&data);
+        
+        // Create sufficient statistic from the data
+        let mut stat = BernoulliSuffStat::new();
+        stat.observe_many(&data);
 
-        let posterior = UnitPowerLaw::new(1.0).unwrap().posterior(&xs);
+        // Use turbofish syntax to specify the type parameter
+        let prior: UnitPowerLaw = UnitPowerLaw::new(1.0).unwrap();
+        let posterior = <UnitPowerLaw as ConjugatePrior<u16, Bernoulli>>::posterior(&prior, &stat);
 
         assert::close(posterior.alpha(), 4.0, TOL);
         assert::close(posterior.beta(), 3.0, TOL);

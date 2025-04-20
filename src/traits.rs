@@ -605,6 +605,85 @@ where
     }
 }
 
+
+
+pub trait ConjugatePrior<X, Fx>: Sampleable<Fx>
+where
+    Fx: HasDensity<X> + HasSuffStat<X>,
+{
+    /// Type of the posterior distribution
+    type Posterior: Sampleable<Fx>;
+    /// Type of the cache for the marginal likelihood
+    type MCache;
+    /// Type of the cache for the posterior predictive
+    type PpCache;
+
+    /// Generate and empty sufficient statistic
+    fn empty_stat(&self) -> Fx::Stat;
+
+
+    fn posterior(&self, stat: &Fx::Stat) -> Self::Posterior;
+
+    /// Compute the cache for the log marginal likelihood.
+    fn ln_m_cache(&self) -> Self::MCache;
+
+    /// Log marginal likelihood with supplied cache.
+    fn ln_m_with_cache(
+        &self,
+        cache: &Self::MCache,
+        stat: &Fx::Stat,
+    ) -> f64;
+
+    /// The log marginal likelihood
+    fn ln_m(&self, x: &Fx::Stat) -> f64 {
+        let cache = self.ln_m_cache();
+        self.ln_m_with_cache(&cache, x)
+    }
+
+    /// Compute the cache for the Log posterior predictive of y given x.
+    ///
+    /// The cache should encompass all information about `x`.
+    fn ln_pp_cache(&self, stat: &Fx::Stat) -> Self::PpCache;
+
+    /// Log posterior predictive of y given x with supplied ln(norm)
+    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &X) -> f64;
+
+    /// Log posterior predictive of y given x
+    fn ln_pp(&self, y: &X, stat: &Fx::Stat) -> f64 {
+        let cache = self.ln_pp_cache(stat);
+        self.ln_pp_with_cache(&cache, y)
+    }
+
+    /// Marginal likelihood of x
+    fn m(&self, x: &Fx::Stat) -> f64 {
+        self.ln_m(x).exp()
+    }
+
+    fn pp_with_cache(&self, cache: &Self::PpCache, y: &X) -> f64 {
+        self.ln_pp_with_cache(cache, y).exp()
+    }
+
+    /// Posterior Predictive distribution
+    fn pp(&self, y: &X, x: &Fx::Stat) -> f64 {
+        self.ln_pp(y, x).exp()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /// Get the quad bounds of a univariate real distribution
 pub trait QuadBounds {
     fn quad_bounds(&self) -> (f64, f64);
