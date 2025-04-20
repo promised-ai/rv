@@ -21,7 +21,7 @@ pub use stat::VonMisesSuffStat;
 use crate::dist::{
     Bernoulli, Categorical, Gaussian, InvGamma, InvGaussian, Poisson,
 };
-use crate::traits::ConjugatePrior;
+use crate::traits::LegacyConjugatePrior;
 use crate::traits::HasDensity;
 use crate::traits::{HasSuffStat, SuffStat};
 
@@ -222,7 +222,7 @@ pub fn extract_stat<X, Fx, Pr>(pr: &Pr, x: &DataOrSuffStat<X, Fx>) -> Fx::Stat
 where
     Fx: HasSuffStat<X> + HasDensity<X>,
     Fx::Stat: Clone,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: LegacyConjugatePrior<X, Fx>,
 {
     match x {
         DataOrSuffStat::SuffStat(s) => (*s).clone(),
@@ -243,7 +243,7 @@ pub fn extract_stat_then<X, Fx, Pr, Fnx, Y>(
 where
     Fx: HasSuffStat<X> + HasDensity<X>,
     Fx::Stat: Clone,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: LegacyConjugatePrior<X, Fx>,
     Fnx: Fn(Fx::Stat) -> Y,
 {
     let stat = extract_stat(pr, x);
@@ -519,7 +519,7 @@ mod tests {
         use crate::data::GaussianSuffStat;
         use crate::dist::Gaussian;
         use crate::traits::{
-            ConjugatePrior, HasSuffStat, Sampleable, SuffStat,
+            LegacyConjugatePrior, HasSuffStat, Sampleable, SuffStat,
         };
         use rand::Rng;
 
@@ -542,7 +542,7 @@ mod tests {
             }
         }
 
-        impl ConjugatePrior<f64, Gaussian> for MockConjPrior {
+        impl LegacyConjugatePrior<f64, Gaussian> for MockConjPrior {
             type Posterior = MockPosterior;
             type MCache = ();
             type PpCache = ();

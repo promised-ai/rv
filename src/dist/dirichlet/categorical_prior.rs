@@ -19,7 +19,7 @@ impl Sampleable<Categorical> for SymmetricDirichlet {
     }
 }
 
-impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
+impl<X: CategoricalDatum> LegacyConjugatePrior<X, Categorical>
     for SymmetricDirichlet
 {
     type Posterior = Dirichlet;
@@ -91,7 +91,7 @@ impl Sampleable<Categorical> for Dirichlet {
     }
 }
 
-impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
+impl<X: CategoricalDatum> LegacyConjugatePrior<X, Categorical> for Dirichlet {
     type Posterior = Self;
     type MCache = (f64, f64);
     type PpCache = (Vec<f64>, f64);

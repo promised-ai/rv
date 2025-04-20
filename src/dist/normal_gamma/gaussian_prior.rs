@@ -48,7 +48,7 @@ fn posterior_from_stat(
     PosteriorParameters { m, r, s, v }
 }
 
-impl ConjugatePrior<f64, Gaussian> for NormalGamma {
+impl LegacyConjugatePrior<f64, Gaussian> for NormalGamma {
     type Posterior = Self;
     type MCache = f64;
     type PpCache = (PosteriorParameters, f64);

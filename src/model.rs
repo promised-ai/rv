@@ -14,9 +14,9 @@ use std::sync::Arc;
 pub struct ConjugateModel<X, Fx, Pr>
 where
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: LegacyConjugatePrior<X, Fx>,
 {
-    /// Pointer to an `Rv` implementing `ConjugatePrior` for `Fx`
+    /// Pointer to an `Rv` implementing `LegacyConjugatePrior` for `Fx`
     prior: Arc<Pr>,
     /// A `SuffStat` for `Fx`
     suffstat: Fx::Stat,
@@ -26,7 +26,7 @@ where
 impl<X, Fx, Pr> ConjugateModel<X, Fx, Pr>
 where
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: LegacyConjugatePrior<X, Fx>,
 {
     /// Create a new conjugate model
     ///
@@ -96,7 +96,7 @@ where
 impl<X, Fx, Pr> SuffStat<X> for ConjugateModel<X, Fx, Pr>
 where
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: LegacyConjugatePrior<X, Fx>,
 {
     fn n(&self) -> usize {
         self.suffstat.n()
@@ -118,7 +118,7 @@ where
 impl<X, Fx, Pr> HasDensity<X> for ConjugateModel<X, Fx, Pr>
 where
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: LegacyConjugatePrior<X, Fx>,
 {
     fn ln_f(&self, x: &X) -> f64 {
         self.prior.ln_pp(x, &self.obs())
@@ -128,7 +128,7 @@ where
 impl<X, Fx, Pr> Sampleable<X> for ConjugateModel<X, Fx, Pr>
 where
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: LegacyConjugatePrior<X, Fx>,
 {
     fn draw<R: Rng>(&self, mut rng: &mut R) -> X {
         let post = self.posterior();

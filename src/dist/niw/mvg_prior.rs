@@ -2,7 +2,7 @@ use crate::consts::LN_2PI;
 use crate::data::{extract_stat_then, DataOrSuffStat, MvGaussianSuffStat};
 use crate::dist::{MvGaussian, NormalInvWishart};
 use crate::misc::lnmv_gamma;
-use crate::traits::ConjugatePrior;
+use crate::traits::LegacyConjugatePrior;
 use crate::traits::HasSuffStat;
 use crate::traits::SuffStat;
 use nalgebra::{DMatrix, DVector};
@@ -21,7 +21,7 @@ fn ln_z(k: f64, df: usize, scale: &DMatrix<f64>) -> f64 {
         )
 }
 
-impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
+impl LegacyConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
     type Posterior = Self;
     type MCache = f64;
     type PpCache = (Self, f64);

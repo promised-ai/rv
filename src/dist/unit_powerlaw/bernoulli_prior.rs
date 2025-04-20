@@ -26,7 +26,7 @@ impl Support<Bernoulli> for UnitPowerLaw {
 
 impl ContinuousDistr<Bernoulli> for UnitPowerLaw {}
 
-impl<X: Booleable> ConjugatePrior<X, Bernoulli> for UnitPowerLaw {
+impl<X: Booleable> LegacyConjugatePrior<X, Bernoulli> for UnitPowerLaw {
     type Posterior = Beta;
     type MCache = f64;
     type PpCache = (f64, f64);

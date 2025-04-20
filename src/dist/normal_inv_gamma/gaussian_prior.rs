@@ -56,7 +56,7 @@ fn posterior_from_stat(
     }
 }
 
-impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
+impl LegacyConjugatePrior<f64, Gaussian> for NormalInvGamma {
     type Posterior = Self;
     type MCache = f64;
     type PpCache = (PosteriorParameters, f64);
@@ -146,7 +146,7 @@ mod test {
     }
 
     // Random reference I found using the same source
-    // https://github.com/JuliaStats/ConjugatePriors.jl/blob/master/src/normalinversegamma.jl
+    // https://github.com/JuliaStats/LegacyConjugatePriors.jl/blob/master/src/normalinversegamma.jl
     fn ln_f_ref(gauss: &Gaussian, nig: &NormalInvGamma) -> f64 {
         let NormalInvGammaParameters { m, v, a, b } = nig.emit_params();
         let mu = gauss.mu();

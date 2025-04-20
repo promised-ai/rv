@@ -322,7 +322,7 @@ macro_rules! gaussian_prior_geweke_testable {
                 data: &[f64],
                 rng: &mut R,
             ) -> Gaussian {
-                let post = <$prior as ConjugatePrior<f64, $fx>>::posterior(
+                let post = <$prior as LegacyConjugatePrior<f64, $fx>>::posterior(
                     &self,
                     &DataOrSuffStat::from(data),
                 );
@@ -416,19 +416,19 @@ macro_rules! test_conjugate_prior {
 
                 let y: $X = fx.draw(&mut rng);
 
-                let ln_pp = <$Pr as ConjugatePrior<$X, $Fx>>::ln_pp(
+                let ln_pp = <$Pr as LegacyConjugatePrior<$X, $Fx>>::ln_pp(
                     &pr,
                     &y,
                     &DataOrSuffStat::SuffStat(&stat),
                 );
-                let ln_m_lower = <$Pr as ConjugatePrior<$X, $Fx>>::ln_m(
+                let ln_m_lower = <$Pr as LegacyConjugatePrior<$X, $Fx>>::ln_m(
                     &pr,
                     &DataOrSuffStat::SuffStat(&stat),
                 );
 
                 stat.observe(&y);
 
-                let ln_m_upper = <$Pr as ConjugatePrior<$X, $Fx>>::ln_m(
+                let ln_m_upper = <$Pr as LegacyConjugatePrior<$X, $Fx>>::ln_m(
                     &pr,
                     &DataOrSuffStat::SuffStat(&stat),
                 );
@@ -455,12 +455,12 @@ macro_rules! test_conjugate_prior {
                         &fx, &stat,
                     );
                 let ln_prior = pr.ln_f(&fx);
-                let ln_m = <$Pr as ConjugatePrior<$X, $Fx>>::ln_m(
+                let ln_m = <$Pr as LegacyConjugatePrior<$X, $Fx>>::ln_m(
                     &pr,
                     &DataOrSuffStat::SuffStat(&stat),
                 );
 
-                let posterior = <$Pr as ConjugatePrior<$X, $Fx>>::posterior(
+                let posterior = <$Pr as LegacyConjugatePrior<$X, $Fx>>::posterior(
                     &pr,
                     &DataOrSuffStat::SuffStat(&stat),
                 );
@@ -492,7 +492,7 @@ macro_rules! test_conjugate_prior {
 
                 let stat = random_xs(&pr.draw(&mut rng), 3, &mut rng);
 
-                let m = <$Pr as ConjugatePrior<$X, $Fx>>::m(
+                let m = <$Pr as LegacyConjugatePrior<$X, $Fx>>::m(
                     &pr,
                     &DataOrSuffStat::SuffStat(&stat),
                 );

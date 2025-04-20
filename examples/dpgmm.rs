@@ -42,7 +42,7 @@ use std::sync::Arc;
 struct Dpmm<X, Fx, Pr>
 where
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: LegacyConjugatePrior<X, Fx>,
 {
     // The data
     xs: Vec<X>,
@@ -61,7 +61,7 @@ where
 impl<X, Fx, Pr> Dpmm<X, Fx, Pr>
 where
     Fx: Rv<X> + HasSuffStat<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: LegacyConjugatePrior<X, Fx>,
 {
     // Draws a Dpmm from the prior
     fn new<R: Rng>(xs: Vec<X>, prior: Pr, alpha: f64, rng: &mut R) -> Self {

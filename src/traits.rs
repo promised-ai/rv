@@ -461,7 +461,7 @@ pub trait KlDivergence {
 /// success probability.
 ///
 /// ```
-/// use rv::traits::ConjugatePrior;
+/// use rv::traits::LegacyConjugatePrior;
 /// use rv::dist::{Bernoulli, Beta};
 ///
 /// let flips = vec![true, false, false];
@@ -478,7 +478,7 @@ pub trait KlDivergence {
 /// Use a cache to speed up repeated computations.
 ///
 /// ```
-/// # use rv::traits::ConjugatePrior;
+/// # use rv::traits::LegacyConjugatePrior;
 /// use rv::traits::*;
 /// use rv::traits::SuffStat;
 /// use rv::dist::{Categorical, SymmetricDirichlet};
@@ -539,7 +539,7 @@ pub trait KlDivergence {
 /// // Using cache improves runtime
 /// assert!(t_no_cache.as_nanos() > t_cache.as_nanos());
 /// ```
-pub trait ConjugatePrior<X, Fx>: Sampleable<Fx>
+pub trait LegacyConjugatePrior<X, Fx>: Sampleable<Fx>
 where
     Fx: HasDensity<X> + HasSuffStat<X>,
 {
@@ -653,7 +653,7 @@ pub trait HasSuffStat<X> {
 ///
 /// ```
 /// use rv::traits::SuffStat;
-/// use rv::traits::ConjugatePrior;
+/// use rv::traits::LegacyConjugatePrior;
 /// use rv::data::BernoulliSuffStat;
 /// use rv::dist::{Bernoulli, Beta};
 ///

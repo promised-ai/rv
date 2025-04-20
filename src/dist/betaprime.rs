@@ -282,7 +282,7 @@ use crate::data::DataOrSuffStat;
 use crate::experimental::stick_breaking_process::{
     StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
 };
-use crate::traits::ConjugatePrior;
+use crate::traits::LegacyConjugatePrior;
 
 #[cfg(feature = "experimental")]
 use crate::experimental::stick_breaking_process::StickBreaking;
@@ -373,7 +373,7 @@ impl fmt::Display for BetaPrimeError {
 }
 
 #[cfg(feature = "experimental")]
-impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
+impl LegacyConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
     type Posterior = Self;
     type MCache = f64;
     type PpCache = f64;

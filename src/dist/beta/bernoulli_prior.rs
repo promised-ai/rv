@@ -26,7 +26,7 @@ impl Support<Bernoulli> for Beta {
 
 impl ContinuousDistr<Bernoulli> for Beta {}
 
-impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
+impl<X: Booleable> LegacyConjugatePrior<X, Bernoulli> for Beta {
     type Posterior = Self;
     type MCache = f64;
     type PpCache = (f64, f64);

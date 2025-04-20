@@ -60,7 +60,7 @@ fn posterior_from_stat(
     PosteriorParameters { mn, kn, vn, s2n }
 }
 
-impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
+impl LegacyConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     type Posterior = Self;
     type MCache = f64;
     type PpCache = (PosteriorParameters, f64);

@@ -236,8 +236,8 @@ impl Sampleable<StickBreakingDiscrete> for StickBreaking {
     }
 }
 
-/// Implementation of the `ConjugatePrior` trait for the `StickBreaking` struct.
-impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
+/// Implementation of the `LegacyConjugatePrior` trait for the `StickBreaking` struct.
+impl LegacyConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
     type Posterior = StickBreaking;
     type MCache = ();
     type PpCache = Self::Posterior;

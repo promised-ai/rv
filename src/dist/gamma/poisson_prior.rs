@@ -41,7 +41,7 @@ impl ContinuousDistr<Poisson> for Gamma {}
 
 macro_rules! impl_traits {
     ($kind: ty) => {
-        impl ConjugatePrior<$kind, Poisson> for Gamma {
+        impl LegacyConjugatePrior<$kind, Poisson> for Gamma {
             type Posterior = Self;
             type MCache = f64;
             type PpCache = (f64, f64, f64);
