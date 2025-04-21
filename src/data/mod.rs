@@ -216,6 +216,7 @@ where
     }
 }
 
+#[inline]
 pub fn extract_stat<X, Fx, Pr>(pr: &Pr, x: &DataOrSuffStat<X, Fx>) -> Fx::Stat
 where
     Fx: HasSuffStat<X> + HasDensity<X>,
@@ -226,6 +227,7 @@ where
 }
 
 /// Convert a `DataOrSuffStat` into a `Stat` then do something with it
+#[inline]
 pub fn extract_stat_then<X, Fx, Pr, Fnx, Y>(
     pr: &Pr,
     x: &DataOrSuffStat<X, Fx>,
