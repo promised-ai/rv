@@ -1,5 +1,6 @@
 use crate::consts::LN_2PI;
-use crate::data::{extract_stat_then, DataOrSuffStat, MvGaussianSuffStat};
+use crate::data::extract_stat_then;
+use crate::data::{DataOrSuffStat, MvGaussianSuffStat};
 use crate::dist::{MvGaussian, NormalInvWishart};
 use crate::misc::lnmv_gamma;
 use crate::traits::ConjugatePrior;
@@ -36,7 +37,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         }
 
         let nf = x.n() as f64;
-        extract_stat_then(self, x, |stat: MvGaussianSuffStat| {
+        extract_stat_then(self, x, |stat: &MvGaussianSuffStat| {
             let xbar = stat.sum_x() / stat.n() as f64;
             let diff = &xbar - self.mu();
             // s = \sum_{i=1}^N (x_i - \bar{x}) (x_i - \bar{x})^T

@@ -216,7 +216,6 @@ where
     }
 }
 
-/// Convert a `DataOrSuffStat` into a `Stat`
 #[inline]
 pub fn extract_stat<X, Fx, Pr>(pr: &Pr, x: &DataOrSuffStat<X, Fx>) -> Fx::Stat
 where
@@ -224,17 +223,11 @@ where
     Fx::Stat: Clone,
     Pr: ConjugatePrior<X, Fx>,
 {
-    match x {
-        DataOrSuffStat::SuffStat(s) => (*s).clone(),
-        DataOrSuffStat::Data(xs) => {
-            let mut stat = pr.empty_stat();
-            stat.observe_many(xs);
-            stat
-        }
-    }
+    extract_stat_then(pr, x, |s| s.clone())
 }
 
 /// Convert a `DataOrSuffStat` into a `Stat` then do something with it
+#[inline]
 pub fn extract_stat_then<X, Fx, Pr, Fnx, Y>(
     pr: &Pr,
     x: &DataOrSuffStat<X, Fx>,
@@ -242,12 +235,17 @@ pub fn extract_stat_then<X, Fx, Pr, Fnx, Y>(
 ) -> Y
 where
     Fx: HasSuffStat<X> + HasDensity<X>,
-    Fx::Stat: Clone,
     Pr: ConjugatePrior<X, Fx>,
-    Fnx: Fn(Fx::Stat) -> Y,
+    Fnx: Fn(&Fx::Stat) -> Y,
 {
-    let stat = extract_stat(pr, x);
-    f_stat(stat)
+    match x {
+        DataOrSuffStat::SuffStat(s) => f_stat(s),
+        DataOrSuffStat::Data(xs) => {
+            let mut stat = pr.empty_stat();
+            stat.observe_many(xs);
+            f_stat(&stat)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -649,9 +647,10 @@ mod tests {
             let data: DataOrSuffStat<f64, Gaussian> =
                 DataOrSuffStat::Data(&data_vec);
 
-            let result = extract_stat_then(&pr, &data, |stat| {
-                stat.n() * 10 + (stat.sum_x() as usize)
-            });
+            let result =
+                extract_stat_then(&pr, &data, |stat: &GaussianSuffStat| {
+                    stat.n() * 10 + (stat.sum_x() as usize)
+                });
 
             assert_eq!(result, 36); // 3 * 10 + 6
         }

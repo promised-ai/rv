@@ -31,7 +31,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     }
 
     fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
-        extract_stat_then(self, x, |stat: CategoricalSuffStat| {
+        extract_stat_then(self, x, |stat: &CategoricalSuffStat| {
             let alphas: Vec<f64> =
                 stat.counts().iter().map(|&ct| self.alpha() + ct).collect();
 
@@ -54,7 +54,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     ) -> f64 {
         let sum_alpha = self.alpha() * self.k() as f64;
 
-        extract_stat_then(self, x, |stat: CategoricalSuffStat| {
+        extract_stat_then(self, x, |stat: &CategoricalSuffStat| {
             let b = ln_gammafn(sum_alpha + stat.n() as f64);
             let c = stat
                 .counts()
@@ -101,7 +101,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     }
 
     fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
-        extract_stat_then(self, x, |stat: CategoricalSuffStat| {
+        extract_stat_then(self, x, |stat: &CategoricalSuffStat| {
             let alphas: Vec<f64> = self
                 .alphas()
                 .iter()
@@ -130,7 +130,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
         x: &CategoricalData<X>,
     ) -> f64 {
         let (sum_alpha, ln_norm) = cache;
-        extract_stat_then(self, x, |stat: CategoricalSuffStat| {
+        extract_stat_then(self, x, |stat: &CategoricalSuffStat| {
             let b = ln_gammafn(sum_alpha + stat.n() as f64);
             let c = self
                 .alphas()
