@@ -42,6 +42,10 @@ impl<D> Shifted<D> {
     pub fn new_unchecked(parent: D, shift: f64) -> Self {
         Shifted { parent, shift }
     }
+
+    pub fn shift(&self) -> f64 {
+        self.shift
+    }
 }
 
 impl<D> Sampleable<f64> for Shifted<D>
