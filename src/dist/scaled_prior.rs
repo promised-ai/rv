@@ -1,3 +1,4 @@
+use crate::data::extract_stat_then;
 use crate::data::{DataOrSuffStat, ScaledSuffStat};
 use crate::dist::Scaled;
 use crate::traits::*;
@@ -169,18 +170,12 @@ where
         &self,
         x: &DataOrSuffStat<f64, Scaled<Fx>>,
     ) -> Self::Posterior {
-        // For now, we'll just compute a new posterior with the same parameters
-        // In the future, we should implement proper handling of the data
-        let data: Vec<f64> = match x {
-            DataOrSuffStat::Data(xs) => {
-                xs.iter().map(|&x| x * self.rate).collect()
-            }
-            DataOrSuffStat::SuffStat(_) => vec![], // Not handling suffstat for now
-        };
-
-        let posterior_parent =
-            self.parent.posterior(&DataOrSuffStat::Data(&data));
-        Self::new_unchecked(posterior_parent, self.scale)
+        extract_stat_then(self, x, |stat: &ScaledSuffStat<Fx::Stat>| {
+            ScaledPrior::new_unchecked(
+                self.parent.posterior_from_suffstat(&stat.parent()),
+                self.scale,
+            )
+        })
     }
 
     fn ln_m_cache(&self) -> Self::MCache {

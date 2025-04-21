@@ -235,7 +235,7 @@ pub fn extract_stat_then<X, Fx, Pr, Fnx, Y>(
 ) -> Y
 where
     Fx: HasSuffStat<X> + HasDensity<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: ConjugatePrior<X, Fx> + ?Sized,
     Fnx: Fn(&Fx::Stat) -> Y,
 {
     match x {
