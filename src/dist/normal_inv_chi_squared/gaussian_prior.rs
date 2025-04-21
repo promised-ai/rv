@@ -70,7 +70,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     }
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        extract_stat_then(self, x, |stat: GaussianSuffStat| {
+        extract_stat_then(self, x, |stat: &GaussianSuffStat| {
             posterior_from_stat(self, &stat).into()
         })
     }
@@ -85,7 +85,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
         cache: &Self::MCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
-        extract_stat_then(self, x, |stat: GaussianSuffStat| {
+        extract_stat_then(self, x, |stat: &GaussianSuffStat| {
             let n = stat.n() as f64;
             let post: Self = posterior_from_stat(self, &stat).into();
             let lnz_n = post.ln_z();
