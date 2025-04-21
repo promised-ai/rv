@@ -1,3 +1,4 @@
+use crate::data::{DataOrSuffStat, ShiftedSuffStat};
 use crate::dist::Shifted;
 use crate::traits::*;
 use rand::Rng;
@@ -5,11 +6,10 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::marker::PhantomData;
-use crate::data::{DataOrSuffStat, ShiftedSuffStat};
 
 /// A wrapper for priors that shifts the output distribution
-/// 
-/// If drawing a `Pr` gives a distribution `Fx`, then drawing `ShiftedPrior<Pr>` 
+///
+/// If drawing a `Pr` gives a distribution `Fx`, then drawing `ShiftedPrior<Pr>`
 /// will produce a `Shifted<Fx>`.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -141,15 +141,21 @@ where
         ShiftedSuffStat::new(parent_stat, self.shift)
     }
 
-    fn posterior(&self, x: &DataOrSuffStat<f64, Shifted<Fx>>) -> Self::Posterior {
+    fn posterior(
+        &self,
+        x: &DataOrSuffStat<f64, Shifted<Fx>>,
+    ) -> Self::Posterior {
         // For now, we'll just compute a new posterior with the same parameters
         // In the future, we should implement proper handling of the data
         let data: Vec<f64> = match x {
-            DataOrSuffStat::Data(xs) => xs.iter().map(|&x| x - self.shift).collect(),
+            DataOrSuffStat::Data(xs) => {
+                xs.iter().map(|&x| x - self.shift).collect()
+            }
             DataOrSuffStat::SuffStat(_) => vec![], // Not handling suffstat for now
         };
-        
-        let posterior_parent = self.parent.posterior(&DataOrSuffStat::Data(&data));
+
+        let posterior_parent =
+            self.parent.posterior(&DataOrSuffStat::Data(&data));
         Self::new_unchecked(posterior_parent, self.shift)
     }
 
@@ -164,20 +170,28 @@ where
     ) -> f64 {
         // For now, we'll just compute from data
         let data: Vec<f64> = match x {
-            DataOrSuffStat::Data(xs) => xs.iter().map(|&x| x - self.shift).collect(),
+            DataOrSuffStat::Data(xs) => {
+                xs.iter().map(|&x| x - self.shift).collect()
+            }
             DataOrSuffStat::SuffStat(_) => vec![], // Not handling suffstat for now
         };
-        
-        self.parent.ln_m_with_cache(cache, &DataOrSuffStat::Data(&data))
+
+        self.parent
+            .ln_m_with_cache(cache, &DataOrSuffStat::Data(&data))
     }
 
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Shifted<Fx>>) -> Self::PpCache {
+    fn ln_pp_cache(
+        &self,
+        x: &DataOrSuffStat<f64, Shifted<Fx>>,
+    ) -> Self::PpCache {
         // For now, we'll just compute from data
         let data: Vec<f64> = match x {
-            DataOrSuffStat::Data(xs) => xs.iter().map(|&x| x - self.shift).collect(),
+            DataOrSuffStat::Data(xs) => {
+                xs.iter().map(|&x| x - self.shift).collect()
+            }
             DataOrSuffStat::SuffStat(_) => vec![], // Not handling suffstat for now
         };
-        
+
         self.parent.ln_pp_cache(&DataOrSuffStat::Data(&data))
     }
 
@@ -202,10 +216,10 @@ mod tests {
     fn test_shifted_prior_draw() {
         let prior = NormalInvChiSquared::new_unchecked(0.0, 1.0, 2.0, 1.0);
         let shifted_prior = ShiftedPrior::new(prior, 2.0).unwrap();
-        
+
         let mut rng = Xoshiro256Plus::seed_from_u64(42);
         let dist = shifted_prior.draw(&mut rng);
-        
+
         assert_eq!(dist.shift(), 2.0);
     }
 
@@ -213,44 +227,44 @@ mod tests {
     fn test_shifted_prior_conjugate() {
         let prior = NormalInvChiSquared::new_unchecked(0.0, 1.0, 2.0, 1.0);
         let shifted_prior = ShiftedPrior::new(prior, 2.0).unwrap();
-        
+
         // Create an empty stat to test
         let stat = shifted_prior.empty_stat();
         assert_eq!(stat.shift(), 2.0);
-        
+
         // Test posterior with empty data
         let data: Vec<f64> = Vec::new();
         // Manually create DataOrSuffStat instead of using .into()
         let dos = DataOrSuffStat::Data(&data);
         let posterior = shifted_prior.posterior(&dos);
-        
+
         // Shift should persist through posterior computation
         assert_eq!(posterior.shift(), 2.0);
     }
-    
+
     #[test]
     fn test_shifted_prior_with_data() {
         let prior = NormalInvChiSquared::new_unchecked(0.0, 1.0, 2.0, 1.0);
         let shifted_prior = ShiftedPrior::new(prior, 2.0).unwrap();
-        
+
         // Create some data - will be shifted by -2.0 internally for parent calculations
         let data = vec![2.0, 4.0, 6.0];
-        
+
         // Manually create DataOrSuffStat instead of using .into()
         let dos = DataOrSuffStat::Data(&data);
-        
+
         // Compute posterior
         let posterior = shifted_prior.posterior(&dos);
-        
+
         // Shift should persist through posterior computation
         assert_eq!(posterior.shift(), 2.0);
-        
+
         // Verify ln_m and ln_pp work
         let ln_m = shifted_prior.ln_m(&dos);
         let ln_pp = shifted_prior.ln_pp(&2.0, &dos);
-        
+
         // Values should be finite (actual values will depend on implementation)
         assert!(ln_m.is_finite());
         assert!(ln_pp.is_finite());
     }
-} 
+}
