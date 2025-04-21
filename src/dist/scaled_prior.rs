@@ -156,7 +156,7 @@ where
     Fx: HasSuffStat<f64> + Scalable + HasDensity<f64>,
     Scaled<Fx>: HasSuffStat<f64, Stat = ScaledSuffStat<Fx::Stat>>,
 {
-    type Posterior = Self;
+    type Posterior = ScaledPrior<Pr::Posterior, Fx>;
     type MCache = Pr::MCache;
     type PpCache = Pr::PpCache;
 
