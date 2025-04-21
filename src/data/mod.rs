@@ -623,7 +623,7 @@ mod tests {
         }
 
         #[test]
-        fn extract_stat2_from_suffstat() {
+        fn extract_stat_from_suffstat() {
             let pr = MockConjPrior;
             let mut stats = GaussianSuffStat::new();
             stats.observe(&1.0);
@@ -638,7 +638,7 @@ mod tests {
         }
 
         #[test]
-        fn extract_stat2_from_data() {
+        fn extract_stat_from_data() {
             let pr = MockConjPrior;
             let data_vec = vec![1.0, 2.0, 3.0];
 
