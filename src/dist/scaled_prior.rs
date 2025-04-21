@@ -166,16 +166,14 @@ where
         ScaledSuffStat::new(parent_stat, self.scale)
     }
 
-    fn posterior(
+    fn posterior_from_suffstat(
         &self,
-        x: &DataOrSuffStat<f64, Scaled<Fx>>,
+        stat: &ScaledSuffStat<Fx::Stat>,
     ) -> Self::Posterior {
-        extract_stat_then(self, x, |stat: &ScaledSuffStat<Fx::Stat>| {
-            ScaledPrior::new_unchecked(
-                self.parent.posterior_from_suffstat(&stat.parent()),
-                self.scale,
-            )
-        })
+        ScaledPrior::new_unchecked(
+            self.parent.posterior_from_suffstat(&stat.parent()),
+            self.scale,
+        )
     }
 
     fn ln_m_cache(&self) -> Self::MCache {
