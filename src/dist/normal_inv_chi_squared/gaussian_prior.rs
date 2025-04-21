@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::f64::consts::PI;
 
 use crate::consts::HALF_LN_PI;
-use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
+use crate::data::{ extract_stat_then, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
@@ -94,16 +94,17 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     }
 
     fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
-        let stat = extract_stat(self, x);
-        let post = posterior_from_stat(self, &stat);
-        let kn = post.kn;
-        let vn = post.vn;
+        extract_stat_then(self, x, |stat: &GaussianSuffStat| {
+            let post = posterior_from_stat(self, &stat);
+            let kn = post.kn;
+            let vn = post.vn;
 
-        let z = 0.5_f64.mul_add(
-            (kn / ((kn + 1.0) * PI * vn * post.s2n)).ln(),
-            ln_gammafn((vn + 1.0) / 2.0) - ln_gammafn(vn / 2.0),
-        );
-        (post, z)
+            let z = 0.5_f64.mul_add(
+                (kn / ((kn + 1.0) * PI * vn * post.s2n)).ln(),
+                ln_gammafn((vn + 1.0) / 2.0) - ln_gammafn(vn / 2.0),
+            );
+            (post, z)
+        })
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
