@@ -216,7 +216,6 @@ where
     }
 }
 
-
 /// Convert a `DataOrSuffStat` into a `Stat` then do something with it
 ///
 /// This function avoids cloning the underlying sufficient statistic when possible.
@@ -236,7 +235,7 @@ where
             // Clone is necessary here due to the function signature
             // *s is of type &Fx::Stat, so we need to clone it
             f_stat((*s).clone())
-        },
+        }
         DataOrSuffStat::Data(xs) => {
             // Create the statistic directly without intermediate cloning
             let mut stat = pr.empty_stat();
