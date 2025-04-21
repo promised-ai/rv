@@ -47,6 +47,7 @@ mod scaled;
 mod scaled_inv_chi_squared;
 mod scaled_prior;
 mod shifted;
+mod shifted_prior;
 mod skellam;
 mod students_t;
 mod uniform;
@@ -111,6 +112,7 @@ pub use scaled_inv_chi_squared::{
 };
 pub use scaled_prior::{ScaledPrior, ScaledPriorError};
 pub use shifted::{Shifted, ShiftedError, ShiftedParameters};
+pub use shifted_prior::{ShiftedPrior, ShiftedPriorError};
 pub use skellam::{Skellam, SkellamError, SkellamParameters};
 pub use students_t::{StudentsT, StudentsTError, StudentsTParameters};
 pub use uniform::{Uniform, UniformError, UniformParameters};
