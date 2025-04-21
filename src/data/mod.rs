@@ -216,37 +216,19 @@ where
     }
 }
 
-/// Convert a `DataOrSuffStat` into a `Stat` then do something with it
-///
-/// This function avoids cloning the underlying sufficient statistic when possible.
-pub fn extract_stat_then<X, Fx, Pr, Fnx, Y>(
-    pr: &Pr,
-    x: &DataOrSuffStat<X, Fx>,
-    f_stat: Fnx,
-) -> Y
+
+pub fn extract_stat<X, Fx, Pr>(pr: &Pr, x: &DataOrSuffStat<X, Fx>) -> Fx::Stat
 where
     Fx: HasSuffStat<X> + HasDensity<X>,
     Fx::Stat: Clone,
     Pr: ConjugatePrior<X, Fx>,
-    Fnx: Fn(Fx::Stat) -> Y,
 {
-    match x {
-        DataOrSuffStat::SuffStat(s) => {
-            // Clone is necessary here due to the function signature
-            // *s is of type &Fx::Stat, so we need to clone it
-            f_stat((*s).clone())
-        }
-        DataOrSuffStat::Data(xs) => {
-            // Create the statistic directly without intermediate cloning
-            let mut stat = pr.empty_stat();
-            stat.observe_many(xs);
-            f_stat(stat)
-        }
-    }
+    extract_stat_then(pr, x, |s| s.clone())
 }
 
+
 /// Convert a `DataOrSuffStat` into a `Stat` then do something with it
-pub fn extract_stat_then2<X, Fx, Pr, Fnx, Y>(
+pub fn extract_stat_then<X, Fx, Pr, Fnx, Y>(
     pr: &Pr,
     x: &DataOrSuffStat<X, Fx>,
     f_stat: Fnx,
@@ -264,15 +246,6 @@ where
             f_stat(&stat)
         }
     }
-}
-
-pub fn extract_stat<X, Fx, Pr>(pr: &Pr, x: &DataOrSuffStat<X, Fx>) -> Fx::Stat
-where
-    Fx: HasSuffStat<X> + HasDensity<X>,
-    Fx::Stat: Clone,
-    Pr: ConjugatePrior<X, Fx>,
-{
-    extract_stat_then2(pr, x, |s| s.clone())
 }
 
 #[cfg(test)]
@@ -674,7 +647,7 @@ mod tests {
             let data: DataOrSuffStat<f64, Gaussian> =
                 DataOrSuffStat::Data(&data_vec);
 
-            let result = extract_stat_then2(&pr, &data, |stat: &GaussianSuffStat| {
+            let result = extract_stat_then(&pr, &data, |stat: &GaussianSuffStat| {
                 stat.n() * 10 + (stat.sum_x() as usize)
             });
 
