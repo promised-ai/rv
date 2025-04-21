@@ -1,4 +1,3 @@
-use crate::data::extract_stat_then;
 use crate::data::{DataOrSuffStat, ScaledSuffStat};
 use crate::dist::Scaled;
 use crate::traits::*;
