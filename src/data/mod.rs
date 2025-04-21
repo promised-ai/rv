@@ -674,7 +674,7 @@ mod tests {
             let data: DataOrSuffStat<f64, Gaussian> =
                 DataOrSuffStat::Data(&data_vec);
 
-            let result = extract_stat_then(&pr, &data, |stat| {
+            let result = extract_stat_then2(&pr, &data, |stat: &GaussianSuffStat| {
                 stat.n() * 10 + (stat.sum_x() as usize)
             });
 

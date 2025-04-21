@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::f64::consts::PI;
 
 use crate::consts::HALF_LN_PI;
-use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
+use crate::data::{extract_stat, extract_stat_then2, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
@@ -70,7 +70,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
     }
 
     fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        extract_stat_then(self, x, |stat: GaussianSuffStat| {
+        extract_stat_then2(self, x, |stat: &GaussianSuffStat| {
             posterior_from_stat(self, &stat).into()
         })
     }
@@ -85,7 +85,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
         cache: &Self::MCache,
         x: &DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
-        extract_stat_then(self, x, |stat: GaussianSuffStat| {
+        extract_stat_then2(self, x, |stat: &GaussianSuffStat| {
             let n = stat.n() as f64;
             let post: Self = posterior_from_stat(self, &stat).into();
             let lnz_n = post.ln_z();
