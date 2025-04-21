@@ -1,4 +1,5 @@
 use crate::consts::LN_2PI;
+use crate::data::extract_stat_then;
 use crate::data::{DataOrSuffStat, MvGaussianSuffStat};
 use crate::dist::{MvGaussian, NormalInvWishart};
 use crate::misc::lnmv_gamma;
@@ -7,7 +8,6 @@ use crate::traits::HasSuffStat;
 use crate::traits::SuffStat;
 use nalgebra::{DMatrix, DVector};
 use std::f64::consts::{LN_2, PI};
-use crate::data::extract_stat_then;
 
 type MvgData<'a> = DataOrSuffStat<'a, DVector<f64>, MvGaussian>;
 
