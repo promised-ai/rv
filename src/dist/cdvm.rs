@@ -3,6 +3,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::data::CdvmSuffStat;
+use crate::dist::vonmises::{VonMises, VonMisesError, VonMisesParameters};
+use crate::dist::{Scaled, ScaledError};
 use crate::impl_display;
 use crate::misc::func::LogSumExp;
 use crate::misc::ln_pflip;
@@ -39,25 +41,15 @@ use std::sync::OnceLock;
 ///
 /// Note that in while the paper uses μ ∈ [0, 2π), we use μ ∈ [0, m)
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Cdvm {
     /// Number of categories
     modulus: usize,
 
-    /// mean direction (μ)
-    mu: f64,
-
-    /// concentration parameter (κ)
-    kappa: f64,
+    /// Underlying scaled von Mises distribution
+    parent: Scaled<VonMises>,
 
     /// Cached log-normalization constant
-    #[cfg_attr(feature = "serde1", serde(skip))]
     log_norm_const: OnceLock<f64>,
-
-    /// Cached 2π/m
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    twopi_over_m: OnceLock<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -67,7 +59,7 @@ pub struct CdvmParameters {
     pub kappa: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum CdvmError {
@@ -76,6 +68,26 @@ pub enum CdvmError {
 
     /// Kappa must be non-negative
     KappaNegative { kappa: f64 },
+
+    /// Error from VonMises distribution
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    VonMisesError(VonMisesError),
+
+    /// Error from Scaled distribution
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    ScaledError(ScaledError),
+}
+
+impl From<VonMisesError> for CdvmError {
+    fn from(err: VonMisesError) -> Self {
+        CdvmError::VonMisesError(err)
+    }
+}
+
+impl From<ScaledError> for CdvmError {
+    fn from(err: ScaledError) -> Self {
+        CdvmError::ScaledError(err)
+    }
 }
 
 impl Cdvm {
@@ -97,20 +109,38 @@ impl Cdvm {
         Ok(Cdvm::new_unchecked(mu, kappa, modulus))
     }
 
+    pub fn concentration(&self) -> f64 {
+        self.parent().parent().k()
+    }
+
     /// Creates a new CDVM without checking whether the parameters are valid.
     #[inline]
     pub fn new_unchecked(mu: f64, kappa: f64, modulus: usize) -> Self {
+        let scale = modulus as f64 / (2.0 * std::f64::consts::PI);
+        let rate = scale.recip();
+        let logjac = scale.abs().ln();
+        let vm = VonMises::new_unchecked(mu * rate, kappa);
+        let parent = Scaled::from_parts_unchecked(vm, scale, rate, logjac);
+        
         Cdvm {
             modulus,
-            mu,
-            kappa,
+            parent,
             log_norm_const: OnceLock::new(),
-            twopi_over_m: OnceLock::new(),
         }
     }
 
-    fn cdvm_kernel(&self, x: usize) -> f64 {
-        self.kappa * ((self.twopi_over_m() * (x as f64 - self.mu)).cos())
+    #[must_use]
+    pub fn from_parts_unchecked(modulus: usize, parent: Scaled<VonMises>) -> Self {
+        Self {
+            modulus,
+            parent,
+            log_norm_const: OnceLock::new(),
+        }
+    }
+
+
+    pub fn cdvm_kernel(&self, x: usize) -> f64 {
+        self.concentration() * ((self.two_pi_over_modulus() * (x as f64 - self.mu())).cos())
     }
 
     /// Get the number of categories
@@ -118,31 +148,58 @@ impl Cdvm {
         self.modulus
     }
 
+    pub fn modulus_over_two_pi(&self) -> f64 {
+        self.parent().scale()
+    }
+
+    pub fn two_pi_over_modulus(&self) -> f64 {
+        self.parent().rate()
+    }
+
+
+
     /// Get the von Mises mean direction
     pub fn mu(&self) -> f64 {
-        self.mu
+        // Convert from von Mises [0, 2π) space to CDVM [0, m) space
+        self.parent().parent().mu() * self.modulus_over_two_pi()
     }
 
     /// Get the von Mises concentration parameter
     pub fn kappa(&self) -> f64 {
-        self.kappa
+        self.parent.parent().k()
     }
 
-    /// Get the cached 2π/m
-    pub fn twopi_over_m(&self) -> f64 {
-        *self
-            .twopi_over_m
-            .get_or_init(|| 2.0 * std::f64::consts::PI / self.modulus as f64)
+    /// Get the underlying scaled von Mises distribution
+    pub fn parent(&self) -> &Scaled<VonMises> {
+        &self.parent
     }
 
     /// Compute or fetch cached normalization constant
     fn log_norm_const(&self) -> f64 {
         *self.log_norm_const.get_or_init(|| {
-            // For CDVM, the normalization constant is just the von Mises normalizer
-            // since the categorical probabilities already sum to 1
+            // For CDVM over integers, the normalization constant is the sum of the unnormalized densities
             (0..self.modulus).map(|x| self.cdvm_kernel(x)).logsumexp()
         })
     }
+
+    fn map_vonmises_params(
+        &self,
+        f: impl Fn(VonMisesParameters) -> VonMisesParameters,
+    ) -> Cdvm {
+        let modulus = self.modulus();
+        let parent = self.parent.map_parent_params(f);
+        Cdvm::from_parts_unchecked(modulus, parent)
+    }
+
+    /// Create a default CDVM with modulus 4, zero mean, and zero concentration
+    pub fn default_with_modulus(modulus: usize) -> Result<Self, CdvmError> {
+        if modulus < 2 {
+            return Err(CdvmError::InvalidCategories { modulus });
+        }
+
+        Ok(Cdvm::new_unchecked(0.0, 0.0, modulus))
+    }
+
 }
 
 impl Parameterized for Cdvm {
@@ -151,8 +208,8 @@ impl Parameterized for Cdvm {
     fn emit_params(&self) -> Self::Parameters {
         CdvmParameters {
             modulus: self.modulus,
-            mu: self.mu,
-            kappa: self.kappa,
+            mu: self.mu(),
+            kappa: self.kappa(),
         }
     }
 
@@ -164,8 +221,8 @@ impl Parameterized for Cdvm {
 impl PartialEq for Cdvm {
     fn eq(&self, other: &Cdvm) -> bool {
         self.modulus == other.modulus
-            && self.mu == other.mu
-            && self.kappa == other.kappa
+            && self.mu() == other.mu()
+            && self.kappa() == other.kappa()
     }
 }
 
@@ -173,20 +230,20 @@ impl From<&Cdvm> for String {
     fn from(cdvm: &Cdvm) -> String {
         format!(
             "CDVM(modulus: {}, μ: {}, κ: {})",
-            cdvm.modulus, cdvm.mu, cdvm.kappa
+            cdvm.modulus, cdvm.mu(), cdvm.kappa()
         )
     }
 }
 
 impl Mean<f64> for Cdvm {
     fn mean(&self) -> Option<f64> {
-        Some(self.mu)
+        Some(self.mu())
     }
 }
 
 impl Mode<usize> for Cdvm {
     fn mode(&self) -> Option<usize> {
-        Some(self.mu.round() as usize)
+        Some(self.mu().round() as usize % self.modulus)
     }
 }
 
@@ -207,26 +264,33 @@ impl fmt::Display for CdvmError {
             Self::KappaNegative { kappa } => {
                 write!(f, "kappa ({}) must be non-negative", kappa)
             }
+            Self::VonMisesError(err) => write!(f, "VonMises error: {}", err),
+            Self::ScaledError(err) => write!(f, "Scaled error: {}", err),
         }
     }
 }
 
 impl HasDensity<usize> for Cdvm {
     fn ln_f(&self, x: &usize) -> f64 {
-        self.cdvm_kernel(*x) - self.log_norm_const()
+        // For Cdvm, we need to support the correct modulo arithmetic
+        let x_mod = *x % self.modulus;
+        
+        // Use the density of the underlying scaled von Mises but adjust for normalization
+        self.parent.ln_f(&(x_mod as f64)) - self.log_norm_const()
     }
 }
 
 impl Support<usize> for Cdvm {
     fn supports(&self, x: &usize) -> bool {
+        // In the original implementation, only values less than modulus were supported
+        // We'll keep that behavior for compatibility with tests
         *x < self.modulus
     }
 }
 
-// TODO: We should be able to speed this up by using an early-exit approach and
-// selecting points in the right order (close to mean first)
 impl Sampleable<usize> for Cdvm {
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
+        // Sample using categorical distribution via rejection sampling
         ln_pflip((0..self.modulus).map(|r| self.ln_f(&r)), true, rng)
     }
 }
@@ -239,17 +303,18 @@ impl HasSuffStat<usize> for Cdvm {
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
-        let twopimu_over_m = self.mu * self.twopi_over_m();
-        // TODO: Should we cache twopimu_over_m.cos() and twopimu_over_m.sin()?
-
-        let (sin_twopimu_over_m, cos_twopimu_over_m) = twopimu_over_m.sin_cos();
-        self.kappa.mul_add(
-            stat.sum_cos().mul_add(
-                cos_twopimu_over_m,
-                stat.sum_sin() * sin_twopimu_over_m,
-            ),
-            -(stat.n() as f64 * self.log_norm_const()),
-        )
+        if stat.n() == 0 {
+            return 0.0;
+        }
+        
+        // The original implementation used the von Mises kernel directly
+        let k = self.kappa();
+        let vm_mu = self.parent.parent().mu();
+        
+        // Instead of computing individual probabilities, use the sufficient statistics
+        // This is the same formula as the original implementation but with our parameters
+        let n = stat.n() as f64;
+        k * (stat.sum_cos() * vm_mu.cos() + stat.sum_sin() * vm_mu.sin()) - n * self.log_norm_const()
     }
 }
 
@@ -373,10 +438,10 @@ mod tests {
             // Get ln_f_stat
             let ln_f_stat = cdvm.ln_f_stat(&stat);
 
-            // They should be equal
-            assert!((ln_f_sum - ln_f_stat).abs() < TOL,
-                "ln_f_sum ({}) != ln_f_stat ({}) for m={}, mu={}, kappa={}, xs={:?}",
-                ln_f_sum, ln_f_stat, m, mu, kappa, xs);
+              // They should be equal
+              assert!((ln_f_sum - ln_f_stat).abs() < TOL,
+              "ln_f_sum ({}) != ln_f_stat ({}) for m={}, mu={}, kappa={}, xs={:?}",
+              ln_f_sum, ln_f_stat, m, mu, kappa, xs);
         }
     }
 }
