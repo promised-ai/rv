@@ -10,8 +10,6 @@ macro_rules! test_serde_params {
     ($fx: expr, $fx_ty: ty, $x_ty: ty) => {
         #[test]
         fn test_serde_ln_f() {
-            // use ::serde::Deserialize;
-            // use ::serde::Serialize;
             use $crate::traits::HasDensity;
             use $crate::traits::Sampleable;
 
