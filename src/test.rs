@@ -10,8 +10,6 @@ macro_rules! test_serde_params {
     ($fx: expr, $fx_ty: ty, $x_ty: ty) => {
         #[test]
         fn test_serde_ln_f() {
-            use ::serde::Deserialize;
-            use ::serde::Serialize;
             use $crate::traits::HasDensity;
             use $crate::traits::Sampleable;
 
@@ -583,14 +581,13 @@ where
     let mut total_integral = 0.0;
 
     for bin_ix in 0..num_bins {
-        let bin_start = min_val + bin_ix as f64 * bin_width;
+        let bin_start = (bin_ix as f64).mul_add(bin_width, min_val);
         let bin_mid = bin_start + bin_width / 2.0;
         let bin_end = bin_start + bin_width;
 
         // Apply Simpson's rule for each bin
         let integral = (bin_width / 6.0)
-            * (density_fn(bin_start)
-                + 4.0 * density_fn(bin_mid)
+            * (4.0_f64.mul_add(density_fn(bin_mid), density_fn(bin_start))
                 + density_fn(bin_end));
 
         expected_counts.push(integral);
@@ -637,16 +634,16 @@ where
 }
 
 mod tests {
-    use crate::prelude::Exponential;
-    use crate::prelude::Gaussian;
-    use crate::test::density_histogram_test;
-    use crate::traits::HasDensity;
-    use crate::traits::Sampleable;
-    use rand::SeedableRng;
-    use rand_xoshiro::Xoshiro256Plus;
 
     #[test]
     fn test_density_histogram_gaussian() {
+        use crate::prelude::Gaussian;
+        use crate::test::density_histogram_test;
+        use crate::traits::HasDensity;
+        use crate::traits::Sampleable;
+        use rand::SeedableRng;
+        use rand_xoshiro::Xoshiro256Plus;
+
         let mut rng = Xoshiro256Plus::seed_from_u64(1);
         let dist = Gaussian::default();
 
@@ -670,6 +667,13 @@ mod tests {
 
     #[test]
     fn test_density_histogram_exponential() {
+        use crate::prelude::Exponential;
+        use crate::test::density_histogram_test;
+        use crate::traits::HasDensity;
+        use crate::traits::Sampleable;
+        use rand::SeedableRng;
+        use rand_xoshiro::Xoshiro256Plus;
+
         let mut rng = Xoshiro256Plus::seed_from_u64(1);
         let dist = Exponential::default();
 

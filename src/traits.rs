@@ -1,4 +1,5 @@
 //! Trait definitions
+use crate::data::extract_stat_then;
 pub use crate::data::DataOrSuffStat;
 use rand::Rng;
 
@@ -558,7 +559,9 @@ where
         self.posterior(&DataOrSuffStat::SuffStat(stat))
     }
 
-    fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior;
+    fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior {
+        extract_stat_then(self, x, |stat| self.posterior_from_suffstat(stat))
+    }
 
     /// Compute the cache for the log marginal likelihood.
     fn ln_m_cache(&self) -> Self::MCache;

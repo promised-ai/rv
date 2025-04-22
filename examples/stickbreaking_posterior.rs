@@ -1,13 +1,11 @@
-use itertools::Either;
-use peroxide::statistics::stat::Statistics;
-use rv::prelude::*;
-
-#[cfg(feature = "experimental")]
-use rv::experimental::stick_breaking_process::*;
-
 fn main() {
     #[cfg(feature = "experimental")]
     {
+        use itertools::Either;
+        use peroxide::fuga::Statistics;
+        use rv::experimental::stick_breaking_process::*;
+        use rv::prelude::*;
+
         let mut rng = rand::thread_rng();
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
 

@@ -235,7 +235,7 @@ pub fn extract_stat_then<X, Fx, Pr, Fnx, Y>(
 ) -> Y
 where
     Fx: HasSuffStat<X> + HasDensity<X>,
-    Pr: ConjugatePrior<X, Fx>,
+    Pr: ConjugatePrior<X, Fx> + ?Sized,
     Fnx: Fn(&Fx::Stat) -> Y,
 {
     match x {
@@ -386,8 +386,8 @@ mod tests {
         fn impl_bool_into_bool() {
             let t = true;
             let f = false;
-            assert_eq!(t.into_bool(), true);
-            assert_eq!(f.into_bool(), false);
+            assert!(t.into_bool());
+            assert!(!f.into_bool());
         }
 
         #[test]
@@ -578,7 +578,6 @@ mod tests {
                 &self,
                 _x: &crate::data::GaussianData<f64>,
             ) -> Self::PpCache {
-                ()
             }
 
             fn ln_pp_with_cache(

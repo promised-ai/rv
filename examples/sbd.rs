@@ -1,14 +1,12 @@
-use rand::SeedableRng;
-use rv::prelude::*;
-
-#[cfg(feature = "experimental")]
-use rv::experimental::stick_breaking_process::{
-    StickBreaking, StickBreakingDiscrete, StickSequence,
-};
-
 fn main() {
     #[cfg(feature = "experimental")]
     {
+        use rand_xoshiro::rand_core::SeedableRng;
+        use rv::experimental::stick_breaking_process::{
+            StickBreaking, StickBreakingDiscrete, StickSequence,
+        };
+        use rv::prelude::*;
+
         // Instantiate a stick-breaking process
         let alpha = 10.0;
         let sbp = StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());

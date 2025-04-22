@@ -3,7 +3,7 @@ use std::f64::consts::LN_2;
 
 use super::dos_to_post;
 use crate::consts::*;
-use crate::data::{extract_stat, GaussianSuffStat};
+use crate::data::{extract_stat_then, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
@@ -77,20 +77,20 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
     }
 
     fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
-        let stat = extract_stat(self, x);
+        extract_stat_then(self, x, |stat| {
+            let params = posterior_from_stat(self, stat);
+            let PosteriorParameters { r, s, v, .. } = params;
 
-        let params = posterior_from_stat(self, &stat);
-        let PosteriorParameters { r, s, v, .. } = params;
+            let half_v = v / 2.0;
+            let g_ratio = ln_gammafn(half_v + 0.5) - ln_gammafn(half_v);
+            let term = 0.5_f64.mul_add(LN_2, -HALF_LN_2PI)
+                + 0.5_f64.mul_add(
+                    (r / (r + 1_f64)).ln(),
+                    half_v.mul_add(s.ln(), g_ratio),
+                );
 
-        let half_v = v / 2.0;
-        let g_ratio = ln_gammafn(half_v + 0.5) - ln_gammafn(half_v);
-        let term = 0.5_f64.mul_add(LN_2, -HALF_LN_2PI)
-            + 0.5_f64.mul_add(
-                (r / (r + 1_f64)).ln(),
-                half_v.mul_add(s.ln(), g_ratio),
-            );
-
-        (params, term)
+            (params, term)
+        })
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {

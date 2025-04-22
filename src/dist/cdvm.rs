@@ -243,10 +243,13 @@ impl HasSuffStat<usize> for Cdvm {
         // TODO: Should we cache twopimu_over_m.cos() and twopimu_over_m.sin()?
 
         let (sin_twopimu_over_m, cos_twopimu_over_m) = twopimu_over_m.sin_cos();
-        self.kappa
-            * (stat.sum_cos() * cos_twopimu_over_m
-                + stat.sum_sin() * sin_twopimu_over_m)
-            - stat.n() as f64 * self.log_norm_const()
+        self.kappa.mul_add(
+            stat.sum_cos().mul_add(
+                cos_twopimu_over_m,
+                stat.sum_sin() * sin_twopimu_over_m,
+            ),
+            -(stat.n() as f64 * self.log_norm_const()),
+        )
     }
 }
 
