@@ -207,8 +207,7 @@ where
 mod tests {
     use super::*;
     use crate::data::DataOrSuffStat;
-    use crate::dist::{Gaussian, NormalInvChiSquared, Shifted};
-    use crate::traits::*;
+    use crate::dist::{NormalInvChiSquared};
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
 

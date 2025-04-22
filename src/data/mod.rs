@@ -578,7 +578,6 @@ mod tests {
                 &self,
                 _x: &crate::data::GaussianData<f64>,
             ) -> Self::PpCache {
-                ()
             }
 
             fn ln_pp_with_cache(

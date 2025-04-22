@@ -641,7 +641,7 @@ mod tests {
 
     #[test]
     fn slice_step_vs_draw_test() {
-        let n_samples = 1000000;
+        let n_samples = 1_000_000;
         let mut rng = rand::thread_rng();
         let mu = 1.5;
         let k = 2.0;

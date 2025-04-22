@@ -1,3 +1,4 @@
+use crate::data::extract_stat_then;
 use crate::data::{DataOrSuffStat, ScaledSuffStat};
 use crate::dist::Scaled;
 use crate::traits::*;
@@ -200,15 +201,10 @@ where
         &self,
         x: &DataOrSuffStat<f64, Scaled<Fx>>,
     ) -> Self::PpCache {
-        // For now, we'll just compute from data
-        let data: Vec<f64> = match x {
-            DataOrSuffStat::Data(xs) => {
-                xs.iter().map(|&x| x * self.rate).collect()
-            }
-            DataOrSuffStat::SuffStat(_) => vec![], // Not handling suffstat for now
-        };
-
-        self.parent.ln_pp_cache(&DataOrSuffStat::Data(&data))
+        extract_stat_then(self, x, |stat| {
+            self.parent
+                .ln_pp_cache(&DataOrSuffStat::SuffStat(stat.parent()))
+        })
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
@@ -224,8 +220,7 @@ where
 mod tests {
     use super::*;
     use crate::data::DataOrSuffStat;
-    use crate::dist::{Gaussian, NormalInvChiSquared, Scaled};
-    use crate::traits::*;
+    use crate::dist::{NormalInvChiSquared};
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
 

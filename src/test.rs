@@ -10,8 +10,8 @@ macro_rules! test_serde_params {
     ($fx: expr, $fx_ty: ty, $x_ty: ty) => {
         #[test]
         fn test_serde_ln_f() {
-            use ::serde::Deserialize;
-            use ::serde::Serialize;
+            // use ::serde::Deserialize;
+            // use ::serde::Serialize;
             use $crate::traits::HasDensity;
             use $crate::traits::Sampleable;
 
@@ -636,17 +636,17 @@ where
     Ok(p_value)
 }
 
-mod tests {
-    use crate::prelude::Exponential;
-    use crate::prelude::Gaussian;
-    use crate::test::density_histogram_test;
-    use crate::traits::HasDensity;
-    use crate::traits::Sampleable;
-    use rand::SeedableRng;
-    use rand_xoshiro::Xoshiro256Plus;
+mod tests {   
 
     #[test]
     fn test_density_histogram_gaussian() {
+        use crate::prelude::Gaussian;
+        use crate::test::density_histogram_test;   
+        use crate::traits::HasDensity;
+        use crate::traits::Sampleable;
+        use rand_xoshiro::Xoshiro256Plus;
+        use rand::SeedableRng;
+
         let mut rng = Xoshiro256Plus::seed_from_u64(1);
         let dist = Gaussian::default();
 
@@ -670,6 +670,13 @@ mod tests {
 
     #[test]
     fn test_density_histogram_exponential() {
+        use crate::prelude::Exponential;
+        use crate::traits::Sampleable;
+        use crate::traits::HasDensity;
+        use crate::test::density_histogram_test;     
+        use rand_xoshiro::Xoshiro256Plus;
+        use rand::SeedableRng;
+
         let mut rng = Xoshiro256Plus::seed_from_u64(1);
         let dist = Exponential::default();
 
