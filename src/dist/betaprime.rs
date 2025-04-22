@@ -389,6 +389,7 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
     ) -> Self {
         match data {
             DataOrSuffStat::Data(xs) => {
+                #[allow(clippy::useless_asref)]
                 let stat = StickBreakingDiscreteSuffStat::from(xs.as_ref());
                 self.posterior(&DataOrSuffStat::SuffStat(&stat))
             }

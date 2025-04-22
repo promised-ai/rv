@@ -1,16 +1,14 @@
-#[cfg(feature = "experimental")]
-use rand::SeedableRng;
-#[cfg(feature = "experimental")]
-use rand_xoshiro::Xoshiro256Plus;
-#[cfg(feature = "experimental")]
-use rv::experimental::stick_breaking_process::{
-    StickBreaking, StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
-};
-
 // Simulation-based calibration
 // For details see http://www.stat.columbia.edu/~gelman/research/unpublished/sbc.pdf
 #[cfg(feature = "experimental")]
 fn main() {
+    use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256Plus;
+    use rv::experimental::stick_breaking_process::{
+        StickBreaking, StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
+    };
+    use rv::prelude::*;
+
     let mut rng = Xoshiro256Plus::seed_from_u64(123);
     let n_samples = 10000;
     let n_obs = 10;
