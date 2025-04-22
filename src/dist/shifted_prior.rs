@@ -1,5 +1,5 @@
-use crate::data::{DataOrSuffStat, ShiftedSuffStat};
 use crate::data::extract_stat_then;
+use crate::data::{DataOrSuffStat, ShiftedSuffStat};
 use crate::dist::Shifted;
 use crate::traits::*;
 use rand::Rng;
@@ -151,7 +151,7 @@ where
             self.shift,
         )
     }
-    
+
     fn posterior(
         &self,
         x: &DataOrSuffStat<f64, Shifted<Fx>>,
@@ -202,7 +202,7 @@ where
 mod tests {
     use super::*;
     use crate::data::DataOrSuffStat;
-    use crate::dist::{NormalInvChiSquared};
+    use crate::dist::NormalInvChiSquared;
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
 

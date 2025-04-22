@@ -220,7 +220,7 @@ where
 mod tests {
     use super::*;
     use crate::data::DataOrSuffStat;
-    use crate::dist::{NormalInvChiSquared};
+    use crate::dist::NormalInvChiSquared;
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
 
