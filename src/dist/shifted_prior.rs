@@ -1,4 +1,5 @@
 use crate::data::{DataOrSuffStat, ShiftedSuffStat};
+use crate::data::extract_stat_then;
 use crate::dist::Shifted;
 use crate::traits::*;
 use rand::Rng;
@@ -141,22 +142,21 @@ where
         ShiftedSuffStat::new(parent_stat, self.shift)
     }
 
+    fn posterior_from_suffstat(
+        &self,
+        stat: &ShiftedSuffStat<Fx::Stat>,
+    ) -> Self::Posterior {
+        ShiftedPrior::new_unchecked(
+            self.parent.posterior_from_suffstat(&stat.parent()),
+            self.shift,
+        )
+    }
+    
     fn posterior(
         &self,
         x: &DataOrSuffStat<f64, Shifted<Fx>>,
     ) -> Self::Posterior {
-        // For now, we'll just compute a new posterior with the same parameters
-        // In the future, we should implement proper handling of the data
-        let data: Vec<f64> = match x {
-            DataOrSuffStat::Data(xs) => {
-                xs.iter().map(|&x| x - self.shift).collect()
-            }
-            DataOrSuffStat::SuffStat(_) => vec![], // Not handling suffstat for now
-        };
-
-        let posterior_parent =
-            self.parent.posterior(&DataOrSuffStat::Data(&data));
-        Self::new_unchecked(posterior_parent, self.shift)
+        extract_stat_then(self, x, |stat| self.posterior_from_suffstat(stat))
     }
 
     fn ln_m_cache(&self) -> Self::MCache {
@@ -184,15 +184,10 @@ where
         &self,
         x: &DataOrSuffStat<f64, Shifted<Fx>>,
     ) -> Self::PpCache {
-        // For now, we'll just compute from data
-        let data: Vec<f64> = match x {
-            DataOrSuffStat::Data(xs) => {
-                xs.iter().map(|&x| x - self.shift).collect()
-            }
-            DataOrSuffStat::SuffStat(_) => vec![], // Not handling suffstat for now
-        };
-
-        self.parent.ln_pp_cache(&DataOrSuffStat::Data(&data))
+        extract_stat_then(self, x, |stat| {
+            self.parent
+                .ln_pp_cache(&DataOrSuffStat::SuffStat(stat.parent()))
+        })
     }
 
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
