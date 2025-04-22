@@ -288,22 +288,6 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
         }
     }
 
-    fn posterior(
-        &self,
-        x: &DataOrSuffStat<usize, StickBreakingDiscrete>,
-    ) -> Self::Posterior {
-        match x {
-            DataOrSuffStat::Data(xs) => {
-                let mut stat = StickBreakingDiscreteSuffStat::new();
-                stat.observe_many(xs);
-                self.posterior_from_suffstat(&stat)
-            }
-            DataOrSuffStat::SuffStat(stat) => {
-                self.posterior_from_suffstat(stat)
-            }
-        }
-    }
-
     /// Computes the logarithm of the marginal likelihood.
     fn ln_m(&self, x: &DataOrSuffStat<usize, StickBreakingDiscrete>) -> f64 {
         let count_pairs = match x {
