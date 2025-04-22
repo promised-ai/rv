@@ -147,7 +147,7 @@ where
         stat: &ShiftedSuffStat<Fx::Stat>,
     ) -> Self::Posterior {
         ShiftedPrior::new_unchecked(
-            self.parent.posterior_from_suffstat(&stat.parent()),
+            self.parent.posterior_from_suffstat(stat.parent()),
             self.shift,
         )
     }

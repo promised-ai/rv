@@ -10,6 +10,9 @@ use std::f64;
 use std::fmt;
 use std::sync::OnceLock;
 
+#[cfg(feature = "experimental")]
+use super::UnitPowerLaw;
+
 /// [Beta prime distribution](https://en.wikipedia.org/wiki/Beta_prime_distribution),
 /// BetaPrime(α, β) over x in (0, ∞).
 ///
@@ -277,17 +280,13 @@ impl Sampleable<f64> for BetaPrime {
     }
 }
 
-use crate::data::DataOrSuffStat;
 #[cfg(feature = "experimental")]
 use crate::experimental::stick_breaking_process::{
     StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
 };
-use crate::traits::ConjugatePrior;
 
 #[cfg(feature = "experimental")]
 use crate::experimental::stick_breaking_process::StickBreaking;
-
-use crate::prelude::UnitPowerLaw;
 
 #[cfg(feature = "experimental")]
 impl Sampleable<StickBreakingDiscrete> for BetaPrime {

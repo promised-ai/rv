@@ -1,17 +1,14 @@
 use criterion::black_box;
-use criterion::measurement::WallTime;
 use criterion::AxisScale;
 use criterion::BatchSize;
 use criterion::BenchmarkId;
 use criterion::Criterion;
 use criterion::PlotConfiguration;
-use criterion::Throughput;
 use criterion::{criterion_group, criterion_main};
 use rand::Rng;
 use rv::dist::VonMises;
 use rv::misc::bessel::log_i0;
 use rv::prelude::*;
-use rv::traits::*;
 use std::f64::consts::PI;
 
 fn bench_vm_draw(c: &mut Criterion) {

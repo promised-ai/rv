@@ -78,7 +78,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalGamma {
 
     fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
         extract_stat_then(self, x, |stat| {
-            let params = posterior_from_stat(self, &stat);
+            let params = posterior_from_stat(self, stat);
             let PosteriorParameters { r, s, v, .. } = params;
 
             let half_v = v / 2.0;

@@ -1,6 +1,3 @@
-use rand::SeedableRng;
-use rv::prelude::*;
-
 #[cfg(feature = "experimental")]
 use rv::experimental::stick_breaking_process::{
     StickBreaking, StickBreakingDiscrete, StickSequence,

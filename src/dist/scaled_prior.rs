@@ -171,7 +171,7 @@ where
         stat: &ScaledSuffStat<Fx::Stat>,
     ) -> Self::Posterior {
         ScaledPrior::new_unchecked(
-            self.parent.posterior_from_suffstat(&stat.parent()),
+            self.parent.posterior_from_suffstat(stat.parent()),
             self.scale,
         )
     }

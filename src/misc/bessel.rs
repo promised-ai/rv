@@ -158,8 +158,11 @@ pub fn log_i0(x: f64) -> f64 {
         let y = ax.mul_add(0.5, -2.0);
         ax + chbevl(y, &BESSI0_COEFFS_A).ln()
     } else {
-        ax + chbevl(32.0_f64.mul_add(ax.recip(), -2.0), &BESSI0_COEFFS_B).ln()
-            - 0.5 * ax.ln()
+        0.5_f64.mul_add(
+            -ax.ln(),
+            ax + chbevl(32.0_f64.mul_add(ax.recip(), -2.0), &BESSI0_COEFFS_B)
+                .ln(),
+        )
     }
 }
 

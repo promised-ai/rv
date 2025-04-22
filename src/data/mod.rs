@@ -386,8 +386,8 @@ mod tests {
         fn impl_bool_into_bool() {
             let t = true;
             let f = false;
-            assert_eq!(t.into_bool(), true);
-            assert_eq!(f.into_bool(), false);
+            assert!(t.into_bool());
+            assert!(!f.into_bool());
         }
 
         #[test]

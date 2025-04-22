@@ -312,13 +312,13 @@ impl VonMises {
     #[inline]
     pub fn slice_step<R: Rng>(x: f64, mu: f64, k: f64, rng: &mut R) -> f64 {
         // y ~ Uniform(0, exp(k * cos(x - μ)))
-        let logy = rng.gen::<f64>().ln() + k * (x - mu).cos();
+        let logy = k.mul_add((x - mu).cos(), rng.gen::<f64>().ln());
         // Need to solve for x in k cos(x) = logy
         // If logy < -k, then we're below the cos curve
         // In that case, sample uniformly on the circle
         let xmax = if logy < -k { PI } else { (logy / k).acos() };
         // Sample uniformly on [-xmax, xmax] and add μ
-        let x = xmax * rng.gen_range(-1.0..=1.0) + mu;
+        let x = xmax.mul_add(rng.gen_range(-1.0..=1.0), mu);
         // Ensure result is in [0, 2π)
         x.rem_euclid(2.0 * PI)
     }
@@ -378,7 +378,7 @@ macro_rules! impl_traits {
                             }
                         }
                         let z = (1.0 - t) / (1.0 + t);
-                        f = (1.0 + r * z) / (r + z);
+                        f = r.mul_add(z, 1.0) / (r + z);
                         let c = self.k * (r - f);
                         if (c.mul_add(2.0 - c, -u) > 0.0)
                             || ((c / u).ln() + 1.0 - c >= 0.0)
@@ -462,9 +462,11 @@ impl HasSuffStat<f64> for VonMises {
     }
 
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
-        self.k
-            * (stat.sum_cos() * self.cos_mu() + stat.sum_sin() * self.sin_mu())
-            - stat.n() as f64 * (self.log_i0_k() + LN_2PI)
+        self.k.mul_add(
+            stat.sum_cos()
+                .mul_add(self.cos_mu(), stat.sum_sin() * self.sin_mu()),
+            -(stat.n() as f64 * (self.log_i0_k() + LN_2PI)),
+        )
     }
 }
 
@@ -734,7 +736,7 @@ mod tests {
             let sample: f64 = vm.draw(&mut rng);
 
             prop_assert!(
-                sample >= 0.0 && sample < 2.0 * std::f64::consts::PI,
+                (0.0..2.0 * std::f64::consts::PI).contains(&sample),
                 "Sample {} not in range [0, 2π) for VonMises({}, {})",
                 sample, mu, k
             );

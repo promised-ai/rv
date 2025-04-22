@@ -1,5 +1,3 @@
-use rv::dist::BetaPrime;
-
 #[cfg(feature = "experimental")]
 use rand::SeedableRng;
 #[cfg(feature = "experimental")]
@@ -8,7 +6,6 @@ use rand_xoshiro::Xoshiro256Plus;
 use rv::experimental::stick_breaking_process::{
     StickBreaking, StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
 };
-use rv::prelude::*;
 
 // Simulation-based calibration
 // For details see http://www.stat.columbia.edu/~gelman/research/unpublished/sbc.pdf

@@ -581,14 +581,13 @@ where
     let mut total_integral = 0.0;
 
     for bin_ix in 0..num_bins {
-        let bin_start = min_val + bin_ix as f64 * bin_width;
+        let bin_start = (bin_ix as f64).mul_add(bin_width, min_val);
         let bin_mid = bin_start + bin_width / 2.0;
         let bin_end = bin_start + bin_width;
 
         // Apply Simpson's rule for each bin
         let integral = (bin_width / 6.0)
-            * (density_fn(bin_start)
-                + 4.0 * density_fn(bin_mid)
+            * (4.0_f64.mul_add(density_fn(bin_mid), density_fn(bin_start))
                 + density_fn(bin_end));
 
         expected_counts.push(integral);
