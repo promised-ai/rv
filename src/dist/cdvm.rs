@@ -121,7 +121,7 @@ impl Cdvm {
         let logjac = scale.abs().ln();
         let vm = VonMises::new_unchecked(mu * rate, kappa);
         let parent = Scaled::from_parts_unchecked(vm, scale, rate, logjac);
-        
+
         Cdvm {
             modulus,
             parent,
@@ -130,7 +130,10 @@ impl Cdvm {
     }
 
     #[must_use]
-    pub fn from_parts_unchecked(modulus: usize, parent: Scaled<VonMises>) -> Self {
+    pub fn from_parts_unchecked(
+        modulus: usize,
+        parent: Scaled<VonMises>,
+    ) -> Self {
         Self {
             modulus,
             parent,
@@ -138,9 +141,9 @@ impl Cdvm {
         }
     }
 
-
     pub fn cdvm_kernel(&self, x: usize) -> f64 {
-        self.concentration() * ((self.two_pi_over_modulus() * (x as f64 - self.mu())).cos())
+        self.concentration()
+            * ((self.two_pi_over_modulus() * (x as f64 - self.mu())).cos())
     }
 
     /// Get the number of categories
@@ -155,8 +158,6 @@ impl Cdvm {
     pub fn two_pi_over_modulus(&self) -> f64 {
         self.parent().rate()
     }
-
-
 
     /// Get the von Mises mean direction
     pub fn mu(&self) -> f64 {
@@ -199,7 +200,6 @@ impl Cdvm {
 
         Ok(Cdvm::new_unchecked(0.0, 0.0, modulus))
     }
-
 }
 
 impl Parameterized for Cdvm {
@@ -230,7 +230,9 @@ impl From<&Cdvm> for String {
     fn from(cdvm: &Cdvm) -> String {
         format!(
             "CDVM(modulus: {}, μ: {}, κ: {})",
-            cdvm.modulus, cdvm.mu(), cdvm.kappa()
+            cdvm.modulus,
+            cdvm.mu(),
+            cdvm.kappa()
         )
     }
 }
@@ -274,7 +276,7 @@ impl HasDensity<usize> for Cdvm {
     fn ln_f(&self, x: &usize) -> f64 {
         // For Cdvm, we need to support the correct modulo arithmetic
         let x_mod = *x % self.modulus;
-        
+
         // Use the density of the underlying scaled von Mises but adjust for normalization
         self.parent.ln_f(&(x_mod as f64)) - self.log_norm_const()
     }
@@ -306,15 +308,19 @@ impl HasSuffStat<usize> for Cdvm {
         if stat.n() == 0 {
             return 0.0;
         }
-        
+
         // The original implementation used the von Mises kernel directly
         let k = self.kappa();
         let vm_mu = self.parent.parent().mu();
-        
+
         // Instead of computing individual probabilities, use the sufficient statistics
         // This is the same formula as the original implementation but with our parameters
         let n = stat.n() as f64;
-        k.mul_add(stat.sum_cos().mul_add(vm_mu.cos(), stat.sum_sin() * vm_mu.sin()), -(n * self.log_norm_const()))
+        k.mul_add(
+            stat.sum_cos()
+                .mul_add(vm_mu.cos(), stat.sum_sin() * vm_mu.sin()),
+            -(n * self.log_norm_const()),
+        )
     }
 }
 
