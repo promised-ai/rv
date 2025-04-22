@@ -314,7 +314,7 @@ impl HasSuffStat<usize> for Cdvm {
         // Instead of computing individual probabilities, use the sufficient statistics
         // This is the same formula as the original implementation but with our parameters
         let n = stat.n() as f64;
-        k * (stat.sum_cos() * vm_mu.cos() + stat.sum_sin() * vm_mu.sin()) - n * self.log_norm_const()
+        k.mul_add(stat.sum_cos().mul_add(vm_mu.cos(), stat.sum_sin() * vm_mu.sin()), -(n * self.log_norm_const()))
     }
 }
 
