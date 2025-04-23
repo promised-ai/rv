@@ -6,6 +6,7 @@ use criterion::Criterion;
 use criterion::PlotConfiguration;
 use criterion::{criterion_group, criterion_main};
 use rand::Rng;
+use rv::consts::TWO_PI;
 use rv::dist::VonMises;
 use rv::misc::bessel::log_i0;
 use rv::prelude::*;
@@ -51,7 +52,7 @@ fn bench_vm_ln_f(c: &mut Criterion) {
             b.iter_batched_ref(
                 rand::thread_rng,
                 |rng| {
-                    let x: f64 = rng.gen_range(0.0..2.0 * PI);
+                    let x: f64 = rng.gen_range(0.0..TWO_PI);
                     black_box(vm.ln_f(&x));
                 },
                 BatchSize::SmallInput,

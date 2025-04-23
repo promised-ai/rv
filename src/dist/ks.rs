@@ -4,6 +4,7 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::consts::TWO_PI;
 use crate::impl_display;
 use crate::traits::*;
 use rand::Rng;
@@ -80,7 +81,7 @@ impl KsTwoAsymptotic {
             let mut p: f64 = 1.0;
             let mut d: f64 = 0.0;
 
-            let w = (2.0 * PI).sqrt() / x;
+            let w = TWO_PI.sqrt() / x;
             let logu8 = -PI * PI / (x * x);
             let u = (logu8 / 8.0).exp();
 

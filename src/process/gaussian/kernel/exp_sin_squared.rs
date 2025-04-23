@@ -295,10 +295,11 @@ mod tests {
 
     #[test]
     fn expsinesquared_kernel_b() -> Result<(), KernelError> {
+        use crate::consts::TWO_PI;
         let x: DMatrix<f64> =
             DMatrix::from_row_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
         // Non default variables
-        let kernel = ExpSineSquaredKernel::new(5.0, 2.0 * f64::consts::PI)?;
+        let kernel = ExpSineSquaredKernel::new(5.0, TWO_PI)?;
         let (cov, grad) = kernel.covariance_with_gradient(&x)?;
         let expected_cov = DMatrix::from_row_slice(
             5,

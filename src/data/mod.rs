@@ -535,7 +535,7 @@ mod tests {
         struct MockPosterior(Gaussian);
 
         impl Sampleable<Gaussian> for MockPosterior {
-            fn draw<R: Rng>(&self, rng: &mut R) -> Gaussian {
+            fn draw<R: Rng>(&self, _rng: &mut R) -> Gaussian {
                 self.0.clone()
             }
         }
