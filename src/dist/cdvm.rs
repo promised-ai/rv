@@ -93,6 +93,9 @@ impl Cdvm {
         if !mu.is_finite() {
             return Err(CdvmError::MuNotFinite { mu });
         }
+        if !k.is_finite() {
+            return Err(CdvmError::KNotFinite { k });
+        }
         if k < 0.0 {
             return Err(CdvmError::KNegative { k });
         }
