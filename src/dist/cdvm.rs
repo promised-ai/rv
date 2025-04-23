@@ -194,7 +194,6 @@ impl Cdvm {
         Cdvm::from_parts_unchecked(modulus, parent)
     }
 
-    /// Create a default CDVM with modulus 4, zero mean, and zero concentration
     pub fn default_with_modulus(modulus: usize) -> Result<Self, CdvmError> {
         if modulus < 2 {
             return Err(CdvmError::InvalidCategories { modulus });
@@ -276,26 +275,19 @@ impl fmt::Display for CdvmError {
 
 impl HasDensity<usize> for Cdvm {
     fn ln_f(&self, x: &usize) -> f64 {
-        // For Cdvm, we need to support the correct modulo arithmetic
-        let x_mod = *x % self.modulus;
-
-        // Use the density of the underlying scaled von Mises but adjust for normalization
-        self.parent.ln_f(&(x_mod as f64)) - self.log_norm_const()
+        self.cdvm_kernel(*x) - self.log_norm_const()
     }
 }
 
 impl Support<usize> for Cdvm {
     fn supports(&self, x: &usize) -> bool {
-        // In the original implementation, only values less than modulus were supported
-        // We'll keep that behavior for compatibility with tests
         *x < self.modulus
     }
 }
 
 impl Sampleable<usize> for Cdvm {
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
-        // Sample using categorical distribution via rejection sampling
-        ln_pflip((0..self.modulus).map(|r| self.ln_f(&r)), true, rng)
+        ln_pflip((0..self.modulus).map(|r| self.cdvm_kernel(r)), true, rng)
     }
 }
 
@@ -311,7 +303,6 @@ impl HasSuffStat<usize> for Cdvm {
             return 0.0;
         }
 
-        // The original implementation used the von Mises kernel directly
         let k = self.kappa();
         let vm_mu = self.parent.parent().mu();
 
