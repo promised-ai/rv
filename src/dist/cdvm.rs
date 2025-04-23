@@ -49,6 +49,7 @@ pub struct Cdvm {
     parent: Scaled<VonMises>,
 
     /// Cached log-normalization constant
+    #[cfg_attr(feature = "serde1", serde(skip))]
     log_norm_const: OnceLock<f64>,
 }
 
