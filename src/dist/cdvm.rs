@@ -104,6 +104,10 @@ impl Cdvm {
         Ok(Cdvm::new_unchecked(mu, k, modulus))
     }
 
+    pub fn is_consistent(&self) -> bool {
+        Cdvm::new(self.mu, self.k, self.modulus).unwrap() == *self
+    }
+
     /// Creates a new CDVM without checking whether the parameters are valid.
     #[inline]
     pub fn new_unchecked(mu: f64, k: f64, modulus: usize) -> Self {
@@ -425,6 +429,47 @@ mod tests {
             assert!((ln_f_sum - ln_f_stat).abs() < TOL,
                 "ln_f_sum ({}) != ln_f_stat ({}) for m={}, mu={}, k={}, xs={:?}",
                 ln_f_sum, ln_f_stat, m, mu, k, xs);
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn set_k_maintains_consistency(
+            m in 3..100_usize,
+            mu in 0.0..100_f64,
+            k1 in 0.1..50.0_f64,
+            k2 in 0.1..50.0_f64,
+        ) {
+            let mu = mu % (m as f64);
+            let mut cdvm = Cdvm::new(mu, k1, m).unwrap();
+            
+            // Set a new k value
+            cdvm.set_k(k2).unwrap();
+            
+            // Check that the distribution is still consistent
+            prop_assert!(cdvm.is_consistent(), 
+                "CDVM not consistent after set_k: m={}, mu={}, k1={}, k2={}", m, mu, k1, k2);
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn set_mu_maintains_consistency(
+            m in 3..100_usize,
+            mu1 in 0.0..100_f64,
+            mu2 in 0.0..100_f64,
+            k in 0.1..50.0_f64,
+        ) {
+            let mu1 = mu1 % (m as f64);
+            let mu2 = mu2 % (m as f64);
+            let mut cdvm = Cdvm::new(mu1, k, m).unwrap();
+            
+            // Set a new mu value
+            cdvm.set_mu(mu2).unwrap();
+            
+            // Check that the distribution is still consistent
+            prop_assert!(cdvm.is_consistent(), 
+                "CDVM not consistent after set_mu: m={}, mu1={}, mu2={}, k={}", m, mu1, mu2, k);
         }
     }
 }
