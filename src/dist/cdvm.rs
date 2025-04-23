@@ -164,6 +164,10 @@ impl Cdvm {
         &self.parent
     }
 
+    pub fn parent_mut(&mut self) -> &mut Scaled<VonMises> {
+        &mut self.parent
+    }
+
     /// Compute or fetch cached normalization constant
     fn log_norm_const(&self) -> f64 {
         *self.log_norm_const.get_or_init(|| {
@@ -233,7 +237,7 @@ impl Mean<f64> for Cdvm {
 
 impl Mode<usize> for Cdvm {
     fn mode(&self) -> Option<usize> {
-        Some(self.mu().round() as usize % self.modulus)
+        Some(self.mu().round() as usize)
     }
 }
 
@@ -348,11 +352,11 @@ mod tests {
             kappa in 0.1..50.0_f64,
             x in 0..100_usize
         ) {
-            let mu = mu % (m as f64);
+            let mu = mu.rem_euclid(m as f64);
             let cdvm1 = Cdvm::new(mu, kappa, m).unwrap();
             let cdvm2 = Cdvm::new((m as f64) - mu, kappa, m).unwrap();
 
-            let x1 = x % m;
+            let x1 = x.rem_euclid(m);
             let x2 = m - x1;
 
             let lnf1 = cdvm1.ln_f(&x1);
@@ -386,8 +390,8 @@ mod tests {
             kappa in 0.1..50.0_f64,
             x in 0..100_usize,
         ) {
-            let mu = mu % (m as f64);
-            let x = x % m;
+            let mu = mu.rem_euclid(m as f64);
+            let x = x.rem_euclid(m);
             let cdvm = Cdvm::new(mu, kappa, m).unwrap();
             prop_assert!((cdvm.ln_f(&x) - cdvm.ln_f(&(x + m))).abs() < TOL,
                 "ln_f not invariant to wrap-around for m={}, mu={}, kappa={}, x={}", m, mu, kappa, x);
@@ -411,8 +415,8 @@ mod tests {
             kappa in 0.1..50.0_f64,
             xs in prop::collection::vec(0..100_usize, 1..20),
         ) {
-            let mu = mu % (m as f64);
-            let xs: Vec<usize> = xs.into_iter().map(|x| x % m).collect();
+            let mu = mu.rem_euclid(m as f64);
+            let xs: Vec<usize> = xs.into_iter().map(|x| x.rem_euclid(m)).collect();
             let cdvm = Cdvm::new(mu, kappa, m).unwrap();
 
             // Calculate ln_f for each x and sum them
