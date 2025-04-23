@@ -41,6 +41,8 @@ use std::sync::OnceLock;
 ///
 /// Note that in while the paper uses μ ∈ [0, 2π), we use μ ∈ [0, m)
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Cdvm {
     /// Number of categories
     modulus: usize,
