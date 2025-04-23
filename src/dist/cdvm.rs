@@ -33,6 +33,12 @@ pub struct Cdvm {
     log_norm_const: OnceLock<f64>,
 }
 
+impl From<Cdvm> for Scaled<VonMises> {
+    fn from(cdvm: Cdvm) -> Self {
+        cdvm.parent
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct CdvmParameters {
     pub modulus: usize,
