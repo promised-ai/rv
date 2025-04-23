@@ -1,6 +1,8 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use super::ScaledSuffStat;
+use super::VonMisesSuffStat;
 use crate::traits::SuffStat;
 
 /// Cdvm sufficient statistic.
@@ -90,6 +92,17 @@ impl CdvmSuffStat {
     #[inline]
     pub fn sum_sin(&self) -> f64 {
         self.sum_sin
+    }
+}
+
+impl From<CdvmSuffStat> for ScaledSuffStat<VonMisesSuffStat> {
+    fn from(stat: CdvmSuffStat) -> Self {
+        let vonmises_stat = VonMisesSuffStat::from_parts_unchecked(
+            stat.n,
+            stat.sum_sin,
+            stat.sum_cos,
+        );
+        ScaledSuffStat::new(vonmises_stat, stat.twopi_over_m)
     }
 }
 

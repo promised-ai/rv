@@ -9,8 +9,6 @@ use serde::{Deserialize, Serialize};
 pub struct ScaledSuffStat<S> {
     parent: S,
     scale: f64,
-
-    #[cfg_attr(feature = "serde1", serde(skip))]
     rate: f64,
 }
 
@@ -21,6 +19,14 @@ impl<S> ScaledSuffStat<S> {
             parent,
             scale,
             rate: scale.recip(),
+        }
+    }
+
+    pub fn from_parts_unchecked(parent: S, scale: f64, rate: f64) -> Self {
+        ScaledSuffStat {
+            parent,
+            scale,
+            rate,
         }
     }
 
