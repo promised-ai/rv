@@ -1,8 +1,8 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::traits::SuffStat;
 use crate::consts::TWO_PI;
+use crate::traits::SuffStat;
 
 /// Cdvm sufficient statistic.
 ///

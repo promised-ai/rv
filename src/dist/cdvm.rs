@@ -79,7 +79,6 @@ pub enum CdvmError {
 
     /// The number of categories is less than 2
     InvalidCategories { modulus: usize },
-
 }
 
 impl Cdvm {
@@ -105,7 +104,12 @@ impl Cdvm {
     }
 
     pub fn is_consistent(&self) -> bool {
-        Cdvm::new(self.mu, self.k, self.modulus).unwrap() == *self
+        let other = Cdvm::new(self.mu, self.k, self.modulus).unwrap();
+        self.mu == other.mu
+            && self.k == other.k
+            && self.modulus == other.modulus
+            && self.log_norm_const == other.log_norm_const
+            && self.twopi_over_m == other.twopi_over_m
     }
 
     /// Creates a new CDVM without checking whether the parameters are valid.
@@ -169,7 +173,8 @@ impl Cdvm {
 
     pub fn set_mu_unchecked(&mut self, mu: f64) {
         self.mu = mu;
-        self.log_norm_const = Cdvm::compute_log_norm_const(self.modulus, self.mu, self.k);
+        self.log_norm_const =
+            Cdvm::compute_log_norm_const(self.modulus, mu, self.k);
     }
 
     /// Set the concentration parameter
@@ -186,7 +191,8 @@ impl Cdvm {
 
     pub fn set_k_unchecked(&mut self, k: f64) {
         self.k = k;
-        self.log_norm_const = Cdvm::compute_log_norm_const(self.modulus, self.mu, k);
+        self.log_norm_const =
+            Cdvm::compute_log_norm_const(self.modulus, self.mu, k);
     }
 }
 
@@ -442,12 +448,12 @@ mod tests {
         ) {
             let mu = mu % (m as f64);
             let mut cdvm = Cdvm::new(mu, k1, m).unwrap();
-            
+
             // Set a new k value
             cdvm.set_k(k2).unwrap();
-            
+
             // Check that the distribution is still consistent
-            prop_assert!(cdvm.is_consistent(), 
+            prop_assert!(cdvm.is_consistent(),
                 "CDVM not consistent after set_k: m={}, mu={}, k1={}, k2={}", m, mu, k1, k2);
         }
     }
@@ -463,12 +469,12 @@ mod tests {
             let mu1 = mu1 % (m as f64);
             let mu2 = mu2 % (m as f64);
             let mut cdvm = Cdvm::new(mu1, k, m).unwrap();
-            
+
             // Set a new mu value
             cdvm.set_mu(mu2).unwrap();
-            
+
             // Check that the distribution is still consistent
-            prop_assert!(cdvm.is_consistent(), 
+            prop_assert!(cdvm.is_consistent(),
                 "CDVM not consistent after set_mu: m={}, mu1={}, mu2={}, k={}", m, mu1, mu2, k);
         }
     }
