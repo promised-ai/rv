@@ -2,16 +2,14 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::consts::TWO_PI;
 use crate::data::CdvmSuffStat;
 use crate::impl_display;
 use crate::misc::func::LogSumExp;
 use crate::misc::ln_pflip;
 use crate::traits::*;
-use crate::consts::TWO_PI;
 use rand::Rng;
-use std::f64;
 use std::fmt;
-use std::sync::OnceLock;
 
 // TODO: This can be *much* more efficient if we replace the modulus with
 // something like this. In particular, the suffstat would only need quick
@@ -56,8 +54,7 @@ pub struct Cdvm {
     log_norm_const: f64,
 
     /// Cached 2π/m
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    twopi_over_m: OnceLock<f64>,
+    twopi_over_m: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -94,7 +91,6 @@ impl Cdvm {
             return Err(CdvmError::KappaNegative { kappa });
         }
 
-        
         Ok(Cdvm::new_unchecked(mu, kappa, modulus))
     }
 
@@ -108,7 +104,7 @@ impl Cdvm {
             mu,
             kappa,
             log_norm_const,
-            twopi_over_m: OnceLock::new(),
+            twopi_over_m: TWO_PI / modulus as f64,
         }
     }
 
@@ -118,7 +114,9 @@ impl Cdvm {
 
     fn compute_log_norm_const(modulus: usize, mu: f64, kappa: f64) -> f64 {
         let two_pi_over_m = TWO_PI / modulus as f64;
-        (0..modulus).map(|x| Cdvm::cdvm_kernel(two_pi_over_m, mu, kappa, x)).logsumexp()
+        (0..modulus)
+            .map(|x| Cdvm::cdvm_kernel(two_pi_over_m, mu, kappa, x))
+            .logsumexp()
     }
 
     /// Get the number of categories
@@ -138,9 +136,7 @@ impl Cdvm {
 
     /// Get the cached 2π/m
     pub fn twopi_over_m(&self) -> f64 {
-        *self
-            .twopi_over_m
-            .get_or_init(|| 2.0 * std::f64::consts::PI / self.modulus as f64)
+        self.twopi_over_m
     }
 
     /// Compute or fetch cached normalization constant
@@ -217,7 +213,8 @@ impl fmt::Display for CdvmError {
 
 impl HasDensity<usize> for Cdvm {
     fn ln_f(&self, x: &usize) -> f64 {
-        Cdvm::cdvm_kernel(self.twopi_over_m(), self.mu, self.kappa, *x) - self.log_norm_const()
+        Cdvm::cdvm_kernel(self.twopi_over_m(), self.mu, self.kappa, *x)
+            - self.log_norm_const()
     }
 }
 
