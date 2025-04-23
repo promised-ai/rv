@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::data::CdvmSuffStat;
-use crate::dist::vonmises::{VonMises, VonMisesError, VonMisesParameters};
+use crate::dist::vonmises::{VonMises, VonMisesError};
 use crate::dist::{Scaled, ScaledError};
 use crate::impl_display;
 use crate::misc::func::LogSumExp;
@@ -12,7 +12,6 @@ use crate::traits::*;
 use rand::Rng;
 use std::f64;
 use std::fmt;
-use std::sync::OnceLock;
 
 /// [CDVM distribution](https://arxiv.org/pdf/2009.05437),
 /// A unimodal distribution over x in (0, m-1) where m is the number of categories.
@@ -29,8 +28,7 @@ pub struct Cdvm {
     parent: Scaled<VonMises>,
 
     /// Cached log-normalization constant
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    log_norm_const: OnceLock<f64>,
+    log_norm_const: f64,
 }
 
 impl From<Cdvm> for Scaled<VonMises> {
@@ -79,6 +77,7 @@ impl From<ScaledError> for CdvmError {
 
 const TWOPI: f64 = 2.0 * std::f64::consts::PI;
 
+
 impl Cdvm {
     /// Create a new CDVM distribution
     ///
@@ -110,11 +109,12 @@ impl Cdvm {
         let logjac = scale.abs().ln();
         let vm = VonMises::new_unchecked(mu * rate, kappa);
         let parent = Scaled::from_parts_unchecked(vm, scale, rate, logjac);
+        let log_norm_const = (0..modulus).map(|x| parent.ln_f(&(x as f64))).logsumexp();
 
         Cdvm {
             modulus,
             parent,
-            log_norm_const: OnceLock::new(),
+            log_norm_const,
         }
     }
 
@@ -122,18 +122,16 @@ impl Cdvm {
     pub fn from_parts_unchecked(
         modulus: usize,
         parent: Scaled<VonMises>,
+        log_norm_const: f64,
     ) -> Self {
         Self {
             modulus,
             parent,
-            log_norm_const: OnceLock::new(),
+            log_norm_const,
         }
     }
 
-    pub fn cdvm_kernel(&self, x: usize) -> f64 {
-        self.concentration()
-            * ((self.two_pi_over_modulus() * (x as f64 - self.mu())).cos())
-    }
+
 
     /// Get the number of categories
     pub fn modulus(&self) -> usize {
@@ -170,19 +168,7 @@ impl Cdvm {
 
     /// Compute or fetch cached normalization constant
     fn log_norm_const(&self) -> f64 {
-        *self.log_norm_const.get_or_init(|| {
-            // For CDVM over integers, the normalization constant is the sum of the unnormalized densities
-            (0..self.modulus).map(|x| self.cdvm_kernel(x)).logsumexp()
-        })
-    }
-
-    fn map_vonmises_params(
-        &self,
-        f: impl Fn(VonMisesParameters) -> VonMisesParameters,
-    ) -> Cdvm {
-        let modulus = self.modulus();
-        let parent = self.parent.map_parent_params(f);
-        Cdvm::from_parts_unchecked(modulus, parent)
+        self.log_norm_const
     }
 
     pub fn default_with_modulus(modulus: usize) -> Result<Self, CdvmError> {
@@ -266,7 +252,7 @@ impl fmt::Display for CdvmError {
 
 impl HasDensity<usize> for Cdvm {
     fn ln_f(&self, x: &usize) -> f64 {
-        self.cdvm_kernel(*x) - self.log_norm_const()
+        self.parent.ln_f(&(*x as f64)) - self.log_norm_const()
     }
 }
 
@@ -278,7 +264,7 @@ impl Support<usize> for Cdvm {
 
 impl Sampleable<usize> for Cdvm {
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
-        ln_pflip((0..self.modulus).map(|r| self.cdvm_kernel(r)), false, rng)
+        ln_pflip((0..self.modulus).map(|r| self.parent.ln_f(&(r as f64))), false, rng)
     }
 }
 
