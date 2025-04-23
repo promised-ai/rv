@@ -14,28 +14,6 @@ use std::f64;
 use std::fmt;
 use std::sync::OnceLock;
 
-// TODO: This can be *much* more efficient if we replace the modulus with
-// something like this. In particular, the suffstat would only need quick
-// lookups and additions, with no trig functions
-//
-// #[derive(Debug, Clone,
-//     PartialEq)] pub struct CdvmModulus { m: usize, twopi_over_m: f64, sines:
-//     Vec<f64>, cosines: Vec<f64>, }
-
-// impl CdvmModulus {
-//     fn new(m: usize) -> Self {
-//         let twopi_over_m = 2.0 * std::f64::consts::PI / m as f64;
-//         let sines = (0..m).map(|x| (twopi_over_m * (x as f64)).sin()).collect();
-//         let cosines = (0..m).map(|x| (twopi_over_m * (x as f64)).cos()).collect();
-//         Self {
-//             m,
-//             twopi_over_m,
-//             sines,
-//             cosines,
-//         }
-//     }
-// }
-
 /// [CDVM distribution](https://arxiv.org/pdf/2009.05437),
 /// A unimodal distribution over x in (0, m-1) where m is the number of categories.
 ///
