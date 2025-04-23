@@ -103,6 +103,8 @@ impl Cdvm {
         Ok(Cdvm::new_unchecked(mu, k, modulus))
     }
 
+    // Test that dependent fields are properly set
+    // This is just for testing purposes
     pub fn is_consistent(&self) -> bool {
         let other = Cdvm::new(self.mu, self.k, self.modulus).unwrap();
         self.mu == other.mu
