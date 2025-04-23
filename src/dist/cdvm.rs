@@ -90,6 +90,8 @@ impl From<ScaledError> for CdvmError {
     }
 }
 
+const TWOPI: f64 = 2.0 * std::f64::consts::PI;
+
 impl Cdvm {
     /// Create a new CDVM distribution
     ///
@@ -116,7 +118,7 @@ impl Cdvm {
     /// Creates a new CDVM without checking whether the parameters are valid.
     #[inline]
     pub fn new_unchecked(mu: f64, kappa: f64, modulus: usize) -> Self {
-        let scale = modulus as f64 / (2.0 * std::f64::consts::PI);
+        let scale = modulus as f64 / TWOPI;
         let rate = scale.recip();
         let logjac = scale.abs().ln();
         let vm = VonMises::new_unchecked(mu * rate, kappa);

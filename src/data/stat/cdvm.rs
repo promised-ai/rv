@@ -25,6 +25,8 @@ pub struct CdvmSuffStat {
     twopi_over_m: f64,
 }
 
+const TWOPI: f64 = 2.0 * std::f64::consts::PI;
+
 impl CdvmSuffStat {
     #[inline]
     pub fn new(modulus: usize) -> Self {
@@ -33,7 +35,7 @@ impl CdvmSuffStat {
             n: 0,
             sum_sin: 0.0,
             sum_cos: 0.0,
-            twopi_over_m: 2.0 * std::f64::consts::PI / modulus as f64,
+            twopi_over_m: TWOPI / modulus as f64,
         }
     }
 
@@ -51,7 +53,7 @@ impl CdvmSuffStat {
             n,
             sum_sin,
             sum_cos,
-            twopi_over_m: 2.0 * std::f64::consts::PI / modulus as f64,
+            twopi_over_m: TWOPI / modulus as f64,
         }
     }
 
