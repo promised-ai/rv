@@ -287,7 +287,7 @@ impl Support<usize> for Cdvm {
 
 impl Sampleable<usize> for Cdvm {
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
-        ln_pflip((0..self.modulus).map(|r| self.cdvm_kernel(r)), true, rng)
+        ln_pflip((0..self.modulus).map(|r| self.cdvm_kernel(r)), false, rng)
     }
 }
 
