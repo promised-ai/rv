@@ -7,6 +7,7 @@ use crate::impl_display;
 use crate::misc::func::LogSumExp;
 use crate::misc::ln_pflip;
 use crate::traits::*;
+use crate::consts::TWO_PI;
 use rand::Rng;
 use std::f64;
 use std::fmt;
@@ -52,8 +53,7 @@ pub struct Cdvm {
     kappa: f64,
 
     /// Cached log-normalization constant
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    log_norm_const: OnceLock<f64>,
+    log_norm_const: f64,
 
     /// Cached 2π/m
     #[cfg_attr(feature = "serde1", serde(skip))]
@@ -67,7 +67,7 @@ pub struct CdvmParameters {
     pub kappa: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum CdvmError {
@@ -94,23 +94,31 @@ impl Cdvm {
             return Err(CdvmError::KappaNegative { kappa });
         }
 
+        
         Ok(Cdvm::new_unchecked(mu, kappa, modulus))
     }
 
     /// Creates a new CDVM without checking whether the parameters are valid.
     #[inline]
     pub fn new_unchecked(mu: f64, kappa: f64, modulus: usize) -> Self {
+        let log_norm_const = Cdvm::compute_log_norm_const(modulus, mu, kappa);
+
         Cdvm {
             modulus,
             mu,
             kappa,
-            log_norm_const: OnceLock::new(),
+            log_norm_const,
             twopi_over_m: OnceLock::new(),
         }
     }
 
-    fn cdvm_kernel(&self, x: usize) -> f64 {
-        self.kappa * ((self.twopi_over_m() * (x as f64 - self.mu)).cos())
+    fn cdvm_kernel(two_pi_over_m: f64, mu: f64, kappa: f64, x: usize) -> f64 {
+        kappa * ((two_pi_over_m * (x as f64 - mu)).cos())
+    }
+
+    fn compute_log_norm_const(modulus: usize, mu: f64, kappa: f64) -> f64 {
+        let two_pi_over_m = TWO_PI / modulus as f64;
+        (0..modulus).map(|x| Cdvm::cdvm_kernel(two_pi_over_m, mu, kappa, x)).logsumexp()
     }
 
     /// Get the number of categories
@@ -137,11 +145,7 @@ impl Cdvm {
 
     /// Compute or fetch cached normalization constant
     fn log_norm_const(&self) -> f64 {
-        *self.log_norm_const.get_or_init(|| {
-            // For CDVM, the normalization constant is just the von Mises normalizer
-            // since the categorical probabilities already sum to 1
-            (0..self.modulus).map(|x| self.cdvm_kernel(x)).logsumexp()
-        })
+        self.log_norm_const
     }
 }
 
@@ -213,7 +217,7 @@ impl fmt::Display for CdvmError {
 
 impl HasDensity<usize> for Cdvm {
     fn ln_f(&self, x: &usize) -> f64 {
-        self.cdvm_kernel(*x) - self.log_norm_const()
+        Cdvm::cdvm_kernel(self.twopi_over_m(), self.mu, self.kappa, *x) - self.log_norm_const()
     }
 }
 
