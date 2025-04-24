@@ -25,11 +25,11 @@ impl StickBreakingDiscreteSuffStat {
     /// # Returns
     ///
     /// A new `StickBreakingDiscreteSuffStat` instance.
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self { counts: Vec::new() }
     }
 
-    pub fn from_counts(counts: Vec<usize>) -> Self {
+    #[must_use] pub fn from_counts(counts: Vec<usize>) -> Self {
         Self { counts }
     }
 
@@ -40,7 +40,7 @@ impl StickBreakingDiscreteSuffStat {
     /// # Returns
     ///
     /// A vector of `(usize, usize)` pairs for calculating probabilities.
-    pub fn break_pairs(&self) -> Vec<(usize, usize)> {
+    #[must_use] pub fn break_pairs(&self) -> Vec<(usize, usize)> {
         let mut s = self.counts.iter().sum();
         self.counts
             .iter()
@@ -56,7 +56,7 @@ impl StickBreakingDiscreteSuffStat {
     /// # Returns
     ///
     /// A reference to the vector of counts.
-    pub fn counts(&self) -> &Vec<usize> {
+    #[must_use] pub fn counts(&self) -> &Vec<usize> {
         &self.counts
     }
 }
@@ -142,7 +142,7 @@ impl SuffStat<usize> for StickBreakingDiscreteSuffStat {
     /// * `i` - The index at which to increment the count.
     fn observe(&mut self, i: &usize) {
         if self.counts.len() < *i + 1 {
-            self.counts.resize(*i + 1, 0)
+            self.counts.resize(*i + 1, 0);
         }
         self.counts[*i] += 1;
     }

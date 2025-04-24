@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::dist::{Gamma, Gaussian};
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{ConjugatePrior, ContinuousDistr, HasDensity, Parameterized, Sampleable, Support};
 use rand::Rng;
 use std::fmt;
 
@@ -101,16 +101,16 @@ impl NormalGamma {
         }
     }
 
-    /// Creates a new NormalGamma without checking whether the parameters are
+    /// Creates a new `NormalGamma` without checking whether the parameters are
     /// valid.
     #[inline]
-    pub fn new_unchecked(m: f64, r: f64, s: f64, v: f64) -> Self {
+    #[must_use] pub fn new_unchecked(m: f64, r: f64, s: f64, v: f64) -> Self {
         NormalGamma { m, r, s, v }
     }
 
     /// Get the m parameter
     #[inline]
-    pub fn m(&self) -> f64 {
+    #[must_use] pub fn m(&self) -> f64 {
         self.m
     }
 
@@ -156,7 +156,7 @@ impl NormalGamma {
 
     /// Get the r parameter
     #[inline]
-    pub fn r(&self) -> f64 {
+    #[must_use] pub fn r(&self) -> f64 {
         self.r
     }
 
@@ -210,7 +210,7 @@ impl NormalGamma {
 
     /// Get the s parameter
     #[inline]
-    pub fn s(&self) -> f64 {
+    #[must_use] pub fn s(&self) -> f64 {
         self.s
     }
 
@@ -264,7 +264,7 @@ impl NormalGamma {
 
     /// Get the v parameter
     #[inline]
-    pub fn v(&self) -> f64 {
+    #[must_use] pub fn v(&self) -> f64 {
         self.v
     }
 
@@ -353,7 +353,7 @@ impl Sampleable<Gaussian> for NormalGamma {
         // all this input validation hurts performance 😞.
         let rho: f64 = Gamma::new(self.v / 2.0, self.s / 2.0)
             .map_err(|err| {
-                panic!("Invalid ρ params when drawing Gaussian: {}", err)
+                panic!("Invalid ρ params when drawing Gaussian: {err}")
             })
             .unwrap()
             .draw(&mut rng);
@@ -367,7 +367,7 @@ impl Sampleable<Gaussian> for NormalGamma {
         let post_sigma: f64 = self.r.recip().sqrt() * sigma;
         let mu: f64 = Gaussian::new(self.m, post_sigma)
             .map_err(|err| {
-                panic!("Invalid μ params when drawing Gaussian: {}", err)
+                panic!("Invalid μ params when drawing Gaussian: {err}")
             })
             .unwrap()
             .draw(&mut rng);
@@ -391,18 +391,18 @@ impl std::error::Error for NormalGammaError {}
 impl fmt::Display for NormalGammaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MNotFinite { m } => write!(f, "non-finite m: {}", m),
-            Self::RNotFinite { r } => write!(f, "non-finite r: {}", r),
-            Self::SNotFinite { s } => write!(f, "non-finite s: {}", s),
-            Self::VNotFinite { v } => write!(f, "non-finite v: {}", v),
+            Self::MNotFinite { m } => write!(f, "non-finite m: {m}"),
+            Self::RNotFinite { r } => write!(f, "non-finite r: {r}"),
+            Self::SNotFinite { s } => write!(f, "non-finite s: {s}"),
+            Self::VNotFinite { v } => write!(f, "non-finite v: {v}"),
             Self::RTooLow { r } => {
-                write!(f, "r ({}) must be greater than zero", r)
+                write!(f, "r ({r}) must be greater than zero")
             }
             Self::STooLow { s } => {
-                write!(f, "s ({}) must be greater than zero", s)
+                write!(f, "s ({s}) must be greater than zero")
             }
             Self::VTooLow { v } => {
-                write!(f, "v ({}) must be greater than zero", v)
+                write!(f, "v ({v}) must be greater than zero")
             }
         }
     }

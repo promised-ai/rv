@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{Cdf, ConjugatePrior, ContinuousDistr, DataOrSuffStat, HasDensity, HasSuffStat, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable, Support, Variance};
 use rand::Rng;
 use special::Beta;
 use std::f64;
@@ -107,9 +107,9 @@ impl BetaPrime {
         }
     }
 
-    /// Creates a new BetaPrime without checking whether the parameters are valid.
+    /// Creates a new `BetaPrime` without checking whether the parameters are valid.
     #[inline]
-    pub fn new_unchecked(alpha: f64, beta: f64) -> Self {
+    #[must_use] pub fn new_unchecked(alpha: f64, beta: f64) -> Self {
         BetaPrime {
             alpha,
             beta,
@@ -356,16 +356,16 @@ impl fmt::Display for BetaPrimeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::AlphaTooLow { alpha } => {
-                write!(f, "alpha ({}) must be greater than zero", alpha)
+                write!(f, "alpha ({alpha}) must be greater than zero")
             }
             Self::AlphaNotFinite { alpha } => {
-                write!(f, "alpha ({}) was non finite", alpha)
+                write!(f, "alpha ({alpha}) was non finite")
             }
             Self::BetaTooLow { beta } => {
-                write!(f, "beta ({}) must be greater than zero", beta)
+                write!(f, "beta ({beta}) must be greater than zero")
             }
             Self::BetaNotFinite { beta } => {
-                write!(f, "beta ({}) was non finite", beta)
+                write!(f, "beta ({beta}) was non finite")
             }
         }
     }
@@ -479,7 +479,7 @@ mod tests {
             let x: f64 = bp.draw(&mut rng);
             s += x;
         }
-        let mu_sample = s / n as f64;
+        let mu_sample = s / f64::from(n);
 
         assert::close(mu_sample, mu_theory, 0.03);
     }
@@ -508,7 +508,7 @@ mod tests {
         }
 
         // Calculate variance
-        let var_sample: f64 = sse / n as f64;
+        let var_sample: f64 = sse / f64::from(n);
 
         assert::close(var_sample, var_theory, 0.01);
     }

@@ -70,7 +70,7 @@ pub enum KsMode {
     Auto,
 }
 
-/// Hypothesis Alternative for ks_two_sample test
+/// Hypothesis Alternative for `ks_two_sample` test
 #[derive(Debug, Clone, Copy, Default)]
 pub enum KsAlternative {
     /// Alternative where the empirical CDFs could lie on either side on one another.
@@ -236,25 +236,22 @@ where
         KsMode::Asymptotic => {
             let ks_dist = KsTwoAsymptotic::new();
 
-            match alternative {
-                KsAlternative::TwoSided => {
-                    let en = (n_x_f * n_y_f / (n_y_f + n_x_f)).sqrt();
-                    Ok((stat, 1.0 - ks_dist.cdf(&(en * stat))))
-                }
-                _ => {
-                    let m = n_x.max(n_y) as f64;
-                    let n = n_x.min(n_y) as f64;
+            if let KsAlternative::TwoSided = alternative {
+                let en = (n_x_f * n_y_f / (n_y_f + n_x_f)).sqrt();
+                Ok((stat, 1.0 - ks_dist.cdf(&(en * stat))))
+            } else {
+                let m = n_x.max(n_y) as f64;
+                let n = n_x.min(n_y) as f64;
 
-                    let z = (m * n / (m + n)).sqrt() * stat;
-                    let expt = (-2.0 * z).mul_add(
-                        z,
-                        -2.0 * z * 2.0_f64.mul_add(n, m)
-                            / (m * n * (m + n)).sqrt()
-                            / 3.0,
-                    );
-                    let p = expt.exp();
-                    Ok((stat, p))
-                }
+                let z = (m * n / (m + n)).sqrt() * stat;
+                let expt = (-2.0 * z).mul_add(
+                    z,
+                    -2.0 * z * 2.0_f64.mul_add(n, m)
+                        / (m * n * (m + n)).sqrt()
+                        / 3.0,
+                );
+                let p = expt.exp();
+                Ok((stat, p))
             }
         }
         KsMode::Auto => unreachable!(),
@@ -294,7 +291,7 @@ fn paths_outside(m: usize, n: usize, g: usize, h: f64) -> usize {
         for j in 0..lxj {
             let bin = binomial((m - xj[j]) + (n - j), n - j);
             let term = b[j] * bin;
-            num_paths += term
+            num_paths += term;
         }
         num_paths
     }
@@ -376,7 +373,7 @@ fn mmul(xs: &[Vec<f64>], ys: &[Vec<f64>]) -> Vec<Vec<f64>> {
     for i in 0..m {
         for j in 0..m {
             zs[i][j] =
-                (0..m).fold(0.0, |acc, k| xs[i][k].mul_add(ys[k][j], acc))
+                (0..m).fold(0.0, |acc, k| xs[i][k].mul_add(ys[k][j], acc));
         }
     }
     zs
@@ -398,9 +395,9 @@ fn mpow(xs: &[Vec<f64>], ea: i32, n: usize) -> (Vec<Vec<f64>>, i32) {
             ev = ea + eb;
         }
         if zs[m / 2][m / 2] > 1E140 {
-            zs.iter_mut().for_each(|zs_i| {
+            for zs_i in &mut zs {
                 zs_i.iter_mut().for_each(|z| (*z) *= 1E-140);
-            });
+            }
             ev += 140;
         }
         (zs, ev)
@@ -430,14 +427,14 @@ fn ks_cdf(n: usize, d: f64) -> f64 {
         for i in 0..m {
             for j in 0..m {
                 if ((i as i32) - (j as i32) + 1) >= 0 {
-                    hs[i][j] = 1.0
+                    hs[i][j] = 1.0;
                 }
             }
         }
 
         for i in 0..m {
             hs[i][0] -= h.powi((i as i32) + 1);
-            hs[m - 1][i] -= h.powi((m as i32) - (i as i32))
+            hs[m - 1][i] -= h.powi((m as i32) - (i as i32));
         }
 
         hs[m - 1][0] += if 2.0_f64.mul_add(h, -1.0) > 0.0 {

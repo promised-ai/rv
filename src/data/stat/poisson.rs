@@ -22,9 +22,9 @@ pub struct PoissonSuffStat {
 }
 
 impl PoissonSuffStat {
-    /// Create a new empty SuffStat
+    /// Create a new empty `SuffStat`
     #[inline]
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             n: 0,
             sum: 0.0,
@@ -35,7 +35,7 @@ impl PoissonSuffStat {
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
-    pub fn from_parts_unchecked(n: usize, sum: f64, sum_ln_fact: f64) -> Self {
+    #[must_use] pub fn from_parts_unchecked(n: usize, sum: f64, sum_ln_fact: f64) -> Self {
         Self {
             n,
             sum,
@@ -45,18 +45,18 @@ impl PoissonSuffStat {
 
     /// Get the number of observations
     #[inline]
-    pub fn n(&self) -> usize {
+    #[must_use] pub fn n(&self) -> usize {
         self.n
     }
 
     /// Get the sum of all observations
     #[inline]
-    pub fn sum(&self) -> f64 {
+    #[must_use] pub fn sum(&self) -> f64 {
         self.sum
     }
 
     #[inline]
-    pub fn sum_ln_fact(&self) -> f64 {
+    #[must_use] pub fn sum_ln_fact(&self) -> f64 {
         self.sum_ln_fact
     }
 }

@@ -3,7 +3,7 @@ use special::Beta as SBeta;
 
 use crate::data::{BernoulliSuffStat, Booleable};
 use crate::dist::{Bernoulli, Beta};
-use crate::traits::*;
+use crate::traits::{ConjugatePrior, ContinuousDistr, DataOrSuffStat, HasDensity, HasSuffStat, Mean, Sampleable, SuffStat, Support};
 
 impl HasDensity<Bernoulli> for Beta {
     fn ln_f(&self, x: &Bernoulli) -> f64 {

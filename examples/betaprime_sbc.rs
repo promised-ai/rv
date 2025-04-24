@@ -50,7 +50,7 @@ fn main() {
     }
 
     // Should be uniform
-    println!("{:?}", hist);
+    println!("{hist:?}");
 }
 
 #[cfg(not(feature = "experimental"))]

@@ -30,7 +30,7 @@ fn bench_vm_draw(c: &mut Criterion) {
                     black_box::<f64>(vm.draw(rng));
                 },
                 BatchSize::SmallInput,
-            )
+            );
         });
     }
 }
@@ -55,7 +55,7 @@ fn bench_vm_ln_f(c: &mut Criterion) {
                     black_box(vm.ln_f(&x));
                 },
                 BatchSize::SmallInput,
-            )
+            );
         });
     }
 }
@@ -79,7 +79,7 @@ fn bench_log_i0(c: &mut Criterion) {
                     black_box(log_i0(x));
                 },
                 BatchSize::SmallInput,
-            )
+            );
         });
     }
 }

@@ -162,7 +162,7 @@ where
     Fx: 'a + HasSuffStat<X>,
 {
     /// Get the number of observations
-    pub fn n(&self) -> usize {
+    #[must_use] pub fn n(&self) -> usize {
         match &self {
             DataOrSuffStat::Data(data) => data.len(),
             DataOrSuffStat::SuffStat(s) => <Fx::Stat as SuffStat<X>>::n(s),
@@ -188,7 +188,7 @@ where
     ///
     /// assert!(!suffstat.is_data());
     /// ```
-    pub fn is_data(&self) -> bool {
+    #[must_use] pub fn is_data(&self) -> bool {
         matches!(&self, DataOrSuffStat::Data(..))
     }
 
@@ -211,7 +211,7 @@ where
     ///
     /// assert!(suffstat.is_suffstat());
     /// ```
-    pub fn is_suffstat(&self) -> bool {
+    #[must_use] pub fn is_suffstat(&self) -> bool {
         matches!(&self, DataOrSuffStat::SuffStat(..))
     }
 }
@@ -223,7 +223,7 @@ where
     Fx::Stat: Clone,
     Pr: ConjugatePrior<X, Fx>,
 {
-    extract_stat_then(pr, x, |s| s.clone())
+    extract_stat_then(pr, x, std::clone::Clone::clone)
 }
 
 /// Convert a `DataOrSuffStat` into a `Stat` then do something with it

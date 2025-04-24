@@ -24,7 +24,7 @@ pub struct RationalQuadratic {
 }
 
 impl RationalQuadratic {
-    /// Create a new RationalQuadratic kernel
+    /// Create a new `RationalQuadratic` kernel
     pub fn new(scale: f64, mixture: f64) -> Result<Self, KernelError> {
         if scale <= 0.0 {
             Err(KernelError::ParameterOutOfBounds {
@@ -43,8 +43,8 @@ impl RationalQuadratic {
         }
     }
 
-    /// Create a new RationalQuadratic without checking values
-    pub fn new_unchecked(scale: f64, mixture: f64) -> Self {
+    /// Create a new `RationalQuadratic` without checking values
+    #[must_use] pub fn new_unchecked(scale: f64, mixture: f64) -> Self {
         Self { scale, mixture }
     }
 }

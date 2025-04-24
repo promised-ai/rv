@@ -7,10 +7,10 @@ use rand_distr::Normal;
 use std::fmt;
 use std::sync::OnceLock;
 
-use crate::consts::*;
+use crate::consts::{HALF_LN_2PI, LN_2PI};
 use crate::data::InvGaussianSuffStat;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{Cdf, ContinuousDistr, HasDensity, HasSuffStat, Kurtosis, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, SuffStat, Support, Variance};
 
 /// [Inverse Gaussian distribution](https://en.wikipedia.org/wiki/Inverse_Gaussian_distribution),
 /// N<sup>-1</sup>(μ, λ) over real values.
@@ -112,10 +112,10 @@ impl InvGaussian {
         }
     }
 
-    /// Creates a new InvGaussian without checking whether the parameters are
+    /// Creates a new `InvGaussian` without checking whether the parameters are
     /// valid.
     #[inline]
-    pub fn new_unchecked(mu: f64, lambda: f64) -> Self {
+    #[must_use] pub fn new_unchecked(mu: f64, lambda: f64) -> Self {
         InvGaussian {
             mu,
             lambda,
@@ -378,15 +378,15 @@ impl std::error::Error for InvGaussianError {}
 impl fmt::Display for InvGaussianError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {mu}"),
             Self::MuTooLow { mu } => {
-                write!(f, "mu ({}) must be greater than zero", mu)
+                write!(f, "mu ({mu}) must be greater than zero")
             }
             Self::LambdaTooLow { lambda } => {
-                write!(f, "lambda ({}) must be greater than zero", lambda)
+                write!(f, "lambda ({lambda}) must be greater than zero")
             }
             Self::LambdaNotFinite { lambda } => {
-                write!(f, "non-finite lambda: {}", lambda)
+                write!(f, "non-finite lambda: {lambda}")
             }
         }
     }

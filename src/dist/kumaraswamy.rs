@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::consts::EULER_MASCERONI;
 use crate::impl_display;
 use crate::misc::gammafn;
-use crate::traits::*;
+use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Mean, Median, Mode, Parameterized, Sampleable, Scalable, Shiftable, Support};
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;
@@ -149,7 +149,7 @@ impl Kumaraswamy {
     /// Creates a new Kumaraswamy without checking whether the parameters are
     /// valid.
     #[inline]
-    pub fn new_unchecked(a: f64, b: f64) -> Self {
+    #[must_use] pub fn new_unchecked(a: f64, b: f64) -> Self {
         Kumaraswamy {
             a,
             b,
@@ -167,7 +167,7 @@ impl Kumaraswamy {
     /// assert_eq!(kuma, Kumaraswamy::new(1.0, 1.0).unwrap());
     /// ```
     #[inline]
-    pub fn uniform() -> Self {
+    #[must_use] pub fn uniform() -> Self {
         Kumaraswamy {
             a: 1.0,
             b: 1.0,
@@ -448,13 +448,13 @@ impl fmt::Display for KumaraswamyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ATooLow { a } => {
-                write!(f, "a ({}) must be greater than zero", a)
+                write!(f, "a ({a}) must be greater than zero")
             }
-            Self::ANotFinite { a } => write!(f, "non-finite a: {}", a),
+            Self::ANotFinite { a } => write!(f, "non-finite a: {a}"),
             Self::BTooLow { b } => {
-                write!(f, "b ({}) must be greater than zero", b)
+                write!(f, "b ({b}) must be greater than zero")
             }
-            Self::BNotFinite { b } => write!(f, "non-finite b: {}", b),
+            Self::BNotFinite { b } => write!(f, "non-finite b: {b}"),
         }
     }
 }
@@ -546,7 +546,7 @@ mod tests {
     #[test]
     fn mean_for_uniform_should_be_one_half() {
         let mean: f64 = Kumaraswamy::uniform().mean().unwrap();
-        assert::close(mean, 0.5, 1E-10)
+        assert::close(mean, 0.5, 1E-10);
     }
 
     #[test]
@@ -560,14 +560,14 @@ mod tests {
                     Kumaraswamy::new(1.0, p).unwrap().mean().unwrap();
                 let beta_m: f64 = Beta::new(1.0, p).unwrap().mean().unwrap();
 
-                assert::close(kuma_m, beta_m, 1E-10)
+                assert::close(kuma_m, beta_m, 1E-10);
             }
             {
                 let kuma_m: f64 =
                     Kumaraswamy::new(p, 1.0).unwrap().mean().unwrap();
                 let beta_m: f64 = Beta::new(p, 1.0).unwrap().mean().unwrap();
 
-                assert::close(kuma_m, beta_m, 1E-10)
+                assert::close(kuma_m, beta_m, 1E-10);
             }
         }
 
@@ -575,7 +575,7 @@ mod tests {
             .unwrap()
             .sample(100, &mut rng)
             .iter()
-            .for_each(|&p| equiv(p))
+            .for_each(|&p| equiv(p));
     }
 
     #[test]
@@ -589,14 +589,14 @@ mod tests {
                     Kumaraswamy::new(1.0, p).unwrap().mean().unwrap();
                 let beta_m: f64 = Beta::new(1.0, p).unwrap().mean().unwrap();
 
-                assert::close(kuma_m, beta_m, 1E-10)
+                assert::close(kuma_m, beta_m, 1E-10);
             }
             {
                 let kuma_m: f64 =
                     Kumaraswamy::new(p, 1.0).unwrap().mean().unwrap();
                 let beta_m: f64 = Beta::new(p, 1.0).unwrap().mean().unwrap();
 
-                assert::close(kuma_m, beta_m, 1E-10)
+                assert::close(kuma_m, beta_m, 1E-10);
             }
         }
 
@@ -605,7 +605,7 @@ mod tests {
             .unwrap()
             .sample(100, &mut rng)
             .iter()
-            .for_each(|p: &f64| equiv(p + 1_f64))
+            .for_each(|p: &f64| equiv(p + 1_f64));
     }
 
     #[test]

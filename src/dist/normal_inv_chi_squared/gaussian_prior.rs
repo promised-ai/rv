@@ -7,7 +7,7 @@ use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
-use crate::traits::*;
+use crate::traits::{ConjugatePrior, DataOrSuffStat, HasSuffStat, Mean, Sampleable, SuffStat};
 
 #[derive(Clone, Debug)]
 pub struct PosteriorParameters {
@@ -148,11 +148,7 @@ mod test {
             .map(|_| {
                 let mut tester = GewekeTester::new(pr.clone(), 20);
                 tester.run_chains(5_000, 20, &mut rng);
-                if tester.eval(0.025).is_ok() {
-                    1_u8
-                } else {
-                    0_u8
-                }
+                u8::from(tester.eval(0.025).is_ok())
             })
             .sum::<u8>();
         assert!(n_passes > 1);

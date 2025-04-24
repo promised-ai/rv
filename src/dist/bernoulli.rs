@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{BernoulliSuffStat, Booleable};
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{Cdf, DiscreteDistr, Entropy, HasDensity, HasSuffStat, KlDivergence, Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Skewness, SuffStat, Support, Variance};
 use rand::Rng;
 use std::f64;
 use std::fmt;
@@ -111,7 +111,7 @@ impl Bernoulli {
     /// Creates a new Bernoulli without checking whether parameter value is
     /// valid.
     #[inline]
-    pub fn new_unchecked(p: f64) -> Self {
+    #[must_use] pub fn new_unchecked(p: f64) -> Self {
         Bernoulli { p }
     }
 
@@ -127,7 +127,7 @@ impl Bernoulli {
     /// assert_eq!(b.q(), 0.5);
     /// ```
     #[inline]
-    pub fn uniform() -> Self {
+    #[must_use] pub fn uniform() -> Self {
         Bernoulli { p: 0.5 }
     }
 
@@ -142,7 +142,7 @@ impl Bernoulli {
     /// assert_eq!(b.p(), 0.2);
     /// ```
     #[inline]
-    pub fn p(&self) -> f64 {
+    #[must_use] pub fn p(&self) -> f64 {
         self.p
     }
 
@@ -202,7 +202,7 @@ impl Bernoulli {
     /// assert_eq!(b.q(), 0.8);
     /// ```
     #[inline]
-    pub fn q(&self) -> f64 {
+    #[must_use] pub fn q(&self) -> f64 {
         1.0 - self.p
     }
 }
@@ -373,12 +373,12 @@ impl fmt::Display for BernoulliError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::PLessThanZero { p } => {
-                write!(f, "p was less than zero: {}", p)
+                write!(f, "p was less than zero: {p}")
             }
             Self::PGreaterThanOne { p } => {
-                write!(f, "p was less greater than one: {}", p)
+                write!(f, "p was less greater than one: {p}")
             }
-            Self::PNotFinite { p } => write!(f, "p was non-finite: {}", p),
+            Self::PNotFinite { p } => write!(f, "p was non-finite: {p}"),
         }
     }
 }
@@ -421,12 +421,12 @@ mod tests {
             Err(BernoulliError::PNotFinite { .. }) => (),
             Err(_) => panic!("wrong error"),
             Ok(_) => panic!("should've errored"),
-        };
+        }
         match Bernoulli::new(f64::INFINITY) {
             Err(BernoulliError::PNotFinite { .. }) => (),
             Err(_) => panic!("wrong error"),
             Ok(_) => panic!("should've errored"),
-        };
+        }
     }
 
     #[test]

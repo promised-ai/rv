@@ -17,7 +17,7 @@ pub struct WhiteKernel {
 }
 
 impl WhiteKernel {
-    /// Create a new WhiteKernel with the given level of noise
+    /// Create a new `WhiteKernel` with the given level of noise
     pub fn new(noise_level: f64) -> Result<Self, KernelError> {
         if noise_level <= 0.0 {
             return Err(KernelError::ParameterOutOfBounds {
@@ -29,8 +29,8 @@ impl WhiteKernel {
         Ok(Self { noise_level })
     }
 
-    /// Create a new WhiteKernel without check the parameters
-    pub fn new_unchecked(noise_level: f64) -> Self {
+    /// Create a new `WhiteKernel` without check the parameters
+    #[must_use] pub fn new_unchecked(noise_level: f64) -> Self {
         Self { noise_level }
     }
 }

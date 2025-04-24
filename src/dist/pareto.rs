@@ -3,16 +3,16 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, Kurtosis, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support, Variance};
 use rand::Rng;
 use std::f64;
 use std::fmt;
 
-/// [Pareto distribution](https://en.wikipedia.org/wiki/Pareto_distribution) Pareto(x_m, α)
-/// over x in (x_m, ∞).
+/// [Pareto distribution](https://en.wikipedia.org/wiki/Pareto_distribution) `Pareto(x_m`, α)
+/// over x in (`x_m`, ∞).
 ///
 /// **NOTE**: The Pareto distribution is parameterized in terms of shape, α, and
-/// scale, x_m.
+/// scale, `x_m`.
 ///
 /// ```math
 ///                α x_m^α
@@ -83,7 +83,7 @@ pub enum ParetoError {
 }
 
 impl Pareto {
-    /// Create a new `Pareto` distribution with shape (α) and scale (x_m).
+    /// Create a new `Pareto` distribution with shape (α) and scale (`x_m`).
     pub fn new(shape: f64, scale: f64) -> Result<Self, ParetoError> {
         if shape <= 0.0 {
             Err(ParetoError::ShapeTooLow { shape })
@@ -100,7 +100,7 @@ impl Pareto {
 
     /// Creates a new Pareto without checking whether the parameters are valid.
     #[inline]
-    pub fn new_unchecked(shape: f64, scale: f64) -> Self {
+    #[must_use] pub fn new_unchecked(shape: f64, scale: f64) -> Self {
         Pareto { shape, scale }
     }
 
@@ -114,7 +114,7 @@ impl Pareto {
     /// assert_eq!(pareto.shape(), 1.0);
     /// ```
     #[inline]
-    pub fn shape(&self) -> f64 {
+    #[must_use] pub fn shape(&self) -> f64 {
         self.shape
     }
 
@@ -171,7 +171,7 @@ impl Pareto {
     /// assert_eq!(pareto.scale(), 2.0);
     /// ```
     #[inline]
-    pub fn scale(&self) -> f64 {
+    #[must_use] pub fn scale(&self) -> f64 {
         self.scale
     }
 
@@ -341,16 +341,16 @@ impl fmt::Display for ParetoError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ShapeTooLow { shape } => {
-                write!(f, "rate ({}) must be greater than zero", shape)
+                write!(f, "rate ({shape}) must be greater than zero")
             }
             Self::ShapeNotFinite { shape } => {
-                write!(f, "non-finite rate: {}", shape)
+                write!(f, "non-finite rate: {shape}")
             }
             Self::ScaleTooLow { scale } => {
-                write!(f, "scale ({}) must be greater than zero", scale)
+                write!(f, "scale ({scale}) must be greater than zero")
             }
             Self::ScaleNotFinite { scale } => {
-                write!(f, "non-finite scale: {}", scale)
+                write!(f, "non-finite scale: {scale}")
             }
         }
     }

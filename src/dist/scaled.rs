@@ -1,5 +1,5 @@
 use crate::traits::Parameterized;
-use crate::traits::*;
+use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, InverseCdf, Kurtosis, Mean, Median, Mode, Sampleable, Scalable, Skewness, Support, Variance};
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -30,10 +30,10 @@ impl fmt::Display for ScaledError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::NonNormalScale(scale) => {
-                write!(f, "non-normal scale: {}", scale)
+                write!(f, "non-normal scale: {scale}")
             }
             Self::NegativeScale(scale) => {
-                write!(f, "negative scale: {}", scale)
+                write!(f, "negative scale: {scale}")
             }
         }
     }

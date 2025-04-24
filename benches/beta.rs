@@ -3,7 +3,7 @@ use std::f64;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use rand_distr::Beta;
-use rv::traits::*;
+use rv::traits::{HasDensity, Sampleable};
 
 fn draw_rand_distr<R: rand::Rng>(rng: &mut R) -> f64 {
     let beta = Beta::new(5.0, 2.0).unwrap();
@@ -34,19 +34,19 @@ fn bench_beta_draw(c: &mut Criterion) {
         b.iter(|| {
             let mut rng = rand::thread_rng();
             draw_rand_distr(&mut rng)
-        })
+        });
     });
     group.bench_function("draw_rv", |b| {
         let mut rng = rand::thread_rng();
-        b.iter(|| draw_rv(&mut rng))
+        b.iter(|| draw_rv(&mut rng));
     });
     group.bench_function("draw_2_uniform", |b| {
         let mut rng = rand::thread_rng();
-        b.iter(|| draw_2u(&mut rng))
+        b.iter(|| draw_2u(&mut rng));
     });
     group.bench_function("draw_2_uniform_recip", |b| {
         let mut rng = rand::thread_rng();
-        b.iter(|| draw_2u_recip(&mut rng))
+        b.iter(|| draw_2u_recip(&mut rng));
     });
 }
 

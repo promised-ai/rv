@@ -43,7 +43,7 @@ impl StickBreakingSuffStat {
     /// # Returns
     ///
     /// A new instance of `StickBreakingSuffStat`.
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             n: 0,
             num_breaks: 0,
@@ -52,13 +52,13 @@ impl StickBreakingSuffStat {
     }
 
     /// Returns the number of breaks observed in the stick-breaking process.
-    pub fn num_breaks(&self) -> usize {
+    #[must_use] pub fn num_breaks(&self) -> usize {
         self.num_breaks
     }
 
     /// Returns the sum of the logarithms of the remaining stick lengths after
     /// each break.
-    pub fn sum_log_q(&self) -> f64 {
+    #[must_use] pub fn sum_log_q(&self) -> f64 {
         self.sum_log_q
     }
 }
@@ -94,7 +94,7 @@ impl From<&&[f64]> for StickBreakingSuffStat {
 //     }
 // }
 
-/// Computes the sufficient statistic for a UnitPowerLaw distribution from a sequence of stick lengths.
+/// Computes the sufficient statistic for a `UnitPowerLaw` distribution from a sequence of stick lengths.
 ///
 /// This function processes a sequence of stick lengths resulting from a stick-breaking process
 /// parameterized by a UnitPowerLaw(α), which is equivalent to a Beta(α,1) distribution. It calculates

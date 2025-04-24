@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, KlDivergence, Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support, Variance};
 use rand::Rng;
 use rand_distr::Exp;
 use std::f64;
@@ -109,7 +109,7 @@ impl Exponential {
     /// Creates a new Exponential without checking whether the parameter is
     /// valid.
     #[inline]
-    pub fn new_unchecked(rate: f64) -> Self {
+    #[must_use] pub fn new_unchecked(rate: f64) -> Self {
         Exponential { rate }
     }
 
@@ -123,7 +123,7 @@ impl Exponential {
     /// assert_eq!(expon.rate(), 1.3);
     /// ```
     #[inline]
-    pub fn rate(&self) -> f64 {
+    #[must_use] pub fn rate(&self) -> f64 {
         self.rate
     }
 
@@ -285,10 +285,10 @@ impl fmt::Display for ExponentialError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::RateTooLow { rate } => {
-                write!(f, "rate ({}) must be greater than zero", rate)
+                write!(f, "rate ({rate}) must be greater than zero")
             }
             Self::RateNotFinite { rate } => {
-                write!(f, "non-finite rate: {}", rate)
+                write!(f, "non-finite rate: {rate}")
             }
         }
     }

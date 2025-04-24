@@ -8,11 +8,11 @@ use special::Error as _;
 use std::f64::consts::SQRT_2;
 use std::fmt;
 
-use crate::consts::*;
+use crate::consts::{HALF_LN_2PI, HALF_LN_2PI_E};
 use crate::data::GaussianSuffStat;
 use crate::impl_display;
 use crate::traits::HasDensity;
-use crate::traits::*;
+use crate::traits::{Cdf, ContinuousDistr, Entropy, HasSuffStat, InverseCdf, KlDivergence, Kurtosis, Mean, Median, Mode, Parameterized, QuadBounds, Sampleable, Scalable, Shiftable, Skewness, SuffStat, Support, Variance};
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.
@@ -132,7 +132,7 @@ impl Gaussian {
     /// Creates a new Gaussian without checking whether the parameters are
     /// valid.
     #[inline]
-    pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
+    #[must_use] pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
         Gaussian {
             mu,
             sigma,
@@ -151,7 +151,7 @@ impl Gaussian {
     /// assert_eq!(gauss, Gaussian::new(0.0, 1.0).unwrap());
     /// ```
     #[inline]
-    pub fn standard() -> Self {
+    #[must_use] pub fn standard() -> Self {
         Gaussian {
             mu: 0.0,
             sigma: 1.0,
@@ -170,7 +170,7 @@ impl Gaussian {
     /// assert_eq!(gauss.mu(), 2.0);
     /// ```
     #[inline]
-    pub fn mu(&self) -> f64 {
+    #[must_use] pub fn mu(&self) -> f64 {
         self.mu
     }
 
@@ -199,11 +199,11 @@ impl Gaussian {
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), GaussianError> {
-        if !mu.is_finite() {
-            Err(GaussianError::MuNotFinite { mu })
-        } else {
+        if mu.is_finite() {
             self.set_mu_unchecked(mu);
             Ok(())
+        } else {
+            Err(GaussianError::MuNotFinite { mu })
         }
     }
 
@@ -224,7 +224,7 @@ impl Gaussian {
     /// assert_eq!(gauss.sigma(), 1.5);
     /// ```
     #[inline]
-    pub fn sigma(&self) -> f64 {
+    #[must_use] pub fn sigma(&self) -> f64 {
         self.sigma
     }
 
@@ -466,12 +466,12 @@ impl std::error::Error for GaussianError {}
 impl fmt::Display for GaussianError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {mu}"),
             Self::SigmaTooLow { sigma } => {
-                write!(f, "sigma ({}) must be greater than zero", sigma)
+                write!(f, "sigma ({sigma}) must be greater than zero")
             }
             Self::SigmaNotFinite { sigma } => {
-                write!(f, "non-finite sigma: {}", sigma)
+                write!(f, "non-finite sigma: {sigma}")
             }
         }
     }
@@ -576,7 +576,7 @@ mod tests {
         let gauss = Gaussian::standard();
         for _ in 0..100 {
             let x: f64 = gauss.draw(&mut rng);
-            assert!(x.is_finite())
+            assert!(x.is_finite());
         }
     }
 
@@ -682,11 +682,11 @@ mod tests {
         let gauss = Gaussian::standard();
         let xs: Vec<f64> = gauss.sample(100, &mut rng);
 
-        xs.iter().for_each(|x| {
+        for x in xs.iter() {
             let p = gauss.cdf(x);
             let y: f64 = gauss.quantile(p);
             assert::close(y, *x, TOL);
-        })
+        }
     }
 
     #[test]
