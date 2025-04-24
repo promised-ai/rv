@@ -8,7 +8,9 @@ use crate::dist::{Gaussian, NormalGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
-use crate::traits::{ConjugatePrior, DataOrSuffStat, HasSuffStat, Sampleable, SuffStat};
+use crate::traits::{
+    ConjugatePrior, DataOrSuffStat, HasSuffStat, Sampleable, SuffStat,
+};
 
 #[inline]
 fn ln_z(r: f64, s: f64, v: f64) -> f64 {

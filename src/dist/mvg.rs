@@ -5,7 +5,10 @@ use crate::consts::HALF_LN_2PI_E;
 use crate::consts::LN_2PI;
 use crate::data::MvGaussianSuffStat;
 use crate::impl_display;
-use crate::traits::{ContinuousDistr, Entropy, HasDensity, HasSuffStat, Mean, Mode, Parameterized, Sampleable, SuffStat, Support, Variance};
+use crate::traits::{
+    ContinuousDistr, Entropy, HasDensity, HasSuffStat, Mean, Mode,
+    Parameterized, Sampleable, SuffStat, Support, Variance,
+};
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dyn};
 use rand::Rng;
@@ -231,7 +234,8 @@ impl MvGaussian {
     /// Creates a new `MvGaussian` from mean and covariance without checking
     /// whether the parameters are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(mu: DVector<f64>, cov: DMatrix<f64>) -> Self {
+    #[must_use]
+    pub fn new_unchecked(mu: DVector<f64>, cov: DMatrix<f64>) -> Self {
         let cache = OnceLock::from(MvgCache::from_cov(&cov).unwrap());
         MvGaussian { mu, cov, cache }
     }
@@ -239,7 +243,8 @@ impl MvGaussian {
     /// Creates a new `MvGaussian` from mean and covariance's Cholesky factorization
     /// without checking whether the parameters are valid.
     #[inline]
-    #[must_use] pub fn new_cholesky_unchecked(
+    #[must_use]
+    pub fn new_cholesky_unchecked(
         mu: DVector<f64>,
         cov_chol: Cholesky<f64, Dyn>,
     ) -> Self {
@@ -535,10 +540,9 @@ impl fmt::Display for MvGaussianError {
                 "mean vector and covariance matrix do not align. mu is {n_mu} \
                     dimensions but cov is {n_cov} dimensions"
             ),
-            Self::CovNotSquare { nrows, ncols } => write!(
-                f,
-                "covariance matrix is not square ({nrows} x {ncols})"
-            ),
+            Self::CovNotSquare { nrows, ncols } => {
+                write!(f, "covariance matrix is not square ({nrows} x {ncols})")
+            }
         }
     }
 }

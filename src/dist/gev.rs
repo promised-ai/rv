@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 use crate::consts;
 use crate::impl_display;
 use crate::misc::gammafn;
-use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, Mean, Median, Mode, Parameterized, Sampleable, Scalable, Shiftable, Support, Variance};
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, Mean, Median, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Support, Variance,
+};
 use rand::Rng;
 use std::f32;
 use std::f64;
@@ -128,7 +131,8 @@ impl Gev {
 
     /// Creates a new Gev without checking whether the parameters are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(loc: f64, scale: f64, shape: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(loc: f64, scale: f64, shape: f64) -> Self {
         Gev { loc, scale, shape }
     }
 
@@ -143,7 +147,8 @@ impl Gev {
     /// assert_eq!(gev.loc(), 1.2);
     /// ```
     #[inline]
-    #[must_use] pub fn loc(&self) -> f64 {
+    #[must_use]
+    pub fn loc(&self) -> f64 {
         self.loc
     }
 
@@ -197,7 +202,8 @@ impl Gev {
     /// assert_eq!(gev.shape(), 3.4);
     /// ```
     #[inline]
-    #[must_use] pub fn shape(&self) -> f64 {
+    #[must_use]
+    pub fn shape(&self) -> f64 {
         self.shape
     }
 
@@ -251,7 +257,8 @@ impl Gev {
     /// assert_eq!(gev.scale(), 2.3);
     /// ```
     #[inline]
-    #[must_use] pub fn scale(&self) -> f64 {
+    #[must_use]
+    pub fn scale(&self) -> f64 {
         self.scale
     }
 

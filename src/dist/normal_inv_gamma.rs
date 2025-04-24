@@ -108,13 +108,15 @@ impl NormalInvGamma {
     /// Creates a new `NormalInvGamma` without checking whether the parameters are
     /// valid.
     #[inline(always)]
-    #[must_use] pub fn new_unchecked(m: f64, v: f64, a: f64, b: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(m: f64, v: f64, a: f64, b: f64) -> Self {
         NormalInvGamma { m, v, a, b }
     }
 
     /// Get the m parameter
     #[inline(always)]
-    #[must_use] pub fn m(&self) -> f64 {
+    #[must_use]
+    pub fn m(&self) -> f64 {
         self.m
     }
 
@@ -160,7 +162,8 @@ impl NormalInvGamma {
 
     /// Get the v parameter
     #[inline]
-    #[must_use] pub fn v(&self) -> f64 {
+    #[must_use]
+    pub fn v(&self) -> f64 {
         self.v
     }
 
@@ -214,7 +217,8 @@ impl NormalInvGamma {
 
     /// Get the a parameter
     #[inline]
-    #[must_use] pub fn a(&self) -> f64 {
+    #[must_use]
+    pub fn a(&self) -> f64 {
         self.a
     }
 
@@ -268,7 +272,8 @@ impl NormalInvGamma {
 
     /// Get the b parameter
     #[inline]
-    #[must_use] pub fn b(&self) -> f64 {
+    #[must_use]
+    pub fn b(&self) -> f64 {
         self.b
     }
 

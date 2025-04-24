@@ -7,7 +7,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::dist::{Categorical, Gaussian, Poisson};
 use crate::misc::{pflips, LogSumExp};
-use crate::traits::{Cdf, ContinuousDistr, DiscreteDistr, Entropy, HasDensity, Mean, Mode, Parameterized, QuadBounds, Rv, Sampleable, Support, Variance};
+use crate::traits::{
+    Cdf, ContinuousDistr, DiscreteDistr, Entropy, HasDensity, Mean, Mode,
+    Parameterized, QuadBounds, Rv, Sampleable, Support, Variance,
+};
 use rand::Rng;
 use std::fmt;
 use std::sync::OnceLock;
@@ -158,7 +161,8 @@ impl<Fx> Mixture<Fx> {
 
     /// Creates a new Mixture without checking whether the parameters are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(weights: Vec<f64>, components: Vec<Fx>) -> Self {
+    #[must_use]
+    pub fn new_unchecked(weights: Vec<f64>, components: Vec<Fx>) -> Self {
         Mixture {
             weights,
             components,
@@ -190,15 +194,13 @@ impl<Fx> Mixture<Fx> {
     /// # Notes
     ///
     /// Assumes mixtures are valid.
-    #[must_use] pub fn combine(mut mixtures: Vec<Mixture<Fx>>) -> Self {
+    #[must_use]
+    pub fn combine(mut mixtures: Vec<Mixture<Fx>>) -> Self {
         // The total number of components
         let k_total: usize = mixtures.iter().fold(0, |acc, mm| acc + mm.k());
 
         // The number of non-empty mixtures
-        let n: u32 = mixtures
-            .iter()
-            .map(|mm| u32::from(mm.k() != 0))
-            .sum();
+        let n: u32 = mixtures.iter().map(|mm| u32::from(mm.k() != 0)).sum();
 
         if n == 0 {
             // everything is empty, return empty

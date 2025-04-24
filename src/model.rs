@@ -1,4 +1,7 @@
-use crate::traits::{ConjugatePrior, DataOrSuffStat, HasDensity, HasSuffStat, Rv, Sampleable, SuffStat};
+use crate::traits::{
+    ConjugatePrior, DataOrSuffStat, HasDensity, HasSuffStat, Rv, Sampleable,
+    SuffStat,
+};
 use rand::Rng;
 use std::marker::PhantomData;
 use std::sync::Arc;

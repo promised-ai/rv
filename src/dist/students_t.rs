@@ -3,7 +3,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::{ContinuousDistr, HasDensity, Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support, Variance};
+use crate::traits::{
+    ContinuousDistr, HasDensity, Kurtosis, Mean, Median, Mode, Parameterized,
+    Sampleable, Scalable, Shiftable, Skewness, Support, Variance,
+};
 use rand::Rng;
 use std::f64::consts::PI;
 use std::fmt;
@@ -68,13 +71,15 @@ impl StudentsT {
     /// Creates a new `StudentsT` without checking whether the parameter is
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(v: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(v: f64) -> Self {
         StudentsT { v }
     }
 
     /// Get the degrees of freedom, v
     #[inline]
-    #[must_use] pub fn v(&self) -> f64 {
+    #[must_use]
+    pub fn v(&self) -> f64 {
         self.v
     }
 

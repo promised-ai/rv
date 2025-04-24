@@ -20,7 +20,8 @@ pub struct CategoricalSuffStat {
 
 impl CategoricalSuffStat {
     #[inline]
-    #[must_use] pub fn new(k: usize) -> Self {
+    #[must_use]
+    pub fn new(k: usize) -> Self {
         CategoricalSuffStat {
             n: 0,
             counts: vec![0.0; k],
@@ -30,7 +31,8 @@ impl CategoricalSuffStat {
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
-    #[must_use] pub fn from_parts_unchecked(n: usize, counts: Vec<f64>) -> Self {
+    #[must_use]
+    pub fn from_parts_unchecked(n: usize, counts: Vec<f64>) -> Self {
         CategoricalSuffStat { n, counts }
     }
 
@@ -50,7 +52,8 @@ impl CategoricalSuffStat {
     /// assert_eq!(stat.n(), 3);
     /// ```
     #[inline]
-    #[must_use] pub fn n(&self) -> usize {
+    #[must_use]
+    pub fn n(&self) -> usize {
         self.n
     }
 
@@ -70,7 +73,8 @@ impl CategoricalSuffStat {
     /// assert_eq!(*stat.counts(), vec![1.0, 0.0, 2.0]);
     /// ```
     #[inline]
-    #[must_use] pub fn counts(&self) -> &Vec<f64> {
+    #[must_use]
+    pub fn counts(&self) -> &Vec<f64> {
         &self.counts
     }
 }

@@ -27,7 +27,8 @@ pub struct CdvmSuffStat {
 
 impl CdvmSuffStat {
     #[inline]
-    #[must_use] pub fn new(modulus: usize) -> Self {
+    #[must_use]
+    pub fn new(modulus: usize) -> Self {
         CdvmSuffStat {
             modulus,
             n: 0,
@@ -40,7 +41,8 @@ impl CdvmSuffStat {
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
-    #[must_use] pub fn from_parts_unchecked(
+    #[must_use]
+    pub fn from_parts_unchecked(
         modulus: usize,
         n: usize,
         sum_cos: f64,
@@ -59,7 +61,8 @@ impl CdvmSuffStat {
     ///
     /// Note that we can't have the usual From trait without const generics
     /// because we need to know the modulus.
-    #[must_use] pub fn from_data(modulus: usize, xs: &[usize]) -> Self {
+    #[must_use]
+    pub fn from_data(modulus: usize, xs: &[usize]) -> Self {
         let mut stat = CdvmSuffStat::new(modulus);
         for x in xs {
             stat.observe(x);
@@ -68,25 +71,29 @@ impl CdvmSuffStat {
     }
 
     /// Get the modulus
-    #[must_use] pub fn modulus(&self) -> usize {
+    #[must_use]
+    pub fn modulus(&self) -> usize {
         self.modulus
     }
 
     /// Get the number of observations
     #[inline]
-    #[must_use] pub fn n(&self) -> usize {
+    #[must_use]
+    pub fn n(&self) -> usize {
         self.n
     }
 
     /// Get the sum of cosines
     #[inline]
-    #[must_use] pub fn sum_cos(&self) -> f64 {
+    #[must_use]
+    pub fn sum_cos(&self) -> f64 {
         self.sum_cos
     }
 
     /// Get the sum of sines
     #[inline]
-    #[must_use] pub fn sum_sin(&self) -> f64 {
+    #[must_use]
+    pub fn sum_sin(&self) -> f64 {
         self.sum_sin
     }
 }

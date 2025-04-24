@@ -5,7 +5,8 @@ use nalgebra::{DMatrix, DVector};
 /// [Mardia's
 /// test](https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Multivariate_normality_tests) for multivariate normality.
 #[allow(clippy::many_single_char_names)]
-#[must_use] pub fn mardia(xs: &[DVector<f64>]) -> (f64, f64) {
+#[must_use]
+pub fn mardia(xs: &[DVector<f64>]) -> (f64, f64) {
     let dims = xs[0].len();
     let n = xs.len() as f64;
 

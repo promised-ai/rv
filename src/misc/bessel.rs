@@ -138,7 +138,8 @@ fn chbevl(x: f64, coeffs: &[f64]) -> f64 {
 }
 
 /// Modified Bessel function, I<sub>0</sub>(x)
-#[must_use] pub fn i0(x: f64) -> f64 {
+#[must_use]
+pub fn i0(x: f64) -> f64 {
     let ax = x.abs();
 
     if ax <= 8.0 {
@@ -151,7 +152,8 @@ fn chbevl(x: f64, coeffs: &[f64]) -> f64 {
 }
 
 /// Logarithm of Modified Bessel function, `log I<sub>0</sub>(x)`
-#[must_use] pub fn log_i0(x: f64) -> f64 {
+#[must_use]
+pub fn log_i0(x: f64) -> f64 {
     let ax = x.abs();
 
     if ax <= 8.0 {
@@ -167,7 +169,8 @@ fn chbevl(x: f64, coeffs: &[f64]) -> f64 {
 }
 
 /// Modified Bessel function, I<sub>1</sub>(x)
-#[must_use] pub fn i1(x: f64) -> f64 {
+#[must_use]
+pub fn i1(x: f64) -> f64 {
     let z = x.abs();
     let res = if z <= 8.0 {
         let y = z.mul_add(0.5, -2.0);

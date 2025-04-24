@@ -10,7 +10,11 @@ use std::sync::OnceLock;
 use crate::consts::{HALF_LN_2PI, LN_2PI};
 use crate::data::InvGaussianSuffStat;
 use crate::impl_display;
-use crate::traits::{Cdf, ContinuousDistr, HasDensity, HasSuffStat, Kurtosis, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, SuffStat, Support, Variance};
+use crate::traits::{
+    Cdf, ContinuousDistr, HasDensity, HasSuffStat, Kurtosis, Mean, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Skewness, SuffStat,
+    Support, Variance,
+};
 
 /// [Inverse Gaussian distribution](https://en.wikipedia.org/wiki/Inverse_Gaussian_distribution),
 /// N<sup>-1</sup>(μ, λ) over real values.
@@ -115,7 +119,8 @@ impl InvGaussian {
     /// Creates a new `InvGaussian` without checking whether the parameters are
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(mu: f64, lambda: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(mu: f64, lambda: f64) -> Self {
         InvGaussian {
             mu,
             lambda,

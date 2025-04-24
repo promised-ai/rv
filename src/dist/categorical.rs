@@ -6,7 +6,10 @@ use crate::data::{CategoricalDatum, CategoricalSuffStat};
 use crate::impl_display;
 use crate::misc::pflip;
 use crate::misc::{argmax, ln_pflips, vec_to_string, LogSumExp};
-use crate::traits::{Cdf, DiscreteDistr, Entropy, HasDensity, HasSuffStat, KlDivergence, Mode, Parameterized, Sampleable, Support};
+use crate::traits::{
+    Cdf, DiscreteDistr, Entropy, HasDensity, HasSuffStat, KlDivergence, Mode,
+    Parameterized, Sampleable, Support,
+};
 use rand::Rng;
 use std::fmt;
 
@@ -158,20 +161,23 @@ impl Categorical {
     /// Creates a new Categorical without checking whether the ln weights are
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(ln_weights: Vec<f64>) -> Self {
+    #[must_use]
+    pub fn new_unchecked(ln_weights: Vec<f64>) -> Self {
         Categorical { ln_weights }
     }
 
     /// Creates a Categorical distribution over [0, k) with uniform weights
     #[inline]
-    #[must_use] pub fn uniform(k: usize) -> Self {
+    #[must_use]
+    pub fn uniform(k: usize) -> Self {
         let lnp = (1.0 / k as f64).ln();
         Categorical::new_unchecked(vec![lnp; k])
     }
 
     /// Return the weights (`exp(ln_weights)`)
     #[inline]
-    #[must_use] pub fn weights(&self) -> Vec<f64> {
+    #[must_use]
+    pub fn weights(&self) -> Vec<f64> {
         self.ln_weights.iter().map(|&w| w.exp()).collect()
     }
 
@@ -185,13 +191,15 @@ impl Categorical {
     /// assert_eq!(cat.k(), 4);
     /// ```
     #[inline]
-    #[must_use] pub fn k(&self) -> usize {
+    #[must_use]
+    pub fn k(&self) -> usize {
         self.ln_weights.len()
     }
 
     /// Get a reference to the weights
     #[inline]
-    #[must_use] pub fn ln_weights(&self) -> &Vec<f64> {
+    #[must_use]
+    pub fn ln_weights(&self) -> &Vec<f64> {
         &self.ln_weights
     }
 }

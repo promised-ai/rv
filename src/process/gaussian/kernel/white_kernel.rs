@@ -30,7 +30,8 @@ impl WhiteKernel {
     }
 
     /// Create a new `WhiteKernel` without check the parameters
-    #[must_use] pub fn new_unchecked(noise_level: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(noise_level: f64) -> Self {
         Self { noise_level }
     }
 }

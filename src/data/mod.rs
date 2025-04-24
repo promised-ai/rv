@@ -162,7 +162,8 @@ where
     Fx: 'a + HasSuffStat<X>,
 {
     /// Get the number of observations
-    #[must_use] pub fn n(&self) -> usize {
+    #[must_use]
+    pub fn n(&self) -> usize {
         match &self {
             DataOrSuffStat::Data(data) => data.len(),
             DataOrSuffStat::SuffStat(s) => <Fx::Stat as SuffStat<X>>::n(s),
@@ -188,7 +189,8 @@ where
     ///
     /// assert!(!suffstat.is_data());
     /// ```
-    #[must_use] pub fn is_data(&self) -> bool {
+    #[must_use]
+    pub fn is_data(&self) -> bool {
         matches!(&self, DataOrSuffStat::Data(..))
     }
 
@@ -211,7 +213,8 @@ where
     ///
     /// assert!(suffstat.is_suffstat());
     /// ```
-    #[must_use] pub fn is_suffstat(&self) -> bool {
+    #[must_use]
+    pub fn is_suffstat(&self) -> bool {
         matches!(&self, DataOrSuffStat::SuffStat(..))
     }
 }

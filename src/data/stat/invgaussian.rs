@@ -25,7 +25,8 @@ pub struct InvGaussianSuffStat {
 
 impl InvGaussianSuffStat {
     #[inline]
-    #[must_use] pub fn new() -> Self {
+    #[must_use]
+    pub fn new() -> Self {
         InvGaussianSuffStat {
             n: 0,
             sum_x: 0.0,
@@ -37,7 +38,8 @@ impl InvGaussianSuffStat {
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
-    #[must_use] pub fn from_parts_unchecked(
+    #[must_use]
+    pub fn from_parts_unchecked(
         n: usize,
         sum_x: f64,
         sum_inv_x: f64,
@@ -53,30 +55,35 @@ impl InvGaussianSuffStat {
 
     /// Get the number of observations
     #[inline]
-    #[must_use] pub fn n(&self) -> usize {
+    #[must_use]
+    pub fn n(&self) -> usize {
         self.n
     }
 
     /// Get the sample mean
     #[inline]
-    #[must_use] pub fn mean(&self) -> f64 {
+    #[must_use]
+    pub fn mean(&self) -> f64 {
         self.sum_x / self.n as f64
     }
 
     /// Sum of `x`
     #[inline]
-    #[must_use] pub fn sum_x(&self) -> f64 {
+    #[must_use]
+    pub fn sum_x(&self) -> f64 {
         self.sum_x
     }
 
     /// Sum of `1/x`
     #[inline]
-    #[must_use] pub fn sum_inv_x(&self) -> f64 {
+    #[must_use]
+    pub fn sum_inv_x(&self) -> f64 {
         self.sum_inv_x
     }
 
     #[inline]
-    #[must_use] pub fn sum_ln_x(&self) -> f64 {
+    #[must_use]
+    pub fn sum_ln_x(&self) -> f64 {
         self.sum_ln_x
     }
 }

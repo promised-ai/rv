@@ -3,7 +3,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::dist::MvGaussian;
 use crate::misc::lnmv_gamma;
-use crate::traits::{ContinuousDistr, HasDensity, Mean, Mode, Parameterized, Sampleable, Support};
+use crate::traits::{
+    ContinuousDistr, HasDensity, Mean, Mode, Parameterized, Sampleable, Support,
+};
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
 use std::f64::consts::LN_2;
@@ -91,14 +93,16 @@ impl InvWishart {
     /// Creates a new `InvWishart` without checking whether the parameters are
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(inv_scale: DMatrix<f64>, df: usize) -> Self {
+    #[must_use]
+    pub fn new_unchecked(inv_scale: DMatrix<f64>, df: usize) -> Self {
         InvWishart { inv_scale, df }
     }
 
     /// Create an Inverse Wishart distribution, W<sup>-1</sup>(**I**<sup>p</sup>,
     /// p)
     #[inline]
-    #[must_use] pub fn identity(dims: usize) -> Self {
+    #[must_use]
+    pub fn identity(dims: usize) -> Self {
         InvWishart {
             inv_scale: DMatrix::identity(dims, dims),
             df: dims,
@@ -106,19 +110,22 @@ impl InvWishart {
     }
 
     #[inline]
-    #[must_use] pub fn ndims(&self) -> usize {
+    #[must_use]
+    pub fn ndims(&self) -> usize {
         self.inv_scale.nrows()
     }
 
     /// Get a reference to the inverse scale parameter
     #[inline]
-    #[must_use] pub fn inv_scale(&self) -> &DMatrix<f64> {
+    #[must_use]
+    pub fn inv_scale(&self) -> &DMatrix<f64> {
         &self.inv_scale
     }
 
     /// Get the degrees of freedom
     #[inline]
-    #[must_use] pub fn df(&self) -> usize {
+    #[must_use]
+    pub fn df(&self) -> usize {
         self.df
     }
 
@@ -252,10 +259,9 @@ impl fmt::Display for InvWishartError {
                 "df, the degrees of freedom must be greater than or \
                     equal to the number of dimensions, but {df} < {ndims}"
             ),
-            Self::ScaleMatrixNotSquare { nrows, ncols } => write!(
-                f,
-                "The scale matrix is not square: {nrows} x {ncols}"
-            ),
+            Self::ScaleMatrixNotSquare { nrows, ncols } => {
+                write!(f, "The scale matrix is not square: {nrows} x {ncols}")
+            }
         }
     }
 }

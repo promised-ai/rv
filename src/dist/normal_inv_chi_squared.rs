@@ -128,7 +128,8 @@ impl NormalInvChiSquared {
     /// Creates a new `NormalInvChiSquared` without checking whether the
     /// parameters are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(m: f64, k: f64, v: f64, s2: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(m: f64, k: f64, v: f64, s2: f64) -> Self {
         NormalInvChiSquared {
             m,
             k,

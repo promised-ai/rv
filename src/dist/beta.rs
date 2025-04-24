@@ -4,7 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::BetaSuffStat;
 use crate::impl_display;
-use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, Kurtosis, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, SuffStat, Support, Variance};
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, Kurtosis, Mean,
+    Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, SuffStat,
+    Support, Variance,
+};
 use rand::Rng;
 use special::Beta as _;
 use special::Gamma as _;
@@ -131,7 +135,8 @@ impl Beta {
 
     /// Creates a new Beta without checking whether the parameters are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(alpha: f64, beta: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(alpha: f64, beta: f64) -> Self {
         Beta {
             alpha,
             beta,
@@ -149,7 +154,8 @@ impl Beta {
     /// assert_eq!(beta, Beta::new(1.0, 1.0).unwrap());
     /// ```
     #[inline]
-    #[must_use] pub fn uniform() -> Self {
+    #[must_use]
+    pub fn uniform() -> Self {
         Beta {
             alpha: 1.0,
             beta: 1.0,
@@ -168,7 +174,8 @@ impl Beta {
     /// assert_eq!(beta, Beta::new(0.5, 0.5).unwrap());
     /// ```
     #[inline]
-    #[must_use] pub fn jeffreys() -> Self {
+    #[must_use]
+    pub fn jeffreys() -> Self {
         Beta {
             alpha: 0.5,
             beta: 0.5,

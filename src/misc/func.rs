@@ -48,7 +48,8 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
 ///
 /// assert!((ln_binom(4.0, 2.0) - 6.0_f64.ln()) < 1E-12);
 /// ```
-#[must_use] pub fn ln_binom(n: f64, k: f64) -> f64 {
+#[must_use]
+pub fn ln_binom(n: f64, k: f64) -> f64 {
     ln_gammafn(n + 1.0) - ln_gammafn(k + 1.0) - ln_gammafn(n - k + 1.0)
 }
 
@@ -67,7 +68,8 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
 /// This function is a wrapper around `special::Gamma::gamma`.. The name `gamma`
 /// is reserved for possible future use in standard libraries. This function is
 /// purely to avoid warnings resulting from this.
-#[must_use] pub fn gammafn(x: f64) -> f64 {
+#[must_use]
+pub fn gammafn(x: f64) -> f64 {
     Gamma::gamma(x)
 }
 
@@ -87,11 +89,13 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
 /// This function is a wrapper around `special::Gamma::ln_gamma`.. The name
 /// `ln_gamma` is reserved for possible future use in standard libraries. This
 /// function is purely to avoid warnings resulting from this.
-#[must_use] pub fn ln_gammafn(x: f64) -> f64 {
+#[must_use]
+pub fn ln_gammafn(x: f64) -> f64 {
     Gamma::ln_gamma(x).0
 }
 
-#[must_use] pub fn log1pexp(x: f64) -> f64 {
+#[must_use]
+pub fn log1pexp(x: f64) -> f64 {
     if x <= -37.0 {
         f64::exp(x)
     } else if x <= 18.0 {
@@ -103,7 +107,8 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
     }
 }
 
-#[must_use] pub fn logaddexp(x: f64, y: f64) -> f64 {
+#[must_use]
+pub fn logaddexp(x: f64, y: f64) -> f64 {
     if x > y {
         x + log1pexp(y - x)
     } else {
@@ -240,7 +245,9 @@ pub fn pflips(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
     (0..n)
         .map(|_| {
             let r = rng.sample(u) * scale;
-            if let Some(ix) = catflip(&cws, r) { ix } else {
+            if let Some(ix) = catflip(&cws, r) {
+                ix
+            } else {
                 let wsvec = weights.to_vec();
                 panic!("Could not draw from {wsvec:?}")
             }
@@ -311,7 +318,9 @@ pub fn ln_pflips<R: Rng>(
     (0..n)
         .map(|_| {
             let r = rng.sample(Open01);
-            if let Some(ix) = catflip(&cws, r) { ix } else {
+            if let Some(ix) = catflip(&cws, r) {
+                ix
+            } else {
                 let wsvec = ln_weights.to_vec();
                 panic!("Could not draw from {wsvec:?}")
             }
@@ -379,7 +388,8 @@ pub fn argmax<T: PartialOrd>(xs: &[T]) -> Vec<usize> {
 ///
 /// * `p` - Positive integer degrees of freedom
 /// * `a` - The number for which to compute the multivariate gamma
-#[must_use] pub fn lnmv_gamma(p: usize, a: f64) -> f64 {
+#[must_use]
+pub fn lnmv_gamma(p: usize, a: f64) -> f64 {
     let pf = p as f64;
     let a0 = pf * (pf - 1.0) / 4.0 * LN_PI;
     (1..=p).fold(a0, |acc, j| acc + ln_gammafn(a + (1.0 - j as f64) / 2.0))
@@ -391,7 +401,8 @@ pub fn argmax<T: PartialOrd>(xs: &[T]) -> Vec<usize> {
 ///
 /// * `p` - Positive integer degrees of freedom
 /// * `a` - The number for which to compute the multivariate gamma
-#[must_use] pub fn mvgamma(p: usize, a: f64) -> f64 {
+#[must_use]
+pub fn mvgamma(p: usize, a: f64) -> f64 {
     lnmv_gamma(p, a).exp()
 }
 
@@ -404,7 +415,8 @@ pub fn argmax<T: PartialOrd>(xs: &[T]) -> Vec<usize> {
 /// Cook](https://www.johndcook.com/blog/csharp_log_factorial/)
 ///
 ///
-#[must_use] pub fn ln_fact(n: usize) -> f64 {
+#[must_use]
+pub fn ln_fact(n: usize) -> f64 {
     if n < 254 {
         LN_FACT[n]
     } else {

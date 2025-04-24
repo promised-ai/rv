@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::consts::LN_PI;
 use crate::impl_display;
-use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Median, Mode, Parameterized, Sampleable, Scalable, Shiftable, Support};
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Median, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Support,
+};
 use rand::Rng;
 use rand_distr::Cauchy as RCauchy;
 use std::f64::consts::{FRAC_1_PI, PI};
@@ -83,7 +86,8 @@ impl Cauchy {
 
     /// Create a new Cauchy without checking whether the parameters are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(loc: f64, scale: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(loc: f64, scale: f64) -> Self {
         Cauchy { loc, scale }
     }
 
@@ -97,7 +101,8 @@ impl Cauchy {
     /// assert_eq!(c.loc(), 0.1);
     /// ```
     #[inline]
-    #[must_use] pub fn loc(&self) -> f64 {
+    #[must_use]
+    pub fn loc(&self) -> f64 {
         self.loc
     }
 
@@ -149,7 +154,8 @@ impl Cauchy {
     /// assert_eq!(c.scale(), 1.0);
     /// ```
     #[inline]
-    #[must_use] pub fn scale(&self) -> f64 {
+    #[must_use]
+    pub fn scale(&self) -> f64 {
         self.scale
     }
 

@@ -3,7 +3,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Kurtosis, Mean, Median, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support, Variance};
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Kurtosis, Mean,
+    Median, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use std::f64;
 use std::fmt;
@@ -133,7 +137,8 @@ impl Uniform {
     /// Creates a new Uniform without checking whether the parameters are
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(a: f64, b: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(a: f64, b: f64) -> Self {
         Uniform {
             a,
             b,

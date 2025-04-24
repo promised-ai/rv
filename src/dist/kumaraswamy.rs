@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use crate::consts::EULER_MASCERONI;
 use crate::impl_display;
 use crate::misc::gammafn;
-use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Mean, Median, Mode, Parameterized, Sampleable, Scalable, Shiftable, Support};
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Mean, Median, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Support,
+};
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;
@@ -149,7 +152,8 @@ impl Kumaraswamy {
     /// Creates a new Kumaraswamy without checking whether the parameters are
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(a: f64, b: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(a: f64, b: f64) -> Self {
         Kumaraswamy {
             a,
             b,
@@ -167,7 +171,8 @@ impl Kumaraswamy {
     /// assert_eq!(kuma, Kumaraswamy::new(1.0, 1.0).unwrap());
     /// ```
     #[inline]
-    #[must_use] pub fn uniform() -> Self {
+    #[must_use]
+    pub fn uniform() -> Self {
         Kumaraswamy {
             a: 1.0,
             b: 1.0,

@@ -86,7 +86,8 @@ where
         .sum::<f64>()
 }
 
-#[must_use] pub fn gauss_legendre_table(n: usize) -> (Vec<f64>, Vec<f64>) {
+#[must_use]
+pub fn gauss_legendre_table(n: usize) -> (Vec<f64>, Vec<f64>) {
     let ref_root: &[f64] = match n {
         2 => &LEGENDRE_ROOT_2[..],
         3 => &LEGENDRE_ROOT_3[..],

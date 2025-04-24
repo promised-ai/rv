@@ -39,7 +39,8 @@ impl RBFKernel {
     }
 
     /// Create a new `RBFKernel` without checking parameters
-    #[must_use] pub fn new_unchecked(length_scale: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(length_scale: f64) -> Self {
         Self { length_scale }
     }
 }

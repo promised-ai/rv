@@ -77,18 +77,21 @@ impl fmt::Display for PartitionError {
 
 impl Partition {
     /// Empty partition
-    #[must_use] pub fn new() -> Partition {
+    #[must_use]
+    pub fn new() -> Partition {
         Partition {
             z: vec![],
             counts: vec![],
         }
     }
 
-    #[must_use] pub fn new_unchecked(z: Vec<usize>, counts: Vec<usize>) -> Self {
+    #[must_use]
+    pub fn new_unchecked(z: Vec<usize>, counts: Vec<usize>) -> Self {
         Partition { z, counts }
     }
 
-    #[must_use] pub fn z(&self) -> &Vec<usize> {
+    #[must_use]
+    pub fn z(&self) -> &Vec<usize> {
         &self.z
     }
 
@@ -96,7 +99,8 @@ impl Partition {
         &mut self.z
     }
 
-    #[must_use] pub fn counts(&self) -> &Vec<usize> {
+    #[must_use]
+    pub fn counts(&self) -> &Vec<usize> {
         &self.counts
     }
 
@@ -208,16 +212,19 @@ impl Partition {
     /// assert_eq!(part.k(), 3);
     /// assert_eq!(*part.counts(), vec![2, 1, 1]);
     /// ```
-    #[must_use] pub fn k(&self) -> usize {
+    #[must_use]
+    pub fn k(&self) -> usize {
         self.counts.len()
     }
 
     /// Returns the number items
-    #[must_use] pub fn len(&self) -> usize {
+    #[must_use]
+    pub fn len(&self) -> usize {
         self.z.len()
     }
 
-    #[must_use] pub fn is_empty(&self) -> bool {
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
@@ -232,7 +239,8 @@ impl Partition {
     ///
     /// assert_eq!(weights, vec![0.5, 0.25, 0.25]);
     /// ```
-    #[must_use] pub fn weights(&self) -> Vec<f64> {
+    #[must_use]
+    pub fn weights(&self) -> Vec<f64> {
         let n = self.len() as f64;
         self.counts.iter().map(|&ct| (ct as f64) / n).collect()
     }

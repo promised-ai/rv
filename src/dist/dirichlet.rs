@@ -5,7 +5,9 @@ use serde::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::misc::ln_gammafn;
 use crate::misc::vec_to_string;
-use crate::traits::{ContinuousDistr, HasDensity, Parameterized, Sampleable, Support};
+use crate::traits::{
+    ContinuousDistr, HasDensity, Parameterized, Sampleable, Support,
+};
 use rand::Rng;
 use rand_distr::Gamma as RGamma;
 use std::fmt;
@@ -94,7 +96,8 @@ impl SymmetricDirichlet {
     /// Create a new `SymmetricDirichlet` without checking whether the parameters
     /// are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(alpha: f64, k: usize) -> Self {
+    #[must_use]
+    pub fn new_unchecked(alpha: f64, k: usize) -> Self {
         Self {
             alpha,
             k,
@@ -313,7 +316,8 @@ impl Dirichlet {
     /// Creates a new Dirichlet without checking whether the parameters are
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(alphas: Vec<f64>) -> Self {
+    #[must_use]
+    pub fn new_unchecked(alphas: Vec<f64>) -> Self {
         Dirichlet { alphas }
     }
 
@@ -384,13 +388,15 @@ impl Dirichlet {
 
     /// The length of `alphas` / the number of categories
     #[inline]
-    #[must_use] pub fn k(&self) -> usize {
+    #[must_use]
+    pub fn k(&self) -> usize {
         self.alphas.len()
     }
 
     /// Get a reference to the weights vector, `alphas`
     #[inline]
-    #[must_use] pub fn alphas(&self) -> &Vec<f64> {
+    #[must_use]
+    pub fn alphas(&self) -> &Vec<f64> {
         &self.alphas
     }
 }

@@ -3,7 +3,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, Kurtosis, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support, Variance};
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, Kurtosis, Mean, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use std::f64;
 use std::fmt;
@@ -100,7 +104,8 @@ impl Pareto {
 
     /// Creates a new Pareto without checking whether the parameters are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(shape: f64, scale: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(shape: f64, scale: f64) -> Self {
         Pareto { shape, scale }
     }
 
@@ -114,7 +119,8 @@ impl Pareto {
     /// assert_eq!(pareto.shape(), 1.0);
     /// ```
     #[inline]
-    #[must_use] pub fn shape(&self) -> f64 {
+    #[must_use]
+    pub fn shape(&self) -> f64 {
         self.shape
     }
 
@@ -171,7 +177,8 @@ impl Pareto {
     /// assert_eq!(pareto.scale(), 2.0);
     /// ```
     #[inline]
-    #[must_use] pub fn scale(&self) -> f64 {
+    #[must_use]
+    pub fn scale(&self) -> f64 {
         self.scale
     }
 

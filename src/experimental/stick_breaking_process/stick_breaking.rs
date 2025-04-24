@@ -2,7 +2,9 @@ use crate::experimental::stick_breaking_process::StickBreakingDiscrete;
 use crate::experimental::stick_breaking_process::StickBreakingDiscreteSuffStat;
 use crate::experimental::stick_breaking_process::StickSequence;
 use crate::prelude::*;
-use crate::traits::{ConjugatePrior, HasDensity, HasSuffStat, Sampleable, SuffStat};
+use crate::traits::{
+    ConjugatePrior, HasDensity, HasSuffStat, Sampleable, SuffStat,
+};
 use itertools::Either;
 use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
@@ -573,7 +575,9 @@ mod tests {
         // Chi-square test is not exact, so we'll trim to only consider cases
         // where expected count is at least 5.
         let expected_counts = (0..)
-            .map(|j| post.m(&DataOrSuffStat::Data(&[j])) * f64::from(num_samples))
+            .map(|j| {
+                post.m(&DataOrSuffStat::Data(&[j])) * f64::from(num_samples)
+            })
             .take_while(|x| *x > 5.0);
 
         let ts = counts

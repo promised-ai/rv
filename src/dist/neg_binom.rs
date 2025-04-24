@@ -1,6 +1,9 @@
 use crate::dist::Poisson;
 use crate::misc::ln_binom;
-use crate::traits::{Cdf, DiscreteDistr, HasDensity, Kurtosis, Mean, Parameterized, Sampleable, Skewness, Support, Variance};
+use crate::traits::{
+    Cdf, DiscreteDistr, HasDensity, Kurtosis, Mean, Parameterized, Sampleable,
+    Skewness, Support, Variance,
+};
 use rand::Rng;
 use std::fmt;
 use std::sync::OnceLock;
@@ -92,7 +95,8 @@ impl NegBinomial {
 
     /// Create a new Negative Binomial distribution without input validation.
     #[inline]
-    #[must_use] pub fn new_unchecked(r: f64, p: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(r: f64, p: f64) -> Self {
         NegBinomial {
             r,
             p,

@@ -49,7 +49,8 @@ impl MaternKernel {
     }
 
     /// Create a new `MaternKernel` with `nu` and `length_scale` without checking inputs.
-    #[must_use] pub fn new_unchecked(nu: f64, length_scale: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(nu: f64, length_scale: f64) -> Self {
         Self { nu, length_scale }
     }
 

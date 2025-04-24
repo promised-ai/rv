@@ -66,7 +66,8 @@ impl _Inner {
         }
     }
 
-    #[must_use] pub fn ccdf(&self) -> &[f64] {
+    #[must_use]
+    pub fn ccdf(&self) -> &[f64] {
         &self.ccdf
     }
 

@@ -20,14 +20,16 @@ pub struct BernoulliSuffStat {
 impl BernoulliSuffStat {
     /// Create a new Bernoulli sufficient statistic
     #[inline]
-    #[must_use] pub fn new() -> Self {
+    #[must_use]
+    pub fn new() -> Self {
         BernoulliSuffStat { n: 0, k: 0 }
     }
 
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
-    #[must_use] pub fn from_parts_unchecked(n: usize, k: usize) -> Self {
+    #[must_use]
+    pub fn from_parts_unchecked(n: usize, k: usize) -> Self {
         BernoulliSuffStat { n, k }
     }
 
@@ -46,7 +48,8 @@ impl BernoulliSuffStat {
     /// assert_eq!(stat.n(), 2);
     /// ```
     #[inline]
-    #[must_use] pub fn n(&self) -> usize {
+    #[must_use]
+    pub fn n(&self) -> usize {
         self.n
     }
 
@@ -65,7 +68,8 @@ impl BernoulliSuffStat {
     /// assert_eq!(stat.k(), 1);
     /// ```
     #[inline]
-    #[must_use] pub fn k(&self) -> usize {
+    #[must_use]
+    pub fn k(&self) -> usize {
         self.k
     }
 }

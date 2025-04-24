@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::dist::Uniform;
 use crate::impl_display;
-use crate::traits::{Cdf, DiscreteDistr, Entropy, HasDensity, Kurtosis, Mean, Parameterized, Sampleable, Skewness, Support, Variance};
+use crate::traits::{
+    Cdf, DiscreteDistr, Entropy, HasDensity, Kurtosis, Mean, Parameterized,
+    Sampleable, Skewness, Support, Variance,
+};
 use num::{Bounded, FromPrimitive, Integer, Saturating, ToPrimitive, Unsigned};
 use rand::Rng;
 use std::fmt;
@@ -101,7 +104,8 @@ impl Geometric {
     /// Creates a new Geometric without checking whether the parameter is
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(p: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(p: f64) -> Self {
         Geometric {
             p,
             ln_p: OnceLock::new(),

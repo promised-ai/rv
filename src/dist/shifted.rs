@@ -1,5 +1,9 @@
 use crate::data::ShiftedSuffStat;
-use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, InverseCdf, Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Shiftable, Skewness, Support, Variance};
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, InverseCdf,
+    Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Shiftable,
+    Skewness, Support, Variance,
+};
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};

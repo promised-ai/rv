@@ -23,7 +23,8 @@ pub struct GaussianSuffStat {
 
 impl GaussianSuffStat {
     #[inline]
-    #[must_use] pub fn new() -> Self {
+    #[must_use]
+    pub fn new() -> Self {
         GaussianSuffStat {
             n: 0,
             mean: 0.0,
@@ -34,37 +35,43 @@ impl GaussianSuffStat {
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
-    #[must_use] pub fn from_parts_unchecked(n: usize, mean: f64, sx: f64) -> Self {
+    #[must_use]
+    pub fn from_parts_unchecked(n: usize, mean: f64, sx: f64) -> Self {
         GaussianSuffStat { n, mean, sx }
     }
 
     /// Get the number of observations
     #[inline]
-    #[must_use] pub fn n(&self) -> usize {
+    #[must_use]
+    pub fn n(&self) -> usize {
         self.n
     }
 
     /// Get the sample mean
     #[inline]
-    #[must_use] pub fn mean(&self) -> f64 {
+    #[must_use]
+    pub fn mean(&self) -> f64 {
         self.mean
     }
 
     /// Sum of `x`
     #[inline]
-    #[must_use] pub fn sum_x(&self) -> f64 {
+    #[must_use]
+    pub fn sum_x(&self) -> f64 {
         self.mean * self.n as f64
     }
 
     /// Sum of `x^2`
     #[inline]
-    #[must_use] pub fn sum_x_sq(&self) -> f64 {
+    #[must_use]
+    pub fn sum_x_sq(&self) -> f64 {
         let nf = self.n as f64;
         (self.mean() * self.mean()).mul_add(nf, self.sx)
     }
 
     #[inline]
-    #[must_use] pub fn sum_sq_diff(&self) -> f64 {
+    #[must_use]
+    pub fn sum_sq_diff(&self) -> f64 {
         self.sx
     }
 }

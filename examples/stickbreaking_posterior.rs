@@ -3,7 +3,9 @@ fn main() {
     {
         use itertools::Either;
         use peroxide::fuga::Statistics;
-        use rv::experimental::stick_breaking_process::{BreakSequence, StickBreaking, StickBreakingDiscrete, StickSequence};
+        use rv::experimental::stick_breaking_process::{
+            BreakSequence, StickBreaking, StickBreakingDiscrete, StickSequence,
+        };
         use rv::prelude::*;
 
         let mut rng = rand::thread_rng();

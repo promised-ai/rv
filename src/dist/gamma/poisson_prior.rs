@@ -4,7 +4,10 @@ use crate::data::PoissonSuffStat;
 use crate::dist::poisson::PoissonError;
 use crate::dist::{Gamma, Poisson};
 use crate::misc::ln_gammafn;
-use crate::traits::{ConjugatePrior, ContinuousDistr, DataOrSuffStat, HasDensity, HasSuffStat, Mean, Sampleable, SuffStat, Support};
+use crate::traits::{
+    ConjugatePrior, ContinuousDistr, DataOrSuffStat, HasDensity, HasSuffStat,
+    Mean, Sampleable, SuffStat, Support,
+};
 
 impl HasDensity<Poisson> for Gamma {
     fn ln_f(&self, x: &Poisson) -> f64 {

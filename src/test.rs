@@ -242,9 +242,7 @@ where
         let errors = self.errs();
         errors.iter().try_for_each(|(name, err)| {
             if *err > max_err {
-                Err(format!(
-                    "P-P Error {name} ({err}) exceeds max ({max_err})"
-                ))
+                Err(format!("P-P Error {name} ({err}) exceeds max ({max_err})"))
             } else {
                 Ok(())
             }

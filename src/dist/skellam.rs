@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use crate::dist::Poisson;
 use crate::impl_display;
 use crate::misc::bessel::bessel_iv;
-use crate::traits::{DiscreteDistr, HasDensity, Kurtosis, Mean, Parameterized, Sampleable, Skewness, Support, Variance};
+use crate::traits::{
+    DiscreteDistr, HasDensity, Kurtosis, Mean, Parameterized, Sampleable,
+    Skewness, Support, Variance,
+};
 use lru::LruCache;
 use rand::Rng;
 use std::{cell::RefCell, num::NonZeroUsize};
@@ -97,7 +100,8 @@ impl Skellam {
 
     /// Creates a new Skellam without checking whether the parameters are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(mu_1: f64, mu_2: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(mu_1: f64, mu_2: f64) -> Self {
         Skellam {
             mu_1,
             mu_2,

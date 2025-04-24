@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_binom;
-use crate::traits::{Cdf, DiscreteDistr, HasDensity, Kurtosis, Mean, Parameterized, Sampleable, Skewness, SuffStat, Support, Variance};
+use crate::traits::{
+    Cdf, DiscreteDistr, HasDensity, Kurtosis, Mean, Parameterized, Sampleable,
+    Skewness, SuffStat, Support, Variance,
+};
 use rand::Rng;
 use std::f64;
 use std::fmt;
@@ -109,7 +112,8 @@ impl Binomial {
     /// Creates a new Binomial without checking whether the parameters are
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(n: u64, p: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(n: u64, p: f64) -> Self {
         Binomial { n, p }
     }
 
@@ -123,7 +127,8 @@ impl Binomial {
     /// assert_eq!(binom.p(), 0.5);
     /// ```
     #[inline]
-    #[must_use] pub fn uniform(n: u64) -> Self {
+    #[must_use]
+    pub fn uniform(n: u64) -> Self {
         Binomial::new_unchecked(n, 0.5)
     }
 
@@ -137,7 +142,8 @@ impl Binomial {
     /// assert_eq!(binom, Binomial::new(11, 0.5).unwrap());
     /// ```
     #[inline]
-    #[must_use] pub fn n(&self) -> u64 {
+    #[must_use]
+    pub fn n(&self) -> u64 {
         self.n
     }
 
@@ -190,7 +196,8 @@ impl Binomial {
     /// assert_eq!(binom.p(), 0.2);
     /// ```
     #[inline]
-    #[must_use] pub fn p(&self) -> f64 {
+    #[must_use]
+    pub fn p(&self) -> f64 {
         self.p
     }
 
@@ -249,7 +256,8 @@ impl Binomial {
     /// assert_eq!(binom.q(), 0.8);
     /// ```
     #[inline]
-    #[must_use] pub fn q(&self) -> f64 {
+    #[must_use]
+    pub fn q(&self) -> f64 {
         1.0 - self.p
     }
 }
