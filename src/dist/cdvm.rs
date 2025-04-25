@@ -2,6 +2,7 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::consts::TWO_PI;
 use crate::data::CdvmSuffStat;
 use crate::impl_display;
 use crate::misc::func::LogSumExp;
@@ -10,9 +11,7 @@ use crate::traits::{
     HasDensity, HasSuffStat, Mean, Mode, Parameterized, Sampleable, Support,
 };
 use rand::Rng;
-use std::f64;
 use std::fmt;
-use std::sync::OnceLock;
 
 // TODO: This can be *much* more efficient if we replace the modulus with
 // something like this. In particular, the suffstat would only need quick
@@ -51,33 +50,37 @@ pub struct Cdvm {
     mu: f64,
 
     /// concentration parameter (κ)
-    kappa: f64,
+    k: f64,
 
     /// Cached log-normalization constant
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    log_norm_const: OnceLock<f64>,
+    log_norm_const: f64,
 
     /// Cached 2π/m
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    twopi_over_m: OnceLock<f64>,
+    twopi_over_m: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CdvmParameters {
     pub modulus: usize,
     pub mu: f64,
-    pub kappa: f64,
+    pub k: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum CdvmError {
+    /// mu must be finite
+    MuNotFinite { mu: f64 },
+
+    /// k must be finite
+    KNotFinite { k: f64 },
+
+    /// k must be non-negative
+    KNegative { k: f64 },
+
     /// The number of categories is less than 2
     InvalidCategories { modulus: usize },
-
-    /// Kappa must be non-negative
-    KappaNegative { kappa: f64 },
 }
 
 impl Cdvm {
@@ -85,66 +88,124 @@ impl Cdvm {
     ///
     /// # Arguments
     /// * `mu` - mean direction (must be in [0, modulus))
-    /// * `kappa` - concentration (must be non-negative)
+    /// * `k` - concentration (must be non-negative)
     /// * `modulus` - Number of categories
-    pub fn new(mu: f64, kappa: f64, modulus: usize) -> Result<Self, CdvmError> {
+    pub fn new(modulus: usize, mu: f64, k: f64) -> Result<Self, CdvmError> {
         // Validate parameters
+        if !mu.is_finite() {
+            return Err(CdvmError::MuNotFinite { mu });
+        }
+        if !k.is_finite() {
+            return Err(CdvmError::KNotFinite { k });
+        }
+        if k < 0.0 {
+            return Err(CdvmError::KNegative { k });
+        }
         if modulus < 2 {
             return Err(CdvmError::InvalidCategories { modulus });
         }
-        if kappa < 0.0 {
-            return Err(CdvmError::KappaNegative { kappa });
-        }
 
-        Ok(Cdvm::new_unchecked(mu, kappa, modulus))
+        Ok(Cdvm::new_unchecked(modulus, mu, k))
+    }
+
+    // Test that dependent fields are properly set
+    // This is just for testing purposes
+    #[must_use]
+    pub fn is_consistent(&self) -> bool {
+        let other = Cdvm::new(self.modulus, self.mu, self.k).unwrap();
+        self.mu == other.mu
+            && self.k == other.k
+            && self.modulus == other.modulus
+            && self.log_norm_const == other.log_norm_const
+            && self.twopi_over_m == other.twopi_over_m
     }
 
     /// Creates a new CDVM without checking whether the parameters are valid.
     #[inline]
     #[must_use]
-    pub fn new_unchecked(mu: f64, kappa: f64, modulus: usize) -> Self {
+    pub fn new_unchecked(modulus: usize, mu: f64, k: f64) -> Self {
+        let log_norm_const = Cdvm::compute_log_norm_const(modulus, mu, k);
+
         Cdvm {
             modulus,
             mu,
-            kappa,
-            log_norm_const: OnceLock::new(),
-            twopi_over_m: OnceLock::new(),
+            k,
+            log_norm_const,
+            twopi_over_m: TWO_PI / modulus as f64,
         }
     }
 
-    fn cdvm_kernel(&self, x: usize) -> f64 {
-        self.kappa * ((self.twopi_over_m() * (x as f64 - self.mu)).cos())
+    fn cdvm_kernel(two_pi_over_m: f64, mu: f64, k: f64, x: usize) -> f64 {
+        k * ((two_pi_over_m * (x as f64 - mu)).cos())
+    }
+
+    fn compute_log_norm_const(modulus: usize, mu: f64, k: f64) -> f64 {
+        let two_pi_over_m = TWO_PI / modulus as f64;
+        (0..modulus)
+            .map(|x| Cdvm::cdvm_kernel(two_pi_over_m, mu, k, x))
+            .logsumexp()
     }
 
     /// Get the number of categories
+    #[must_use]
     pub fn modulus(&self) -> usize {
         self.modulus
     }
 
     /// Get the von Mises mean direction
+    #[must_use]
     pub fn mu(&self) -> f64 {
         self.mu
     }
 
     /// Get the von Mises concentration parameter
-    pub fn kappa(&self) -> f64 {
-        self.kappa
+    #[must_use]
+    pub fn k(&self) -> f64 {
+        self.k
     }
 
     /// Get the cached 2π/m
+    #[must_use]
     pub fn twopi_over_m(&self) -> f64 {
-        *self
-            .twopi_over_m
-            .get_or_init(|| 2.0 * std::f64::consts::PI / self.modulus as f64)
+        self.twopi_over_m
     }
 
     /// Compute or fetch cached normalization constant
     fn log_norm_const(&self) -> f64 {
-        *self.log_norm_const.get_or_init(|| {
-            // For CDVM, the normalization constant is just the von Mises normalizer
-            // since the categorical probabilities already sum to 1
-            (0..self.modulus).map(|x| self.cdvm_kernel(x)).logsumexp()
-        })
+        self.log_norm_const
+    }
+
+    /// Set the mean direction
+    pub fn set_mu(&mut self, mu: f64) -> Result<(), CdvmError> {
+        if !mu.is_finite() {
+            return Err(CdvmError::MuNotFinite { mu });
+        }
+        self.set_mu_unchecked(mu);
+        Ok(())
+    }
+
+    pub fn set_mu_unchecked(&mut self, mu: f64) {
+        self.mu = mu;
+        self.log_norm_const =
+            Cdvm::compute_log_norm_const(self.modulus, mu, self.k);
+    }
+
+    /// Set the concentration parameter
+    pub fn set_k(&mut self, k: f64) -> Result<(), CdvmError> {
+        if !k.is_finite() {
+            return Err(CdvmError::KNotFinite { k });
+        }
+        if k < 0.0 {
+            return Err(CdvmError::KNegative { k });
+        }
+        self.set_k_unchecked(k);
+        Ok(())
+    }
+
+    pub fn set_k_unchecked(&mut self, k: f64) {
+        self.k = k;
+        self.log_norm_const =
+            Cdvm::compute_log_norm_const(self.modulus, self.mu, k);
     }
 }
 
@@ -155,12 +216,12 @@ impl Parameterized for Cdvm {
         CdvmParameters {
             modulus: self.modulus,
             mu: self.mu,
-            kappa: self.kappa,
+            k: self.k,
         }
     }
 
     fn from_params(params: Self::Parameters) -> Self {
-        Self::new(params.mu, params.kappa, params.modulus).unwrap()
+        Self::new(params.modulus, params.mu, params.k).unwrap()
     }
 }
 
@@ -168,7 +229,7 @@ impl PartialEq for Cdvm {
     fn eq(&self, other: &Cdvm) -> bool {
         self.modulus == other.modulus
             && self.mu == other.mu
-            && self.kappa == other.kappa
+            && self.k == other.k
     }
 }
 
@@ -176,7 +237,7 @@ impl From<&Cdvm> for String {
     fn from(cdvm: &Cdvm) -> String {
         format!(
             "CDVM(modulus: {}, μ: {}, κ: {})",
-            cdvm.modulus, cdvm.mu, cdvm.kappa
+            cdvm.modulus, cdvm.mu, cdvm.k
         )
     }
 }
@@ -200,11 +261,17 @@ impl std::error::Error for CdvmError {}
 impl fmt::Display for CdvmError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::MuNotFinite { mu } => {
+                write!(f, "mu ({mu}) must be finite")
+            }
+            Self::KNotFinite { k } => {
+                write!(f, "k ({k}) must be finite")
+            }
+            Self::KNegative { k } => {
+                write!(f, "k ({k}) must be non-negative")
+            }
             Self::InvalidCategories { modulus } => {
                 write!(f, "number of categories ({modulus}) must be at least 2")
-            }
-            Self::KappaNegative { kappa } => {
-                write!(f, "kappa ({kappa}) must be non-negative")
             }
         }
     }
@@ -212,7 +279,8 @@ impl fmt::Display for CdvmError {
 
 impl HasDensity<usize> for Cdvm {
     fn ln_f(&self, x: &usize) -> f64 {
-        self.cdvm_kernel(*x) - self.log_norm_const()
+        Cdvm::cdvm_kernel(self.twopi_over_m(), self.mu, self.k, *x)
+            - self.log_norm_const()
     }
 }
 
@@ -242,7 +310,7 @@ impl HasSuffStat<usize> for Cdvm {
         // TODO: Should we cache twopimu_over_m.cos() and twopimu_over_m.sin()?
 
         let (sin_twopimu_over_m, cos_twopimu_over_m) = twopimu_over_m.sin_cos();
-        self.kappa.mul_add(
+        self.k.mul_add(
             stat.sum_cos().mul_add(
                 cos_twopimu_over_m,
                 stat.sum_sin() * sin_twopimu_over_m,
@@ -262,24 +330,24 @@ mod tests {
     #[test]
     fn new_should_validate_parameters() {
         // Valid parameters should work
-        assert!(Cdvm::new(1.5, 1.0, 3).is_ok());
+        assert!(Cdvm::new(3, 1.0, 1.5).is_ok());
 
         // Invalid modulus should fail
         assert!(matches!(
-            Cdvm::new(1.5, 1.0, 1),
+            Cdvm::new(1, 1.0, 1.5),
             Err(CdvmError::InvalidCategories { modulus: 1 })
         ));
 
-        // Invalid kappa should fail
+        // Invalid k should fail
         assert!(matches!(
-            Cdvm::new(1.5, -1.0, 3),
-            Err(CdvmError::KappaNegative { kappa: -1.0 })
+            Cdvm::new(3, 1.0, -1.5),
+            Err(CdvmError::KNegative { k: -1.5 })
         ));
     }
 
     #[test]
     fn supports_correct_range() {
-        let cdvm = Cdvm::new(1.5, 1.0, 4).unwrap();
+        let cdvm = Cdvm::new(4, 1.0, 1.5).unwrap();
 
         assert!(cdvm.supports(&0));
         assert!(cdvm.supports(&1));
@@ -293,12 +361,12 @@ mod tests {
         fn ln_f_symmetry(
             m in 3..100_usize,
             mu in 0.0..100_f64,
-            kappa in 0.1..50.0_f64,
+            k in 0.1..50.0_f64,
             x in 0..100_usize
         ) {
             let mu = mu % (m as f64);
-            let cdvm1 = Cdvm::new(mu, kappa, m).unwrap();
-            let cdvm2 = Cdvm::new((m as f64) - mu, kappa, m).unwrap();
+            let cdvm1 = Cdvm::new(m, mu, k).unwrap();
+            let cdvm2 = Cdvm::new(m, (m as f64) - mu, k).unwrap();
 
             let x1 = x % m;
             let x2 = m - x1;
@@ -306,7 +374,7 @@ mod tests {
             let lnf1 = cdvm1.ln_f(&x1);
             let lnf2 = cdvm2.ln_f(&x2);
             prop_assert!((lnf1 - lnf2).abs() < TOL,
-                "ln_f not symmetric for m={}, mu={}, kappa={}, x={}, lnf1={}, lnf2={}", m, mu, kappa, x, lnf1, lnf2);
+                "ln_f not symmetric for m={}, mu={}, k={}, x={}, lnf1={}, lnf2={}", m, mu, k, x, lnf1, lnf2);
         }
     }
 
@@ -315,14 +383,14 @@ mod tests {
         fn density_is_normalized(
             m in 3..100_usize,
             mu in 0.0..100_f64,
-            kappa in 0.1..50.0_f64,
+            k in 0.1..50.0_f64,
         ) {
-            let cdvm = Cdvm::new(mu, kappa, m).unwrap();
+            let cdvm = Cdvm::new(m, mu, k).unwrap();
 
             // For the density to be normalized, the logsum should be zero
             let logsum = (0..m).map(|x| cdvm.ln_f(&x)).logsumexp();
             prop_assert!((logsum).abs() < TOL,
-                "density not normalized for m={}, mu={}, kappa={}, logsum={}", m, mu, kappa, logsum);
+                "density not normalized for m={}, mu={}, k={}, logsum={}", m, mu, k, logsum);
         }
     }
 
@@ -331,20 +399,20 @@ mod tests {
         fn wrap_around_invariance(
             m in 3..100_usize,
             mu in 0.0..100_f64,
-            kappa in 0.1..50.0_f64,
+            k in 0.1..50.0_f64,
             x in 0..100_usize,
         ) {
             let mu = mu % (m as f64);
             let x = x % m;
-            let cdvm = Cdvm::new(mu, kappa, m).unwrap();
+            let cdvm = Cdvm::new(m, mu, k).unwrap();
             prop_assert!((cdvm.ln_f(&x) - cdvm.ln_f(&(x + m))).abs() < TOL,
-                "ln_f not invariant to wrap-around for m={}, mu={}, kappa={}, x={}", m, mu, kappa, x);
+                "ln_f not invariant to wrap-around for m={}, mu={}, k={}, x={}", m, mu, k, x);
         }
     }
 
     #[test]
     fn parameterized_trait() {
-        let original = Cdvm::new(1.5, 1.0, 3).unwrap();
+        let original = Cdvm::new(3, 1.0, 1.5).unwrap();
         let params = original.emit_params();
         let reconstructed = Cdvm::from_params(params);
 
@@ -356,12 +424,12 @@ mod tests {
         fn ln_f_matches_ln_f_stat(
             m in 3..100_usize,
             mu in 0.0..100_f64,
-            kappa in 0.1..50.0_f64,
+            k in 0.1..50.0_f64,
             xs in prop::collection::vec(0..100_usize, 1..20),
         ) {
             let mu = mu % (m as f64);
             let xs: Vec<usize> = xs.into_iter().map(|x| x % m).collect();
-            let cdvm = Cdvm::new(mu, kappa, m).unwrap();
+            let cdvm = Cdvm::new(m, mu, k).unwrap();
 
             // Calculate ln_f for each x and sum them
             let ln_f_sum: f64 = xs.iter().map(|x| cdvm.ln_f(x)).sum();
@@ -374,7 +442,48 @@ mod tests {
 
             // They should be equal
             assert!((ln_f_sum - ln_f_stat).abs() < TOL,
-                "ln_f_sum ({ln_f_sum}) != ln_f_stat ({ln_f_stat}) for m={m}, mu={mu}, kappa={kappa}, xs={xs:?}");
+            "ln_f_sum ({ln_f_sum}) != ln_f_stat ({ln_f_stat}) for m={m}, mu={mu}, k={k}, xs={xs:?}");
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn set_k_maintains_consistency(
+            m in 3..100_usize,
+            mu in 0.0..100_f64,
+            k1 in 0.1..50.0_f64,
+            k2 in 0.1..50.0_f64,
+        ) {
+            let mu = mu % (m as f64);
+            let mut cdvm = Cdvm::new(m, mu, k1).unwrap();
+
+            // Set a new k value
+            cdvm.set_k(k2).unwrap();
+
+            // Check that the distribution is still consistent
+            prop_assert!(cdvm.is_consistent(),
+                "CDVM not consistent after set_k: m={}, mu={}, k1={}, k2={}", m, mu, k1, k2);
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn set_mu_maintains_consistency(
+            m in 3..100_usize,
+            mu1 in 0.0..100_f64,
+            mu2 in 0.0..100_f64,
+            k in 0.1..50.0_f64,
+        ) {
+            let mu1 = mu1 % (m as f64);
+            let mu2 = mu2 % (m as f64);
+            let mut cdvm = Cdvm::new(m, mu1, k).unwrap();
+
+            // Set a new mu value
+            cdvm.set_mu(mu2).unwrap();
+
+            // Check that the distribution is still consistent
+            prop_assert!(cdvm.is_consistent(),
+                "CDVM not consistent after set_mu: m={}, mu1={}, mu2={}, k={}", m, mu1, mu2, k);
         }
     }
 }

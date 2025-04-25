@@ -9,8 +9,6 @@ use serde::{Deserialize, Serialize};
 pub struct ScaledSuffStat<S> {
     parent: S,
     scale: f64,
-
-    #[cfg_attr(feature = "serde1", serde(skip))]
     rate: f64,
 }
 

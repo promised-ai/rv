@@ -1,6 +1,7 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+use crate::consts::TWO_PI;
 use crate::traits::SuffStat;
 
 /// Cdvm sufficient statistic.
@@ -21,7 +22,6 @@ pub struct CdvmSuffStat {
     sum_cos: f64,
 
     /// Cached 2π/m
-    #[cfg_attr(feature = "serde1", serde(skip))]
     twopi_over_m: f64,
 }
 
@@ -34,7 +34,7 @@ impl CdvmSuffStat {
             n: 0,
             sum_sin: 0.0,
             sum_cos: 0.0,
-            twopi_over_m: 2.0 * std::f64::consts::PI / modulus as f64,
+            twopi_over_m: TWO_PI / modulus as f64,
         }
     }
 
@@ -53,7 +53,7 @@ impl CdvmSuffStat {
             n,
             sum_sin,
             sum_cos,
-            twopi_over_m: 2.0 * std::f64::consts::PI / modulus as f64,
+            twopi_over_m: TWO_PI / modulus as f64,
         }
     }
 
@@ -104,7 +104,6 @@ impl SuffStat<usize> for CdvmSuffStat {
     }
 
     fn observe(&mut self, x: &usize) {
-        assert!((*x < self.modulus), "x must be less than modulus");
         let angle = self.twopi_over_m * (*x as f64);
         let (sin_x, cos_x) = angle.sin_cos();
         self.sum_sin += sin_x;
@@ -113,7 +112,6 @@ impl SuffStat<usize> for CdvmSuffStat {
     }
 
     fn forget(&mut self, x: &usize) {
-        assert!((*x < self.modulus), "x must be less than modulus");
         let angle = self.twopi_over_m * (*x as f64);
         let (sin_x, cos_x) = angle.sin_cos();
         self.sum_sin -= sin_x;
@@ -175,20 +173,6 @@ mod tests {
         stat1.observe(&1);
         stat1.merge(stat2);
         assert_eq!(stat1.n(), 1);
-    }
-
-    #[test]
-    #[should_panic(expected = "x must be less than modulus")]
-    fn observe_panics_if_x_too_large() {
-        let mut stat = CdvmSuffStat::new(4);
-        stat.observe(&4);
-    }
-
-    #[test]
-    #[should_panic(expected = "x must be less than modulus")]
-    fn forget_panics_if_x_too_large() {
-        let mut stat = CdvmSuffStat::new(4);
-        stat.forget(&4);
     }
 
     #[test]

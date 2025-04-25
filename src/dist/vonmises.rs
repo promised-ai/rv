@@ -2,6 +2,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::consts::LN_2PI;
+use crate::consts::TWO_PI;
 use crate::data::VonMisesSuffStat;
 use crate::impl_display;
 use crate::misc::bessel;
@@ -119,7 +120,7 @@ impl VonMises {
         } else if !k.is_finite() {
             Err(VonMisesError::KNotFinite { k })
         } else {
-            let mu = mu.rem_euclid(2.0 * PI);
+            let mu = mu.rem_euclid(TWO_PI);
             let (sin_mu, cos_mu) = mu.sin_cos();
             let log_i0_k = bessel::log_i0(k);
             Ok(VonMises {
@@ -329,7 +330,7 @@ impl VonMises {
         // Sample uniformly on [-xmax, xmax] and add μ
         let x = xmax.mul_add(rng.gen_range(-1.0..=1.0), mu);
         // Ensure result is in [0, 2π)
-        x.rem_euclid(2.0 * PI)
+        x.rem_euclid(TWO_PI)
     }
 }
 
@@ -363,10 +364,10 @@ macro_rules! impl_traits {
             // https://www.researchgate.net/publication/246035131_Efficient_Simulation_of_the_von_Mises_Distribution
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 if self.k.is_zero() {
-                    rng.gen_range(0.0..=2.0 * PI) as $kind
+                    rng.gen_range(0.0..=TWO_PI) as $kind
                 } else if self.k > 700.0 {
                     let normal = Normal::new(self.mu, 1.0 / self.k).unwrap();
-                    rng.sample(normal).rem_euclid(2.0 * PI) as $kind
+                    rng.sample(normal).rem_euclid(TWO_PI) as $kind
                 } else {
                     let tau =
                         1.0 + 4.0_f64.mul_add(self.k * self.k, 1.0).sqrt();
@@ -402,7 +403,7 @@ macro_rules! impl_traits {
                     } else {
                         self.mu - acf
                     };
-                    x.rem_euclid(2.0 * PI) as $kind
+                    x.rem_euclid(TWO_PI) as $kind
                 }
             }
         }
@@ -431,7 +432,7 @@ macro_rules! impl_traits {
         impl Support<$kind> for VonMises {
             fn supports(&self, x: &$kind) -> bool {
                 let xf = f64::from(*x);
-                (0.0..=2.0 * PI).contains(&xf)
+                (0.0..=TWO_PI).contains(&xf)
             }
         }
 
@@ -525,7 +526,7 @@ mod tests {
     fn new_should_allow_mu_in_0_2pi() {
         assert!(VonMises::new(0.0, 1.0).is_ok());
         assert!(VonMises::new(PI, 1.0).is_ok());
-        assert!(VonMises::new(2.0 * PI, 1.0).is_ok());
+        assert!(VonMises::new(TWO_PI, 1.0).is_ok());
     }
 
     #[test]
