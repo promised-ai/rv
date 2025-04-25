@@ -21,11 +21,11 @@ fn main() {
         let start = std::time::Instant::now();
         let entropy = sbd.entropy();
         let duration = start.elapsed();
-        println!("Entropy: {}", entropy);
-        println!("Time elapsed in entropy() is: {:?}", duration);
+        println!("Entropy: {entropy}");
+        println!("Time elapsed in entropy() is: {duration:?}");
 
         let num_weights = sbd.stick_sequence().num_weights_unstable();
 
-        println!("num weights: {}", num_weights);
+        println!("num weights: {num_weights}");
     }
 }

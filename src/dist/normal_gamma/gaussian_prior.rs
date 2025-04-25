@@ -2,13 +2,13 @@ use std::collections::BTreeMap;
 use std::f64::consts::LN_2;
 
 use super::dos_to_post;
-use crate::consts::*;
+use crate::consts::{HALF_LN_2PI, HALF_LN_PI};
 use crate::data::{extract_stat_then, GaussianSuffStat};
 use crate::dist::{Gaussian, NormalGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
-use crate::traits::*;
+use crate::traits::{ConjugatePrior, DataOrSuffStat, HasSuffStat, HasDensity,Sampleable, SuffStat};
 
 #[inline]
 fn ln_z(r: f64, s: f64, v: f64) -> f64 {

@@ -12,7 +12,7 @@ pub struct ShiftedSuffStat<S> {
 }
 
 impl<S> ShiftedSuffStat<S> {
-    /// Create a new ShiftedSuffStat with the given parent statistic and shift
+    /// Create a new `ShiftedSuffStat` with the given parent statistic and shift
     pub fn new(parent: S, shift: f64) -> Self {
         ShiftedSuffStat { parent, shift }
     }

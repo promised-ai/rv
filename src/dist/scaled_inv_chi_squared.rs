@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{Cdf, ContinuousDistr, HasDensity, Kurtosis, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support, Variance};
 
 use rand::Rng;
 use special::Gamma as _;
@@ -123,10 +123,10 @@ impl ScaledInvChiSquared {
         }
     }
 
-    /// Create a new ScaledInvChiSquared without checking whether the parameters are
+    /// Create a new `ScaledInvChiSquared` without checking whether the parameters are
     /// valid.
     #[inline(always)]
-    pub fn new_unchecked(v: f64, t2: f64) -> Self {
+    #[must_use] pub fn new_unchecked(v: f64, t2: f64) -> Self {
         ScaledInvChiSquared {
             v,
             t2,
@@ -376,13 +376,13 @@ impl fmt::Display for ScaledInvChiSquaredError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::VTooLow { v } => {
-                write!(f, "v ({}) must be greater than zero", v)
+                write!(f, "v ({v}) must be greater than zero")
             }
-            Self::VNotFinite { v } => write!(f, "v ({}) must be finite", v),
+            Self::VNotFinite { v } => write!(f, "v ({v}) must be finite"),
             Self::T2TooLow { t2 } => {
-                write!(f, "t2 ({}) must be greater than zero", t2)
+                write!(f, "t2 ({t2}) must be greater than zero")
             }
-            Self::T2NotFinite { t2 } => write!(f, "t2 ({}) must be finite", t2),
+            Self::T2NotFinite { t2 } => write!(f, "t2 ({t2}) must be finite"),
         }
     }
 }

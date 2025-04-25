@@ -11,7 +11,7 @@ use std::sync::OnceLock;
 use crate::impl_display;
 use crate::misc::ln_gammafn;
 use crate::misc::ln_pflips;
-use crate::traits::*;
+use crate::traits::{Cdf, DiscreteDistr, HasDensity, Mean, Parameterized, Sampleable, SuffStat, Support, Variance};
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// over k in {0, ..., n}
@@ -146,10 +146,10 @@ impl BetaBinomial {
         }
     }
 
-    /// Creates a new BetaBinomial without checking whether the parameters are
+    /// Creates a new `BetaBinomial` without checking whether the parameters are
     /// valid.
     #[inline]
-    pub fn new_unchecked(n: u32, alpha: f64, beta: f64) -> Self {
+    #[must_use] pub fn new_unchecked(n: u32, alpha: f64, beta: f64) -> Self {
         BetaBinomial {
             n,
             alpha,
@@ -162,7 +162,7 @@ impl BetaBinomial {
     #[inline]
     fn ln_z(&self) -> f64 {
         *self.ln_z.get_or_init(|| {
-            ln_gammafn(self.n as f64 + 1.0) - self.alpha.ln_beta(self.beta)
+            ln_gammafn(f64::from(self.n) + 1.0) - self.alpha.ln_beta(self.beta)
         })
     }
 
@@ -234,7 +234,7 @@ impl BetaBinomial {
     #[inline]
     pub fn set_alpha_unchecked(&mut self, alpha: f64) {
         self.ln_z = OnceLock::new();
-        self.alpha = alpha
+        self.alpha = alpha;
     }
 
     /// Get the `beta` parameter
@@ -290,7 +290,7 @@ impl BetaBinomial {
     #[inline]
     pub fn set_beta_unchecked(&mut self, beta: f64) {
         self.ln_z = OnceLock::new();
-        self.beta = beta
+        self.beta = beta;
     }
 
     /// Set the value of the n parameter
@@ -329,7 +329,7 @@ impl BetaBinomial {
     /// Set the value of n without input validation
     #[inline]
     pub fn set_n_unchecked(&mut self, n: u32) {
-        self.n = n
+        self.n = n;
     }
 }
 
@@ -427,16 +427,16 @@ impl fmt::Display for BetaBinomialError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::AlphaTooLow { alpha } => {
-                write!(f, "alpha ({}) must be greater than zero", alpha)
+                write!(f, "alpha ({alpha}) must be greater than zero")
             }
             Self::AlphaNotFinite { alpha } => {
-                write!(f, "alpha ({}) was non finite", alpha)
+                write!(f, "alpha ({alpha}) was non finite")
             }
             Self::BetaTooLow { beta } => {
-                write!(f, "beta ({}) must be greater than zero", beta)
+                write!(f, "beta ({beta}) must be greater than zero")
             }
             Self::BetaNotFinite { beta } => {
-                write!(f, "beta ({}) was non finite", beta)
+                write!(f, "beta ({beta}) was non finite")
             }
             Self::NIsZero => write!(f, "n was zero"),
         }

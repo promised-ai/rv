@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::dist::Poisson;
 use crate::impl_display;
 use crate::misc::bessel::bessel_iv;
-use crate::traits::*;
+use crate::traits::{DiscreteDistr, HasDensity, Kurtosis, Mean, Parameterized, Sampleable, Skewness, Support, Variance};
 use lru::LruCache;
 use rand::Rng;
 use std::{cell::RefCell, num::NonZeroUsize};
@@ -34,8 +34,8 @@ pub struct Skellam {
     mu_1: f64,
     /// Mean of second poisson
     mu_2: f64,
-    /// Cached values of bessel_iv. Note that the cache is not invalidated when
-    /// the values of mu_1 or mu_2 change.
+    /// Cached values of `bessel_iv`. Note that the cache is not invalidated when
+    /// the values of `mu_1` or `mu_2` change.
     #[cfg_attr(feature = "serde1", serde(skip, default = "cache_default"))]
     bessel_iv_cache: RefCell<LruCache<i32, f64>>,
 }
@@ -97,7 +97,7 @@ impl Skellam {
 
     /// Creates a new Skellam without checking whether the parameters are valid.
     #[inline]
-    pub fn new_unchecked(mu_1: f64, mu_2: f64) -> Self {
+    #[must_use] pub fn new_unchecked(mu_1: f64, mu_2: f64) -> Self {
         Skellam {
             mu_1,
             mu_2,
@@ -105,7 +105,7 @@ impl Skellam {
         }
     }
 
-    /// Get the mu_1 parameter
+    /// Get the `mu_1` parameter
     ///
     /// # Example
     ///
@@ -119,7 +119,7 @@ impl Skellam {
         self.mu_1
     }
 
-    /// Set the mu_1 (first rate) parameter
+    /// Set the `mu_1` (first rate) parameter
     ///
     /// # Example
     ///
@@ -156,13 +156,13 @@ impl Skellam {
         }
     }
 
-    /// Set the mu_1 (first rate) parameter without input validation
+    /// Set the `mu_1` (first rate) parameter without input validation
     #[inline]
     pub fn set_mu_1_unchecked(&mut self, mu_1: f64) {
         self.mu_1 = mu_1;
     }
 
-    /// Get the mu_2 parameter
+    /// Get the `mu_2` parameter
     ///
     /// # Example
     ///
@@ -176,7 +176,7 @@ impl Skellam {
         self.mu_2
     }
 
-    /// Set the mu_2 (second rate) parameter
+    /// Set the `mu_2` (second rate) parameter
     ///
     /// # Example
     ///
@@ -213,7 +213,7 @@ impl Skellam {
         }
     }
 
-    /// Set the mu_2 (first rate) parameter without input validation
+    /// Set the `mu_2` (first rate) parameter without input validation
     #[inline]
     pub fn set_mu_2_unchecked(&mut self, mu_2: f64) {
         self.mu_2 = mu_2;

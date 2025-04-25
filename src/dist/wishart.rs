@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::dist::MvGaussian;
 use crate::misc::lnmv_gamma;
-use crate::traits::*;
+use crate::traits::{ContinuousDistr, HasDensity, Mean, Mode, Parameterized, Sampleable, Support};
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
 use std::f64::consts::LN_2;
@@ -77,7 +77,7 @@ impl InvWishart {
     /// p-by-p inverse scale matrix, **Ψ**, and degrees of freedom, ν > p - 1.
     ///
     /// # Arguments
-    /// - inv_scale: p-dimensional inverse scale matrix, **Ψ**
+    /// - `inv_scale`: p-dimensional inverse scale matrix, **Ψ**
     /// - df: Degrees of freedom, ν > p - 1
     #[inline]
     pub fn new(
@@ -88,17 +88,17 @@ impl InvWishart {
         Ok(InvWishart { inv_scale, df })
     }
 
-    /// Creates a new InvWishart without checking whether the parameters are
+    /// Creates a new `InvWishart` without checking whether the parameters are
     /// valid.
     #[inline]
-    pub fn new_unchecked(inv_scale: DMatrix<f64>, df: usize) -> Self {
+    #[must_use] pub fn new_unchecked(inv_scale: DMatrix<f64>, df: usize) -> Self {
         InvWishart { inv_scale, df }
     }
 
     /// Create an Inverse Wishart distribution, W<sup>-1</sup>(**I**<sup>p</sup>,
     /// p)
     #[inline]
-    pub fn identity(dims: usize) -> Self {
+    #[must_use] pub fn identity(dims: usize) -> Self {
         InvWishart {
             inv_scale: DMatrix::identity(dims, dims),
             df: dims,
@@ -106,19 +106,19 @@ impl InvWishart {
     }
 
     #[inline]
-    pub fn ndims(&self) -> usize {
+    #[must_use] pub fn ndims(&self) -> usize {
         self.inv_scale.nrows()
     }
 
     /// Get a reference to the inverse scale parameter
     #[inline]
-    pub fn inv_scale(&self) -> &DMatrix<f64> {
+    #[must_use] pub fn inv_scale(&self) -> &DMatrix<f64> {
         &self.inv_scale
     }
 
     /// Get the degrees of freedom
     #[inline]
-    pub fn df(&self) -> usize {
+    #[must_use] pub fn df(&self) -> usize {
         self.df
     }
 
@@ -250,13 +250,11 @@ impl fmt::Display for InvWishartError {
             Self::DfLessThanDimensions { df, ndims } => write!(
                 f,
                 "df, the degrees of freedom must be greater than or \
-                    equal to the number of dimensions, but {} < {}",
-                df, ndims
+                    equal to the number of dimensions, but {df} < {ndims}"
             ),
             Self::ScaleMatrixNotSquare { nrows, ncols } => write!(
                 f,
-                "The scale matrix is not square: {} x {}",
-                nrows, ncols
+                "The scale matrix is not square: {nrows} x {ncols}"
             ),
         }
     }

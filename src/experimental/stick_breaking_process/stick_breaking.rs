@@ -2,7 +2,7 @@ use crate::experimental::stick_breaking_process::StickBreakingDiscrete;
 use crate::experimental::stick_breaking_process::StickBreakingDiscreteSuffStat;
 use crate::experimental::stick_breaking_process::StickSequence;
 use crate::prelude::*;
-use crate::traits::*;
+use crate::traits::{ConjugatePrior, HasDensity, HasSuffStat, Sampleable, SuffStat};
 use itertools::Either;
 use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
@@ -64,7 +64,7 @@ impl StickBreaking {
         Ok(Self::new(breaker))
     }
 
-    /// Sets the alpha parameter for both the break_tail and all Beta distributions in break_prefix.
+    /// Sets the alpha parameter for both the `break_tail` and all Beta distributions in `break_prefix`.
     ///
     /// # Arguments
     ///
@@ -182,7 +182,7 @@ impl HasDensity<PartialWeights> for StickBreaking {
 }
 
 impl Sampleable<StickSequence> for StickBreaking {
-    /// Draws a sample from the StickBreaking distribution.
+    /// Draws a sample from the `StickBreaking` distribution.
     ///
     /// # Arguments
     ///

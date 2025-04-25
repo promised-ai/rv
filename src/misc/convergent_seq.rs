@@ -6,8 +6,8 @@ use num::Zero;
 /// A trait for sequences that can be checked for convergence.
 pub trait ConvergentSequence: Iterator<Item = f64> + Sized {
     /// Applies Aitken's Δ² process to accelerate the convergence of a sequence.
-    /// See https://en.wikipedia.org/wiki/Aitken%27s_delta-squared_process and
-    /// https://en.wikipedia.org/wiki/Shanks_transformation
+    /// See <https://en.wikipedia.org/wiki/Aitken%27s_delta-squared_process> and
+    /// <https://en.wikipedia.org/wiki/Shanks_transformation>
     ///
     /// # Returns
     ///

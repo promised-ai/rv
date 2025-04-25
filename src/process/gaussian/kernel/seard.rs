@@ -7,7 +7,7 @@ use std::f64;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-/// Squared Exponential function (SEard) kernel
+/// Squared Exponential function (`SEard`) kernel
 /// The distance metric here is L2 (Euclidean).
 ///
 /// ```math
@@ -41,8 +41,8 @@ impl SEardKernel {
         }
     }
 
-    /// Create a new SEardKernel without checking parameters
-    pub fn new_unchecked(length_scale: DVector<f64>) -> Self {
+    /// Create a new `SEardKernel` without checking parameters
+    #[must_use] pub fn new_unchecked(length_scale: DVector<f64>) -> Self {
         Self { length_scale }
     }
 }
@@ -78,7 +78,7 @@ impl Kernel for SEardKernel {
                 let b = x2.row(j);
                 for k in 0..c {
                     let term = (a[k] - b[k]) / self.length_scale[k];
-                    s += term * term
+                    s += term * term;
                 }
                 dm[(i, j)] = s;
             }

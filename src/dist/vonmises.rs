@@ -5,7 +5,7 @@ use crate::consts::LN_2PI;
 use crate::data::VonMisesSuffStat;
 use crate::impl_display;
 use crate::misc::bessel;
-use crate::traits::*;
+use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, Mean, Median, Mode, Parameterized, Sampleable, Scalable, SuffStat, Support, Variance};
 use num::Zero;
 use rand::Rng;
 use rand_distr::Normal;
@@ -107,7 +107,7 @@ pub enum VonMisesError {
 }
 
 impl VonMises {
-    /// Create a new VonMises distribution with mean mu, and precision, k.
+    /// Create a new `VonMises` distribution with mean mu, and precision, k.
     pub fn new(mu: f64, k: f64) -> Result<Self, VonMisesError> {
         if !mu.is_finite() {
             Err(VonMisesError::MuNotFinite { mu })
@@ -129,10 +129,10 @@ impl VonMises {
         }
     }
 
-    /// Creates a new VonMises without checking whether the parameters are
+    /// Creates a new `VonMises` without checking whether the parameters are
     /// valid.
     #[inline]
-    pub fn new_unchecked(mu: f64, k: f64) -> Self {
+    #[must_use] pub fn new_unchecked(mu: f64, k: f64) -> Self {
         let (sin_mu, cos_mu) = mu.sin_cos();
         let log_i0_k = bessel::log_i0(k);
         VonMises {
@@ -145,7 +145,7 @@ impl VonMises {
     }
 
     #[inline]
-    pub fn from_parts_unchecked(
+    #[must_use] pub fn from_parts_unchecked(
         mu: f64,
         k: f64,
         log_i0_k: f64,
@@ -171,15 +171,15 @@ impl VonMises {
     /// assert_eq!(vm.mu(), 0.0);
     /// ```
     #[inline]
-    pub fn mu(&self) -> f64 {
+    #[must_use] pub fn mu(&self) -> f64 {
         self.mu
     }
 
-    pub fn sin_mu(&self) -> f64 {
+    #[must_use] pub fn sin_mu(&self) -> f64 {
         self.sin_mu
     }
 
-    pub fn cos_mu(&self) -> f64 {
+    #[must_use] pub fn cos_mu(&self) -> f64 {
         self.cos_mu
     }
 
@@ -216,11 +216,11 @@ impl VonMises {
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), VonMisesError> {
-        if !mu.is_finite() {
-            Err(VonMisesError::MuNotFinite { mu })
-        } else {
+        if mu.is_finite() {
             self.set_mu_unchecked(mu.rem_euclid(2.0 * PI));
             Ok(())
+        } else {
+            Err(VonMisesError::MuNotFinite { mu })
         }
     }
 
@@ -243,7 +243,7 @@ impl VonMises {
     /// assert_eq!(vm.k(), 1.0);
     /// ```
     #[inline]
-    pub fn k(&self) -> f64 {
+    #[must_use] pub fn k(&self) -> f64 {
         self.k
     }
 
@@ -297,7 +297,7 @@ impl VonMises {
         self.log_i0_k = bessel::log_i0(k);
     }
 
-    /// Perform a slice sampling step for the VonMises distribution
+    /// Perform a slice sampling step for the `VonMises` distribution
     ///
     /// # Arguments
     ///
@@ -486,10 +486,10 @@ impl std::error::Error for VonMisesError {}
 impl fmt::Display for VonMisesError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
-            Self::KNotFinite { k } => write!(f, "non-finite k: {}", k),
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {mu}"),
+            Self::KNotFinite { k } => write!(f, "non-finite k: {k}"),
             Self::KTooLow { k } => {
-                write!(f, "k ({}) must be greater than zero", k)
+                write!(f, "k ({k}) must be greater than zero")
             }
         }
     }

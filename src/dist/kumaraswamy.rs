@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::consts::EULER_MASCERONI;
 use crate::impl_display;
 use crate::misc::gammafn;
-use crate::traits::*;
+use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Mean, Median, Mode, Parameterized, Sampleable, Scalable, Shiftable, Support};
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;
@@ -149,7 +149,7 @@ impl Kumaraswamy {
     /// Creates a new Kumaraswamy without checking whether the parameters are
     /// valid.
     #[inline]
-    pub fn new_unchecked(a: f64, b: f64) -> Self {
+    #[must_use] pub fn new_unchecked(a: f64, b: f64) -> Self {
         Kumaraswamy {
             a,
             b,
@@ -167,7 +167,7 @@ impl Kumaraswamy {
     /// assert_eq!(kuma, Kumaraswamy::new(1.0, 1.0).unwrap());
     /// ```
     #[inline]
-    pub fn uniform() -> Self {
+    #[must_use] pub fn uniform() -> Self {
         Kumaraswamy {
             a: 1.0,
             b: 1.0,
@@ -448,13 +448,13 @@ impl fmt::Display for KumaraswamyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ATooLow { a } => {
-                write!(f, "a ({}) must be greater than zero", a)
+                write!(f, "a ({a}) must be greater than zero")
             }
-            Self::ANotFinite { a } => write!(f, "non-finite a: {}", a),
+            Self::ANotFinite { a } => write!(f, "non-finite a: {a}"),
             Self::BTooLow { b } => {
-                write!(f, "b ({}) must be greater than zero", b)
+                write!(f, "b ({b}) must be greater than zero")
             }
-            Self::BNotFinite { b } => write!(f, "non-finite b: {}", b),
+            Self::BNotFinite { b } => write!(f, "non-finite b: {b}"),
         }
     }
 }

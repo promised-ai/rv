@@ -27,7 +27,7 @@ pub struct CdvmSuffStat {
 
 impl CdvmSuffStat {
     #[inline]
-    pub fn new(modulus: usize) -> Self {
+    #[must_use] pub fn new(modulus: usize) -> Self {
         CdvmSuffStat {
             modulus,
             n: 0,
@@ -40,7 +40,7 @@ impl CdvmSuffStat {
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
-    pub fn from_parts_unchecked(
+    #[must_use] pub fn from_parts_unchecked(
         modulus: usize,
         n: usize,
         sum_cos: f64,
@@ -59,7 +59,7 @@ impl CdvmSuffStat {
     ///
     /// Note that we can't have the usual From trait without const generics
     /// because we need to know the modulus.
-    pub fn from_data(modulus: usize, xs: &[usize]) -> Self {
+    #[must_use] pub fn from_data(modulus: usize, xs: &[usize]) -> Self {
         let mut stat = CdvmSuffStat::new(modulus);
         for x in xs {
             stat.observe(x);
@@ -68,25 +68,25 @@ impl CdvmSuffStat {
     }
 
     /// Get the modulus
-    pub fn modulus(&self) -> usize {
+    #[must_use] pub fn modulus(&self) -> usize {
         self.modulus
     }
 
     /// Get the number of observations
     #[inline]
-    pub fn n(&self) -> usize {
+    #[must_use] pub fn n(&self) -> usize {
         self.n
     }
 
     /// Get the sum of cosines
     #[inline]
-    pub fn sum_cos(&self) -> f64 {
+    #[must_use] pub fn sum_cos(&self) -> f64 {
         self.sum_cos
     }
 
     /// Get the sum of sines
     #[inline]
-    pub fn sum_sin(&self) -> f64 {
+    #[must_use] pub fn sum_sin(&self) -> f64 {
         self.sum_sin
     }
 }
@@ -97,9 +97,7 @@ impl SuffStat<usize> for CdvmSuffStat {
     }
 
     fn observe(&mut self, x: &usize) {
-        if *x >= self.modulus {
-            panic!("x must be less than modulus");
-        }
+        assert!((*x < self.modulus), "x must be less than modulus");
         let angle = self.twopi_over_m * (*x as f64);
         let (sin_x, cos_x) = angle.sin_cos();
         self.sum_sin += sin_x;
@@ -108,9 +106,7 @@ impl SuffStat<usize> for CdvmSuffStat {
     }
 
     fn forget(&mut self, x: &usize) {
-        if *x >= self.modulus {
-            panic!("x must be less than modulus");
-        }
+        assert!((*x < self.modulus), "x must be less than modulus");
         let angle = self.twopi_over_m * (*x as f64);
         let (sin_x, cos_x) = angle.sin_cos();
         self.sum_sin -= sin_x;

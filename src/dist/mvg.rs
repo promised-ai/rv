@@ -5,14 +5,14 @@ use crate::consts::HALF_LN_2PI_E;
 use crate::consts::LN_2PI;
 use crate::data::MvGaussianSuffStat;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{ContinuousDistr, Entropy, HasDensity, HasSuffStat, Mean, Mode, Parameterized, Sampleable, SuffStat, Support, Variance};
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dyn};
 use rand::Rng;
 use std::fmt;
 use std::sync::OnceLock;
 
-/// Cache for MvGaussian Internals
+/// Cache for `MvGaussian` Internals
 #[derive(Clone, Debug)]
 struct MvgCache {
     /// Covariant Matrix Cholesky Decomposition
@@ -192,7 +192,7 @@ impl MvGaussian {
     ///
     /// # Arguments
     /// - mu: k-length mean vector
-    /// - cov_chol: Cholesky decomposition of k-by-k positive-definite covariance matrix
+    /// - `cov_chol`: Cholesky decomposition of k-by-k positive-definite covariance matrix
     /// ```rust
     /// use nalgebra::{DMatrix, DVector};
     /// use rv::prelude::*;
@@ -217,29 +217,29 @@ impl MvGaussian {
     ) -> Result<Self, MvGaussianError> {
         let l = cov_chol.l();
         let cov = &l * &l.transpose();
-        if mu.len() != cov.nrows() {
+        if mu.len() == cov.nrows() {
+            let cache = OnceLock::from(MvgCache::from_chol(cov_chol));
+            Ok(MvGaussian { mu, cov, cache })
+        } else {
             Err(MvGaussianError::MuCovDimensionMismatch {
                 n_mu: mu.len(),
                 n_cov: cov.nrows(),
             })
-        } else {
-            let cache = OnceLock::from(MvgCache::from_chol(cov_chol));
-            Ok(MvGaussian { mu, cov, cache })
         }
     }
 
-    /// Creates a new MvGaussian from mean and covariance without checking
+    /// Creates a new `MvGaussian` from mean and covariance without checking
     /// whether the parameters are valid.
     #[inline]
-    pub fn new_unchecked(mu: DVector<f64>, cov: DMatrix<f64>) -> Self {
+    #[must_use] pub fn new_unchecked(mu: DVector<f64>, cov: DMatrix<f64>) -> Self {
         let cache = OnceLock::from(MvgCache::from_cov(&cov).unwrap());
         MvGaussian { mu, cov, cache }
     }
 
-    /// Creates a new MvGaussian from mean and covariance's Cholesky factorization
+    /// Creates a new `MvGaussian` from mean and covariance's Cholesky factorization
     /// without checking whether the parameters are valid.
     #[inline]
-    pub fn new_cholesky_unchecked(
+    #[must_use] pub fn new_cholesky_unchecked(
         mu: DVector<f64>,
         cov_chol: Cholesky<f64, Dyn>,
     ) -> Self {
@@ -322,14 +322,14 @@ impl MvGaussian {
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: DVector<f64>) -> Result<(), MvGaussianError> {
-        if mu.len() != self.cov.nrows() {
+        if mu.len() == self.cov.nrows() {
+            self.mu = mu;
+            Ok(())
+        } else {
             Err(MvGaussianError::MuCovDimensionMismatch {
                 n_mu: mu.len(),
                 n_cov: self.cov.nrows(),
             })
-        } else {
-            self.mu = mu;
-            Ok(())
         }
     }
 
@@ -532,14 +532,12 @@ impl fmt::Display for MvGaussianError {
             }
             Self::MuCovDimensionMismatch { n_mu, n_cov } => write!(
                 f,
-                "mean vector and covariance matrix do not align. mu is {} \
-                    dimensions but cov is {} dimensions",
-                n_mu, n_cov
+                "mean vector and covariance matrix do not align. mu is {n_mu} \
+                    dimensions but cov is {n_cov} dimensions"
             ),
             Self::CovNotSquare { nrows, ncols } => write!(
                 f,
-                "covariance matrix is not square ({} x {})",
-                nrows, ncols
+                "covariance matrix is not square ({nrows} x {ncols})"
             ),
         }
     }
@@ -712,6 +710,8 @@ mod tests {
 
     #[test]
     fn standard_draw_marginals() {
+        use crate::traits::Cdf;
+        
         let mut rng = rand::thread_rng();
         let mvg = MvGaussian::standard(2).unwrap();
 

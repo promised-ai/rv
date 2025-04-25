@@ -20,7 +20,7 @@ pub struct BetaSuffStat {
 
 impl BetaSuffStat {
     #[inline]
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         BetaSuffStat {
             n: 0,
             sum_ln_x: 0.0,
@@ -31,7 +31,7 @@ impl BetaSuffStat {
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
-    pub fn from_parts_unchecked(
+    #[must_use] pub fn from_parts_unchecked(
         n: usize,
         sum_ln_x: f64,
         sum_ln_1mx: f64,
@@ -45,19 +45,19 @@ impl BetaSuffStat {
 
     /// Get the number of observations
     #[inline]
-    pub fn n(&self) -> usize {
+    #[must_use] pub fn n(&self) -> usize {
         self.n
     }
 
     /// Sum of `ln(x)`
     #[inline]
-    pub fn sum_ln_x(&self) -> f64 {
+    #[must_use] pub fn sum_ln_x(&self) -> f64 {
         self.sum_ln_x
     }
 
     /// Sum of `ln(1-x)`
     #[inline]
-    pub fn sum_ln_1mx(&self) -> f64 {
+    #[must_use] pub fn sum_ln_1mx(&self) -> f64 {
         self.sum_ln_1mx
     }
 }

@@ -2,7 +2,7 @@ use criterion::BatchSize;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use rv::dist::{Gaussian, Mixture, NormalGamma, SymmetricDirichlet};
-use rv::traits::*;
+use rv::traits::{Entropy, Sampleable};
 
 fn bench_gmm_entropy(c: &mut Criterion) {
     let ng = NormalGamma::new_unchecked(0.0, 1.0, 1.0, 1.0);
@@ -20,7 +20,7 @@ fn bench_gmm_entropy(c: &mut Criterion) {
                 let _q: f64 = mm.entropy();
             },
             BatchSize::SmallInput,
-        )
+        );
     });
 }
 

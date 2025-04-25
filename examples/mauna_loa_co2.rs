@@ -1,4 +1,4 @@
-//! This is an example of how to use the GaussianProcess code to predict functional
+//! This is an example of how to use the `GaussianProcess` code to predict functional
 //! form of the CO2 concentration at Mauna Loa from 1958-2008
 //!
 //! This example appears in the Gaussian Processes for Machine Learning book by Rasmussen and
@@ -31,7 +31,7 @@ pub fn main() -> std::io::Result<()> {
     use nalgebra::{DMatrix, DVector};
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
-    use rv::process::gaussian::kernel::*;
+    use rv::process::gaussian::kernel::{ConstantKernel, ExpSineSquaredKernel, Kernel, RBFKernel, RationalQuadratic, WhiteKernel};
     use rv::process::gaussian::{GaussianProcess, NoiseModel};
     use rv::process::{RandomProcess, RandomProcessMle};
     use std::fs::File;
@@ -71,7 +71,7 @@ pub fn main() -> std::io::Result<()> {
             * RBFKernel::new_unchecked(1.01)
         + WhiteKernel::new_unchecked(0.001);
 
-    println!("kernel = {:#?}", kernel);
+    println!("kernel = {kernel:#?}");
     // These parameters define the kernel, keep in mind these are in log-scale
     println!("kernel theta = {:?}", kernel.parameters());
 
@@ -89,7 +89,7 @@ pub fn main() -> std::io::Result<()> {
     // The given parameters given the following log likelihood and the gradient at the location is
     let (ln_m, grad_ln_m) =
         gp.ln_m_with_params(&gp.kernel().parameters()).unwrap();
-    println!("ln_m = {}\ngrad_ln_m = {:?}", ln_m, grad_ln_m);
+    println!("ln_m = {ln_m}\ngrad_ln_m = {grad_ln_m:?}");
 
     // Let's find better parameters
     println!("Optimizing...");

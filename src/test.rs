@@ -214,10 +214,10 @@ fn append_stats(
         }
     }
 
-    for (k, v) in src.iter() {
+    for (k, v) in src {
         sink.get_mut(k)
             .map(|vals| vals.push(*v))
-            .expect("failed to push")
+            .expect("failed to push");
     }
 }
 
@@ -243,8 +243,7 @@ where
         errors.iter().try_for_each(|(name, err)| {
             if *err > max_err {
                 Err(format!(
-                    "P-P Error {} ({}) exceeds max ({})",
-                    name, err, max_err
+                    "P-P Error {name} ({err}) exceeds max ({max_err})"
                 ))
             } else {
                 Ok(())
@@ -256,7 +255,7 @@ where
     pub fn errs(&self) -> Vec<(String, f64)> {
         use crate::dist::Empirical;
         let mut errors: Vec<(String, f64)> = Vec::new();
-        for (stat_name, prior_stats) in self.prior_chain_stats.iter() {
+        for (stat_name, prior_stats) in &self.prior_chain_stats {
             let post_stats = &self.posterior_chain_stats[stat_name];
             let emp_prior = Empirical::new(prior_stats.clone());
             let emp_post = Empirical::new(post_stats.clone());
@@ -282,8 +281,8 @@ where
             let xs: Vec<X> = fx.sample(self.nx, rng);
             let stats = self.pr.geweke_stats(&fx, &xs);
 
-            append_stats(n, &stats, &mut self.prior_chain_stats)
-        })
+            append_stats(n, &stats, &mut self.prior_chain_stats);
+        });
     }
 
     pub fn run_posterior_chain<R: rand::Rng>(
@@ -302,8 +301,8 @@ where
 
             let stats = self.pr.geweke_stats(&fx, &xs);
 
-            append_stats(n, &stats, &mut self.posterior_chain_stats)
-        })
+            append_stats(n, &stats, &mut self.posterior_chain_stats);
+        });
     }
 }
 
@@ -435,7 +434,7 @@ macro_rules! test_conjugate_prior {
             }
 
             #[test]
-            fn bayes_law() {
+            fn bayes_law() {use crate::traits::HasDensity;
                 // test that p(θ|x) == p(x|θ)p(θ)/p(x)
                 // If this doesn't work, one of the following is wrong
                 // 1. prior.posterior.ln_f(fx)
@@ -627,7 +626,7 @@ where
     }
 
     // Calculate p-value
-    let chi_dist = ChiSquared::new(df as f64)?;
+    let chi_dist = ChiSquared::new(f64::from(df))?;
     let p_value = 1.0 - chi_dist.cdf(&test_stat);
 
     Ok(p_value)

@@ -31,7 +31,7 @@ use rand_xoshiro::Xoshiro256Plus;
 use rv::data::Partition;
 use rv::dist::{Crp, Gaussian, NormalInvGamma};
 use rv::misc::ln_pflips;
-use rv::traits::*;
+use rv::traits::{ConjugatePrior, HasSuffStat, Rv, Sampleable, SuffStat};
 use rv::ConjugateModel;
 use std::sync::Arc;
 
@@ -180,7 +180,7 @@ where
     // Run the DPGMM for `iters` iterations
     fn run<R: Rng>(&mut self, iters: usize, rng: &mut R) {
         (0..iters).for_each(|_| self.scan(rng));
-        self.sort() // restore data/assignment order
+        self.sort(); // restore data/assignment order
     }
 
     // The data get shuffled as a result of the removal/insertion process, so we
@@ -228,6 +228,6 @@ fn main() {
     // because we don't actually know how many components there are.
     let mut zs_a = dpgmm.partition.z().clone();
     let zs_b = zs_a.split_off(50);
-    println!("{:?}", zs_a);
-    println!("{:?}", zs_b);
+    println!("{zs_a:?}");
+    println!("{zs_b:?}");
 }

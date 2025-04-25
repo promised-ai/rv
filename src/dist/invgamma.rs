@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::data::InvGammaSuffStat;
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, Kurtosis, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, SuffStat, Support, Variance};
 use rand::Rng;
 use special::Gamma as _;
 use std::fmt;
@@ -102,10 +102,10 @@ impl InvGamma {
         }
     }
 
-    /// Creates a new InvGamma without checking whether the parameters are
+    /// Creates a new `InvGamma` without checking whether the parameters are
     /// valid.
     #[inline]
-    pub fn new_unchecked(shape: f64, scale: f64) -> Self {
+    #[must_use] pub fn new_unchecked(shape: f64, scale: f64) -> Self {
         InvGamma { shape, scale }
     }
 
@@ -119,7 +119,7 @@ impl InvGamma {
     /// assert_eq!(ig.shape(), 1.0);
     /// ```
     #[inline]
-    pub fn shape(&self) -> f64 {
+    #[must_use] pub fn shape(&self) -> f64 {
         self.shape
     }
 
@@ -176,7 +176,7 @@ impl InvGamma {
     /// assert_eq!(ig.scale(), 2.0);
     /// ```
     #[inline]
-    pub fn scale(&self) -> f64 {
+    #[must_use] pub fn scale(&self) -> f64 {
         self.scale
     }
 
@@ -376,16 +376,16 @@ impl fmt::Display for InvGammaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ShapeTooLow { shape } => {
-                write!(f, "rate ({}) must be greater than zero", shape)
+                write!(f, "rate ({shape}) must be greater than zero")
             }
             Self::ShapeNotFinite { shape } => {
-                write!(f, "non-finite rate: {}", shape)
+                write!(f, "non-finite rate: {shape}")
             }
             Self::ScaleTooLow { scale } => {
-                write!(f, "scale ({}) must be greater than zero", scale)
+                write!(f, "scale ({scale}) must be greater than zero")
             }
             Self::ScaleNotFinite { scale } => {
-                write!(f, "non-finite scale: {}", scale)
+                write!(f, "non-finite scale: {scale}")
             }
         }
     }

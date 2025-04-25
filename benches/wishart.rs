@@ -4,13 +4,13 @@ use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use nalgebra::DMatrix;
 use rv::dist::InvWishart;
-use rv::traits::*;
+use rv::traits::{HasDensity, Sampleable};
 
 fn bench_wishart(c: &mut Criterion) {
     let mut group = c.benchmark_group("InvWishart");
     for dims in [2, 3, 5, 10] {
         group.bench_with_input(
-            format!("draw - {} dims", dims),
+            format!("draw - {dims} dims"),
             &dims,
             |b, &dims| {
                 let iw = InvWishart::identity(dims);
@@ -20,16 +20,16 @@ fn bench_wishart(c: &mut Criterion) {
                         black_box::<DMatrix<f64>>(iw.draw(&mut rng));
                     },
                     BatchSize::SmallInput,
-                )
+                );
             },
         );
         group.bench_with_input(
-            format!("ln f(x) - {} dims", dims),
+            format!("ln f(x) - {dims} dims"),
             &dims,
             |b, &dims| {
                 let iw = &InvWishart::identity(dims);
                 let x = &DMatrix::<f64>::identity(dims, dims);
-                b.iter(|| black_box(iw.ln_f(x)))
+                b.iter(|| black_box(iw.ln_f(x)));
             },
         );
     }

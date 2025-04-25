@@ -7,7 +7,7 @@ use crate::dist::{Gaussian, NormalInvGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
-use crate::traits::*;
+use crate::traits::{ConjugatePrior, DataOrSuffStat, HasSuffStat, Parameterized, Sampleable, SuffStat};
 
 #[inline]
 fn ln_z(v: f64, a: f64, b: f64) -> f64 {
@@ -214,6 +214,8 @@ mod test {
 
     #[test]
     fn ln_f_vs_reference() {
+        use crate::traits::HasDensity;
+
         let (m, v, a, b) = (0.0, 1.2, 2.3, 3.4);
         let nig = NormalInvGamma::new(m, v, a, b).unwrap();
         let mut rng = rand::thread_rng();
@@ -239,6 +241,7 @@ mod test {
     #[test]
     fn ln_m_vs_monte_carlo() {
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 1_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -264,6 +267,7 @@ mod test {
     #[test]
     fn ln_m_vs_importance() {
         use crate::dist::Gamma;
+        use crate::traits::HasDensity;
         use crate::misc::LogSumExp;
 
         let n_samples = 1_000_000;
@@ -293,6 +297,7 @@ mod test {
     #[test]
     fn ln_pp_vs_monte_carlo() {
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 1_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -328,6 +333,7 @@ mod test {
     #[test]
     fn ln_pp_vs_t() {
         use crate::dist::StudentsT;
+        use crate::traits::HasDensity;
 
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let y: f64 = -0.3;

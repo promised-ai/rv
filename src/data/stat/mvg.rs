@@ -15,7 +15,7 @@ pub struct MvGaussianSuffStat {
 
 impl MvGaussianSuffStat {
     #[inline]
-    pub fn new(dims: usize) -> Self {
+    #[must_use] pub fn new(dims: usize) -> Self {
         MvGaussianSuffStat {
             n: 0,
             sum_x: DVector::zeros(dims),
@@ -26,7 +26,7 @@ impl MvGaussianSuffStat {
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
-    pub fn from_parts_unchecked(
+    #[must_use] pub fn from_parts_unchecked(
         n: usize,
         sum_x: DVector<f64>,
         sum_x_sq: DMatrix<f64>,
@@ -36,19 +36,19 @@ impl MvGaussianSuffStat {
 
     /// Get the number of observations
     #[inline]
-    pub fn n(&self) -> usize {
+    #[must_use] pub fn n(&self) -> usize {
         self.n
     }
 
     /// Get the sum of observations
     #[inline]
-    pub fn sum_x(&self) -> &DVector<f64> {
+    #[must_use] pub fn sum_x(&self) -> &DVector<f64> {
         &self.sum_x
     }
 
     /// Get the sum of X^2
     #[inline]
-    pub fn sum_x_sq(&self) -> &DMatrix<f64> {
+    #[must_use] pub fn sum_x_sq(&self) -> &DMatrix<f64> {
         &self.sum_x_sq
     }
 }
