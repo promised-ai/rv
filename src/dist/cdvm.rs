@@ -88,7 +88,7 @@ impl Cdvm {
     /// * `mu` - mean direction (must be in [0, modulus))
     /// * `k` - concentration (must be non-negative)
     /// * `modulus` - Number of categories
-    pub fn new(mu: f64, k: f64, modulus: usize) -> Result<Self, CdvmError> {
+    pub fn new(modulus: usize, mu: f64, k: f64) -> Result<Self, CdvmError> {
         // Validate parameters
         if !mu.is_finite() {
             return Err(CdvmError::MuNotFinite { mu });
@@ -109,7 +109,7 @@ impl Cdvm {
     // Test that dependent fields are properly set
     // This is just for testing purposes
     pub fn is_consistent(&self) -> bool {
-        let other = Cdvm::new(self.mu, self.k, self.modulus).unwrap();
+        let other = Cdvm::new(self.modulus, self.mu, self.k).unwrap();
         self.mu == other.mu
             && self.k == other.k
             && self.modulus == other.modulus
@@ -213,7 +213,7 @@ impl Parameterized for Cdvm {
     }
 
     fn from_params(params: Self::Parameters) -> Self {
-        Self::new(params.mu, params.k, params.modulus).unwrap()
+        Self::new(params.modulus, params.mu, params.k).unwrap()
     }
 }
 
@@ -326,24 +326,24 @@ mod tests {
     #[test]
     fn new_should_validate_parameters() {
         // Valid parameters should work
-        assert!(Cdvm::new(1.5, 1.0, 3).is_ok());
+        assert!(Cdvm::new(3, 1.0, 1.5).is_ok());
 
         // Invalid modulus should fail
         assert!(matches!(
-            Cdvm::new(1.5, 1.0, 1),
+            Cdvm::new(1, 1.0, 1.5),
             Err(CdvmError::InvalidCategories { modulus: 1 })
         ));
 
         // Invalid k should fail
         assert!(matches!(
-            Cdvm::new(1.5, -1.0, 3),
-            Err(CdvmError::KNegative { k: -1.0 })
+            Cdvm::new(3, 1.0, -1.5),
+            Err(CdvmError::KNegative { k: -1.5 })
         ));
     }
 
     #[test]
     fn supports_correct_range() {
-        let cdvm = Cdvm::new(1.5, 1.0, 4).unwrap();
+        let cdvm = Cdvm::new(4, 1.0, 1.5).unwrap();
 
         assert!(cdvm.supports(&0));
         assert!(cdvm.supports(&1));
@@ -361,8 +361,8 @@ mod tests {
             x in 0..100_usize
         ) {
             let mu = mu % (m as f64);
-            let cdvm1 = Cdvm::new(mu, k, m).unwrap();
-            let cdvm2 = Cdvm::new((m as f64) - mu, k, m).unwrap();
+            let cdvm1 = Cdvm::new(m, mu, k).unwrap();
+            let cdvm2 = Cdvm::new(m, (m as f64) - mu, k).unwrap();
 
             let x1 = x % m;
             let x2 = m - x1;
@@ -381,7 +381,7 @@ mod tests {
             mu in 0.0..100_f64,
             k in 0.1..50.0_f64,
         ) {
-            let cdvm = Cdvm::new(mu, k, m).unwrap();
+            let cdvm = Cdvm::new(m, mu, k).unwrap();
 
             // For the density to be normalized, the logsum should be zero
             let logsum = (0..m).map(|x| cdvm.ln_f(&x)).logsumexp();
@@ -400,7 +400,7 @@ mod tests {
         ) {
             let mu = mu % (m as f64);
             let x = x % m;
-            let cdvm = Cdvm::new(mu, k, m).unwrap();
+            let cdvm = Cdvm::new(m, mu, k).unwrap();
             prop_assert!((cdvm.ln_f(&x) - cdvm.ln_f(&(x + m))).abs() < TOL,
                 "ln_f not invariant to wrap-around for m={}, mu={}, k={}, x={}", m, mu, k, x);
         }
@@ -408,7 +408,7 @@ mod tests {
 
     #[test]
     fn parameterized_trait() {
-        let original = Cdvm::new(1.5, 1.0, 3).unwrap();
+        let original = Cdvm::new(3, 1.0, 1.5).unwrap();
         let params = original.emit_params();
         let reconstructed = Cdvm::from_params(params);
 
@@ -425,7 +425,7 @@ mod tests {
         ) {
             let mu = mu % (m as f64);
             let xs: Vec<usize> = xs.into_iter().map(|x| x % m).collect();
-            let cdvm = Cdvm::new(mu, k, m).unwrap();
+            let cdvm = Cdvm::new(m, mu, k).unwrap();
 
             // Calculate ln_f for each x and sum them
             let ln_f_sum: f64 = xs.iter().map(|x| cdvm.ln_f(x)).sum();
@@ -452,7 +452,7 @@ mod tests {
             k2 in 0.1..50.0_f64,
         ) {
             let mu = mu % (m as f64);
-            let mut cdvm = Cdvm::new(mu, k1, m).unwrap();
+            let mut cdvm = Cdvm::new(m, mu, k1).unwrap();
 
             // Set a new k value
             cdvm.set_k(k2).unwrap();
@@ -473,7 +473,7 @@ mod tests {
         ) {
             let mu1 = mu1 % (m as f64);
             let mu2 = mu2 % (m as f64);
-            let mut cdvm = Cdvm::new(mu1, k, m).unwrap();
+            let mut cdvm = Cdvm::new(m, mu1, k).unwrap();
 
             // Set a new mu value
             cdvm.set_mu(mu2).unwrap();
