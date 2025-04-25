@@ -110,6 +110,7 @@ impl Cdvm {
 
     // Test that dependent fields are properly set
     // This is just for testing purposes
+    #[must_use]
     pub fn is_consistent(&self) -> bool {
         let other = Cdvm::new(self.modulus, self.mu, self.k).unwrap();
         self.mu == other.mu
@@ -146,21 +147,25 @@ impl Cdvm {
     }
 
     /// Get the number of categories
+    #[must_use]
     pub fn modulus(&self) -> usize {
         self.modulus
     }
 
     /// Get the von Mises mean direction
+    #[must_use]
     pub fn mu(&self) -> f64 {
         self.mu
     }
 
     /// Get the von Mises concentration parameter
+    #[must_use]
     pub fn k(&self) -> f64 {
         self.k
     }
 
     /// Get the cached 2π/m
+    #[must_use]
     pub fn twopi_over_m(&self) -> f64 {
         self.twopi_over_m
     }
@@ -257,13 +262,13 @@ impl fmt::Display for CdvmError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::MuNotFinite { mu } => {
-                write!(f, "mu ({}) must be finite", mu)
+                write!(f, "mu ({mu}) must be finite")
             }
             Self::KNotFinite { k } => {
-                write!(f, "k ({}) must be finite", k)
+                write!(f, "k ({k}) must be finite")
             }
             Self::KNegative { k } => {
-                write!(f, "k ({}) must be non-negative", k)
+                write!(f, "k ({k}) must be non-negative")
             }
             Self::InvalidCategories { modulus } => {
                 write!(f, "number of categories ({modulus}) must be at least 2")
