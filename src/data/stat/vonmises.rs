@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::traits::SuffStat;
 
-/// VonMises sufficient statistic.
+/// `VonMises` sufficient statistic.
 ///
 /// Holds the number of observations, their sum, and the sum of their squared
 /// values.
@@ -21,6 +21,7 @@ pub struct VonMisesSuffStat {
 
 impl VonMisesSuffStat {
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         VonMisesSuffStat {
             n: 0,
@@ -32,6 +33,7 @@ impl VonMisesSuffStat {
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
+    #[must_use]
     pub fn from_parts_unchecked(n: usize, sum_cos: f64, sum_sin: f64) -> Self {
         VonMisesSuffStat {
             n,
@@ -41,6 +43,7 @@ impl VonMisesSuffStat {
     }
 
     /// Create a sufficient statistic from a slice of data
+    #[must_use]
     pub fn from_data(xs: &[f64]) -> Self {
         let mut stat = VonMisesSuffStat::new();
         for x in xs {
@@ -51,18 +54,21 @@ impl VonMisesSuffStat {
 
     /// Get the number of observations
     #[inline]
+    #[must_use]
     pub fn n(&self) -> usize {
         self.n
     }
 
     /// Get the sum of cosines
     #[inline]
+    #[must_use]
     pub fn sum_cos(&self) -> f64 {
         self.sum_cos
     }
 
     /// Get the sum of sines
     #[inline]
+    #[must_use]
     pub fn sum_sin(&self) -> f64 {
         self.sum_sin
     }

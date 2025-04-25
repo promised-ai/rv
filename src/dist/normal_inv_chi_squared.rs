@@ -10,7 +10,7 @@ mod gaussian_prior;
 use crate::dist::{Gaussian, ScaledInvChiSquared};
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{HasDensity, Parameterized, Sampleable};
 use rand::Rng;
 use std::sync::OnceLock;
 
@@ -125,9 +125,10 @@ impl NormalInvChiSquared {
         }
     }
 
-    /// Creates a new NormalInvChiSquared without checking whether the
+    /// Creates a new `NormalInvChiSquared` without checking whether the
     /// parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(m: f64, k: f64, v: f64, s2: f64) -> Self {
         NormalInvChiSquared {
             m,
@@ -403,7 +404,7 @@ impl Sampleable<Gaussian> for NormalInvChiSquared {
         let post_sigma: f64 = sigma / self.k.sqrt();
         let mu: f64 = Gaussian::new(self.m, post_sigma)
             .map_err(|err| {
-                panic!("Invalid μ params when drawing Gaussian: {}", err)
+                panic!("Invalid μ params when drawing Gaussian: {err}")
             })
             .unwrap()
             .draw(&mut rng);
@@ -417,18 +418,18 @@ impl std::error::Error for NormalInvChiSquaredError {}
 impl std::fmt::Display for NormalInvChiSquaredError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::MNotFinite { m } => write!(f, "non-finite m: {}", m),
-            Self::KNotFinite { k } => write!(f, "non-finite k: {}", k),
-            Self::VNotFinite { v } => write!(f, "non-finite v: {}", v),
-            Self::S2NotFinite { s2 } => write!(f, "non-finite s2: {}", s2),
+            Self::MNotFinite { m } => write!(f, "non-finite m: {m}"),
+            Self::KNotFinite { k } => write!(f, "non-finite k: {k}"),
+            Self::VNotFinite { v } => write!(f, "non-finite v: {v}"),
+            Self::S2NotFinite { s2 } => write!(f, "non-finite s2: {s2}"),
             Self::KTooLow { k } => {
-                write!(f, "k ({}) must be greater than zero", k)
+                write!(f, "k ({k}) must be greater than zero")
             }
             Self::VTooLow { v } => {
-                write!(f, "v ({}) must be greater than zero", v)
+                write!(f, "v ({v}) must be greater than zero")
             }
             Self::S2TooLow { s2 } => {
-                write!(f, "s2 ({}) must be greater than zero", s2)
+                write!(f, "s2 ({s2}) must be greater than zero")
             }
         }
     }

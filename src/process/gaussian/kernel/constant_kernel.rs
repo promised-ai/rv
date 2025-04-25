@@ -29,6 +29,7 @@ impl ConstantKernel {
     }
 
     /// Create a new constant function kernel without checking the parameters
+    #[must_use]
     pub fn new_unchecked(scale: f64) -> Self {
         Self { scale }
     }

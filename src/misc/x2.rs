@@ -18,6 +18,7 @@ use special::Gamma as _;
 /// let (stat, p) = x2_test(&f_obs, &ps);
 /// assert!(p > 0.05);
 /// ```
+#[must_use]
 pub fn x2_test(f_obs: &[u32], ps: &[f64]) -> (f64, f64) {
     let k = f_obs.len();
     let nf = f64::from(f_obs.iter().sum::<u32>());

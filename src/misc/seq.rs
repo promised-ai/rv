@@ -1,6 +1,7 @@
 //! Sequence utilities
 
 /// Generate a linearly spaced set of points between start and stop
+#[must_use]
 pub fn linspace(start: f64, stop: f64, num: i32) -> Vec<f64> {
     let step = (stop - start) / f64::from(num - 1);
     (0..num)

@@ -4,7 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, Kurtosis, Mean, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use special::Gamma as _;
 use std::fmt;
@@ -95,6 +99,7 @@ impl Gamma {
 
     /// Creates a new Gamma without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(shape: f64, rate: f64) -> Self {
         Gamma {
             shape,
@@ -345,16 +350,16 @@ impl fmt::Display for GammaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ShapeTooLow { shape } => {
-                write!(f, "rate ({}) must be greater than zero", shape)
+                write!(f, "rate ({shape}) must be greater than zero")
             }
             Self::ShapeNotFinite { shape } => {
-                write!(f, "non-finite rate: {}", shape)
+                write!(f, "non-finite rate: {shape}")
             }
             Self::RateTooLow { rate } => {
-                write!(f, "rate ({}) must be greater than zero", rate)
+                write!(f, "rate ({rate}) must be greater than zero")
             }
             Self::RateNotFinite { rate } => {
-                write!(f, "non-finite rate: {}", rate)
+                write!(f, "non-finite rate: {rate}")
             }
         }
     }

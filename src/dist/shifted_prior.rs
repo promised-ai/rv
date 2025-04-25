@@ -1,7 +1,10 @@
 use crate::data::extract_stat_then;
 use crate::data::{DataOrSuffStat, ShiftedSuffStat};
 use crate::dist::Shifted;
-use crate::traits::*;
+use crate::traits::{
+    ConjugatePrior, HasDensity, HasSuffStat, Parameterized, Sampleable,
+    Shiftable,
+};
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -37,7 +40,7 @@ impl fmt::Display for ShiftedPriorError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::NonFiniteShift(shift) => {
-                write!(f, "non-finite shift: {}", shift)
+                write!(f, "non-finite shift: {shift}")
             }
         }
     }
@@ -54,14 +57,14 @@ where
     /// Returns `ShiftedPriorError::NonFiniteShift` if the shift parameter is not
     /// a finite number (i.e., if it's infinite or NaN).
     pub fn new(parent: Pr, shift: f64) -> Result<Self, ShiftedPriorError> {
-        if !shift.is_finite() {
-            Err(ShiftedPriorError::NonFiniteShift(shift))
-        } else {
+        if shift.is_finite() {
             Ok(ShiftedPrior {
                 parent,
                 shift,
                 _phantom: PhantomData,
             })
+        } else {
+            Err(ShiftedPriorError::NonFiniteShift(shift))
         }
     }
 

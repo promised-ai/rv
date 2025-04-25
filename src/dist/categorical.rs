@@ -6,7 +6,10 @@ use crate::data::{CategoricalDatum, CategoricalSuffStat};
 use crate::impl_display;
 use crate::misc::pflip;
 use crate::misc::{argmax, ln_pflips, vec_to_string, LogSumExp};
-use crate::traits::*;
+use crate::traits::{
+    Cdf, DiscreteDistr, Entropy, HasDensity, HasSuffStat, KlDivergence, Mode,
+    Parameterized, Sampleable, Support,
+};
 use rand::Rng;
 use std::fmt;
 
@@ -101,8 +104,8 @@ impl Categorical {
     /// Build a Categorical distribution from normalized log weights
     ///
     /// # Arguments
-    /// - ln_weights: A vector describing the proportional likelihood of each
-    ///   outcome in log space. sum(exp(ln_weights)) must be equal to 1.
+    /// - `ln_weights`: A vector describing the proportional likelihood of each
+    ///   outcome in log space. `sum(exp(ln_weights))` must be equal to 1.
     ///
     /// # Example
     ///
@@ -158,12 +161,14 @@ impl Categorical {
     /// Creates a new Categorical without checking whether the ln weights are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(ln_weights: Vec<f64>) -> Self {
         Categorical { ln_weights }
     }
 
     /// Creates a Categorical distribution over [0, k) with uniform weights
     #[inline]
+    #[must_use]
     pub fn uniform(k: usize) -> Self {
         let lnp = (1.0 / k as f64).ln();
         Categorical::new_unchecked(vec![lnp; k])
@@ -171,6 +176,7 @@ impl Categorical {
 
     /// Return the weights (`exp(ln_weights)`)
     #[inline]
+    #[must_use]
     pub fn weights(&self) -> Vec<f64> {
         self.ln_weights.iter().map(|&w| w.exp()).collect()
     }
@@ -185,12 +191,14 @@ impl Categorical {
     /// assert_eq!(cat.k(), 4);
     /// ```
     #[inline]
+    #[must_use]
     pub fn k(&self) -> usize {
         self.ln_weights.len()
     }
 
     /// Get a reference to the weights
     #[inline]
+    #[must_use]
     pub fn ln_weights(&self) -> &Vec<f64> {
         &self.ln_weights
     }
@@ -297,19 +305,19 @@ impl fmt::Display for CategoricalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::NonFiniteWeight { ix, ln, weight } if *ln => {
-                write!(f, "non-finite ln weight at index {}: {}", ix, weight)
+                write!(f, "non-finite ln weight at index {ix}: {weight}")
             }
             Self::NonFiniteWeight { ix, weight, .. } => {
-                write!(f, "non-finite weight at index {}: {}", ix, weight)
+                write!(f, "non-finite weight at index {ix}: {weight}")
             }
             Self::NegativeWeight { ix, weight } => {
-                write!(f, "negative weight at index {}: {}", ix, weight)
+                write!(f, "negative weight at index {ix}: {weight}")
             }
             Self::WeightsDoNotSumToOne { ln, sum } if *ln => {
-                write!(f, "ln weights sum to {}, should sum to zero", sum)
+                write!(f, "ln weights sum to {sum}, should sum to zero")
             }
             Self::WeightsDoNotSumToOne { sum, .. } => {
-                write!(f, "weights sum to {}, should sum to one", sum)
+                write!(f, "weights sum to {sum}, should sum to one")
             }
             Self::EmptyWeights => write!(f, "empty weights vector"),
         }
@@ -478,6 +486,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+
         let data: Vec<u8> = vec![0, 1, 2, 1, 1, 0];
         let mut stat = CategoricalSuffStat::new(3);
         stat.observe_many(&data);

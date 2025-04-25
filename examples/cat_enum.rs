@@ -12,7 +12,7 @@ enum Color {
     Green = 2,
 }
 
-/// Then we implement the CatgoricalDatum trait for Color which has methods to
+/// Then we implement the `CatgoricalDatum` trait for Color which has methods to
 /// convert to and from a usize index.
 impl CategoricalDatum for Color {
     fn into_usize(self) -> usize {
@@ -24,7 +24,7 @@ impl CategoricalDatum for Color {
             0 => Color::Red,
             1 => Color::Blue,
             2 => Color::Green,
-            _ => panic!("Cannot convert {} to Color", n),
+            _ => panic!("Cannot convert {n} to Color"),
         }
     }
 }
@@ -40,5 +40,5 @@ fn main() {
 
     // Take 10 draws from {Red, Blue, Green} according to the distribution.
     let xs: Vec<Color> = ctgrl.sample(10, &mut rng);
-    println!("xs: {:?}", xs);
+    println!("xs: {xs:?}");
 }

@@ -1,12 +1,15 @@
 //! Kolmogorow-Smirnov two-sided test for large values of N.
-//! Heavily inspired by SciPy's implementation which can be found here:
+//! Heavily inspired by `SciPy`'s implementation which can be found here:
 //! <https://github.com/scipy/scipy/blob/a767030252ba3f7c8e2924847dffa7024171657b/scipy/special/cephes/kolmogorov.c#L153>
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
 use crate::consts::TWO_PI;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, HasDensity, InverseCdf, Parameterized, Sampleable,
+    Support,
+};
 use rand::Rng;
 use std::f64::consts::{PI, SQRT_2};
 
@@ -19,8 +22,8 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
 /// Kolmogorov-Smirnov distribution where the number of samples, $N$, is
 /// assumed to be large.
 ///
-/// This is the distribution of $\sqrt{N} D_n$ where
-/// $D_n = \sup_x |F_n(x) - F(x)|$ where $F$ is the true CDF and $F_n$ the
+/// This is the distribution of $\sqrt{N} `D_n`$ where
+/// $`D_n` = \`sup_x` |`F_n(x)` - F(x)|$ where $F$ is the true CDF and $`F_n`$ the
 /// empirical CDF.
 ///
 /// # Example
@@ -62,8 +65,9 @@ const KOLMOGO_CUTOVER: f64 = 0.82;
 const MAX_ITERS: usize = 2000;
 
 impl KsTwoAsymptotic {
-    /// Create a new KsTwoAsymptotic distribution
+    /// Create a new `KsTwoAsymptotic` distribution
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self {}
     }
@@ -218,7 +222,7 @@ impl KsTwoAsymptotic {
                     x = (a + b) / 2.0;
                 }
             }
-            assert!(a <= b, "{} > {}", a, b);
+            assert!(a <= b, "{a} > {b}");
 
             for _ in 0..MAX_ITERS {
                 let x0 = x;

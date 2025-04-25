@@ -1,7 +1,7 @@
 use rand::Rng;
 use rv::dist::{Bernoulli, Beta};
 use rv::prelude::BernoulliData;
-use rv::traits::*;
+use rv::traits::{ConjugatePrior, DataOrSuffStat, Mean, Sampleable, SuffStat};
 use rv::ConjugateModel;
 use std::sync::Arc;
 
@@ -30,10 +30,7 @@ fn main() {
     // Print the mean. The posterior mean for Bernoulli likelihood with Beta
     // prior.
     let posterior_mean: f64 = posterior.mean().expect("Mean undefined");
-    println!(
-        "Posterior mean: {} (should be close to 0.7)",
-        posterior_mean
-    );
+    println!("Posterior mean: {posterior_mean} (should be close to 0.7)");
 
     // Same thing, only using ConjugateModel
     let mut model: ConjugateModel<bool, Bernoulli, Beta> =
@@ -44,5 +41,5 @@ fn main() {
 
     // draw from the posterior predictive
     let ys = model.sample(10, &mut rng);
-    println!("Posterior predictive samples: {:?}", ys);
+    println!("Posterior predictive samples: {ys:?}");
 }

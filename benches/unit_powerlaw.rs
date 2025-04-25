@@ -2,7 +2,7 @@ use std::f64;
 
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
-use rv::traits::*;
+use rv::traits::{HasDensity, Sampleable};
 
 fn draw_rv<R: rand::Rng>(mut rng: &mut R) -> f64 {
     let powlaw = rv::dist::UnitPowerLaw::new(5.0).unwrap();
@@ -26,15 +26,15 @@ fn bench_powlaw_draw(c: &mut Criterion) {
     let mut group = c.benchmark_group("unit_powerlaw_draw");
     group.bench_function("draw_rv", |b| {
         let mut rng = rand::thread_rng();
-        b.iter(|| draw_rv(&mut rng))
+        b.iter(|| draw_rv(&mut rng));
     });
     group.bench_function("draw_2_uniform", |b| {
         let mut rng = rand::thread_rng();
-        b.iter(|| draw_2u(&mut rng))
+        b.iter(|| draw_2u(&mut rng));
     });
     group.bench_function("draw_2_uniform_recip", |b| {
         let mut rng = rand::thread_rng();
-        b.iter(|| draw_2u_recip(&mut rng))
+        b.iter(|| draw_2u_recip(&mut rng));
     });
 }
 

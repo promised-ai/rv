@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, HasDensity, Kurtosis, Mean, Mode, Parameterized,
+    Sampleable, Scalable, Shiftable, Skewness, Support, Variance,
+};
 use rand::Rng;
 use special::Gamma;
 use std::f64::consts::LN_2;
@@ -92,9 +95,10 @@ impl InvChiSquared {
         }
     }
 
-    /// Create a new InvChiSquared without checking whether the parameters are
+    /// Create a new `InvChiSquared` without checking whether the parameters are
     /// valid.
     #[inline(always)]
+    #[must_use]
     pub fn new_unchecked(v: f64) -> Self {
         InvChiSquared {
             v,
@@ -273,9 +277,9 @@ impl fmt::Display for InvChiSquaredError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::VTooLow { v } => {
-                write!(f, "v ({}) must be greater than zero", v)
+                write!(f, "v ({v}) must be greater than zero")
             }
-            Self::VNotFinite { v } => write!(f, "v ({}) must be finite", v),
+            Self::VNotFinite { v } => write!(f, "v ({v}) must be finite"),
         }
     }
 }

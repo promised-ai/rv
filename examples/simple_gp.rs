@@ -7,7 +7,10 @@ use rand_xoshiro::Xoshiro256Plus;
 
 #[cfg(feature = "process")]
 use rv::process::{
-    gaussian::{kernel::*, GaussianProcess, NoiseModel},
+    gaussian::{
+        kernel::{ConstantKernel, Kernel, RBFKernel},
+        GaussianProcess, NoiseModel,
+    },
     RandomProcess, RandomProcessMle,
 };
 

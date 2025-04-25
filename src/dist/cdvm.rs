@@ -7,7 +7,9 @@ use crate::data::CdvmSuffStat;
 use crate::impl_display;
 use crate::misc::func::LogSumExp;
 use crate::misc::ln_pflip;
-use crate::traits::*;
+use crate::traits::{
+    HasDensity, HasSuffStat, Mean, Mode, Parameterized, Sampleable, Support,
+};
 use rand::Rng;
 use std::fmt;
 
@@ -119,6 +121,7 @@ impl Cdvm {
 
     /// Creates a new CDVM without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(modulus: usize, mu: f64, k: f64) -> Self {
         let log_norm_const = Cdvm::compute_log_norm_const(modulus, mu, k);
 
@@ -263,11 +266,7 @@ impl fmt::Display for CdvmError {
                 write!(f, "k ({}) must be non-negative", k)
             }
             Self::InvalidCategories { modulus } => {
-                write!(
-                    f,
-                    "number of categories ({}) must be at least 2",
-                    modulus
-                )
+                write!(f, "number of categories ({modulus}) must be at least 2")
             }
         }
     }
@@ -438,8 +437,7 @@ mod tests {
 
             // They should be equal
             assert!((ln_f_sum - ln_f_stat).abs() < TOL,
-                "ln_f_sum ({}) != ln_f_stat ({}) for m={}, mu={}, k={}, xs={:?}",
-                ln_f_sum, ln_f_stat, m, mu, k, xs);
+            "ln_f_sum ({ln_f_sum}) != ln_f_stat ({ln_f_stat}) for m={m}, mu={mu}, k={k}, xs={xs:?}");
         }
     }
 

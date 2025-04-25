@@ -3,7 +3,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Kurtosis, Mean,
+    Median, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use std::f64;
 use std::fmt;
@@ -133,6 +137,7 @@ impl Uniform {
     /// Creates a new Uniform without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(a: f64, b: f64) -> Self {
         Uniform {
             a,
@@ -170,7 +175,7 @@ impl Uniform {
     /// Set the value of a without checking if a is valid
     pub fn set_a_unchecked(&mut self, a: f64) {
         self.lnf = OnceLock::new();
-        self.a = a
+        self.a = a;
     }
 
     /// Get the upper bound, b
@@ -202,7 +207,7 @@ impl Uniform {
     /// Set the value of b without checking if b is valid
     pub fn set_b_unchecked(&mut self, b: f64) {
         self.lnf = OnceLock::new();
-        self.b = b
+        self.b = b;
     }
 
     #[inline]
@@ -333,10 +338,10 @@ impl fmt::Display for UniformError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidInterval { a, b } => {
-                write!(f, "invalid interval: (a, b) = ({}, {})", a, b)
+                write!(f, "invalid interval: (a, b) = ({a}, {b})")
             }
-            Self::ANotFinite { a } => write!(f, "non-finite a: {}", a),
-            Self::BNotFinite { b } => write!(f, "non-finite b: {}", b),
+            Self::ANotFinite { a } => write!(f, "non-finite a: {a}"),
+            Self::BNotFinite { b } => write!(f, "non-finite b: {b}"),
         }
     }
 }
