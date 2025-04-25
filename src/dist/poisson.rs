@@ -7,8 +7,8 @@ use crate::impl_display;
 use crate::misc::ln_fact;
 use crate::traits::{
     Cdf, DiscreteDistr, Entropy, HasDensity, HasSuffStat, KlDivergence,
-    Kurtosis, Mean, Mode, Parameterized, Sampleable, Skewness, 
-    Support, Variance,
+    Kurtosis, Mean, Mode, Parameterized, Sampleable, Skewness, Support,
+    Variance,
 };
 use rand::Rng;
 use rand_distr::Poisson as RPoisson;
@@ -567,8 +567,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
-        use crate::traits::SuffStat;   
-        
+        use crate::traits::SuffStat;
+
         let data: Vec<u32> = vec![1, 2, 2, 8, 10, 3];
         let mut stat = PoissonSuffStat::new();
         stat.observe_many(&data);

@@ -7,7 +7,7 @@ use crate::impl_display;
 use crate::misc::bessel;
 use crate::traits::{
     Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, Mean, Median, Mode,
-    Parameterized, Sampleable, Scalable,  Support, Variance,
+    Parameterized, Sampleable, Scalable, Support, Variance,
 };
 use num::Zero;
 use rand::Rng;
@@ -706,7 +706,7 @@ mod tests {
     #[test]
     fn ln_f_vs_ln_f_stat_test() {
         use crate::traits::SuffStat;
-        
+
         // Create a VonMises distribution
         let mut rng = rand::thread_rng();
         let mu = 1.5;

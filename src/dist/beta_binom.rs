@@ -12,8 +12,8 @@ use crate::impl_display;
 use crate::misc::ln_gammafn;
 use crate::misc::ln_pflips;
 use crate::traits::{
-    Cdf, DiscreteDistr, HasDensity, Mean, Parameterized, Sampleable, 
-    Support, Variance,
+    Cdf, DiscreteDistr, HasDensity, Mean, Parameterized, Sampleable, Support,
+    Variance,
 };
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)

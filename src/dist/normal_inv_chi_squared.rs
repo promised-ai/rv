@@ -10,7 +10,7 @@ mod gaussian_prior;
 use crate::dist::{Gaussian, ScaledInvChiSquared};
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::{ HasDensity, Parameterized, Sampleable};
+use crate::traits::{HasDensity, Parameterized, Sampleable};
 use rand::Rng;
 use std::sync::OnceLock;
 

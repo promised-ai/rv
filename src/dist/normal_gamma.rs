@@ -5,8 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::dist::{Gamma, Gaussian};
 use crate::impl_display;
 use crate::traits::{
-     ContinuousDistr, HasDensity, Parameterized, Sampleable,
-    Support,
+    ContinuousDistr, HasDensity, Parameterized, Sampleable, Support,
 };
 use rand::Rng;
 use std::fmt;

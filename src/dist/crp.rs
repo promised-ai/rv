@@ -14,7 +14,7 @@ use crate::data::Partition;
 use crate::impl_display;
 use crate::misc::ln_gammafn;
 use crate::misc::pflip;
-use crate::traits::{HasDensity, Parameterized, Sampleable,  Support};
+use crate::traits::{HasDensity, Parameterized, Sampleable, Support};
 use rand::Rng;
 use std::fmt;
 

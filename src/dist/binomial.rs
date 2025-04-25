@@ -6,7 +6,7 @@ use crate::impl_display;
 use crate::misc::ln_binom;
 use crate::traits::{
     Cdf, DiscreteDistr, HasDensity, Kurtosis, Mean, Parameterized, Sampleable,
-    Skewness,  Support, Variance,
+    Skewness, Support, Variance,
 };
 use rand::Rng;
 use std::f64;

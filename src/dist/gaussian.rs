@@ -15,7 +15,7 @@ use crate::traits::HasDensity;
 use crate::traits::{
     Cdf, ContinuousDistr, Entropy, HasSuffStat, InverseCdf, KlDivergence,
     Kurtosis, Mean, Median, Mode, Parameterized, QuadBounds, Sampleable,
-    Scalable, Shiftable, Skewness,  Support, Variance,
+    Scalable, Shiftable, Skewness, Support, Variance,
 };
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
@@ -764,7 +764,7 @@ mod tests {
     #[test]
     fn ln_f_stat() {
         use crate::traits::SuffStat;
-        
+
         let data: Vec<f64> = vec![0.1, 0.23, 1.4, 0.65, 0.22, 3.1];
         let mut stat = GaussianSuffStat::new();
         stat.observe_many(&data);

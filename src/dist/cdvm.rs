@@ -7,8 +7,7 @@ use crate::impl_display;
 use crate::misc::func::LogSumExp;
 use crate::misc::ln_pflip;
 use crate::traits::{
-    HasDensity, HasSuffStat, Mean, Mode, Parameterized, Sampleable, 
-    Support,
+    HasDensity, HasSuffStat, Mean, Mode, Parameterized, Sampleable, Support,
 };
 use rand::Rng;
 use std::f64;

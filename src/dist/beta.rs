@@ -6,8 +6,8 @@ use crate::data::BetaSuffStat;
 use crate::impl_display;
 use crate::traits::{
     Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, Kurtosis, Mean,
-    Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness,
-    Support, Variance,
+    Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
 };
 use rand::Rng;
 use special::Beta as _;
@@ -767,7 +767,7 @@ mod tests {
     #[test]
     fn ln_f_stat() {
         use crate::traits::SuffStat;
-        
+
         let data: Vec<f64> = vec![0.1, 0.23, 0.4, 0.65, 0.22, 0.31];
         let mut stat = BetaSuffStat::new();
         stat.observe_many(&data);

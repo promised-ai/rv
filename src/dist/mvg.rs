@@ -7,7 +7,7 @@ use crate::data::MvGaussianSuffStat;
 use crate::impl_display;
 use crate::traits::{
     ContinuousDistr, Entropy, HasDensity, HasSuffStat, Mean, Mode,
-    Parameterized, Sampleable,  Support, Variance,
+    Parameterized, Sampleable, Support, Variance,
 };
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dyn};
@@ -811,8 +811,8 @@ mod tests {
 
     #[test]
     fn suff_stat_ln_f_fuzzy() {
-        use crate::traits::SuffStat;    
-        
+        use crate::traits::SuffStat;
+
         let f = MvGaussian::new(
             dvector![1.0, 2.0],
             dmatrix![1.0, 3.0/5.0; 3.0/5.0, 2.0;],

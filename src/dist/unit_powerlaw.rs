@@ -576,8 +576,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
-        use crate::traits::SuffStat;  
-        
+        use crate::traits::SuffStat;
+
         let data: Vec<f64> = vec![0.1, 0.23, 0.4, 0.65, 0.22, 0.31];
         let mut stat = UnitPowerLawSuffStat::new();
         stat.observe_many(&data);

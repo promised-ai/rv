@@ -7,9 +7,7 @@ use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
-use crate::traits::{
-    ConjugatePrior, DataOrSuffStat, HasSuffStat,  Sampleable, 
-};
+use crate::traits::{ConjugatePrior, DataOrSuffStat, HasSuffStat, Sampleable};
 
 #[derive(Clone, Debug)]
 pub struct PosteriorParameters {

@@ -6,8 +6,8 @@ use crate::data::{BernoulliSuffStat, Booleable};
 use crate::impl_display;
 use crate::traits::{
     Cdf, DiscreteDistr, Entropy, HasDensity, HasSuffStat, KlDivergence,
-    Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Skewness,
-     Support, Variance,
+    Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Skewness, Support,
+    Variance,
 };
 use rand::Rng;
 use std::f64;
@@ -742,7 +742,7 @@ mod tests {
     #[test]
     fn ln_f_stat() {
         use crate::traits::SuffStat;
-        
+
         let data: Vec<bool> = vec![true, false, false, false, true];
         let mut stat = BernoulliSuffStat::new();
         stat.observe_many(&data);

@@ -474,7 +474,7 @@ mod tests {
     #[test]
     fn ln_f_stat() {
         use crate::traits::SuffStat;
-        
+
         let data: Vec<f64> = vec![0.1, 0.23, 1.4, 0.65, 0.22, 3.1];
         let mut stat = InvGaussianSuffStat::new();
         stat.observe_many(&data);
