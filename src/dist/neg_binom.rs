@@ -358,7 +358,7 @@ mod tests {
 
         match nbin_res {
             Err(NegBinomialError::RLessThanOne { .. }) => (),
-            Err(err) => panic!("wrong error {:?}", err),
+            Err(err) => panic!("wrong error {err:?}"),
             Ok(_) => panic!("should have failed"),
         }
     }
@@ -367,13 +367,13 @@ mod tests {
     fn new_with_too_low_or_high_p_errors() {
         match NegBinomial::new(2.0, -0.1) {
             Err(NegBinomialError::POutOfRange { .. }) => (),
-            Err(err) => panic!("wrong error {:?}", err),
+            Err(err) => panic!("wrong error {err:?}"),
             Ok(_) => panic!("should have failed"),
         }
 
         match NegBinomial::new(2.0, 1.001) {
             Err(NegBinomialError::POutOfRange { .. }) => (),
-            Err(err) => panic!("wrong error {:?}", err),
+            Err(err) => panic!("wrong error {err:?}"),
             Ok(_) => panic!("should have failed"),
         }
     }
@@ -394,8 +394,8 @@ mod tests {
 
         match nbin.set_r(0.1) {
             Err(NegBinomialError::RLessThanOne { .. }) => (),
-            Err(err) => panic!("wrong error {:?}", err),
-            Ok(_) => panic!("should have failed"),
+            Err(err) => panic!("wrong error {err:?}"),
+            Ok(()) => panic!("should have failed"),
         }
     }
 
@@ -415,8 +415,8 @@ mod tests {
 
         match nbin.set_p(-0.1) {
             Err(NegBinomialError::POutOfRange { .. }) => (),
-            Err(err) => panic!("wrong error {:?}", err),
-            Ok(_) => panic!("should have failed"),
+            Err(err) => panic!("wrong error {err:?}"),
+            Ok(()) => panic!("should have failed"),
         }
     }
 
@@ -427,8 +427,8 @@ mod tests {
 
         match nbin.set_p(1.1) {
             Err(NegBinomialError::POutOfRange { .. }) => (),
-            Err(err) => panic!("wrong error {:?}", err),
-            Ok(_) => panic!("should have failed"),
+            Err(err) => panic!("wrong error {err:?}"),
+            Ok(()) => panic!("should have failed"),
         }
     }
 

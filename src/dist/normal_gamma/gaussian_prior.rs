@@ -256,7 +256,7 @@ mod tests {
                 // ln_f + ng.ln_f(&gauss) - pr_m.ln_f(&mu) - pr_p.ln_f(&prec)
                 ln_f + ng.ln_f(&gauss) - post.ln_f(&gauss)
             });
-            ln_fs.logsumexp() - (n_samples as f64).ln()
+            ln_fs.logsumexp() - f64::from(n_samples).ln()
         };
         // high error tolerance. MC estimation is not the most accurate...
         assert::close(ln_m, mc_est, 1e-2);

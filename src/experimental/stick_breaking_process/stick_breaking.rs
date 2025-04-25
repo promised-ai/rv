@@ -573,7 +573,7 @@ mod tests {
         // Chi-square test is not exact, so we'll trim to only consider cases
         // where expected count is at least 5.
         let expected_counts = (0..)
-            .map(|j| post.m(&DataOrSuffStat::Data(&[j])) * num_samples as f64)
+            .map(|j| post.m(&DataOrSuffStat::Data(&[j])) * f64::from(num_samples))
             .take_while(|x| *x > 5.0);
 
         let ts = counts
@@ -584,7 +584,7 @@ mod tests {
         let t: &f64 = &ts.clone().sum();
         let p = ChiSquared::new(dof).unwrap().sf(t);
 
-        assert!(p > 0.001, "p-value = {}", p);
+        assert!(p > 0.001, "p-value = {p}");
     }
 
     #[test]

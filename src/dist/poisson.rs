@@ -530,7 +530,7 @@ mod tests {
         rates.iter().zip(hs.iter()).for_each(|(rate, h)| {
             let pois = Poisson::new(*rate).unwrap();
             assert::close(*h, pois.entropy(), TOL);
-        })
+        });
     }
 
     #[test]

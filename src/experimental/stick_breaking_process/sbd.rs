@@ -313,6 +313,6 @@ mod tests {
         assert_eq!(
             sbd.multi_invccdf_sorted(&ps),
             ps.iter().rev().map(|p| sbd.invccdf(*p)).collect::<Vec<_>>()
-        )
+        );
     }
 }

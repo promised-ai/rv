@@ -415,7 +415,7 @@ mod tests {
     fn simple() {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+        let y_train: DVector<f64> = x_train.map(f64::sin).column(0).into();
 
         let kernel = RBFKernel::default();
         let gp = GaussianProcess::train(
@@ -560,14 +560,14 @@ mod tests {
         );
 
         let cov = pred.cov();
-        assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7))
+        assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7));
     }
 
     #[test]
     fn log_marginal_a() {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+        let y_train: DVector<f64> = x_train.map(f64::sin).column(0).into();
 
         let kernel = RBFKernel::default() * ConstantKernel::default();
         let parameters = kernel.parameters();
@@ -596,7 +596,7 @@ mod tests {
     fn log_marginal_b() -> Result<(), KernelError> {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+        let y_train: DVector<f64> = x_train.map(f64::sin).column(0).into();
 
         let kernel = RBFKernel::new(1.994_891_474_270_000_8)?
             * ConstantKernel::new(1.221_163_421_070_665)?;
@@ -633,7 +633,7 @@ mod tests {
     fn optimize_gp_1_param() {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+        let y_train: DVector<f64> = x_train.map(f64::sin).column(0).into();
 
         let kernel = RBFKernel::default();
         let noise_model = NoiseModel::default();
@@ -658,7 +658,7 @@ mod tests {
     fn optimize_gp_2_param() {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+        let y_train: DVector<f64> = x_train.map(f64::sin).column(0).into();
 
         let kernel = ConstantKernel::default() * RBFKernel::default();
         let noise_model = NoiseModel::default();

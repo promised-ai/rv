@@ -576,7 +576,7 @@ mod tests {
         let gauss = Gaussian::standard();
         for _ in 0..100 {
             let x: f64 = gauss.draw(&mut rng);
-            assert!(x.is_finite())
+            assert!(x.is_finite());
         }
     }
 
@@ -686,7 +686,7 @@ mod tests {
             let p = gauss.cdf(x);
             let y: f64 = gauss.quantile(p);
             assert::close(y, *x, TOL);
-        })
+        });
     }
 
     #[test]

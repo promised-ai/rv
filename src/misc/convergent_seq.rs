@@ -80,7 +80,7 @@ mod tests {
         let seq = (0..)
             .map(|n| {
                 let sign = if n.is_even() { 1.0 } else { -1.0 };
-                let val = sign / (2 * n + 1) as f64;
+                let val = sign / f64::from(2 * n + 1);
                 dbg!(val);
                 val
             })

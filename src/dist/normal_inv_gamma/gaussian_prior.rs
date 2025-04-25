@@ -288,7 +288,7 @@ mod test {
                 let ln_f = xs.iter().map(|x| gauss.ln_f(x)).sum::<f64>();
                 ln_f + nig.ln_f(&gauss) - pr_m.ln_f(&mu) - pr_s.ln_f(&var)
             });
-            ln_fs.logsumexp() - (n_samples as f64).ln()
+            ln_fs.logsumexp() - f64::from(n_samples).ln()
         };
         // high error tolerance. MC estimation is not the most accurate...
         assert::close(ln_m, mc_est, 1e-2);

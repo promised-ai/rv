@@ -673,8 +673,7 @@ mod tests {
         dbg!(p_value);
         assert!(
             p_value > 0.01,
-            "Slice step sampling failed KS test with p-value {}",
-            p_value
+            "Slice step sampling failed KS test with p-value {p_value}"
         );
     }
 

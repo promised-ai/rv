@@ -897,7 +897,7 @@ mod tests {
                 prop_assert!(result == f64::NEG_INFINITY);
             } else {
                 // Naive implementation for comparison
-                let max_x = xs.iter().cloned().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+                let max_x = xs.iter().copied().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
                 let sum_exp = xs.iter().map(|&x| (x - max_x).exp()).sum::<f64>();
                 let expected = max_x + sum_exp.ln();
 
@@ -994,10 +994,10 @@ mod tests {
             let mut next_bin = 0.01;
             let mut bin_pop = 0;
 
-            for x in xs.iter() {
+            for x in &xs {
                 bin_pop += 1;
                 if *x > next_bin {
-                    let obs = bin_pop as f64;
+                    let obs = f64::from(bin_pop);
                     let exp = n as f64 / 100.0;
                     t += (obs - exp).powi(2) / exp;
                     bin_pop = 0;
@@ -1006,7 +1006,7 @@ mod tests {
             }
 
             // The last bin
-            let obs = bin_pop as f64;
+            let obs = f64::from(bin_pop);
             let exp = n as f64 / 100.0;
             t += (obs - exp).powi(2) / exp;
         }
@@ -1047,7 +1047,7 @@ mod tests {
             .iter()
             .zip(expected.iter())
             .map(|(obs, exp)| {
-                let diff = *obs as f64 - exp;
+                let diff = f64::from(*obs) - exp;
                 diff * diff / exp
             })
             .sum();
@@ -1059,8 +1059,7 @@ mod tests {
 
         assert!(
             p_value > 0.01,
-            "Chi-squared test failed: p-value = {}",
-            p_value
+            "Chi-squared test failed: p-value = {p_value}"
         );
     }
 }

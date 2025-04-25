@@ -139,7 +139,7 @@ mod tests {
         let sf = CategoricalSuffStat::new(4);
         assert_eq!(sf.counts.len(), 4);
         assert_eq!(sf.n, 0);
-        assert!(sf.counts.iter().all(|&ct| ct.abs() < 1E-12))
+        assert!(sf.counts.iter().all(|&ct| ct.abs() < 1E-12));
     }
 
     #[test]

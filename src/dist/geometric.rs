@@ -441,12 +441,12 @@ mod tests {
 
     #[test]
     fn draw_test_05() {
-        test_draw_generic(0.5)
+        test_draw_generic(0.5);
     }
 
     #[test]
     fn draw_test_02() {
-        test_draw_generic(0.2)
+        test_draw_generic(0.2);
     }
 
     verify_cache_resets!(

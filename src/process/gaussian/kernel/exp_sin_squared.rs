@@ -177,7 +177,7 @@ mod tests {
 
         let x: DMatrix<f64> =
             DMatrix::from_row_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y = x.map(|z| z.sin());
+        let y = x.map(f64::sin);
 
         let cov = kernel.covariance(&x, &y);
         let expected_cov = DMatrix::from_row_slice(

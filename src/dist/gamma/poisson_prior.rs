@@ -210,7 +210,7 @@ mod tests {
                 dist.ln_pp(&inputs[i], &DataOrSuffStat::from(&vec![])),
                 expected[i],
                 TOL,
-            )
+            );
         }
     }
 

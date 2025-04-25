@@ -421,12 +421,12 @@ mod tests {
             Err(BernoulliError::PNotFinite { .. }) => (),
             Err(_) => panic!("wrong error"),
             Ok(_) => panic!("should've errored"),
-        };
+        }
         match Bernoulli::new(f64::INFINITY) {
             Err(BernoulliError::PNotFinite { .. }) => (),
             Err(_) => panic!("wrong error"),
             Ok(_) => panic!("should've errored"),
-        };
+        }
     }
 
     #[test]

@@ -183,7 +183,7 @@ mod tests {
         .unwrap();
 
         let data: Vec<_> = (0..10)
-            .map(|i| i as f64)
+            .map(|i| f64::from(i))
             .map(|i| dvector![i * 2.0, i.mul_add(2.0, 1.0)])
             .collect();
 

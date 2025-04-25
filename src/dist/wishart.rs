@@ -293,14 +293,14 @@ mod tests {
     fn ln_f_standard_ident() {
         let iw = InvWishart::identity(4);
         let x = DMatrix::<f64>::identity(4, 4);
-        assert::close(iw.ln_f(&x), -11.430_949_807_317_218, TOL)
+        assert::close(iw.ln_f(&x), -11.430_949_807_317_218, TOL);
     }
 
     #[test]
     fn ln_f_standard_mode() {
         let iw = InvWishart::identity(4);
         let x = DMatrix::<f64>::identity(4, 4) / 9.0;
-        assert::close(iw.ln_f(&x), 12.119_092_584_734_73, TOL)
+        assert::close(iw.ln_f(&x), 12.119_092_584_734_73, TOL);
     }
 
     #[test]
@@ -326,7 +326,7 @@ mod tests {
         let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
         let iw = InvWishart::new(inv_scale, 5).unwrap();
         let x = DMatrix::<f64>::identity(4, 4);
-        assert::close(iw.ln_f(&x), -18.939_673_925_150_9, TOL)
+        assert::close(iw.ln_f(&x), -18.939_673_925_150_9, TOL);
     }
 
     #[test]
@@ -389,6 +389,6 @@ mod tests {
         let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
         let x = inv_scale.clone();
         let iw = InvWishart::new(inv_scale, 5).unwrap();
-        assert::close(iw.ln_f(&x), -6.187_876_016_819_759, TOL)
+        assert::close(iw.ln_f(&x), -6.187_876_016_819_759, TOL);
     }
 }

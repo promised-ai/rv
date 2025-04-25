@@ -425,7 +425,7 @@ mod tests {
         let lognorm = LogNormal::standard();
         for _ in 0..100 {
             let x: f64 = lognorm.draw(&mut rng);
-            assert!(x.is_finite())
+            assert!(x.is_finite());
         }
     }
 

@@ -580,7 +580,7 @@ mod tests {
         assert_eq!(
             mvg,
             Err(MvGaussianError::MuCovDimensionMismatch { n_mu: 3, n_cov: 4 })
-        )
+        );
     }
 
     #[test]
@@ -591,7 +591,7 @@ mod tests {
         assert_eq!(
             mvg,
             Err(MvGaussianError::MuCovDimensionMismatch { n_mu: 3, n_cov: 2 })
-        )
+        );
     }
 
     #[test]

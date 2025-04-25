@@ -546,7 +546,7 @@ mod tests {
     #[test]
     fn mean_for_uniform_should_be_one_half() {
         let mean: f64 = Kumaraswamy::uniform().mean().unwrap();
-        assert::close(mean, 0.5, 1E-10)
+        assert::close(mean, 0.5, 1E-10);
     }
 
     #[test]
@@ -560,14 +560,14 @@ mod tests {
                     Kumaraswamy::new(1.0, p).unwrap().mean().unwrap();
                 let beta_m: f64 = Beta::new(1.0, p).unwrap().mean().unwrap();
 
-                assert::close(kuma_m, beta_m, 1E-10)
+                assert::close(kuma_m, beta_m, 1E-10);
             }
             {
                 let kuma_m: f64 =
                     Kumaraswamy::new(p, 1.0).unwrap().mean().unwrap();
                 let beta_m: f64 = Beta::new(p, 1.0).unwrap().mean().unwrap();
 
-                assert::close(kuma_m, beta_m, 1E-10)
+                assert::close(kuma_m, beta_m, 1E-10);
             }
         }
 
@@ -575,7 +575,7 @@ mod tests {
             .unwrap()
             .sample(100, &mut rng)
             .iter()
-            .for_each(|&p| equiv(p))
+            .for_each(|&p| equiv(p));
     }
 
     #[test]
@@ -589,14 +589,14 @@ mod tests {
                     Kumaraswamy::new(1.0, p).unwrap().mean().unwrap();
                 let beta_m: f64 = Beta::new(1.0, p).unwrap().mean().unwrap();
 
-                assert::close(kuma_m, beta_m, 1E-10)
+                assert::close(kuma_m, beta_m, 1E-10);
             }
             {
                 let kuma_m: f64 =
                     Kumaraswamy::new(p, 1.0).unwrap().mean().unwrap();
                 let beta_m: f64 = Beta::new(p, 1.0).unwrap().mean().unwrap();
 
-                assert::close(kuma_m, beta_m, 1E-10)
+                assert::close(kuma_m, beta_m, 1E-10);
             }
         }
 
@@ -605,7 +605,7 @@ mod tests {
             .unwrap()
             .sample(100, &mut rng)
             .iter()
-            .for_each(|p: &f64| equiv(p + 1_f64))
+            .for_each(|p: &f64| equiv(p + 1_f64));
     }
 
     #[test]

@@ -374,8 +374,7 @@ mod tests {
 
             // They should be equal
             assert!((ln_f_sum - ln_f_stat).abs() < TOL,
-                "ln_f_sum ({}) != ln_f_stat ({}) for m={}, mu={}, kappa={}, xs={:?}",
-                ln_f_sum, ln_f_stat, m, mu, kappa, xs);
+                "ln_f_sum ({ln_f_sum}) != ln_f_stat ({ln_f_stat}) for m={m}, mu={mu}, kappa={kappa}, xs={xs:?}");
         }
     }
 }

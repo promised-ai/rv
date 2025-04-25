@@ -426,7 +426,7 @@ mod tests {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
         let beta: Beta = (&powlaw).into();
         let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
-        for x in xs.iter() {
+        for x in &xs {
             assert::close(powlaw.cdf(x), beta.cdf(x), TOL);
         }
     }
@@ -436,7 +436,7 @@ mod tests {
         let powlaw = UnitPowerLaw::new(0.5).unwrap();
         let beta: Beta = (&powlaw).into();
         let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
-        for x in xs.iter() {
+        for x in &xs {
             assert::close(powlaw.cdf(x), beta.cdf(x), TOL);
         }
     }

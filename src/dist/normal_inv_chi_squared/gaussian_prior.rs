@@ -148,11 +148,7 @@ mod test {
             .map(|_| {
                 let mut tester = GewekeTester::new(pr.clone(), 20);
                 tester.run_chains(5_000, 20, &mut rng);
-                if tester.eval(0.025).is_ok() {
-                    1_u8
-                } else {
-                    0_u8
-                }
+                u8::from(tester.eval(0.025).is_ok())
             })
             .sum::<u8>();
         assert!(n_passes > 1);

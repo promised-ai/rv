@@ -479,7 +479,7 @@ mod tests {
             let x: f64 = bp.draw(&mut rng);
             s += x;
         }
-        let mu_sample = s / n as f64;
+        let mu_sample = s / f64::from(n);
 
         assert::close(mu_sample, mu_theory, 0.03);
     }
@@ -508,7 +508,7 @@ mod tests {
         }
 
         // Calculate variance
-        let var_sample: f64 = sse / n as f64;
+        let var_sample: f64 = sse / f64::from(n);
 
         assert::close(var_sample, var_theory, 0.01);
     }
