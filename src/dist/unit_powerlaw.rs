@@ -1,11 +1,15 @@
-//! UnitPowerLaw distribution over x in (0, 1)
+//! `UnitPowerLaw` distribution over x in (0, 1)
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
 use crate::data::UnitPowerLawSuffStat;
 use crate::impl_display;
 use crate::prelude::Beta;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, InverseCdf,
+    Kurtosis, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable,
+    Skewness, Support, Variance,
+};
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;
@@ -14,7 +18,7 @@ use std::sync::OnceLock;
 
 pub mod bernoulli_prior;
 
-/// Parameters for the UnitPowerLaw distribution
+/// Parameters for the `UnitPowerLaw` distribution
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -27,7 +31,7 @@ pub struct UnitPowerLawParameters {
 ///
 /// # Examples
 ///
-/// UnitPowerLaw as a conjugate prior for Bernoulli
+/// `UnitPowerLaw` as a conjugate prior for Bernoulli
 ///
 /// ```
 /// use rv::prelude::*;
@@ -112,8 +116,9 @@ impl UnitPowerLaw {
         }
     }
 
-    /// Creates a new UnitPowerLaw without checking whether the parameters are valid.
+    /// Creates a new `UnitPowerLaw` without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(alpha: f64) -> Self {
         UnitPowerLaw {
             alpha,
@@ -132,6 +137,7 @@ impl UnitPowerLaw {
     /// assert_eq!(powlaw, UnitPowerLaw::new(1.0).unwrap());
     /// ```
     #[inline]
+    #[must_use]
     pub fn uniform() -> Self {
         UnitPowerLaw::new_unchecked(1.0)
     }
@@ -345,10 +351,10 @@ impl fmt::Display for UnitPowerLawError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::AlphaTooLow { alpha } => {
-                write!(f, "alpha ({}) must be greater than zero", alpha)
+                write!(f, "alpha ({alpha}) must be greater than zero")
             }
             Self::AlphaNotFinite { alpha } => {
-                write!(f, "alpha ({}) was non finite", alpha)
+                write!(f, "alpha ({alpha}) was non finite")
             }
         }
     }
@@ -426,7 +432,7 @@ mod tests {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
         let beta: Beta = (&powlaw).into();
         let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
-        for x in xs.iter() {
+        for x in &xs {
             assert::close(powlaw.cdf(x), beta.cdf(x), TOL);
         }
     }
@@ -436,7 +442,7 @@ mod tests {
         let powlaw = UnitPowerLaw::new(0.5).unwrap();
         let beta: Beta = (&powlaw).into();
         let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
-        for x in xs.iter() {
+        for x in &xs {
             assert::close(powlaw.cdf(x), beta.cdf(x), TOL);
         }
     }
@@ -570,6 +576,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+
         let data: Vec<f64> = vec![0.1, 0.23, 0.4, 0.65, 0.22, 0.31];
         let mut stat = UnitPowerLawSuffStat::new();
         stat.observe_many(&data);

@@ -1,5 +1,9 @@
 use crate::data::ShiftedSuffStat;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, InverseCdf,
+    Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Shiftable,
+    Skewness, Support, Variance,
+};
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -32,10 +36,10 @@ pub enum ShiftedError {
 
 impl<D> Shifted<D> {
     pub fn new(parent: D, shift: f64) -> Result<Self, ShiftedError> {
-        if !shift.is_finite() {
-            Err(ShiftedError::NonFiniteShift(shift))
-        } else {
+        if shift.is_finite() {
             Ok(Shifted { parent, shift })
+        } else {
+            Err(ShiftedError::NonFiniteShift(shift))
         }
     }
 

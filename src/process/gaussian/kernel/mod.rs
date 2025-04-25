@@ -141,7 +141,7 @@ impl std::fmt::Display for KernelError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::ImproperBounds(lower, upper) => {
-                writeln!(f, "Bounds are not in order: ({}, {})", lower, upper)
+                writeln!(f, "Bounds are not in order: ({lower}, {upper})")
             }
             Self::ParameterOutOfBounds {
                 name,
@@ -153,13 +153,13 @@ impl std::fmt::Display for KernelError {
                 name, bounds.0, bounds.1, given
             ),
             Self::ExtraneousParameters(n) => {
-                writeln!(f, "{} extra parameters proved to kernel", n)
+                writeln!(f, "{n} extra parameters proved to kernel")
             }
             Self::MissingParameters(n) => {
-                writeln!(f, "Missing {} parameters", n)
+                writeln!(f, "Missing {n} parameters")
             }
             Self::CovGrad(e) => {
-                writeln!(f, "Covariance Gradient couldn't be computed: {}", e)
+                writeln!(f, "Covariance Gradient couldn't be computed: {e}")
             }
         }
     }

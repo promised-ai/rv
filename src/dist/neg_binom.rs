@@ -1,6 +1,9 @@
 use crate::dist::Poisson;
 use crate::misc::ln_binom;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, DiscreteDistr, HasDensity, Kurtosis, Mean, Parameterized, Sampleable,
+    Skewness, Support, Variance,
+};
 use rand::Rng;
 use std::fmt;
 use std::sync::OnceLock;
@@ -92,6 +95,7 @@ impl NegBinomial {
 
     /// Create a new Negative Binomial distribution without input validation.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(r: f64, p: f64) -> Self {
         NegBinomial {
             r,
@@ -320,13 +324,13 @@ impl fmt::Display for NegBinomialError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::POutOfRange { p } => {
-                write!(f, "p ({}) not in range [0, 1]", p)
+                write!(f, "p ({p}) not in range [0, 1]")
             }
-            Self::PNotFinite { p } => write!(f, "non-finite p: {}", p),
+            Self::PNotFinite { p } => write!(f, "non-finite p: {p}"),
             Self::RLessThanOne { r } => {
-                write!(f, "r ({}) must be one or greater", r)
+                write!(f, "r ({r}) must be one or greater")
             }
-            Self::RNotFinite { r } => write!(f, "non-finite r: {}", r),
+            Self::RNotFinite { r } => write!(f, "non-finite r: {r}"),
         }
     }
 }
@@ -358,7 +362,7 @@ mod tests {
 
         match nbin_res {
             Err(NegBinomialError::RLessThanOne { .. }) => (),
-            Err(err) => panic!("wrong error {:?}", err),
+            Err(err) => panic!("wrong error {err:?}"),
             Ok(_) => panic!("should have failed"),
         }
     }
@@ -367,13 +371,13 @@ mod tests {
     fn new_with_too_low_or_high_p_errors() {
         match NegBinomial::new(2.0, -0.1) {
             Err(NegBinomialError::POutOfRange { .. }) => (),
-            Err(err) => panic!("wrong error {:?}", err),
+            Err(err) => panic!("wrong error {err:?}"),
             Ok(_) => panic!("should have failed"),
         }
 
         match NegBinomial::new(2.0, 1.001) {
             Err(NegBinomialError::POutOfRange { .. }) => (),
-            Err(err) => panic!("wrong error {:?}", err),
+            Err(err) => panic!("wrong error {err:?}"),
             Ok(_) => panic!("should have failed"),
         }
     }
@@ -394,8 +398,8 @@ mod tests {
 
         match nbin.set_r(0.1) {
             Err(NegBinomialError::RLessThanOne { .. }) => (),
-            Err(err) => panic!("wrong error {:?}", err),
-            Ok(_) => panic!("should have failed"),
+            Err(err) => panic!("wrong error {err:?}"),
+            Ok(()) => panic!("should have failed"),
         }
     }
 
@@ -415,8 +419,8 @@ mod tests {
 
         match nbin.set_p(-0.1) {
             Err(NegBinomialError::POutOfRange { .. }) => (),
-            Err(err) => panic!("wrong error {:?}", err),
-            Ok(_) => panic!("should have failed"),
+            Err(err) => panic!("wrong error {err:?}"),
+            Ok(()) => panic!("should have failed"),
         }
     }
 
@@ -427,8 +431,8 @@ mod tests {
 
         match nbin.set_p(1.1) {
             Err(NegBinomialError::POutOfRange { .. }) => (),
-            Err(err) => panic!("wrong error {:?}", err),
-            Ok(_) => panic!("should have failed"),
+            Err(err) => panic!("wrong error {err:?}"),
+            Ok(()) => panic!("should have failed"),
         }
     }
 

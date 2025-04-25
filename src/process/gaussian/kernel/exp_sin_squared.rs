@@ -12,7 +12,7 @@ use std::f64::consts::PI;
 use serde::{Deserialize, Serialize};
 
 /// Exp Sine^2 Kernel
-/// k(x_i, x_j) = exp(-2 (sin(pi / periodicity * d(x_i, x_j)) / length_scale) ^ 2)
+/// `k(x_i`, `x_j`) = exp(-2 (sin(pi / periodicity * `d(x_i`, `x_j`)) / `length_scale`) ^ 2)
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -22,7 +22,7 @@ pub struct ExpSineSquaredKernel {
 }
 
 impl ExpSineSquaredKernel {
-    /// Create a new ExpSineSquaredKernel
+    /// Create a new `ExpSineSquaredKernel`
     pub fn new(
         length_scale: f64,
         periodicity: f64,
@@ -47,7 +47,8 @@ impl ExpSineSquaredKernel {
         }
     }
 
-    /// Create a new ExpSineSquaredKernel without checking the parameters
+    /// Create a new `ExpSineSquaredKernel` without checking the parameters
+    #[must_use]
     pub fn new_unchecked(length_scale: f64, periodicity: f64) -> Self {
         Self {
             length_scale,
@@ -177,7 +178,7 @@ mod tests {
 
         let x: DMatrix<f64> =
             DMatrix::from_row_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y = x.map(|z| z.sin());
+        let y = x.map(f64::sin);
 
         let cov = kernel.covariance(&x, &y);
         let expected_cov = DMatrix::from_row_slice(

@@ -4,7 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::BetaSuffStat;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, Kurtosis, Mean,
+    Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use special::Beta as _;
 use special::Gamma as _;
@@ -131,6 +135,7 @@ impl Beta {
 
     /// Creates a new Beta without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(alpha: f64, beta: f64) -> Self {
         Beta {
             alpha,
@@ -149,6 +154,7 @@ impl Beta {
     /// assert_eq!(beta, Beta::new(1.0, 1.0).unwrap());
     /// ```
     #[inline]
+    #[must_use]
     pub fn uniform() -> Self {
         Beta {
             alpha: 1.0,
@@ -168,6 +174,7 @@ impl Beta {
     /// assert_eq!(beta, Beta::new(0.5, 0.5).unwrap());
     /// ```
     #[inline]
+    #[must_use]
     pub fn jeffreys() -> Self {
         Beta {
             alpha: 0.5,
@@ -451,16 +458,16 @@ impl fmt::Display for BetaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::AlphaTooLow { alpha } => {
-                write!(f, "alpha ({}) must be greater than zero", alpha)
+                write!(f, "alpha ({alpha}) must be greater than zero")
             }
             Self::AlphaNotFinite { alpha } => {
-                write!(f, "alpha ({}) was non finite", alpha)
+                write!(f, "alpha ({alpha}) was non finite")
             }
             Self::BetaTooLow { beta } => {
-                write!(f, "beta ({}) must be greater than zero", beta)
+                write!(f, "beta ({beta}) must be greater than zero")
             }
             Self::BetaNotFinite { beta } => {
-                write!(f, "beta ({}) was non finite", beta)
+                write!(f, "beta ({beta}) was non finite")
             }
         }
     }
@@ -759,6 +766,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+
         let data: Vec<f64> = vec![0.1, 0.23, 0.4, 0.65, 0.22, 0.31];
         let mut stat = BetaSuffStat::new();
         stat.observe_many(&data);

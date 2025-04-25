@@ -2,9 +2,13 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::consts::*;
+use crate::consts::HALF_LN_2PI;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Kurtosis, Mean,
+    Median, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness,
+    Support, Variance,
+};
 use rand::Rng;
 use special::Error as _;
 use std::f64::consts::SQRT_2;
@@ -75,7 +79,7 @@ pub enum LogNormalError {
 }
 
 impl LogNormal {
-    /// Create a new LogNormal distribution
+    /// Create a new `LogNormal` distribution
     ///
     /// # Arguments
     /// - mu: log scale mean
@@ -93,9 +97,10 @@ impl LogNormal {
         }
     }
 
-    /// Creates a new LogNormal without checking whether the parameters are
+    /// Creates a new `LogNormal` without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
         LogNormal { mu, sigma }
     }
@@ -110,6 +115,7 @@ impl LogNormal {
     /// assert_eq!(lognormal, LogNormal::new(0.0, 1.0).unwrap());
     /// ```
     #[inline]
+    #[must_use]
     pub fn standard() -> Self {
         LogNormal {
             mu: 0.0,
@@ -127,6 +133,7 @@ impl LogNormal {
     /// assert_eq!(lognormal.mu(), -1.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn mu(&self) -> f64 {
         self.mu
     }
@@ -156,11 +163,11 @@ impl LogNormal {
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), LogNormalError> {
-        if !mu.is_finite() {
-            Err(LogNormalError::MuNotFinite { mu })
-        } else {
+        if mu.is_finite() {
             self.set_mu_unchecked(mu);
             Ok(())
+        } else {
+            Err(LogNormalError::MuNotFinite { mu })
         }
     }
 
@@ -180,6 +187,7 @@ impl LogNormal {
     /// assert_eq!(lognormal.sigma(), 2.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn sigma(&self) -> f64 {
         self.sigma
     }
@@ -359,12 +367,12 @@ impl std::error::Error for LogNormalError {}
 impl fmt::Display for LogNormalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {mu}"),
             Self::SigmaTooLow { sigma } => {
-                write!(f, "sigma ({}) must be greater than zero", sigma)
+                write!(f, "sigma ({sigma}) must be greater than zero")
             }
             Self::SigmaNotFinite { sigma } => {
-                write!(f, "non-finite sigma: {}", sigma)
+                write!(f, "non-finite sigma: {sigma}")
             }
         }
     }
@@ -425,7 +433,7 @@ mod tests {
         let lognorm = LogNormal::standard();
         for _ in 0..100 {
             let x: f64 = lognorm.draw(&mut rng);
-            assert!(x.is_finite())
+            assert!(x.is_finite());
         }
     }
 

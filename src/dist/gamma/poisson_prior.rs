@@ -4,7 +4,10 @@ use crate::data::PoissonSuffStat;
 use crate::dist::poisson::PoissonError;
 use crate::dist::{Gamma, Poisson};
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{
+    ConjugatePrior, ContinuousDistr, DataOrSuffStat, HasDensity, HasSuffStat,
+    Mean, Sampleable, SuffStat, Support,
+};
 
 impl HasDensity<Poisson> for Gamma {
     fn ln_f(&self, x: &Poisson) -> f64 {
@@ -23,7 +26,7 @@ impl Sampleable<Poisson> for Gamma {
             Err(PoissonError::RateTooLow { .. }) => {
                 Poisson::new_unchecked(f64::EPSILON)
             }
-            Err(err) => panic!("Failed to draw Possion: {}", err),
+            Err(err) => panic!("Failed to draw Possion: {err}"),
         }
     }
 }
@@ -210,7 +213,7 @@ mod tests {
                 dist.ln_pp(&inputs[i], &DataOrSuffStat::from(&vec![])),
                 expected[i],
                 TOL,
-            )
+            );
         }
     }
 

@@ -1,7 +1,10 @@
 use crate::data::extract_stat_then;
 use crate::data::{DataOrSuffStat, ScaledSuffStat};
 use crate::dist::Scaled;
-use crate::traits::*;
+use crate::traits::{
+    ConjugatePrior, HasDensity, HasSuffStat, Parameterized, Sampleable,
+    Scalable,
+};
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -41,10 +44,10 @@ impl fmt::Display for ScaledPriorError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::NonNormalScale(scale) => {
-                write!(f, "non-normal scale: {}", scale)
+                write!(f, "non-normal scale: {scale}")
             }
             Self::NegativeScale(scale) => {
-                write!(f, "negative scale: {}", scale)
+                write!(f, "negative scale: {scale}")
             }
         }
     }

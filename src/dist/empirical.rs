@@ -1,7 +1,9 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::traits::*;
+use crate::traits::{
+    Cdf, HasDensity, Mean, Parameterized, Sampleable, Variance,
+};
 use rand::Rng;
 
 /// An empirical distribution derived from samples.
@@ -64,6 +66,7 @@ impl Parameterized for Empirical {
 
 impl Empirical {
     /// Create a new Empirical distribution with the given observed values
+    #[must_use]
     pub fn new(mut xs: Vec<f64>) -> Self {
         xs.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
         let min = xs[0];
@@ -97,6 +100,7 @@ impl Empirical {
     }
 
     /// Compute the CDF of a number of values
+    #[must_use]
     pub fn empcdfs(&self, values: &[f64]) -> Vec<f64> {
         values
             .iter()
@@ -108,6 +112,7 @@ impl Empirical {
     }
 
     /// A utility for computing a P-P plot.
+    #[must_use]
     pub fn pp(&self, other: &Self) -> (Vec<f64>, Vec<f64>) {
         let mut xys = self.xs.clone();
         xys.append(&mut other.xs.clone());
@@ -116,6 +121,7 @@ impl Empirical {
     }
 
     /// Area between CDF-CDF (1-1) line
+    #[must_use]
     pub fn err(&self, other: &Self) -> f64 {
         let (fxs, fys) = self.pp(other);
         let diff: Vec<f64> = fxs
@@ -128,12 +134,13 @@ impl Empirical {
         for i in 1..fxs.len() {
             let step = fxs[i] - fxs[i - 1];
             let trap = diff[i] + diff[i - 1];
-            q += step * trap
+            q += step * trap;
         }
         q / 2.0
     }
 
     /// Return the range of non-zero support for this distribution.
+    #[must_use]
     pub fn range(&self) -> &(f64, f64) {
         &self.range
     }

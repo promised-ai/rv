@@ -12,7 +12,7 @@ use std::fmt;
 
 use crate::dist::{Gaussian, InvGamma};
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{HasDensity, Parameterized, Sampleable};
 
 /// Prior for Gaussian
 ///
@@ -105,15 +105,17 @@ impl NormalInvGamma {
         }
     }
 
-    /// Creates a new NormalInvGamma without checking whether the parameters are
+    /// Creates a new `NormalInvGamma` without checking whether the parameters are
     /// valid.
     #[inline(always)]
+    #[must_use]
     pub fn new_unchecked(m: f64, v: f64, a: f64, b: f64) -> Self {
         NormalInvGamma { m, v, a, b }
     }
 
     /// Get the m parameter
     #[inline(always)]
+    #[must_use]
     pub fn m(&self) -> f64 {
         self.m
     }
@@ -160,6 +162,7 @@ impl NormalInvGamma {
 
     /// Get the v parameter
     #[inline]
+    #[must_use]
     pub fn v(&self) -> f64 {
         self.v
     }
@@ -214,6 +217,7 @@ impl NormalInvGamma {
 
     /// Get the a parameter
     #[inline]
+    #[must_use]
     pub fn a(&self) -> f64 {
         self.a
     }
@@ -268,6 +272,7 @@ impl NormalInvGamma {
 
     /// Get the b parameter
     #[inline]
+    #[must_use]
     pub fn b(&self) -> f64 {
         self.b
     }
@@ -351,7 +356,7 @@ impl Sampleable<Gaussian> for NormalInvGamma {
         // parameters are valid.
         let var: f64 = InvGamma::new(self.a, self.b)
             .map_err(|err| {
-                panic!("Invalid σ² params when drawing Gaussian: {}", err)
+                panic!("Invalid σ² params when drawing Gaussian: {err}")
             })
             .unwrap()
             .draw(&mut rng);
@@ -361,7 +366,7 @@ impl Sampleable<Gaussian> for NormalInvGamma {
         let post_sigma: f64 = self.v.sqrt() * sigma;
         let mu: f64 = Gaussian::new(self.m, post_sigma)
             .map_err(|err| {
-                panic!("Invalid μ params when drawing Gaussian: {}", err)
+                panic!("Invalid μ params when drawing Gaussian: {err}")
             })
             .unwrap()
             .draw(&mut rng);
@@ -375,18 +380,18 @@ impl std::error::Error for NormalInvGammaError {}
 impl fmt::Display for NormalInvGammaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MNotFinite { m } => write!(f, "non-finite m: {}", m),
-            Self::VNotFinite { v } => write!(f, "non-finite v: {}", v),
-            Self::ANotFinite { a } => write!(f, "non-finite a: {}", a),
-            Self::BNotFinite { b } => write!(f, "non-finite b: {}", b),
+            Self::MNotFinite { m } => write!(f, "non-finite m: {m}"),
+            Self::VNotFinite { v } => write!(f, "non-finite v: {v}"),
+            Self::ANotFinite { a } => write!(f, "non-finite a: {a}"),
+            Self::BNotFinite { b } => write!(f, "non-finite b: {b}"),
             Self::VTooLow { v } => {
-                write!(f, "v ({}) must be greater than zero", v)
+                write!(f, "v ({v}) must be greater than zero")
             }
             Self::ATooLow { a } => {
-                write!(f, "a ({}) must be greater than zero", a)
+                write!(f, "a ({a}) must be greater than zero")
             }
             Self::BTooLow { b } => {
-                write!(f, "b ({}) must be greater than zero", b)
+                write!(f, "b ({b}) must be greater than zero")
             }
         }
     }

@@ -3,7 +3,9 @@ fn main() {
     {
         use itertools::Either;
         use peroxide::fuga::Statistics;
-        use rv::experimental::stick_breaking_process::*;
+        use rv::experimental::stick_breaking_process::{
+            BreakSequence, StickBreaking, StickBreakingDiscrete, StickSequence,
+        };
         use rv::prelude::*;
 
         let mut rng = rand::thread_rng();
@@ -33,7 +35,7 @@ fn main() {
                     .iter()
                     .map(|breaks: &Vec<f64>| *breaks.get(j).unwrap())
                     .collect(),
-            )
+            );
         }
 
         let break_dists: Vec<Beta> = dist

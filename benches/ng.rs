@@ -5,7 +5,7 @@ use criterion::{criterion_group, criterion_main};
 use rv::data::GaussianSuffStat;
 use rv::dist::Gaussian;
 use rv::dist::NormalGamma;
-use rv::traits::*;
+use rv::traits::{ConjugatePrior, DataOrSuffStat, Sampleable, SuffStat};
 
 fn bench_ng_postpred(c: &mut Criterion) {
     let mut group = c.benchmark_group("NG ln pp(x)");

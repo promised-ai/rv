@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, HasDensity, Kurtosis, Mean, Mode, Parameterized,
+    Sampleable, Scalable, Shiftable, Skewness, Support, Variance,
+};
 use rand::Rng;
 use special::Gamma;
 use std::f64::consts::LN_2;
@@ -76,9 +79,10 @@ impl ChiSquared {
         }
     }
 
-    /// Create a new ChiSquared without checking whether the parameters are
+    /// Create a new `ChiSquared` without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(k: f64) -> Self {
         ChiSquared { k }
     }
@@ -93,6 +97,7 @@ impl ChiSquared {
     /// assert_eq!(x2.k(), 1.2);
     /// ```
     #[inline]
+    #[must_use]
     pub fn k(&self) -> f64 {
         self.k
     }
@@ -134,7 +139,7 @@ impl ChiSquared {
 
     #[inline]
     pub fn set_k_unchecked(&mut self, k: f64) {
-        self.k = k
+        self.k = k;
     }
 }
 
@@ -228,9 +233,9 @@ impl fmt::Display for ChiSquaredError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::KTooLow { k } => {
-                write!(f, "k ({}) must be greater than zero", k)
+                write!(f, "k ({k}) must be greater than zero")
             }
-            Self::KNotFinite { k } => write!(f, "k ({}) must be finite", k),
+            Self::KNotFinite { k } => write!(f, "k ({k}) must be finite"),
         }
     }
 }

@@ -6,7 +6,9 @@ use crate::data::CdvmSuffStat;
 use crate::impl_display;
 use crate::misc::func::LogSumExp;
 use crate::misc::ln_pflip;
-use crate::traits::*;
+use crate::traits::{
+    HasDensity, HasSuffStat, Mean, Mode, Parameterized, Sampleable, Support,
+};
 use rand::Rng;
 use std::f64;
 use std::fmt;
@@ -99,6 +101,7 @@ impl Cdvm {
 
     /// Creates a new CDVM without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(mu: f64, kappa: f64, modulus: usize) -> Self {
         Cdvm {
             modulus,
@@ -198,14 +201,10 @@ impl fmt::Display for CdvmError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidCategories { modulus } => {
-                write!(
-                    f,
-                    "number of categories ({}) must be at least 2",
-                    modulus
-                )
+                write!(f, "number of categories ({modulus}) must be at least 2")
             }
             Self::KappaNegative { kappa } => {
-                write!(f, "kappa ({}) must be non-negative", kappa)
+                write!(f, "kappa ({kappa}) must be non-negative")
             }
         }
     }
@@ -375,8 +374,7 @@ mod tests {
 
             // They should be equal
             assert!((ln_f_sum - ln_f_stat).abs() < TOL,
-                "ln_f_sum ({}) != ln_f_stat ({}) for m={}, mu={}, kappa={}, xs={:?}",
-                ln_f_sum, ln_f_stat, m, mu, kappa, xs);
+                "ln_f_sum ({ln_f_sum}) != ln_f_stat ({ln_f_stat}) for m={m}, mu={mu}, kappa={kappa}, xs={xs:?}");
         }
     }
 }

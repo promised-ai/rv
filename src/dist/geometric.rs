@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::dist::Uniform;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, DiscreteDistr, Entropy, HasDensity, Kurtosis, Mean, Parameterized,
+    Sampleable, Skewness, Support, Variance,
+};
 use num::{Bounded, FromPrimitive, Integer, Saturating, ToPrimitive, Unsigned};
 use rand::Rng;
 use std::fmt;
@@ -101,6 +104,7 @@ impl Geometric {
     /// Creates a new Geometric without checking whether the parameter is
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(p: f64) -> Self {
         Geometric {
             p,
@@ -315,12 +319,12 @@ impl fmt::Display for GeometricError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::PTooLow { p } => {
-                write!(f, "p ({}) must be greater than zero", p)
+                write!(f, "p ({p}) must be greater than zero")
             }
             Self::PGreaterThanOne { p } => {
-                write!(f, "p was less greater than one: {}", p)
+                write!(f, "p was less greater than one: {p}")
             }
-            Self::PNotFinite { p } => write!(f, "p was non-finite: {}", p),
+            Self::PNotFinite { p } => write!(f, "p was non-finite: {p}"),
         }
     }
 }
@@ -441,12 +445,12 @@ mod tests {
 
     #[test]
     fn draw_test_05() {
-        test_draw_generic(0.5)
+        test_draw_generic(0.5);
     }
 
     #[test]
     fn draw_test_02() {
-        test_draw_generic(0.2)
+        test_draw_generic(0.2);
     }
 
     verify_cache_resets!(

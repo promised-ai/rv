@@ -15,7 +15,7 @@ pub struct ScaledSuffStat<S> {
 }
 
 impl<S> ScaledSuffStat<S> {
-    /// Create a new ScaledSuffStat with the given parent statistic and scale
+    /// Create a new `ScaledSuffStat` with the given parent statistic and scale
     pub fn new(parent: S, scale: f64) -> Self {
         ScaledSuffStat {
             parent,

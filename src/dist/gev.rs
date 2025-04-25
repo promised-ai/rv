@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 use crate::consts;
 use crate::impl_display;
 use crate::misc::gammafn;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, Mean, Median, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Support, Variance,
+};
 use rand::Rng;
 use std::f32;
 use std::f64;
@@ -128,6 +131,7 @@ impl Gev {
 
     /// Creates a new Gev without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(loc: f64, scale: f64, shape: f64) -> Self {
         Gev { loc, scale, shape }
     }
@@ -143,6 +147,7 @@ impl Gev {
     /// assert_eq!(gev.loc(), 1.2);
     /// ```
     #[inline]
+    #[must_use]
     pub fn loc(&self) -> f64 {
         self.loc
     }
@@ -172,18 +177,18 @@ impl Gev {
     /// ```
     #[inline]
     pub fn set_loc(&mut self, loc: f64) -> Result<(), GevError> {
-        if !loc.is_finite() {
-            Err(GevError::LocNotFinite { loc })
-        } else {
+        if loc.is_finite() {
             self.set_loc_unchecked(loc);
             Ok(())
+        } else {
+            Err(GevError::LocNotFinite { loc })
         }
     }
 
     /// Set the loc parameter without input validation
     #[inline]
     pub fn set_loc_unchecked(&mut self, loc: f64) {
-        self.loc = loc
+        self.loc = loc;
     }
 
     /// Get the shape parameter
@@ -197,6 +202,7 @@ impl Gev {
     /// assert_eq!(gev.shape(), 3.4);
     /// ```
     #[inline]
+    #[must_use]
     pub fn shape(&self) -> f64 {
         self.shape
     }
@@ -226,18 +232,18 @@ impl Gev {
     /// ```
     #[inline]
     pub fn set_shape(&mut self, shape: f64) -> Result<(), GevError> {
-        if !shape.is_finite() {
-            Err(GevError::ShapeNotFinite { shape })
-        } else {
+        if shape.is_finite() {
             self.set_shape_unchecked(shape);
             Ok(())
+        } else {
+            Err(GevError::ShapeNotFinite { shape })
         }
     }
 
     /// Set the shape parameter without input validation
     #[inline]
     pub fn set_shape_unchecked(&mut self, shape: f64) {
-        self.shape = shape
+        self.shape = shape;
     }
 
     /// Get the scale parameter
@@ -251,6 +257,7 @@ impl Gev {
     /// assert_eq!(gev.scale(), 2.3);
     /// ```
     #[inline]
+    #[must_use]
     pub fn scale(&self) -> f64 {
         self.scale
     }
@@ -295,7 +302,7 @@ impl Gev {
     /// Set the scale parameter without input validation
     #[inline]
     pub fn set_scale_unchecked(&mut self, scale: f64) {
-        self.scale = scale
+        self.scale = scale;
     }
 }
 
@@ -445,15 +452,15 @@ impl std::error::Error for GevError {}
 impl fmt::Display for GevError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::LocNotFinite { loc } => write!(f, "non-finite loc: {}", loc),
+            Self::LocNotFinite { loc } => write!(f, "non-finite loc: {loc}"),
             Self::ShapeNotFinite { shape } => {
-                write!(f, "non-finite shape: {}", shape)
+                write!(f, "non-finite shape: {shape}")
             }
             Self::ScaleNotFinite { scale } => {
-                write!(f, "non-finite scale: {}", scale)
+                write!(f, "non-finite scale: {scale}")
             }
             Self::ScaleTooLow { scale } => {
-                write!(f, "scale ({}) must be greater than zero", scale)
+                write!(f, "scale ({scale}) must be greater than zero")
             }
         }
     }

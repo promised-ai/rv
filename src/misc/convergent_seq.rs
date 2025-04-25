@@ -6,8 +6,8 @@ use num::Zero;
 /// A trait for sequences that can be checked for convergence.
 pub trait ConvergentSequence: Iterator<Item = f64> + Sized {
     /// Applies Aitken's Δ² process to accelerate the convergence of a sequence.
-    /// See https://en.wikipedia.org/wiki/Aitken%27s_delta-squared_process and
-    /// https://en.wikipedia.org/wiki/Shanks_transformation
+    /// See <https://en.wikipedia.org/wiki/Aitken%27s_delta-squared_process> and
+    /// <https://en.wikipedia.org/wiki/Shanks_transformation>
     ///
     /// # Returns
     ///
@@ -80,7 +80,7 @@ mod tests {
         let seq = (0..)
             .map(|n| {
                 let sign = if n.is_even() { 1.0 } else { -1.0 };
-                let val = sign / (2 * n + 1) as f64;
+                let val = sign / f64::from(2 * n + 1);
                 dbg!(val);
                 val
             })

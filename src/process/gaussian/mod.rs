@@ -10,7 +10,7 @@ use std::cell::OnceCell;
 
 use crate::consts::HALF_LN_2PI;
 use crate::dist::MvGaussian;
-use crate::traits::*;
+use crate::traits::{HasDensity, Mean, Sampleable, Variance};
 
 pub mod kernel;
 use kernel::{Kernel, KernelError};
@@ -26,12 +26,12 @@ fn outer_product_self(col: &DVector<f64>) -> DMatrix<f64> {
     col * row
 }
 
-/// Errors from GaussianProcess
+/// Errors from `GaussianProcess`
 #[derive(Debug)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GaussianProcessError {
-    /// The kernel is not returning a positive-definite matrix. Try adding a small, constant noise parameter as y_train_sigma.
+    /// The kernel is not returning a positive-definite matrix. Try adding a small, constant noise parameter as `y_train_sigma`.
     NotPositiveSemiDefinite,
     /// Error from the kernel function
     KernelError(KernelError),
@@ -47,9 +47,9 @@ impl std::fmt::Display for GaussianProcessError {
                 writeln!(f, "Covariance matrix is not semi-positive definite")
             }
             Self::MisshapenNoiseModel(msg) => {
-                writeln!(f, "Noise model error: {}", msg)
+                writeln!(f, "Noise model error: {msg}")
             }
-            Self::KernelError(e) => writeln!(f, "Error from kernel: {}", e),
+            Self::KernelError(e) => writeln!(f, "Error from kernel: {e}"),
         }
     }
 }
@@ -150,12 +150,12 @@ where
 
     fn sample_function(&self, indices: &[Self::Index]) -> Self::SampleFunction {
         let n = indices.len();
-        let m = indices.first().map(|i| i.len()).unwrap_or(0);
+        let m = indices.first().map_or(0, nalgebra::Matrix::len);
 
         let indices: DMatrix<f64> = DMatrix::from_iterator(
             n,
             m,
-            indices.iter().flat_map(|i| i.iter().cloned()),
+            indices.iter().flat_map(|i| i.iter().copied()),
         );
         let k_trans = self.kernel.covariance(&indices, &self.x_train);
         let y_mean = &k_trans * &self.alpha;
@@ -171,7 +171,7 @@ where
 
     fn ln_m(&self) -> f64 {
         let k_chol = self.k_chol();
-        let dlog_sum = k_chol.l_dirty().diagonal().map(|x| x.ln()).sum();
+        let dlog_sum = k_chol.l_dirty().diagonal().map(f64::ln).sum();
         let n: f64 = self.x_train.nrows() as f64;
         let alpha = k_chol.solve(&self.y_train);
         n.mul_add(
@@ -201,15 +201,14 @@ where
 
         if maybe_k_chol.is_none() {
             eprintln!(
-                "failed to find chol of k = {}, with parameters = {:?}",
-                k, parameter
+                "failed to find chol of k = {k}, with parameters = {parameter:?}"
             );
         }
 
         let k_chol = maybe_k_chol
             .ok_or(GaussianProcessError::NotPositiveSemiDefinite)?;
         let alpha = k_chol.solve(&self.y_train);
-        let dlog_sum = k_chol.l_dirty().diagonal().map(|x| x.ln()).sum();
+        let dlog_sum = k_chol.l_dirty().diagonal().map(f64::ln).sum();
         let n: f64 = self.x_train.nrows() as f64;
 
         let ln_m = n.mul_add(
@@ -324,7 +323,7 @@ where
                 .map(|j| k_ti[(i, j)] * self.k_trans[(i, j)])
                 .sum::<f64>();
         }
-        y_var.map(|e| e.sqrt())
+        y_var.map(f64::sqrt)
     }
 
     /// Return the MV Gaussian distribution which shows the predicted values
@@ -416,7 +415,7 @@ mod tests {
     fn simple() {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+        let y_train: DVector<f64> = x_train.map(f64::sin).column(0).into();
 
         let kernel = RBFKernel::default();
         let gp = GaussianProcess::train(
@@ -561,14 +560,14 @@ mod tests {
         );
 
         let cov = pred.cov();
-        assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7))
+        assert!(cov.relative_eq(&expected_cov, 1E-7, 1E-7));
     }
 
     #[test]
     fn log_marginal_a() {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+        let y_train: DVector<f64> = x_train.map(f64::sin).column(0).into();
 
         let kernel = RBFKernel::default() * ConstantKernel::default();
         let parameters = kernel.parameters();
@@ -597,7 +596,7 @@ mod tests {
     fn log_marginal_b() -> Result<(), KernelError> {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+        let y_train: DVector<f64> = x_train.map(f64::sin).column(0).into();
 
         let kernel = RBFKernel::new(1.994_891_474_270_000_8)?
             * ConstantKernel::new(1.221_163_421_070_665)?;
@@ -634,7 +633,7 @@ mod tests {
     fn optimize_gp_1_param() {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+        let y_train: DVector<f64> = x_train.map(f64::sin).column(0).into();
 
         let kernel = RBFKernel::default();
         let noise_model = NoiseModel::default();
@@ -659,7 +658,7 @@ mod tests {
     fn optimize_gp_2_param() {
         let x_train: DMatrix<f64> =
             DMatrix::from_column_slice(5, 1, &[-4.0, -3.0, -2.0, -1.0, 1.0]);
-        let y_train: DVector<f64> = x_train.map(|x| x.sin()).column(0).into();
+        let y_train: DVector<f64> = x_train.map(f64::sin).column(0).into();
 
         let kernel = ConstantKernel::default() * RBFKernel::default();
         let noise_model = NoiseModel::default();

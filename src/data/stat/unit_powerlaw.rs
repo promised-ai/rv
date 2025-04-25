@@ -18,6 +18,7 @@ pub struct UnitPowerLawSuffStat {
 
 impl UnitPowerLawSuffStat {
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         UnitPowerLawSuffStat {
             n: 0,
@@ -28,18 +29,21 @@ impl UnitPowerLawSuffStat {
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
+    #[must_use]
     pub fn from_parts_unchecked(n: usize, sum_ln_x: f64) -> Self {
         UnitPowerLawSuffStat { n, sum_ln_x }
     }
 
     /// Get the number of observations
     #[inline]
+    #[must_use]
     pub fn n(&self) -> usize {
         self.n
     }
 
     /// Sum of `ln(x)`
     #[inline]
+    #[must_use]
     pub fn sum_ln_x(&self) -> f64 {
         self.sum_ln_x
     }

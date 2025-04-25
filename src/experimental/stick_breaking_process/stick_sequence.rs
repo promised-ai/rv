@@ -7,7 +7,7 @@ use std::sync::{Arc, RwLock};
 // use super::sticks_stat::StickBreakingSuffStat;
 use crate::experimental::stick_breaking_process::stick_breaking::PartialWeights;
 use crate::prelude::UnitPowerLaw;
-use crate::traits::*;
+use crate::traits::Rv;
 
 // We'd like to be able to serialize and deserialize StickSequence, but serde can't handle
 // `Arc` or `RwLock`. So we use `StickSequenceFmt` as an intermediate type.
@@ -66,6 +66,7 @@ impl _Inner {
         }
     }
 
+    #[must_use]
     pub fn ccdf(&self) -> &[f64] {
         &self.ccdf
     }
@@ -119,7 +120,7 @@ impl PartialEq<StickSequence> for StickSequence {
 }
 
 impl StickSequence {
-    /// Creates a new StickSequence with the given breaker and optional seed.
+    /// Creates a new `StickSequence` with the given breaker and optional seed.
     ///
     /// # Arguments
     ///
@@ -314,7 +315,7 @@ impl StickSequence {
         PartialWeights(w)
     }
 
-    /// Returns a clone of the breaker used in this StickSequence.
+    /// Returns a clone of the breaker used in this `StickSequence`.
     ///
     /// # Returns
     ///

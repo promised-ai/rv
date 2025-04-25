@@ -3,7 +3,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, Kurtosis, Mean, Median, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use std::f64::consts::{E, FRAC_1_SQRT_2, LN_2};
 use std::fmt;
@@ -120,6 +124,7 @@ impl Laplace {
     /// Creates a new Laplace without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(mu: f64, b: f64) -> Self {
         Laplace { mu, b }
     }
@@ -134,6 +139,7 @@ impl Laplace {
     /// assert_eq!(laplace.mu(), -1.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn mu(&self) -> f64 {
         self.mu
     }
@@ -186,6 +192,7 @@ impl Laplace {
     /// assert_eq!(laplace.b(), 2.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn b(&self) -> f64 {
         self.b
     }
@@ -340,11 +347,11 @@ impl std::error::Error for LaplaceError {}
 impl fmt::Display for LaplaceError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {mu}"),
             Self::BTooLow { b } => {
-                write!(f, "b ({}) must be greater than zero", b)
+                write!(f, "b ({b}) must be greater than zero")
             }
-            Self::BNotFinite { b } => write!(f, "non-finite b: {}", b),
+            Self::BNotFinite { b } => write!(f, "non-finite b: {b}"),
         }
     }
 }
