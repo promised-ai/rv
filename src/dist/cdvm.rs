@@ -103,7 +103,7 @@ impl Cdvm {
             return Err(CdvmError::InvalidCategories { modulus });
         }
 
-        Ok(Cdvm::new_unchecked(mu, k, modulus))
+        Ok(Cdvm::new_unchecked(modulus, mu, k))
     }
 
     // Test that dependent fields are properly set
@@ -119,7 +119,7 @@ impl Cdvm {
 
     /// Creates a new CDVM without checking whether the parameters are valid.
     #[inline]
-    pub fn new_unchecked(mu: f64, k: f64, modulus: usize) -> Self {
+    pub fn new_unchecked(modulus: usize, mu: f64, k: f64) -> Self {
         let log_norm_const = Cdvm::compute_log_norm_const(modulus, mu, k);
 
         Cdvm {
