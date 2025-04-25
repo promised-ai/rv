@@ -471,6 +471,7 @@ mod tests {
     use crate::misc::gauss_legendre_quadrature;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
+    use proptest::prelude::*;
 
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
@@ -554,33 +555,19 @@ mod tests {
         assert::close(mean, 0.5, 1E-10);
     }
 
-    #[test]
-    fn equivalent_mean_to_beta_when_a_or_b_is_1() {
-        let mut rng = rand::thread_rng();
+    proptest! {
+        #[test]
+        fn prop_equivalent_mean_to_beta_when_a_or_b_is_1(p in 0.01..100.0) {
+            // K(a, 1) = B(a, 1) - test a=1, varying b
+            let kuma_m1: f64 = Kumaraswamy::new(1.0, p).unwrap().mean().unwrap();
+            let beta_m1: f64 = Beta::new(1.0, p).unwrap().mean().unwrap();
+            assert::close(kuma_m1, beta_m1, 1E-10);
 
-        // K(a, 1) = B(a, 1) and K(1, b) = B(1, b)
-        fn equiv(p: f64) {
-            {
-                let kuma_m: f64 =
-                    Kumaraswamy::new(1.0, p).unwrap().mean().unwrap();
-                let beta_m: f64 = Beta::new(1.0, p).unwrap().mean().unwrap();
-
-                assert::close(kuma_m, beta_m, 1E-10);
-            }
-            {
-                let kuma_m: f64 =
-                    Kumaraswamy::new(p, 1.0).unwrap().mean().unwrap();
-                let beta_m: f64 = Beta::new(p, 1.0).unwrap().mean().unwrap();
-
-                assert::close(kuma_m, beta_m, 1E-10);
-            }
+            // K(1, b) = B(1, b) - test b=1, varying a
+            let kuma_m2: f64 = Kumaraswamy::new(p, 1.0).unwrap().mean().unwrap();
+            let beta_m2: f64 = Beta::new(p, 1.0).unwrap().mean().unwrap();
+            assert::close(kuma_m2, beta_m2, 1E-10);
         }
-
-        Gamma::new(2.0, 2.0)
-            .unwrap()
-            .sample(100, &mut rng)
-            .iter()
-            .for_each(|&p| equiv(p));
     }
 
     #[test]
