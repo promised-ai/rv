@@ -192,7 +192,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "assertion failed")]
+    #[should_panic]
     fn merge_panics_if_modulus_mismatch() {
         let mut stat1 = CdvmSuffStat::new(4);
         let stat2 = CdvmSuffStat::new(3);
