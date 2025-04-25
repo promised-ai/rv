@@ -31,7 +31,10 @@ pub fn main() -> std::io::Result<()> {
     use nalgebra::{DMatrix, DVector};
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
-    use rv::process::gaussian::kernel::{ConstantKernel, ExpSineSquaredKernel, Kernel, RBFKernel, RationalQuadratic, WhiteKernel};
+    use rv::process::gaussian::kernel::{
+        ConstantKernel, ExpSineSquaredKernel, Kernel, RBFKernel,
+        RationalQuadratic, WhiteKernel,
+    };
     use rv::process::gaussian::{GaussianProcess, NoiseModel};
     use rv::process::{RandomProcess, RandomProcessMle};
     use std::fs::File;

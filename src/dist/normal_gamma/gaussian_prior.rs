@@ -8,7 +8,9 @@ use crate::dist::{Gaussian, NormalGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
-use crate::traits::{ConjugatePrior, DataOrSuffStat, HasSuffStat,Sampleable, SuffStat};
+use crate::traits::{
+    ConjugatePrior, DataOrSuffStat, HasSuffStat, Sampleable, SuffStat,
+};
 
 #[inline]
 fn ln_z(r: f64, s: f64, v: f64) -> f64 {
@@ -206,8 +208,8 @@ mod tests {
 
     #[test]
     fn ln_m_vs_monte_carlo() {
-        use crate::traits::HasDensity;
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 8_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -231,8 +233,8 @@ mod tests {
 
     #[test]
     fn ln_m_vs_importance() {
-        use crate::traits::HasDensity;
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 2_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];

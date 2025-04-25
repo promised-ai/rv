@@ -4,7 +4,9 @@ use crate::data::{extract_stat_then, CategoricalDatum, CategoricalSuffStat};
 use crate::dist::{Categorical, Dirichlet, SymmetricDirichlet};
 use crate::misc::ln_gammafn;
 use crate::prelude::CategoricalData;
-use crate::traits::{ConjugatePrior, HasDensity, HasSuffStat, Sampleable, SuffStat};
+use crate::traits::{
+    ConjugatePrior, HasDensity, HasSuffStat, Sampleable, 
+};
 
 impl HasDensity<Categorical> for SymmetricDirichlet {
     fn ln_f(&self, x: &Categorical) -> f64 {

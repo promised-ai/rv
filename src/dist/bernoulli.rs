@@ -4,7 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{BernoulliSuffStat, Booleable};
 use crate::impl_display;
-use crate::traits::{Cdf, DiscreteDistr, Entropy, HasDensity, HasSuffStat, KlDivergence, Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Skewness, SuffStat, Support, Variance};
+use crate::traits::{
+    Cdf, DiscreteDistr, Entropy, HasDensity, HasSuffStat, KlDivergence,
+    Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Skewness,
+     Support, Variance,
+};
 use rand::Rng;
 use std::f64;
 use std::fmt;
@@ -111,7 +115,8 @@ impl Bernoulli {
     /// Creates a new Bernoulli without checking whether parameter value is
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(p: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(p: f64) -> Self {
         Bernoulli { p }
     }
 
@@ -127,7 +132,8 @@ impl Bernoulli {
     /// assert_eq!(b.q(), 0.5);
     /// ```
     #[inline]
-    #[must_use] pub fn uniform() -> Self {
+    #[must_use]
+    pub fn uniform() -> Self {
         Bernoulli { p: 0.5 }
     }
 
@@ -142,7 +148,8 @@ impl Bernoulli {
     /// assert_eq!(b.p(), 0.2);
     /// ```
     #[inline]
-    #[must_use] pub fn p(&self) -> f64 {
+    #[must_use]
+    pub fn p(&self) -> f64 {
         self.p
     }
 
@@ -202,7 +209,8 @@ impl Bernoulli {
     /// assert_eq!(b.q(), 0.8);
     /// ```
     #[inline]
-    #[must_use] pub fn q(&self) -> f64 {
+    #[must_use]
+    pub fn q(&self) -> f64 {
         1.0 - self.p
     }
 }
@@ -733,6 +741,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+        
         let data: Vec<bool> = vec![true, false, false, false, true];
         let mut stat = BernoulliSuffStat::new();
         stat.observe_many(&data);

@@ -11,7 +11,10 @@ use std::sync::OnceLock;
 use crate::impl_display;
 use crate::misc::ln_gammafn;
 use crate::misc::ln_pflips;
-use crate::traits::{Cdf, DiscreteDistr, HasDensity, Mean, Parameterized, Sampleable, SuffStat, Support, Variance};
+use crate::traits::{
+    Cdf, DiscreteDistr, HasDensity, Mean, Parameterized, Sampleable, 
+    Support, Variance,
+};
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// over k in {0, ..., n}
@@ -149,7 +152,8 @@ impl BetaBinomial {
     /// Creates a new `BetaBinomial` without checking whether the parameters are
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(n: u32, alpha: f64, beta: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(n: u32, alpha: f64, beta: f64) -> Self {
         BetaBinomial {
             n,
             alpha,

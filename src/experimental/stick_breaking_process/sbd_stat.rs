@@ -3,7 +3,6 @@ use crate::traits::{HasSuffStat, SuffStat};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-
 /// Represents the sufficient statistics for a Stick-Breaking Discrete distribution.
 ///
 /// This struct encapsulates the sufficient statistics for a Stick-Breaking Discrete distribution,
@@ -26,11 +25,13 @@ impl StickBreakingDiscreteSuffStat {
     /// # Returns
     ///
     /// A new `StickBreakingDiscreteSuffStat` instance.
-    #[must_use] pub fn new() -> Self {
+    #[must_use]
+    pub fn new() -> Self {
         Self { counts: Vec::new() }
     }
 
-    #[must_use] pub fn from_counts(counts: Vec<usize>) -> Self {
+    #[must_use]
+    pub fn from_counts(counts: Vec<usize>) -> Self {
         Self { counts }
     }
 
@@ -41,7 +42,8 @@ impl StickBreakingDiscreteSuffStat {
     /// # Returns
     ///
     /// A vector of `(usize, usize)` pairs for calculating probabilities.
-    #[must_use] pub fn break_pairs(&self) -> Vec<(usize, usize)> {
+    #[must_use]
+    pub fn break_pairs(&self) -> Vec<(usize, usize)> {
         let mut s = self.counts.iter().sum();
         self.counts
             .iter()
@@ -57,7 +59,8 @@ impl StickBreakingDiscreteSuffStat {
     /// # Returns
     ///
     /// A reference to the vector of counts.
-    #[must_use] pub fn counts(&self) -> &Vec<usize> {
+    #[must_use]
+    pub fn counts(&self) -> &Vec<usize> {
         &self.counts
     }
 }

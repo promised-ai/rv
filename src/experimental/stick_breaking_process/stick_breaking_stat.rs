@@ -43,7 +43,8 @@ impl StickBreakingSuffStat {
     /// # Returns
     ///
     /// A new instance of `StickBreakingSuffStat`.
-    #[must_use] pub fn new() -> Self {
+    #[must_use]
+    pub fn new() -> Self {
         Self {
             n: 0,
             num_breaks: 0,
@@ -52,13 +53,15 @@ impl StickBreakingSuffStat {
     }
 
     /// Returns the number of breaks observed in the stick-breaking process.
-    #[must_use] pub fn num_breaks(&self) -> usize {
+    #[must_use]
+    pub fn num_breaks(&self) -> usize {
         self.num_breaks
     }
 
     /// Returns the sum of the logarithms of the remaining stick lengths after
     /// each break.
-    #[must_use] pub fn sum_log_q(&self) -> f64 {
+    #[must_use]
+    pub fn sum_log_q(&self) -> f64 {
         self.sum_log_q
     }
 }

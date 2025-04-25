@@ -5,7 +5,10 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::{Cdf, ContinuousDistr, HasDensity, InverseCdf, Parameterized, Sampleable, Support};
+use crate::traits::{
+    Cdf, ContinuousDistr, HasDensity, InverseCdf, Parameterized, Sampleable,
+    Support,
+};
 use rand::Rng;
 use std::f64::consts::{PI, SQRT_2};
 
@@ -63,7 +66,8 @@ const MAX_ITERS: usize = 2000;
 impl KsTwoAsymptotic {
     /// Create a new `KsTwoAsymptotic` distribution
     #[inline]
-    #[must_use] pub fn new() -> Self {
+    #[must_use]
+    pub fn new() -> Self {
         Self {}
     }
 

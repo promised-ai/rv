@@ -7,7 +7,7 @@ use std::sync::{Arc, RwLock};
 // use super::sticks_stat::StickBreakingSuffStat;
 use crate::experimental::stick_breaking_process::stick_breaking::PartialWeights;
 use crate::prelude::UnitPowerLaw;
-use crate::traits::{Rv, Sampleable};
+use crate::traits::{Rv,};
 
 // We'd like to be able to serialize and deserialize StickSequence, but serde can't handle
 // `Arc` or `RwLock`. So we use `StickSequenceFmt` as an intermediate type.
@@ -66,7 +66,8 @@ impl _Inner {
         }
     }
 
-    #[must_use] pub fn ccdf(&self) -> &[f64] {
+    #[must_use]
+    pub fn ccdf(&self) -> &[f64] {
         &self.ccdf
     }
 

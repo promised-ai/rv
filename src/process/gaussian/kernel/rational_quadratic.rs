@@ -44,7 +44,8 @@ impl RationalQuadratic {
     }
 
     /// Create a new `RationalQuadratic` without checking values
-    #[must_use] pub fn new_unchecked(scale: f64, mixture: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(scale: f64, mixture: f64) -> Self {
         Self { scale, mixture }
     }
 }

@@ -3,7 +3,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::{Cdf, ConjugatePrior, ContinuousDistr, DataOrSuffStat, HasDensity, HasSuffStat, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable, Support, Variance};
+use crate::traits::{
+    Cdf, ConjugatePrior, ContinuousDistr, DataOrSuffStat, HasDensity,
+    HasSuffStat, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable,
+    Support, Variance,
+};
 use rand::Rng;
 use special::Beta;
 use std::f64;
@@ -109,7 +113,8 @@ impl BetaPrime {
 
     /// Creates a new `BetaPrime` without checking whether the parameters are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(alpha: f64, beta: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(alpha: f64, beta: f64) -> Self {
         BetaPrime {
             alpha,
             beta,
@@ -597,7 +602,7 @@ mod tests {
     #[test]
     fn test_posterior_parameter_updates() {
         use crate::traits::SuffStat;
-        
+
         let prior = BetaPrime::new(2.0, 3.0).unwrap();
         let mut stat = StickBreakingDiscreteSuffStat::new();
 

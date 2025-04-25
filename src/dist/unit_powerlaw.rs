@@ -5,7 +5,11 @@ use serde::{Deserialize, Serialize};
 use crate::data::UnitPowerLawSuffStat;
 use crate::impl_display;
 use crate::prelude::Beta;
-use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, InverseCdf, Kurtosis, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, SuffStat, Support, Variance};
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, InverseCdf,
+    Kurtosis, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable,
+    Skewness, Support, Variance,
+};
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;
@@ -114,7 +118,8 @@ impl UnitPowerLaw {
 
     /// Creates a new `UnitPowerLaw` without checking whether the parameters are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(alpha: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(alpha: f64) -> Self {
         UnitPowerLaw {
             alpha,
             alpha_inv: OnceLock::new(),
@@ -132,7 +137,8 @@ impl UnitPowerLaw {
     /// assert_eq!(powlaw, UnitPowerLaw::new(1.0).unwrap());
     /// ```
     #[inline]
-    #[must_use] pub fn uniform() -> Self {
+    #[must_use]
+    pub fn uniform() -> Self {
         UnitPowerLaw::new_unchecked(1.0)
     }
 
@@ -570,6 +576,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;  
+        
         let data: Vec<f64> = vec![0.1, 0.23, 0.4, 0.65, 0.22, 0.31];
         let mut stat = UnitPowerLawSuffStat::new();
         stat.observe_many(&data);

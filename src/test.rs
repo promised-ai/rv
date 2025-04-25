@@ -242,9 +242,7 @@ where
         let errors = self.errs();
         errors.iter().try_for_each(|(name, err)| {
             if *err > max_err {
-                Err(format!(
-                    "P-P Error {name} ({err}) exceeds max ({max_err})"
-                ))
+                Err(format!("P-P Error {name} ({err}) exceeds max ({max_err})"))
             } else {
                 Ok(())
             }
@@ -382,6 +380,8 @@ macro_rules! test_conjugate_prior {
     };
     ($X: ty, $Fx: ty, $Pr: ident, $prior: expr, mctol=$tol: expr, n=$n: expr) => {
         mod conjugate_prior {
+            use $crate::traits::SuffStat;
+
             use super::*;
 
             fn random_xs(
@@ -434,7 +434,8 @@ macro_rules! test_conjugate_prior {
             }
 
             #[test]
-            fn bayes_law() {use $crate::traits::HasDensity;
+            fn bayes_law() {
+                use $crate::traits::HasDensity;
                 // test that p(θ|x) == p(x|θ)p(θ)/p(x)
                 // If this doesn't work, one of the following is wrong
                 // 1. prior.posterior.ln_f(fx)

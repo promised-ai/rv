@@ -1,7 +1,10 @@
 use crate::data::extract_stat_then;
 use crate::data::{DataOrSuffStat, ShiftedSuffStat};
 use crate::dist::Shifted;
-use crate::traits::{ConjugatePrior, HasDensity, HasSuffStat, Parameterized, Sampleable, Shiftable};
+use crate::traits::{
+    ConjugatePrior, HasDensity, HasSuffStat, Parameterized, Sampleable,
+    Shiftable,
+};
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};

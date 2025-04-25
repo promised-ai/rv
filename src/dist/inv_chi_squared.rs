@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::{Cdf, ContinuousDistr, HasDensity, Kurtosis, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support, Variance};
+use crate::traits::{
+    Cdf, ContinuousDistr, HasDensity, Kurtosis, Mean, Mode, Parameterized,
+    Sampleable, Scalable, Shiftable, Skewness, Support, Variance,
+};
 use rand::Rng;
 use special::Gamma;
 use std::f64::consts::LN_2;
@@ -95,7 +98,8 @@ impl InvChiSquared {
     /// Create a new `InvChiSquared` without checking whether the parameters are
     /// valid.
     #[inline(always)]
-    #[must_use] pub fn new_unchecked(v: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(v: f64) -> Self {
         InvChiSquared {
             v,
             ln_f_const: OnceLock::new(),

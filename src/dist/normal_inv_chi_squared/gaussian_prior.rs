@@ -7,7 +7,9 @@ use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
-use crate::traits::{ConjugatePrior, DataOrSuffStat, HasSuffStat, Mean, Sampleable, SuffStat};
+use crate::traits::{
+    ConjugatePrior, DataOrSuffStat, HasSuffStat,  Sampleable, 
+};
 
 #[derive(Clone, Debug)]
 pub struct PosteriorParameters {
@@ -245,8 +247,8 @@ mod test {
 
     #[test]
     fn ln_m_single_datum_vs_monte_carlo() {
-        use crate::traits::HasDensity;
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 1_000_000;
         let x: f64 = -0.3;
@@ -294,8 +296,8 @@ mod test {
 
     #[test]
     fn ln_pp_vs_monte_carlo() {
-        use crate::traits::HasDensity;
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 1_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -319,8 +321,8 @@ mod test {
 
     #[test]
     fn ln_pp_single_vs_monte_carlo() {
-        use crate::traits::HasDensity;
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 1_000_000;
         let x: f64 = -0.3;
@@ -363,8 +365,8 @@ mod test {
 
     #[test]
     fn ln_pp_vs_t() {
-        use crate::traits::HasDensity;
         use crate::dist::StudentsT;
+        use crate::traits::HasDensity;
 
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let y: f64 = -0.3;

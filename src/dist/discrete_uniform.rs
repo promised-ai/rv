@@ -1,5 +1,8 @@
 //! Continuous uniform distribution, U(a, b) on the interval x in [a, b]
-use crate::traits::{Cdf, DiscreteDistr, Entropy, HasDensity, InverseCdf, Kurtosis, Mean, Median, Parameterized, Sampleable, Skewness, Support, Variance};
+use crate::traits::{
+    Cdf, DiscreteDistr, Entropy, HasDensity, InverseCdf, Kurtosis, Mean,
+    Median, Parameterized, Sampleable, Skewness, Support, Variance,
+};
 use num::{FromPrimitive, Integer, ToPrimitive};
 use rand::Rng;
 use rand_distr::uniform::SampleUniform;

@@ -2,7 +2,10 @@ use super::StickSequence;
 use crate::dist::Mixture;
 use crate::misc::sorted_uniforms;
 use crate::misc::ConvergentSequence;
-use crate::traits::{Cdf, DiscreteDistr, Entropy, HasDensity, InverseCdf, Mode, Sampleable, Support};
+use crate::traits::{
+    Cdf, DiscreteDistr, Entropy, HasDensity, InverseCdf, Mode, Sampleable,
+    Support,
+};
 use rand::seq::SliceRandom;
 use rand::Rng;
 #[cfg(feature = "serde1")]

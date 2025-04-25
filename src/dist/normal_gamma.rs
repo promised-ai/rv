@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::dist::{Gamma, Gaussian};
 use crate::impl_display;
-use crate::traits::{ConjugatePrior, ContinuousDistr, HasDensity, Parameterized, Sampleable, Support};
+use crate::traits::{
+     ContinuousDistr, HasDensity, Parameterized, Sampleable,
+    Support,
+};
 use rand::Rng;
 use std::fmt;
 
@@ -104,13 +107,15 @@ impl NormalGamma {
     /// Creates a new `NormalGamma` without checking whether the parameters are
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(m: f64, r: f64, s: f64, v: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(m: f64, r: f64, s: f64, v: f64) -> Self {
         NormalGamma { m, r, s, v }
     }
 
     /// Get the m parameter
     #[inline]
-    #[must_use] pub fn m(&self) -> f64 {
+    #[must_use]
+    pub fn m(&self) -> f64 {
         self.m
     }
 
@@ -156,7 +161,8 @@ impl NormalGamma {
 
     /// Get the r parameter
     #[inline]
-    #[must_use] pub fn r(&self) -> f64 {
+    #[must_use]
+    pub fn r(&self) -> f64 {
         self.r
     }
 
@@ -210,7 +216,8 @@ impl NormalGamma {
 
     /// Get the s parameter
     #[inline]
-    #[must_use] pub fn s(&self) -> f64 {
+    #[must_use]
+    pub fn s(&self) -> f64 {
         self.s
     }
 
@@ -264,7 +271,8 @@ impl NormalGamma {
 
     /// Get the v parameter
     #[inline]
-    #[must_use] pub fn v(&self) -> f64 {
+    #[must_use]
+    pub fn v(&self) -> f64 {
         self.v
     }
 

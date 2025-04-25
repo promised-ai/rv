@@ -4,7 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::consts::HALF_LN_2PI;
 use crate::impl_display;
-use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support, Variance};
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Kurtosis, Mean,
+    Median, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness,
+    Support, Variance,
+};
 use rand::Rng;
 use special::Error as _;
 use std::f64::consts::SQRT_2;
@@ -96,7 +100,8 @@ impl LogNormal {
     /// Creates a new `LogNormal` without checking whether the parameters are
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
         LogNormal { mu, sigma }
     }
 
@@ -110,7 +115,8 @@ impl LogNormal {
     /// assert_eq!(lognormal, LogNormal::new(0.0, 1.0).unwrap());
     /// ```
     #[inline]
-    #[must_use] pub fn standard() -> Self {
+    #[must_use]
+    pub fn standard() -> Self {
         LogNormal {
             mu: 0.0,
             sigma: 1.0,
@@ -127,7 +133,8 @@ impl LogNormal {
     /// assert_eq!(lognormal.mu(), -1.0);
     /// ```
     #[inline]
-    #[must_use] pub fn mu(&self) -> f64 {
+    #[must_use]
+    pub fn mu(&self) -> f64 {
         self.mu
     }
 
@@ -180,7 +187,8 @@ impl LogNormal {
     /// assert_eq!(lognormal.sigma(), 2.0);
     /// ```
     #[inline]
-    #[must_use] pub fn sigma(&self) -> f64 {
+    #[must_use]
+    pub fn sigma(&self) -> f64 {
         self.sigma
     }
 

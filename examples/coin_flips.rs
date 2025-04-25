@@ -30,9 +30,7 @@ fn main() {
     // Print the mean. The posterior mean for Bernoulli likelihood with Beta
     // prior.
     let posterior_mean: f64 = posterior.mean().expect("Mean undefined");
-    println!(
-        "Posterior mean: {posterior_mean} (should be close to 0.7)"
-    );
+    println!("Posterior mean: {posterior_mean} (should be close to 0.7)");
 
     // Same thing, only using ConjugateModel
     let mut model: ConjugateModel<bool, Bernoulli, Beta> =

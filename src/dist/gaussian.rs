@@ -12,7 +12,11 @@ use crate::consts::{HALF_LN_2PI, HALF_LN_2PI_E};
 use crate::data::GaussianSuffStat;
 use crate::impl_display;
 use crate::traits::HasDensity;
-use crate::traits::{Cdf, ContinuousDistr, Entropy, HasSuffStat, InverseCdf, KlDivergence, Kurtosis, Mean, Median, Mode, Parameterized, QuadBounds, Sampleable, Scalable, Shiftable, Skewness, SuffStat, Support, Variance};
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasSuffStat, InverseCdf, KlDivergence,
+    Kurtosis, Mean, Median, Mode, Parameterized, QuadBounds, Sampleable,
+    Scalable, Shiftable, Skewness,  Support, Variance,
+};
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.
@@ -132,7 +136,8 @@ impl Gaussian {
     /// Creates a new Gaussian without checking whether the parameters are
     /// valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
         Gaussian {
             mu,
             sigma,
@@ -151,7 +156,8 @@ impl Gaussian {
     /// assert_eq!(gauss, Gaussian::new(0.0, 1.0).unwrap());
     /// ```
     #[inline]
-    #[must_use] pub fn standard() -> Self {
+    #[must_use]
+    pub fn standard() -> Self {
         Gaussian {
             mu: 0.0,
             sigma: 1.0,
@@ -170,7 +176,8 @@ impl Gaussian {
     /// assert_eq!(gauss.mu(), 2.0);
     /// ```
     #[inline]
-    #[must_use] pub fn mu(&self) -> f64 {
+    #[must_use]
+    pub fn mu(&self) -> f64 {
         self.mu
     }
 
@@ -224,7 +231,8 @@ impl Gaussian {
     /// assert_eq!(gauss.sigma(), 1.5);
     /// ```
     #[inline]
-    #[must_use] pub fn sigma(&self) -> f64 {
+    #[must_use]
+    pub fn sigma(&self) -> f64 {
         self.sigma
     }
 
@@ -755,6 +763,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+        
         let data: Vec<f64> = vec![0.1, 0.23, 1.4, 0.65, 0.22, 3.1];
         let mut stat = GaussianSuffStat::new();
         stat.observe_many(&data);

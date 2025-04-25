@@ -42,7 +42,8 @@ impl CovGrad {
     }
 
     /// Create a new unchecked `CovGrad`
-    #[must_use] pub fn new_unchecked(slices: &[DMatrix<f64>]) -> Self {
+    #[must_use]
+    pub fn new_unchecked(slices: &[DMatrix<f64>]) -> Self {
         Self {
             slices: slices.to_vec(),
         }
@@ -95,7 +96,8 @@ impl CovGrad {
     }
 
     /// Check if this is relatively eq to another matrix
-    #[must_use] pub fn relative_eq(&self, other: &CovGrad, rel: f64, abs: f64) -> bool {
+    #[must_use]
+    pub fn relative_eq(&self, other: &CovGrad, rel: f64, abs: f64) -> bool {
         assert!(
             self.slices.len() == other.slices.len(),
             "Cannot compare dissimilarly shaped CovMats"
@@ -120,7 +122,8 @@ impl CovGrad {
     }
 
     /// Create a new cov-grad with all zeros
-    #[must_use] pub fn zeros(n: usize, m: usize) -> Self {
+    #[must_use]
+    pub fn zeros(n: usize, m: usize) -> Self {
         Self {
             slices: (0..m).map(|_| DMatrix::zeros(n, n)).collect(),
         }

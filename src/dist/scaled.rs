@@ -1,5 +1,9 @@
 use crate::traits::Parameterized;
-use crate::traits::{Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, InverseCdf, Kurtosis, Mean, Median, Mode, Sampleable, Scalable, Skewness, Support, Variance};
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, InverseCdf,
+    Kurtosis, Mean, Median, Mode, Sampleable, Scalable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};

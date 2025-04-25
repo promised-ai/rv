@@ -42,7 +42,8 @@ impl SEardKernel {
     }
 
     /// Create a new `SEardKernel` without checking parameters
-    #[must_use] pub fn new_unchecked(length_scale: DVector<f64>) -> Self {
+    #[must_use]
+    pub fn new_unchecked(length_scale: DVector<f64>) -> Self {
         Self { length_scale }
     }
 }

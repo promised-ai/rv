@@ -10,7 +10,7 @@ mod gaussian_prior;
 use crate::dist::{Gaussian, ScaledInvChiSquared};
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::{ConjugatePrior, HasDensity, Parameterized, Sampleable};
+use crate::traits::{ HasDensity, Parameterized, Sampleable};
 use rand::Rng;
 use std::sync::OnceLock;
 
@@ -128,7 +128,8 @@ impl NormalInvChiSquared {
     /// Creates a new `NormalInvChiSquared` without checking whether the
     /// parameters are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(m: f64, k: f64, v: f64, s2: f64) -> Self {
+    #[must_use]
+    pub fn new_unchecked(m: f64, k: f64, v: f64, s2: f64) -> Self {
         NormalInvChiSquared {
             m,
             k,

@@ -14,7 +14,7 @@ use crate::data::Partition;
 use crate::impl_display;
 use crate::misc::ln_gammafn;
 use crate::misc::pflip;
-use crate::traits::{HasDensity, Parameterized, Sampleable, SuffStat, Support};
+use crate::traits::{HasDensity, Parameterized, Sampleable,  Support};
 use rand::Rng;
 use std::fmt;
 
@@ -86,7 +86,8 @@ impl Crp {
 
     /// Create a new Crp without checking whether the parameters are valid.
     #[inline]
-    #[must_use] pub fn new_unchecked(alpha: f64, n: usize) -> Self {
+    #[must_use]
+    pub fn new_unchecked(alpha: f64, n: usize) -> Self {
         Crp { alpha, n }
     }
 
@@ -100,7 +101,8 @@ impl Crp {
     /// assert_eq!(crp.alpha(), 1.0);
     /// ```
     #[inline]
-    #[must_use] pub fn alpha(&self) -> f64 {
+    #[must_use]
+    pub fn alpha(&self) -> f64 {
         self.alpha
     }
 
@@ -156,7 +158,8 @@ impl Crp {
     /// assert_eq!(crp.n(), 12);
     /// ```
     #[inline]
-    #[must_use] pub fn n(&self) -> usize {
+    #[must_use]
+    pub fn n(&self) -> usize {
         self.n
     }
 
