@@ -434,7 +434,7 @@ macro_rules! test_conjugate_prior {
             }
 
             #[test]
-            fn bayes_law() {use crate::traits::HasDensity;
+            fn bayes_law() {use $crate::traits::HasDensity;
                 // test that p(θ|x) == p(x|θ)p(θ)/p(x)
                 // If this doesn't work, one of the following is wrong
                 // 1. prior.posterior.ln_f(fx)

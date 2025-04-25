@@ -6,7 +6,7 @@ use crate::data::{CategoricalDatum, CategoricalSuffStat};
 use crate::impl_display;
 use crate::misc::pflip;
 use crate::misc::{argmax, ln_pflips, vec_to_string, LogSumExp};
-use crate::traits::{Cdf, DiscreteDistr, Entropy, HasDensity, HasSuffStat, KlDivergence, Mode, Parameterized, Sampleable, Support, SuffStat};
+use crate::traits::{Cdf, DiscreteDistr, Entropy, HasDensity, HasSuffStat, KlDivergence, Mode, Parameterized, Sampleable, Support};
 use rand::Rng;
 use std::fmt;
 
@@ -478,6 +478,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+        
         let data: Vec<u8> = vec![0, 1, 2, 1, 1, 0];
         let mut stat = CategoricalSuffStat::new(3);
         stat.observe_many(&data);
