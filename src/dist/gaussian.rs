@@ -682,11 +682,11 @@ mod tests {
         let gauss = Gaussian::standard();
         let xs: Vec<f64> = gauss.sample(100, &mut rng);
 
-        xs.iter().for_each(|x| {
+        for x in xs.iter() {
             let p = gauss.cdf(x);
             let y: f64 = gauss.quantile(p);
             assert::close(y, *x, TOL);
-        });
+        }
     }
 
     #[test]

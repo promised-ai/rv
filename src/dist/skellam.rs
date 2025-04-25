@@ -458,7 +458,7 @@ mod tests {
                 .map(|x: i32| x.min(right_len as i32).max(-(left_len as i32)))
                 .collect();
 
-            for &x in xs.iter() {
+            for &x in &xs {
                 f_obs[(x + left_len as i32) as usize] += 1;
             }
             let (_, p) = x2_test(&f_obs, &ps);
