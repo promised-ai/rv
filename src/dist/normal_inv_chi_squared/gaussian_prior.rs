@@ -253,7 +253,10 @@ mod test {
     #[test]
     fn posterior_of_nothing_is_prior() {
         let prior = NormalInvChiSquared::new_unchecked(1.2, 2.3, 3.4, 4.5);
-        let post = prior.posterior(&DataOrSuffStat::from(&vec![]));
+        let post = <NormalInvChiSquared as ConjugatePrior<f64, _>>::posterior(
+            &prior,
+            &DataOrSuffStat::from(&vec![]),
+        );
         assert_eq!(prior.m(), post.m());
         assert_eq!(prior.k(), post.k());
         assert_eq!(prior.v(), post.v());
