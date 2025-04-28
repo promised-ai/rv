@@ -60,67 +60,84 @@ fn posterior_from_stat(
     PosteriorParameters { mn, kn, vn, s2n }
 }
 
-impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
-    type Posterior = Self;
-    type MCache = f64;
-    type PpCache = (PosteriorParameters, f64);
+macro_rules! impl_traits {
+    ($kind: ty) => {
+        impl ConjugatePrior<$kind, Gaussian> for NormalInvChiSquared {
+            type Posterior = Self;
+            type MCache = f64;
+            type PpCache = (PosteriorParameters, f64);
 
-    fn empty_stat(&self) -> <Gaussian as HasSuffStat<f64>>::Stat {
-        GaussianSuffStat::new()
-    }
+            fn empty_stat(&self) -> <Gaussian as HasSuffStat<$kind>>::Stat {
+                GaussianSuffStat::new()
+            }
 
-    fn posterior_from_suffstat(
-        &self,
-        stat: &GaussianSuffStat,
-    ) -> Self::Posterior {
-        posterior_from_stat(self, stat).into()
-    }
+            fn posterior_from_suffstat(
+                &self,
+                stat: &GaussianSuffStat,
+            ) -> Self::Posterior {
+                posterior_from_stat(self, stat).into()
+            }
 
-    #[inline]
-    fn ln_m_cache(&self) -> Self::MCache {
-        self.ln_z()
-    }
+            #[inline]
+            fn ln_m_cache(&self) -> Self::MCache {
+                self.ln_z()
+            }
 
-    fn ln_m_with_cache(
-        &self,
-        cache: &Self::MCache,
-        x: &DataOrSuffStat<f64, Gaussian>,
-    ) -> f64 {
-        extract_stat_then(self, x, |stat: &GaussianSuffStat| {
-            let n = stat.n() as f64;
-            let post: Self = posterior_from_stat(self, stat).into();
-            let lnz_n = post.ln_z();
-            n.mul_add(-HALF_LN_PI, lnz_n - cache)
-        })
-    }
+            fn ln_m_with_cache(
+                &self,
+                cache: &Self::MCache,
+                x: &DataOrSuffStat<$kind, Gaussian>,
+            ) -> f64 {
+                extract_stat_then(self, x, |stat: &GaussianSuffStat| {
+                    let n = stat.n() as f64;
+                    let post: Self = posterior_from_stat(self, stat).into();
+                    let lnz_n = post.ln_z();
+                    n.mul_add(-HALF_LN_PI, lnz_n - cache)
+                })
+            }
 
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
-        extract_stat_then(self, x, |stat: &GaussianSuffStat| {
-            let post = posterior_from_stat(self, stat);
-            let kn = post.kn;
-            let vn = post.vn;
+            fn ln_pp_cache(
+                &self,
+                x: &DataOrSuffStat<$kind, Gaussian>,
+            ) -> Self::PpCache {
+                extract_stat_then(self, x, |stat: &GaussianSuffStat| {
+                    let post = posterior_from_stat(self, stat);
+                    let kn = post.kn;
+                    let vn = post.vn;
 
-            let z = 0.5_f64.mul_add(
-                (kn / ((kn + 1.0) * PI * vn * post.s2n)).ln(),
-                ln_gammafn((vn + 1.0) / 2.0) - ln_gammafn(vn / 2.0),
-            );
-            (post, z)
-        })
-    }
+                    let z = 0.5_f64.mul_add(
+                        (kn / ((kn + 1.0) * PI * vn * post.s2n)).ln(),
+                        ln_gammafn((vn + 1.0) / 2.0) - ln_gammafn(vn / 2.0),
+                    );
+                    (post, z)
+                })
+            }
 
-    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
-        let post = &cache.0;
-        let z = cache.1;
-        let kn = post.kn;
+            fn ln_pp_with_cache(
+                &self,
+                cache: &Self::PpCache,
+                y: &$kind,
+            ) -> f64 {
+                let post = &cache.0;
+                let z = cache.1;
+                let kn = post.kn;
 
-        let diff = y - post.mn;
+                let diff = f64::from(*y) - post.mn;
 
-        ((post.vn + 1.0) / 2.0).mul_add(
-            -((kn * diff * diff) / ((kn + 1.0) * post.vn * post.s2n)).ln_1p(),
-            z,
-        )
-    }
+                ((post.vn + 1.0) / 2.0).mul_add(
+                    -((kn * diff * diff) / ((kn + 1.0) * post.vn * post.s2n))
+                        .ln_1p(),
+                    z,
+                )
+            }
+        }
+    };
 }
+
+#[cfg(feature = "experimental")]
+impl_traits!(f16);
+impl_traits!(f32);
+impl_traits!(f64);
 
 gaussian_prior_geweke_testable!(NormalInvChiSquared, Gaussian);
 
