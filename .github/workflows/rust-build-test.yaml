@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@nightly
 
       - name: Install dependencies
         run: cargo install cargo-hack
@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt, clippy
 
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@nightly
 
       - name: Run tests
         env:
@@ -83,7 +83,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@nightly
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
@@ -113,7 +113,7 @@ jobs:
           path: master
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@nightly
 
       - name: Install extra cargo tools
         run: cargo install cargo-semver-checks --locked
@@ -136,7 +136,7 @@ jobs:
         run: |
           git fetch origin master
           git tag --merged origin/master | grep $NEW_VERSION
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@nightly
       - name: Install dependencies
         run: cargo install cargo-crate
       - name: Publish Updated Library Crates to Crates.io
