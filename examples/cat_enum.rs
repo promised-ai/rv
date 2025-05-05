@@ -5,7 +5,7 @@ use rv::prelude::*;
 /// We have to assign values 0, ..., n-1 to the enum values so they map to
 /// indices in the categorical weights
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Hash)]
 enum Color {
     Red = 0,
     Blue = 1,

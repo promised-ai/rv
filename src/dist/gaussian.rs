@@ -466,6 +466,8 @@ impl QuadBounds for Gaussian {
     }
 }
 
+#[cfg(feature = "experimental")]
+impl_traits!(f16);
 impl_traits!(f32);
 impl_traits!(f64);
 

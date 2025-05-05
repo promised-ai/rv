@@ -204,6 +204,8 @@ macro_rules! impl_gaussian_suffstat {
     };
 }
 
+#[cfg(feature = "experimental")]
+impl_gaussian_suffstat!(f16);
 impl_gaussian_suffstat!(f32);
 impl_gaussian_suffstat!(f64);
 

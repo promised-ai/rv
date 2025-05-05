@@ -2,6 +2,8 @@
 mod partition;
 mod stat;
 
+use std::hash::Hash;
+
 pub use partition::Partition;
 pub use stat::BernoulliSuffStat;
 pub use stat::BetaSuffStat;
@@ -34,7 +36,7 @@ pub type PoissonData<'a, X> = DataOrSuffStat<'a, X, Poisson>;
 
 /// The trait that data must implemented by all data used with the
 /// `Categorical` distribution
-pub trait CategoricalDatum: Sized + Sync + Copy {
+pub trait CategoricalDatum: Sized + Sync + Copy + Eq + Hash {
     fn into_usize(self) -> usize;
     fn from_usize(n: usize) -> Self;
 }

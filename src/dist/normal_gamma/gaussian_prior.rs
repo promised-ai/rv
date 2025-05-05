@@ -50,61 +50,71 @@ fn posterior_from_stat(
     PosteriorParameters { m, r, s, v }
 }
 
-impl ConjugatePrior<f64, Gaussian> for NormalGamma {
-    type Posterior = Self;
-    type MCache = f64;
-    type PpCache = (PosteriorParameters, f64);
+macro_rules! impl_traits {
+    ($kind: ty) => {
+        impl ConjugatePrior<$kind, Gaussian> for NormalGamma {
+            type Posterior = Self;
+            type MCache = f64;
+            type PpCache = (PosteriorParameters, f64);
 
-    fn empty_stat(&self) -> <Gaussian as HasSuffStat<f64>>::Stat {
-        GaussianSuffStat::new()
-    }
+            fn empty_stat(&self) -> <Gaussian as HasSuffStat<$kind>>::Stat {
+                GaussianSuffStat::new()
+            }
 
-    fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        dos_to_post!(self, x).into()
-    }
+            fn posterior(&self, x: &DataOrSuffStat<$kind, Gaussian>) -> Self {
+                dos_to_post!(self, x).into()
+            }
 
-    #[inline]
-    fn ln_m_cache(&self) -> Self::MCache {
-        ln_z(self.r(), self.s, self.v)
-    }
+            #[inline]
+            fn ln_m_cache(&self) -> Self::MCache {
+                ln_z(self.r(), self.s, self.v)
+            }
 
-    fn ln_m_with_cache(
-        &self,
-        cache: &Self::MCache,
-        x: &DataOrSuffStat<f64, Gaussian>,
-    ) -> f64 {
-        let (n, post) = dos_to_post!(# self, x);
-        let lnz_n = ln_z(post.r, post.s, post.v);
-        (-(n as f64)).mul_add(HALF_LN_2PI, lnz_n) - cache
-    }
+            fn ln_m_with_cache(
+                &self,
+                cache: &Self::MCache,
+                x: &DataOrSuffStat<$kind, Gaussian>,
+            ) -> f64 {
+                let (n, post) = dos_to_post!(# self, x);
+                let lnz_n = ln_z(post.r, post.s, post.v);
+                (-(n as f64)).mul_add(HALF_LN_2PI, lnz_n) - cache
+            }
 
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
-        extract_stat_then(self, x, |stat| {
-            let params = posterior_from_stat(self, stat);
-            let PosteriorParameters { r, s, v, .. } = params;
+            fn ln_pp_cache(&self, x: &DataOrSuffStat<$kind, Gaussian>) -> Self::PpCache {
+                extract_stat_then(self, x, |stat| {
+                    let params = posterior_from_stat(self, stat);
+                    let PosteriorParameters { r, s, v, .. } = params;
 
-            let half_v = v / 2.0;
-            let g_ratio = ln_gammafn(half_v + 0.5) - ln_gammafn(half_v);
-            let term = 0.5_f64.mul_add(LN_2, -HALF_LN_2PI)
-                + 0.5_f64.mul_add(
-                    (r / (r + 1_f64)).ln(),
-                    half_v.mul_add(s.ln(), g_ratio),
-                );
+                    let half_v = v / 2.0;
+                    let g_ratio = ln_gammafn(half_v + 0.5) - ln_gammafn(half_v);
+                    let term = 0.5_f64.mul_add(LN_2, -HALF_LN_2PI)
+                        + 0.5_f64.mul_add(
+                            (r / (r + 1_f64)).ln(),
+                            half_v.mul_add(s.ln(), g_ratio),
+                        );
 
-            (params, term)
-        })
-    }
+                    (params, term)
+                })
+            }
 
-    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
-        let PosteriorParameters { m, r, s, v } = cache.0;
+            fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &$kind) -> f64 {
+                let PosteriorParameters { m, r, s, v } = cache.0;
 
-        let y = *y;
-        let rn = r + 1.0;
-        let mn = r.mul_add(m, y) / rn;
-        let sn = (rn * mn).mul_add(-mn, (r * m).mul_add(m, y.mul_add(y, s)));
-        ((v + 1.0) / 2.0).mul_add(-sn.ln(), cache.1)
-    }
+                let y = f64::from(*y);
+                let rn = r + 1.0;
+                let mn = r.mul_add(m, y) / rn;
+                let sn = (rn * mn).mul_add(-mn, (r * m).mul_add(m, y.mul_add(y, s)));
+                ((v + 1.0) / 2.0).mul_add(-sn.ln(), cache.1)
+            }
+        }
+
+    };
 }
+
+#[cfg(feature = "experimental")]
+impl_traits!(f16);
+impl_traits!(f32);
+impl_traits!(f64);
 
 gaussian_prior_geweke_testable!(NormalGamma, Gaussian);
 

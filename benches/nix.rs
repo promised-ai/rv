@@ -44,7 +44,9 @@ fn bench_nix_postpred(c: &mut Criterion) {
                     stat
                 };
                 let y: f64 = g.draw(&mut rng);
-                let cache = nix.ln_pp_cache(&DataOrSuffStat::SuffStat(&stat));
+                let stat: DataOrSuffStat<f64, _> =
+                    DataOrSuffStat::SuffStat(&stat);
+                let cache = nix.ln_pp_cache(&stat);
                 (y, cache)
             },
             |(y, cache)| black_box(nix.ln_pp_with_cache(&cache, &y)),

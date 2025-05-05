@@ -83,6 +83,7 @@
     clippy::implicit_clone
 )]
 #![deny(clippy::print_stdout)]
+#![cfg_attr(feature = "experimental", feature(f16))]
 
 #[cfg(feature = "serde1")]
 extern crate serde;
