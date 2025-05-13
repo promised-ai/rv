@@ -485,4 +485,31 @@ mod test {
         3.4,
         0.8
     );
+
+    use super::*;
+    use ::proptest::prelude::*;
+    use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256Plus;
+
+    proptest! {
+        #[test]
+        fn draw_always_returns_positive_finite_value(
+            m in -1e300..1e300f64,
+            k in 1e-300..1e300f64,
+            v in 1e-300..1e300f64,
+            s2 in 1e-300..1e300f64,
+            seed in 0u64..1000u64,
+        ) {
+            let nix = NormalInvChiSquared::new(m, k, v, s2);
+            if let Ok(nix) = NormalInvChiSquared::new(m, k, v, s2) {
+                let mut rng = Xoshiro256Plus::seed_from_u64(seed);
+                let gaussian = nix.draw(&mut rng);
+
+                prop_assert!(gaussian.mu().is_finite());
+                prop_assert!(gaussian.sigma() > 0.0);
+                prop_assert!(gaussian.sigma().is_finite());
+            }
+
+        }
+    }
 }
