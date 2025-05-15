@@ -4,9 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::traits::{
-    Cdf, ConjugatePrior, ContinuousDistr, DataOrSuffStat, HasDensity,
-    HasSuffStat, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable,
-    Support, Variance,
+    Cdf, ContinuousDistr, HasDensity, Mean, Mode, Parameterized, Sampleable,
+    Scalable, Shiftable, Support, Variance,
 };
 use rand::Rng;
 use special::Beta;
@@ -17,6 +16,8 @@ use std::sync::OnceLock;
 #[cfg(feature = "experimental")]
 use super::UnitPowerLaw;
 
+#[cfg(feature = "experimental")]
+use crate::traits::{ConjugatePrior, DataOrSuffStat, HasSuffStat};
 /// [Beta prime distribution](https://en.wikipedia.org/wiki/Beta_prime_distribution),
 /// BetaPrime(α, β) over x in (0, ∞).
 ///

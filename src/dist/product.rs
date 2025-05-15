@@ -1,22 +1,27 @@
+//! This module implements common traits for Product Distributions Tuple Products, e.g. (Gaussian, Gaussian)
+
+use crate::traits::{
+    Cdf, ContinuousDistr, DiscreteDistr, Entropy, HasDensity, Mean, Median,
+    Mode, Sampleable, Support,
+};
+
+#[cfg(feature = "experimental")]
 use crate::{
     prelude::DataOrSuffStat,
-    traits::{
-        Cdf, ConjugatePrior, ContinuousDistr, DiscreteDistr, Entropy,
-        HasDensity, HasSuffStat, Mean, Median, Mode, Sampleable, SuffStat,
-        Support,
-    },
+    traits::{ConjugatePrior, HasSuffStat, SuffStat},
 };
 
 macro_rules! tuple_sampleable {
-    ($($len:expr => ($($n:tt $t:ident $x:ident)+))+) => {
+    ($($len:expr => ($($n:tt $t:ident $x:ident)*))+) => {
         $(
-            impl<$($t,)+$($x,)+> Sampleable<($($x,)+)> for ($($t,)+)
+            impl<$($t,)*$($x,)*> Sampleable<($($x,)*)> for ($($t,)*)
             where
-                $($t: Sampleable<$x>,)+
+                $($t: Sampleable<$x>,)*
             {
-                fn draw<R: rand::Rng>(&self, rng: &mut R) -> ($($x,)+) {
+                #[allow(unused_variables)]
+                fn draw<R: rand::Rng>(&self, rng: &mut R) -> ($($x,)*) {
                     (
-                        $(self.$n.draw(rng),)+
+                        $(self.$n.draw(rng),)*
                     )
                 }
             }
@@ -25,14 +30,15 @@ macro_rules! tuple_sampleable {
 }
 
 macro_rules! tuple_has_density {
-    ($($len:expr => ($($n:tt $t:ident $x:ident)+))+) => {
+    ($($len:expr => ($($n:tt $t:ident $x:ident)*))+) => {
         $(
-            impl<$($t,)+$($x,)+> HasDensity<($($x,)+)> for ($($t,)+)
+            impl<$($t,)*$($x,)*> HasDensity<($($x,)*)> for ($($t,)*)
             where
-                $($t: HasDensity<$x>,)+
+                $($t: HasDensity<$x>,)*
             {
-                fn ln_f(&self, x: &($($x,)+)) -> f64 {
-                    0.0 $(+ self.$n.ln_f(&x.$n))+
+                #[allow(unused_variables)]
+                fn ln_f(&self, x: &($($x,)*)) -> f64 {
+                    0.0 $(+ self.$n.ln_f(&x.$n))*
                 }
             }
         )+
@@ -40,14 +46,15 @@ macro_rules! tuple_has_density {
 }
 
 macro_rules! tuple_support {
-    ($($len:expr => ($($n:tt $t:ident $x:ident)+))+) => {
+    ($($len:expr => ($($n:tt $t:ident $x:ident)*))+) => {
         $(
-            impl<$($t,)+$($x,)+> Support<($($x,)+)> for ($($t,)+)
+            impl<$($t,)*$($x,)*> Support<($($x,)*)> for ($($t,)*)
             where
-                $($t: Support<$x>,)+
+                $($t: Support<$x>,)*
             {
-                fn supports(&self, x: &($($x,)+)) -> bool {
-                    true $(&& self.$n.supports(&x.$n))+
+                #[allow(unused_variables)]
+                fn supports(&self, x: &($($x,)*)) -> bool {
+                    true $(&& self.$n.supports(&x.$n))*
                 }
             }
         )+
@@ -55,17 +62,17 @@ macro_rules! tuple_support {
 }
 
 macro_rules! tuple_discrete_continuous {
-    ($($len:expr => ($($n:tt $t:ident $x:ident)+))+) => {
+    ($($len:expr => ($($n:tt $t:ident $x:ident)*))+) => {
         $(
-            impl<$($t,)+$($x,)+> ContinuousDistr<($($x,)+)> for ($($t,)+)
+            impl<$($t,)*$($x,)*> ContinuousDistr<($($x,)*)> for ($($t,)*)
             where
-                $($t: ContinuousDistr<$x>,)+
+                $($t: ContinuousDistr<$x>,)*
             {
             }
 
-            impl<$($t,)+$($x,)+> DiscreteDistr<($($x,)+)> for ($($t,)+)
+            impl<$($t,)*$($x,)*> DiscreteDistr<($($x,)*)> for ($($t,)*)
             where
-                $($t: DiscreteDistr<$x>,)+
+                $($t: DiscreteDistr<$x>,)*
             {
             }
 
@@ -74,14 +81,15 @@ macro_rules! tuple_discrete_continuous {
 }
 
 macro_rules! tuple_cdf {
-    ($($len:expr => ($($n:tt $t:ident $x:ident)+))+) => {
+    ($($len:expr => ($($n:tt $t:ident $x:ident)*))+) => {
         $(
-            impl<$($t,)+$($x,)+> Cdf<($($x,)+)> for ($($t,)+)
+            impl<$($t,)*$($x,)*> Cdf<($($x,)*)> for ($($t,)*)
             where
-                $($t: Cdf<$x>,)+
+                $($t: Cdf<$x>,)*
             {
-                fn cdf(&self, x: &($($x,)+)) -> f64 {
-                    1.0 $(* self.$n.cdf(&x.$n))+
+                #[allow(unused_variables)]
+                fn cdf(&self, x: &($($x,)*)) -> f64 {
+                    1.0 $(* self.$n.cdf(&x.$n))*
                 }
             }
         )+
@@ -89,14 +97,14 @@ macro_rules! tuple_cdf {
 }
 
 macro_rules! tuple_entropy {
-    ($($len:expr => ($($n:tt $t:ident)+))+) => {
+    ($($len:expr => ($($n:tt $t:ident)*))+) => {
         $(
-            impl<$($t,)+> Entropy for ($($t,)+)
+            impl<$($t,)*> Entropy for ($($t,)*)
             where
-                $($t: Entropy,)+
+                $($t: Entropy,)*
             {
                 fn entropy(&self) -> f64 {
-                    0.0 $(+ self.$n.entropy())+
+                    0.0 $(+ self.$n.entropy())*
                 }
             }
         )+
@@ -104,32 +112,32 @@ macro_rules! tuple_entropy {
 }
 
 macro_rules! tuple_mean_meadian_mode {
-    ($($len:expr => ($($n:tt $t:ident $x:ident)+))+) => {
+    ($($len:expr => ($($n:tt $t:ident $x:ident)*))+) => {
         $(
-            impl<$($t,)+$($x,)+> Mean<($($x,)+)> for ($($t,)+)
+            impl<$($t,)*$($x,)*> Mean<($($x,)*)> for ($($t,)*)
             where
-                $($t: Mean<$x>,)+
+                $($t: Mean<$x>,)*
             {
-                fn mean(&self) -> Option<($($x,)+)> {
-                    Some(($(self.$n.mean()?,)+))
+                fn mean(&self) -> Option<($($x,)*)> {
+                    Some(($(self.$n.mean()?,)*))
                 }
             }
 
-            impl<$($t,)+$($x,)+> Median<($($x,)+)> for ($($t,)+)
+            impl<$($t,)*$($x,)*> Median<($($x,)*)> for ($($t,)*)
             where
-                $($t: Median<$x>,)+
+                $($t: Median<$x>,)*
             {
-                fn median(&self) -> Option<($($x,)+)> {
-                    Some(($(self.$n.median()?,)+))
+                fn median(&self) -> Option<($($x,)*)> {
+                    Some(($(self.$n.median()?,)*))
                 }
             }
 
-            impl<$($t,)+$($x,)+> Mode<($($x,)+)> for ($($t,)+)
+            impl<$($t,)*$($x,)*> Mode<($($x,)*)> for ($($t,)*)
             where
-                $($t: Mode<$x>,)+
+                $($t: Mode<$x>,)*
             {
-                fn mode(&self) -> Option<($($x,)+)> {
-                    Some(($(self.$n.mode()?,)+))
+                fn mode(&self) -> Option<($($x,)*)> {
+                    Some(($(self.$n.mode()?,)*))
                 }
             }
 
@@ -138,52 +146,38 @@ macro_rules! tuple_mean_meadian_mode {
     };
 }
 
-macro_rules! debug_assert_all_eq (
-    ($a: expr) => {};
-    ($a:expr, $b:expr) => {
-        debug_assert_eq!($a, $b);
-    };
-    ($a:expr, $b:expr, $c:expr) => {
-        debug_assert_eq!($a, $b);
-        debug_assert_eq!($b, $c);
-    };
-    ($a:expr, $b:expr, $c:expr, $($rest:expr),*) => {
-        debug_assert_eq!($a, $b);
-        debug_assert_all_eq!($b, $c, $($rest),*);
-    }
-);
-
 macro_rules! tuple_suff_stat {
-    ($($len:expr => ($($n:tt $t:ident $x:ident)+))+) => {
+    ($($len:expr => ($($n:tt $t:ident $x:ident)*))+) => {
         $(
-            impl<$($t,)+$($x,)+> SuffStat<($($x,)+)> for ($($t,)+)
+
+            #[cfg(feature = "experimental")]
+            impl<$($t,)*$($x,)*> SuffStat<($($x,)*)> for ($($t,)*)
             where
-                $($t: SuffStat<$x>,)+
+                $($t: SuffStat<$x>,)*
             {
                 fn n(&self) -> usize {
-                    // The sufficient statistics should agree on the number of observations
-                    debug_assert_all_eq!(
-                        $(self.$n.n()),+
-                    );
-                    self.0.n()
+                    panic!("The number of observations for a product distribution is poorly defined, as not all suff stats will have the same number of observations");
                 }
 
-                fn observe(&mut self, x: &($($x,)+)) {
+                #[allow(unused_variables)]
+                fn observe(&mut self, x: &($($x,)*)) {
                     $(
                         self.$n.observe(&x.$n);
-                    )+
+                    )*
                 }
 
-                fn forget(&mut self, x: &($($x,)+)) {
+                #[allow(unused_variables)]
+                fn forget(&mut self, x: &($($x,)*)) {
                     $(
                         self.$n.forget(&x.$n);
-                    )+
+                    )*
                 }
 
+                #[allow(unused_variables)]
                 fn merge(&mut self, other: Self) {
                     $(
                         self.$n.merge(other.$n);
-                    )+
+                    )*
                 }
             }
         )+
@@ -191,20 +185,22 @@ macro_rules! tuple_suff_stat {
 }
 
 macro_rules! tuple_has_suffstat {
-    ($($len:expr => ($($n:tt $t:ident $x:ident)+))+) => {
+    ($($len:expr => ($($n:tt $t:ident $x:ident)*))+) => {
         $(
-            impl<$($t,)+$($x,)+> HasSuffStat<($($x,)+)> for ($($t,)+)
+            #[cfg(feature = "experimental")]
+            impl<$($t,)*$($x,)*> HasSuffStat<($($x,)*)> for ($($t,)*)
             where
-                $($t: HasSuffStat<$x>,)+
+                $($t: HasSuffStat<$x>,)*
             {
-                type Stat = ($($t::Stat,)+);
+                type Stat = ($($t::Stat,)*);
 
                 fn empty_suffstat(&self) -> Self::Stat {
-                    ($(self.$n.empty_suffstat(),)+)
+                    ($(self.$n.empty_suffstat(),)*)
                 }
 
+                #[allow(unused_variables)]
                 fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
-                    0.0 $(+ self.$n.ln_f_stat(&stat.$n))+
+                    0.0 $(+ self.$n.ln_f_stat(&stat.$n))*
                 }
             }
         )+
@@ -212,61 +208,66 @@ macro_rules! tuple_has_suffstat {
 }
 
 macro_rules! tuple_conjugate_prior {
-    ($($len:expr => ($($n:tt $t:ident $x:ident $f:ident)+))+) => {
+    ($($len:expr => ($($n:tt $t:ident $x:ident $f:ident)*))+) => {
         $(
-            impl<$($t,)+$($x,)+$($f,)+> ConjugatePrior<($($x,)+),($($f,)+)> for ($($t,)+)
+            #[cfg(feature = "experimental")]
+            impl<$($t,)*$($x,)*$($f,)*> ConjugatePrior<($($x,)*),($($f,)*)> for ($($t,)*)
             where
-                $($x: Copy,)+
-                $($t: ConjugatePrior<$x, $f>,)+
-                $($f: HasSuffStat<$x> + HasDensity<$x>,)+
+                $($x: Copy,)*
+                $($t: ConjugatePrior<$x, $f>,)*
+                $($f: HasSuffStat<$x> + HasDensity<$x>,)*
             {
-                type Posterior = ($($t::Posterior,)+);
-                type MCache = ($($t::MCache,)+);
-                type PpCache = ($($t::PpCache,)+);
+                type Posterior = ($($t::Posterior,)*);
+                type MCache = ($($t::MCache,)*);
+                type PpCache = ($($t::PpCache,)*);
 
-                fn posterior_from_suffstat(&self, stat: &($($f::Stat,)+)) -> Self::Posterior {
-                    ($(self.$n.posterior_from_suffstat(&stat.$n),)+)
+                #[allow(unused_variables)]
+                fn posterior_from_suffstat(&self, stat: &($($f::Stat,)*)) -> Self::Posterior {
+                    ($(self.$n.posterior_from_suffstat(&stat.$n),)*)
                 }
 
-                fn empty_stat(&self) -> <($($f,)+) as HasSuffStat<($($x,)+)>>::Stat {
-                    ($(self.$n.empty_stat(),)+)
+                fn empty_stat(&self) -> <($($f,)*) as HasSuffStat<($($x,)*)>>::Stat {
+                    ($(self.$n.empty_stat(),)*)
                 }
 
                 fn ln_m_cache(&self) -> Self::MCache {
-                    ($(self.$n.ln_m_cache(),)+)
+                    ($(self.$n.ln_m_cache(),)*)
                 }
 
+                #[allow(unused_variables)]
                 fn ln_m_with_cache(
                     &self,
                     cache: &Self::MCache,
-                    x: &DataOrSuffStat<($($x,)+), ($($f,)+)>,
+                    x: &DataOrSuffStat<($($x,)*), ($($f,)*)>,
                 ) -> f64 {
                     match x {
                         DataOrSuffStat::Data(items) => {
-                            0.0 $(+ self.$n.ln_m_with_cache(&cache.$n, &DataOrSuffStat::Data(&items.iter().map(|x| x.$n).collect::<Vec<_>>())))+
+                            0.0 $(+ self.$n.ln_m_with_cache(&cache.$n, &DataOrSuffStat::Data(&items.iter().map(|x| x.$n).collect::<Vec<_>>())))*
                         }
                         DataOrSuffStat::SuffStat(stats) => {
-                            0.0 $(+ self.$n.ln_m_with_cache(&cache.$n, &DataOrSuffStat::SuffStat(&stats.$n)))+
+                            0.0 $(+ self.$n.ln_m_with_cache(&cache.$n, &DataOrSuffStat::SuffStat(&stats.$n)))*
                         }
                     }
                 }
 
+                #[allow(unused_variables)]
                 fn ln_pp_cache(
                     &self,
-                    x: &DataOrSuffStat<($($x,)+), ($($f,)+)>,
+                    x: &DataOrSuffStat<($($x,)*), ($($f,)*)>,
                 ) -> Self::PpCache {
                     match x {
                         DataOrSuffStat::Data(items) => {
-                            ($(self.$n.ln_pp_cache(&DataOrSuffStat::Data(&items.iter().map(|x| x.$n).collect::<Vec<_>>())),)+)
+                            ($(self.$n.ln_pp_cache(&DataOrSuffStat::Data(&items.iter().map(|x| x.$n).collect::<Vec<_>>())),)*)
                         }
                         DataOrSuffStat::SuffStat(stats) => {
-                            ($(self.$n.ln_pp_cache(&DataOrSuffStat::SuffStat(&stats.$n)),)+)
+                            ($(self.$n.ln_pp_cache(&DataOrSuffStat::SuffStat(&stats.$n)),)*)
                         }
                     }
                 }
 
-                fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &($($x,)+)) -> f64 {
-                    0.0 $(+ self.$n.ln_pp_with_cache(&cache.$n, &y.$n))+
+                #[allow(unused_variables)]
+                fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &($($x,)*)) -> f64 {
+                    0.0 $(+ self.$n.ln_pp_with_cache(&cache.$n, &y.$n))*
                 }
             }
         )+
@@ -274,61 +275,62 @@ macro_rules! tuple_conjugate_prior {
 }
 
 macro_rules! tuple_impls {
-    ($($len:expr => ($($n:tt $t:ident $x:ident $f:ident)+))+) => {
+    ($($len:expr => ($($n:tt $t:ident $x:ident $f:ident)*))+) => {
         tuple_sampleable!(
             $(
-                $len => ($($n $t $x)+)
+                $len => ($($n $t $x)*)
             )+
         );
         tuple_has_density!(
             $(
-                $len => ($($n $t $x)+)
+                $len => ($($n $t $x)*)
             )+
         );
         tuple_support!(
             $(
-                $len => ($($n $t $x)+)
+                $len => ($($n $t $x)*)
             )+
         );
         tuple_discrete_continuous!(
             $(
-                $len => ($($n $t $x)+)
+                $len => ($($n $t $x)*)
             )+
         );
         tuple_mean_meadian_mode!(
             $(
-                $len => ($($n $t $x)+)
+                $len => ($($n $t $x)*)
             )+
         );
         tuple_cdf!(
             $(
-                $len => ($($n $t $x)+)
+                $len => ($($n $t $x)*)
             )+
         );
         tuple_suff_stat!(
             $(
-                $len => ($($n $t $x)+)
+                $len => ($($n $t $x)*)
             )+
         );
         tuple_has_suffstat!(
             $(
-                $len => ($($n $t $x)+)
+                $len => ($($n $t $x)*)
             )+
         );
         tuple_entropy!(
             $(
-                $len => ($($n $t)+)
+                $len => ($($n $t)*)
             )+
         );
         tuple_conjugate_prior!(
             $(
-                $len => ($($n $t $x $f)+)
+                $len => ($($n $t $x $f)*)
             )+
         );
     };
 }
 
 tuple_impls!(
+    0 => ()
     1 => (0 T0 X0 F0)
     2 => (0 T0 X0 F0 1 T1 X1 F1)
     3 => (0 T0 X0 F0 1 T1 X1 F1 2 T2 X2 F2)
@@ -349,11 +351,7 @@ tuple_impls!(
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        data::DataOrSuffStat,
-        dist::{Gaussian, NormalInvGamma},
-        traits::{ConjugatePrior, HasDensity, SuffStat},
-    };
+    use crate::{dist::Gaussian, traits::HasDensity};
 
     #[test]
     fn independent_product_gaussians() {
@@ -363,8 +361,15 @@ mod tests {
         assert_eq!(f.ln_f(&(0.0, 0.0)), 2.0 * g.ln_f(&0.0));
     }
 
+    #[cfg(feature = "experimental")]
     #[test]
     fn independent_product_gaussians_conjugate() {
+        use crate::{
+            data::DataOrSuffStat,
+            dist::NormalInvGamma,
+            traits::{ConjugatePrior, SuffStat},
+        };
+
         let f = (Gaussian::standard(), Gaussian::standard());
         let h = (
             NormalInvGamma::new_unchecked(0.0, 1.0, 1.0, 1.0),
