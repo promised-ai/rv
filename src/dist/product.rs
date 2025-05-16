@@ -19,6 +19,7 @@ macro_rules! tuple_sampleable {
                 $($t: Sampleable<$x>,)*
             {
                 #[allow(unused_variables)]
+                #[allow(clippy::unused_unit)]
                 fn draw<R: rand::Rng>(&self, rng: &mut R) -> ($($x,)*) {
                     (
                         $(self.$n.draw(rng),)*
@@ -194,6 +195,7 @@ macro_rules! tuple_has_suffstat {
             {
                 type Stat = ($($t::Stat,)*);
 
+                #[allow(clippy::unused_unit)]
                 fn empty_suffstat(&self) -> Self::Stat {
                     ($(self.$n.empty_suffstat(),)*)
                 }
@@ -222,15 +224,18 @@ macro_rules! tuple_conjugate_prior {
                 type PpCache = ($($t::PpCache,)*);
 
                 #[allow(unused_variables)]
+                #[allow(clippy::unused_unit)]
                 fn posterior_from_suffstat(&self, stat: &($($f::Stat,)*)) -> Self::Posterior {
                     ($(self.$n.posterior_from_suffstat(&stat.$n),)*)
                 }
 
                 fn empty_stat(&self) -> <($($f,)*) as HasSuffStat<($($x,)*)>>::Stat {
+                    #[allow(clippy::unused_unit)]
                     ($(self.$n.empty_stat(),)*)
                 }
 
                 fn ln_m_cache(&self) -> Self::MCache {
+                    #[allow(clippy::unused_unit)]
                     ($(self.$n.ln_m_cache(),)*)
                 }
 
@@ -251,6 +256,7 @@ macro_rules! tuple_conjugate_prior {
                 }
 
                 #[allow(unused_variables)]
+                #[allow(clippy::unused_unit)]
                 fn ln_pp_cache(
                     &self,
                     x: &DataOrSuffStat<($($x,)*), ($($f,)*)>,
