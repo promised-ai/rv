@@ -51,6 +51,7 @@ pub struct _Inner {
 }
 
 // Add this function to provide a default RNG
+#[allow(dead_code)]
 fn default_rng() -> Xoshiro256Plus {
     Xoshiro256Plus::from_entropy()
 }

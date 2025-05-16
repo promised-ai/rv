@@ -43,6 +43,7 @@ mod normal_inv_chi_squared;
 mod normal_inv_gamma;
 mod pareto;
 mod poisson;
+mod product;
 mod scaled;
 mod scaled_inv_chi_squared;
 mod scaled_prior;
