@@ -112,7 +112,7 @@ macro_rules! tuple_entropy {
     };
 }
 
-macro_rules! tuple_mean_meadian_mode {
+macro_rules! tuple_mean_median_mode {
     ($($len:expr => ($($n:tt $t:ident $x:ident)*))+) => {
         $(
             impl<$($t,)*$($x,)*> Mean<($($x,)*)> for ($($t,)*)
@@ -302,7 +302,7 @@ macro_rules! tuple_impls {
                 $len => ($($n $t $x)*)
             )+
         );
-        tuple_mean_meadian_mode!(
+        tuple_mean_median_mode!(
             $(
                 $len => ($($n $t $x)*)
             )+
