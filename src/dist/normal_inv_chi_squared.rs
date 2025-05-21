@@ -488,7 +488,6 @@ mod test {
         0.8
     );
 
-    
     use ::proptest::prelude::*;
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;

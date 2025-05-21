@@ -640,25 +640,24 @@ mod test {
     test_scalable_density!(ScaledInvChiSquared::new(2.0, 4.0).unwrap());
     test_scalable_cdf!(ScaledInvChiSquared::new(4.0, 1.0).unwrap(), ix2);
 
-        
-        use ::proptest::prelude::*;
-        use rand::SeedableRng;
-        use rand_xoshiro::Xoshiro256Plus;
+    use ::proptest::prelude::*;
+    use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256Plus;
 
-        proptest! {
-            #[test]
-            fn draw_always_returns_positive_finite_value(
-                v in -1e-100..1e100_f64,
-                t2 in -1e-100..1e100_f64,
-                seed in 0_u64..1000_u64,
-            ) {
-                if let Ok(ix2) = ScaledInvChiSquared::new(v, t2) {
-                    let mut rng = Xoshiro256Plus::seed_from_u64(seed);
-                    let value: f64 = ix2.draw(&mut rng);
-                    
-                    prop_assert!(value > 0.0);
-                    prop_assert!(value.is_finite());
-                }
+    proptest! {
+        #[test]
+        fn draw_always_returns_positive_finite_value(
+            v in -1e-100..1e100_f64,
+            t2 in -1e-100..1e100_f64,
+            seed in 0_u64..1000_u64,
+        ) {
+            if let Ok(ix2) = ScaledInvChiSquared::new(v, t2) {
+                let mut rng = Xoshiro256Plus::seed_from_u64(seed);
+                let value: f64 = ix2.draw(&mut rng);
+
+                prop_assert!(value > 0.0);
+                prop_assert!(value.is_finite());
             }
         }
+    }
 }

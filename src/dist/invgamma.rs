@@ -267,10 +267,10 @@ macro_rules! impl_traits {
                 const MAX_TRIES: usize = 10;
                 let g = rand_distr::Gamma::new(self.shape, self.scale.recip())
                     .unwrap();
-                
+
                 let mut x = 1.0 / rng.sample(g);
                 let mut found_finite = x.is_finite();
-                
+
                 if !found_finite {
                     for _ in 0..MAX_TRIES - 1 {
                         x = 1.0 / rng.sample(g);
@@ -280,7 +280,7 @@ macro_rules! impl_traits {
                         }
                     }
                 }
-                
+
                 if found_finite {
                     x as $kind
                 } else {
