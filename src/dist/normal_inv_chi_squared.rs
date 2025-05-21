@@ -488,7 +488,7 @@ mod test {
         0.8
     );
 
-    use super::*;
+    
     use ::proptest::prelude::*;
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
@@ -496,11 +496,11 @@ mod test {
     proptest! {
         #[test]
         fn draw_always_returns_positive_finite_value(
-            m in -1e300..1e100f64,
-            k in 1e-300..1e100f64,
-            v in 1e-300..1e100f64,
-            s2 in 1e-300..1e100f64,
-            seed in 0u64..1000u64,
+            m in -1e300..1e100_f64,
+            k in 1e-300..1e100_f64,
+            v in 1e-300..1e100_f64,
+            s2 in 1e-300..1e100_f64,
+            seed in 0_u64..1000_u64,
         ) {
             let nix = NormalInvChiSquared::new(m, k, v, s2);
             if let Ok(nix) = NormalInvChiSquared::new(m, k, v, s2) {
