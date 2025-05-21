@@ -501,7 +501,6 @@ mod test {
             s2 in 1e-300..1e100_f64,
             seed in 0_u64..1000_u64,
         ) {
-            let nix = NormalInvChiSquared::new(m, k, v, s2);
             if let Ok(nix) = NormalInvChiSquared::new(m, k, v, s2) {
                 let mut rng = Xoshiro256Plus::seed_from_u64(seed);
                 let gaussian = nix.draw(&mut rng);
