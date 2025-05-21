@@ -292,6 +292,8 @@ macro_rules! impl_traits {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let a = 0.5 * self.v;
                 let b = 0.5 * self.v * self.t2;
+                debug_assert!(a.is_finite());
+                debug_assert!(b.is_finite());
                 let ig = crate::dist::InvGamma::new_unchecked(a, b);
                 ig.draw(rng)
             }

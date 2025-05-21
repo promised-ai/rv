@@ -264,9 +264,28 @@ macro_rules! impl_traits {
 
         impl Sampleable<$kind> for InvGamma {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
+                const MAX_TRIES: usize = 10;
                 let g = rand_distr::Gamma::new(self.shape, self.scale.recip())
                     .unwrap();
-                (1.0 / rng.sample(g)) as $kind
+                
+                let mut x = 1.0 / rng.sample(g);
+                let mut found_finite = x.is_finite();
+                
+                if !found_finite {
+                    for _ in 0..MAX_TRIES - 1 {
+                        x = 1.0 / rng.sample(g);
+                        if x.is_finite() {
+                            found_finite = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if found_finite {
+                    x as $kind
+                } else {
+                    <$kind>::MAX
+                }
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {

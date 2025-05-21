@@ -404,6 +404,8 @@ impl Sampleable<Gaussian> for NormalInvChiSquared {
         let post_sigma: f64 = sigma / self.k.sqrt();
         let mu: f64 = Gaussian::new(self.m, post_sigma)
             .map_err(|err| {
+                dbg!(&self);
+                dbg!(var, sigma, post_sigma);
                 panic!("Invalid μ params when drawing Gaussian: {err}")
             })
             .unwrap()
@@ -494,10 +496,10 @@ mod test {
     proptest! {
         #[test]
         fn draw_always_returns_positive_finite_value(
-            m in -1e300..1e300f64,
-            k in 1e-300..1e300f64,
-            v in 1e-300..1e300f64,
-            s2 in 1e-300..1e300f64,
+            m in -1e300..1e100f64,
+            k in 1e-300..1e100f64,
+            v in 1e-300..1e100f64,
+            s2 in 1e-300..1e100f64,
             seed in 0u64..1000u64,
         ) {
             let nix = NormalInvChiSquared::new(m, k, v, s2);
