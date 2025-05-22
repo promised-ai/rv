@@ -404,7 +404,11 @@ impl Sampleable<Gaussian> for NormalInvChiSquared {
         let post_sigma: f64 = sigma / self.k.sqrt();
         let mu: f64 = Gaussian::new(self.m, post_sigma)
             .map_err(|err| {
-                panic!("Invalid μ params when drawing Gaussian: {err}")
+                panic!(
+                    "Invalid μ params when drawing Gaussian: {err}, \
+                     self: {self:?}, var: {var}, sigma: {sigma}, \
+                     post_sigma: {post_sigma}"
+                )
             })
             .unwrap()
             .draw(&mut rng);
@@ -485,4 +489,29 @@ mod test {
         3.4,
         0.8
     );
+
+    use ::proptest::prelude::*;
+    use rand::SeedableRng;
+    use rand_xoshiro::Xoshiro256Plus;
+
+    proptest! {
+        #[test]
+        fn draw_always_returns_positive_finite_value(
+            m in -1e300..1e100_f64,
+            k in 1e-300..1e100_f64,
+            v in 1e-300..1e100_f64,
+            s2 in 1e-300..1e100_f64,
+            seed in 0_u64..1000_u64,
+        ) {
+            if let Ok(nix) = NormalInvChiSquared::new(m, k, v, s2) {
+                let mut rng = Xoshiro256Plus::seed_from_u64(seed);
+                let gaussian = nix.draw(&mut rng);
+
+                prop_assert!(gaussian.mu().is_finite());
+                prop_assert!(gaussian.sigma() > 0.0);
+                prop_assert!(gaussian.sigma().is_finite());
+            }
+
+        }
+    }
 }
