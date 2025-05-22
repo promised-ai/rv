@@ -404,9 +404,11 @@ impl Sampleable<Gaussian> for NormalInvChiSquared {
         let post_sigma: f64 = sigma / self.k.sqrt();
         let mu: f64 = Gaussian::new(self.m, post_sigma)
             .map_err(|err| {
-                dbg!(&self);
-                dbg!(var, sigma, post_sigma);
-                panic!("Invalid μ params when drawing Gaussian: {err}")
+                panic!(
+                    "Invalid μ params when drawing Gaussian: {err}, \
+                     self: {self:?}, var: {var}, sigma: {sigma}, \
+                     post_sigma: {post_sigma}"
+                )
             })
             .unwrap()
             .draw(&mut rng);
