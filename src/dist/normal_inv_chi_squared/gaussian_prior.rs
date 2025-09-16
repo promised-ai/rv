@@ -115,7 +115,7 @@ mod test {
     fn geweke() {
         use crate::test::GewekeTester;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let pr = NormalInvChiSquared::new(0.1, 1.2, 0.5, 1.8).unwrap();
         let n_passes = (0..5)
             .map(|_| {
@@ -233,7 +233,7 @@ mod test {
         let ln_m = nix.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            nix.sample_stream(&mut rand::thread_rng())
+            nix.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| gauss.ln_f(&x))
                 .logsumexp()
@@ -255,7 +255,7 @@ mod test {
         let ln_m = nix.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            nix.sample_stream(&mut rand::thread_rng())
+            nix.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| {
                     xs.iter().map(|x| gauss.ln_f(x)).sum::<f64>()
@@ -281,7 +281,7 @@ mod test {
         let ln_pp = nix.ln_pp(&y, &DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            post.sample_stream(&mut rand::thread_rng())
+            post.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| gauss.ln_f(&y))
                 .logsumexp()
@@ -304,7 +304,7 @@ mod test {
             nix.ln_pp(&x, &DataOrSuffStat::<f64, Gaussian>::from(&vec![]));
 
         let mc_est = {
-            nix.sample_stream(&mut rand::thread_rng())
+            nix.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| gauss.ln_f(&x))
                 .logsumexp()

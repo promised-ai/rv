@@ -406,7 +406,7 @@ mod tests {
 
     #[test]
     fn draws_should_be_finite() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let lognorm = LogNormal::standard();
         for _ in 0..100 {
             let x: f64 = lognorm.draw(&mut rng);
@@ -416,7 +416,7 @@ mod tests {
 
     #[test]
     fn sample_length() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let lognorm = LogNormal::standard();
         let xs: Vec<f64> = lognorm.sample(10, &mut rng);
         assert_eq!(xs.len(), 10);

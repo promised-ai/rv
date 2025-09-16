@@ -11,7 +11,7 @@ fn bench_gmm_entropy(c: &mut Criterion) {
     c.bench_function("4-component GMM entropy", move |b| {
         b.iter_batched_ref(
             || {
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
                 let weights: Vec<f64> = symdir.draw(&mut rng);
                 let components: Vec<Gaussian> = ng.sample(4, &mut rng);
                 Mixture::new(weights, components).unwrap()

@@ -279,7 +279,7 @@ macro_rules! impl_traits {
                     ),
                     mu,
                 );
-                let z: f64 = rng.gen();
+                let z: f64 = rng.random();
 
                 if z <= mu / (mu + x) {
                     x as $kind
@@ -405,7 +405,7 @@ mod tests {
 
     #[test]
     fn mode_is_highest_point() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mu_prior = crate::dist::InvGamma::new_unchecked(2.0, 2.0);
         let lambda_prior = crate::dist::InvGamma::new_unchecked(2.0, 2.0);
         for _ in 0..100 {
@@ -430,7 +430,7 @@ mod tests {
         let ig = InvGaussian::new(1.1, 2.5).unwrap();
         // use pdf to hit `supports(x)` first
         let pdf = |x: f64| ig.pdf(&x);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
             let res = gauss_kronrod_quadrature(
@@ -445,7 +445,7 @@ mod tests {
 
     #[test]
     fn draw_vs_kl() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ig = InvGaussian::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| ig.cdf(&x);
 

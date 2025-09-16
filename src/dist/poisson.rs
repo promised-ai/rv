@@ -463,7 +463,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let pois = Poisson::new(2.0).unwrap();
 
         // How many bins do we need?
@@ -491,7 +491,7 @@ mod tests {
     #[test]
     fn kl_divergence_vs_brute() {
         let prior = crate::dist::Gamma::new(1.0, 1.0).unwrap();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..10 {
             let pois_x: Poisson = prior.draw(&mut rng);

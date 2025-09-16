@@ -481,7 +481,7 @@ mod test {
 
     #[test]
     fn pdf_agrees_with_inv_gamma_special_case() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v_prior = Gamma::new_unchecked(2.0, 1.0);
         let t2_prior = Gamma::new_unchecked(2.0, 1.0);
 
@@ -509,7 +509,7 @@ mod test {
 
     #[test]
     fn cdf_agrees_with_inv_gamma_special_case() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v_prior = Gamma::new_unchecked(2.0, 1.0);
         let t2_prior = Gamma::new_unchecked(2.0, 1.0);
 
@@ -530,7 +530,7 @@ mod test {
 
     #[test]
     fn draw_agrees_with_cdf() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ix2 = ScaledInvChiSquared::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| ix2.cdf(&x);
 

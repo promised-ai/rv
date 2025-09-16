@@ -139,12 +139,12 @@ where
     X: Integer + From<T>,
 {
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
-        let d = rand::distributions::Uniform::new_inclusive(self.a, self.b);
+        let d = rand_distr::Uniform::new_inclusive(self.a, self.b).unwrap();
         X::from(rng.sample(d))
     }
 
     fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<X> {
-        let d = rand::distributions::Uniform::new_inclusive(self.a, self.b);
+        let d = rand_distr::Uniform::new_inclusive(self.a, self.b).unwrap();
         rng.sample_iter(&d).take(n).map(X::from).collect()
     }
 }
@@ -335,8 +335,8 @@ mod tests {
 
     #[test]
     fn cdf_inv_cdf_ident() {
-        let mut rng = rand::thread_rng();
-        let ru = rand::distributions::Uniform::new_inclusive(0_u32, 100_u32);
+        let mut rng = rand::rng();
+        let ru = rand_distr::Uniform::new_inclusive(0_u32, 100_u32).unwrap();
         let u = DiscreteUniform::new(0_u32, 100_u32).unwrap();
         for _ in 0..100 {
             let x: u32 = rng.sample(ru);
@@ -348,7 +348,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let u = DiscreteUniform::new(0_u32, 100_u32).unwrap();
         let cdf = |x: u64| u.cdf(&x);
 

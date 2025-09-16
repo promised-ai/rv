@@ -490,7 +490,7 @@ mod tests {
 
     #[test]
     fn draws_should_be_finite() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gauss = Gaussian::standard();
         for _ in 0..100 {
             let x: f64 = gauss.draw(&mut rng);
@@ -500,7 +500,7 @@ mod tests {
 
     #[test]
     fn sample_length() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gauss = Gaussian::standard();
         let xs: Vec<f64> = gauss.sample(10, &mut rng);
         assert_eq!(xs.len(), 10);
@@ -596,7 +596,7 @@ mod tests {
 
     #[test]
     fn quantile_agree_with_cdf() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gauss = Gaussian::standard();
         let xs: Vec<f64> = gauss.sample(100, &mut rng);
 
@@ -614,7 +614,7 @@ mod tests {
         };
         let ig = Gaussian::new(-2.3, 0.5).unwrap();
         let pdf = |x: f64| ig.f(&x);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
             let res = gauss_kronrod_quadrature(

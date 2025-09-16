@@ -431,7 +431,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let pois = Skellam::new(3.0, 3.0).unwrap();
 
         // How many bins do we need?

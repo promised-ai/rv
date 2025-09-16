@@ -30,7 +30,7 @@ impl CategoricalDatum for Color {
 }
 
 fn main() {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let ctgrl = Categorical::new(&[0.25, 0.25, 0.5]).unwrap();
 

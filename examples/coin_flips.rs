@@ -6,13 +6,13 @@ use rv::ConjugateModel;
 use std::sync::Arc;
 
 fn main() {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     // Generate some 1000 coin flips from a coin that will come up head 70%
     // of the time.
     let flips: Vec<bool> = (0..1000)
         .map(|_| {
-            let x: f64 = rng.gen();
+            let x: f64 = rng.random();
             x < 0.7
         })
         .collect();

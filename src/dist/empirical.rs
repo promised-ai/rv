@@ -171,7 +171,7 @@ impl HasDensity<f64> for Empirical {
 impl Sampleable<f64> for Empirical {
     fn draw<R: Rng>(&self, rng: &mut R) -> f64 {
         let n = self.xs.len();
-        let ix: usize = rng.gen_range(0..n);
+        let ix: usize = rng.random_range(0..n);
         self.xs[ix]
     }
 }
@@ -245,7 +245,7 @@ mod tests {
 
     #[test]
     fn draw_smoke() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         // create a distribution with only a few bins so that draw hits all the
         // bins.
         let xs = vec![0.0, 1.0, 2.0];

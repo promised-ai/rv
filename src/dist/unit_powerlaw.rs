@@ -222,12 +222,14 @@ macro_rules! impl_traits {
 
         impl Sampleable<$kind> for UnitPowerLaw {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                self.invcdf(rng.gen::<f64>())
+                self.invcdf(rng.random::<f64>())
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
                 let alpha_inv = self.alpha_inv() as $kind;
-                (0..n).map(|_| rng.gen::<$kind>().powf(alpha_inv)).collect()
+                (0..n)
+                    .map(|_| rng.random::<$kind>().powf(alpha_inv))
+                    .collect()
             }
         }
 
@@ -429,7 +431,7 @@ mod tests {
 
     #[test]
     fn draw_should_return_values_within_0_to_1() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let powlaw = UnitPowerLaw::new(2.0).unwrap();
         for _ in 0..100 {
             let x = powlaw.draw(&mut rng);
@@ -439,7 +441,7 @@ mod tests {
 
     #[test]
     fn sample_returns_the_correct_number_draws() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let powlaw = UnitPowerLaw::new(2.0).unwrap();
         let xs: Vec<f32> = powlaw.sample(103, &mut rng);
         assert_eq!(xs.len(), 103);
@@ -516,7 +518,7 @@ mod tests {
 
     #[test]
     fn draw_test_alpha_powlaw_gt_one() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let powlaw = UnitPowerLaw::new(1.2).unwrap();
         let cdf = |x: f64| powlaw.cdf(&x);
 
@@ -536,7 +538,7 @@ mod tests {
 
     #[test]
     fn draw_test_alpha_powlaw_lt_one() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let powlaw = UnitPowerLaw::new(0.2).unwrap();
         let cdf = |x: f64| powlaw.cdf(&x);
 
@@ -571,20 +573,20 @@ mod tests {
 
     #[test]
     fn set_alpha() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..100 {
-            let a1 = rng.gen::<f64>();
+            let a1 = rng.random::<f64>();
             let mut powlaw1 = UnitPowerLaw::new(a1).unwrap();
 
             // Any value in the unit interval
-            let x: f64 = rng.gen();
+            let x: f64 = rng.random();
 
             // Evaluate the pdf to force computation of `ln_powlaw_ab`
             let _ = powlaw1.pdf(&x);
 
             // Next we'll `set_alpha` to a2, and compare with a fresh UnitPowerLaw
-            let a2 = rng.gen::<f64>();
+            let a2 = rng.random::<f64>();
 
             // Setting the new values
             powlaw1.set_alpha(a2).unwrap();

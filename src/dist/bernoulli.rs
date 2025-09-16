@@ -506,7 +506,7 @@ mod tests {
 
     #[test]
     fn sample_bools_should_draw_the_correct_number_of_samples() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let n = 103;
         let xs: Vec<bool> = Bernoulli::uniform().sample(n, &mut rng);
         assert_eq!(xs.len(), n);
@@ -514,7 +514,7 @@ mod tests {
 
     #[test]
     fn sample_ints_should_draw_the_correct_number_of_samples() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let n = 103;
         let xs: Vec<i16> = Bernoulli::uniform().sample(n, &mut rng);
         assert_eq!(xs.len(), n);
@@ -694,7 +694,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let b = Bernoulli::new(0.7).unwrap();
         let ps: Vec<f64> = vec![0.3, 0.7];
 

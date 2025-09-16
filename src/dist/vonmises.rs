@@ -255,7 +255,7 @@ macro_rules! impl_traits {
             //     von Mises distribution. Applied Statistics, 152-157.
             // https://www.researchgate.net/publication/246035131_Efficient_Simulation_of_the_von_Mises_Distribution
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let u = rand::distributions::Open01;
+                let u = rand_distr::Open01;
                 let tau = 1.0 + 4.0_f64.mul_add(self.k * self.k, 1.0).sqrt();
                 let rho = (tau * (2.0 * tau).sqrt()) / (2.0 * self.k);
                 let r = rho.mul_add(rho, 1.0) / (2.0 * rho);
@@ -488,7 +488,7 @@ mod tests {
 
     #[test]
     fn all_samples_should_be_supported() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         // kappa should be low so we get samples at the tails
         let vm = VonMises::new(1.5 * PI, 0.25).unwrap();
         let xs: Vec<f64> = vm.sample(1000, &mut rng);
@@ -497,7 +497,7 @@ mod tests {
 
     #[test]
     fn vm_draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let vm = VonMises::new(1.0, 1.2).unwrap();
         let cdf = |x: f64| vm.cdf(&x);
 

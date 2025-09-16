@@ -1045,7 +1045,7 @@ mod tests {
 
     #[test]
     fn mean_of_sample_should_be_weighted_dist_means_uniform() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mm = Mixture::new(
             vec![0.5, 0.5],
             vec![
@@ -1073,7 +1073,7 @@ mod tests {
 
     #[test]
     fn mean_of_sample_should_be_weighted_dist_means_nonuniform() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mm = Mixture::new(
             vec![0.9, 0.1],
             vec![
@@ -1377,7 +1377,7 @@ mod tests {
         fn gauss_mixture_quad_bounds_have_zero_pdf() {
             use crate::dist::{InvGamma, Poisson};
 
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let pois = Poisson::new(7.0).unwrap();
 
             let mu_prior = Gaussian::new(0.0, 5.0).unwrap();

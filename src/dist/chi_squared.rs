@@ -296,7 +296,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let x2 = ChiSquared::new(2.5).unwrap();
         let cdf = |x: f64| x2.cdf(&x);
 

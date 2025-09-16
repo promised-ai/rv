@@ -3,7 +3,7 @@ use rv::prelude::CategoricalData;
 use rv::traits::*;
 
 fn main() {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     // Roll a die (0...5) that comes up 5 half the time
     let ctgrl = Categorical::new(&[1.0, 1.0, 1.0, 1.0, 1.0, 5.0]).unwrap();

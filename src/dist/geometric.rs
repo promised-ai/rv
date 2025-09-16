@@ -182,7 +182,7 @@ impl Geometric {
         X: Unsigned + Integer + Saturating,
         R: Rng,
     {
-        let u: f64 = rng.gen();
+        let u: f64 = rng.random();
         let q = 1.0 - p;
 
         let mut t: X = X::zero();
@@ -404,7 +404,7 @@ mod tests {
     }
 
     fn test_draw_generic(p: f64) {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let geom = Geometric::new(p).unwrap();
 
         // How many bins do we need?

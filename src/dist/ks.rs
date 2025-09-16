@@ -290,7 +290,7 @@ macro_rules! impl_traits {
 
         impl Sampleable<$kind> for KsTwoAsymptotic {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let p: f64 = rng.gen();
+                let p: f64 = rng.random();
                 self.invcdf(p)
             }
         }

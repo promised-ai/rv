@@ -9,7 +9,7 @@ fn bivariate_mixture_mi() {
     let n_samples = 100_000;
     let n_f = n_samples as f64;
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let mx = Mixture::uniform(vec![
         Gaussian::new_unchecked(-2.0, 1.0),
@@ -49,7 +49,7 @@ fn bivariate_mixture_mi() {
     let (mi_est, hxy_est) = {
         let (mi_sum, hxy_sum) =
             (0..n_samples).fold((0.0, 0.0), |(mi, hxy), _| {
-                let cpnt_ix = rng.gen_range(0..k);
+                let cpnt_ix = rng.random_range(0..k);
 
                 let x: f64 = mx.components()[cpnt_ix].draw(&mut rng);
                 let y: f64 = my.components()[cpnt_ix].draw(&mut rng);

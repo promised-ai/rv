@@ -19,8 +19,8 @@ fn main() {
     let u = Uniform::new(-1.0, 1.0).unwrap();
 
     // The rand number steam consumes the rng
-    let mut rng1 = rand::thread_rng();
-    let mut rng2 = rand::thread_rng();
+    let mut rng1 = rand::rng();
+    let mut rng2 = rand::rng();
 
     let pi_est = u
         .sample_stream(&mut rng1)

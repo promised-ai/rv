@@ -37,7 +37,7 @@ fn mean_var(xs: &[f64]) -> (f64, f64) {
 // compiler does type inference.
 macro_rules! geweke {
     ($pr: expr) => {{
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut results: BTreeMap<String, Vec<f64>> = BTreeMap::new();
         for i in 0..N_RUNS {
             print_flush!(".");
