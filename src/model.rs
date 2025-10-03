@@ -91,7 +91,7 @@ where
     }
 
     /// Return the observations
-    fn obs(&self) -> DataOrSuffStat<X, Fx> {
+    fn obs(&self) -> DataOrSuffStat<'_, X, Fx> {
         DataOrSuffStat::SuffStat(&self.suffstat)
     }
 }
