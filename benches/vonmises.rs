@@ -3,7 +3,6 @@ use criterion::BatchSize;
 use criterion::BenchmarkId;
 use criterion::Criterion;
 use criterion::PlotConfiguration;
-use criterion::black_box;
 use criterion::{criterion_group, criterion_main};
 use rand::Rng;
 use rv::consts::TWO_PI;
@@ -11,6 +10,7 @@ use rv::dist::VonMises;
 use rv::misc::bessel::log_i0;
 use rv::prelude::*;
 use std::f64::consts::PI;
+use std::hint::black_box;
 
 fn bench_vm_draw(c: &mut Criterion) {
     let mut group = c.benchmark_group("VonMises draw");

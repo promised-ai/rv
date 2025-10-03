@@ -1,9 +1,9 @@
-use criterion::black_box;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use nalgebra::{DMatrix, DVector};
 use rv::data::Partition;
 use rv::prelude::*;
+use std::hint::black_box;
 
 // Takes a list of tuple-like inputs and builds benchmarks.
 // Each entry contains:
