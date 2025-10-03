@@ -123,11 +123,7 @@ macro_rules! impl_booleable {
             }
 
             fn from_bool(b: bool) -> Self {
-                if b {
-                    1
-                } else {
-                    0
-                }
+                if b { 1 } else { 0 }
             }
         }
     };

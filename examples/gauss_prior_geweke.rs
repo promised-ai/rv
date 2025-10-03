@@ -4,7 +4,7 @@
 use rv::dist::{NormalGamma, NormalInvChiSquared, NormalInvGamma};
 use rv::test::GewekeTester;
 use std::collections::BTreeMap;
-use std::io::{stdout, Write};
+use std::io::{Write, stdout};
 
 // Number of tests to run per prior
 const N_RUNS: usize = 100;

@@ -1,10 +1,10 @@
 use crate::misc::bessel::bessel_ikv_temme;
 
-use super::{e2_norm, CovGrad, CovGradError, Kernel, KernelError};
+use super::{CovGrad, CovGradError, Kernel, KernelError, e2_norm};
 use crate::misc::gammafn;
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
-use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
+use nalgebra::{DMatrix, DVector, Dim, Matrix, dvector};
 use std::f64;
 
 #[cfg(feature = "serde1")]

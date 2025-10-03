@@ -1,10 +1,11 @@
 use super::{CovGrad, CovGradError, Kernel, KernelError};
-use nalgebra::{
-    base::constraint::{SameNumberOfColumns, ShapeConstraint},
-    dvector, EuclideanNorm,
-};
-use nalgebra::{base::storage::Storage, Norm};
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
+use nalgebra::{
+    EuclideanNorm,
+    base::constraint::{SameNumberOfColumns, ShapeConstraint},
+    dvector,
+};
+use nalgebra::{Norm, base::storage::Storage};
 use std::f64;
 use std::f64::consts::PI;
 

@@ -21,11 +21,7 @@ pub trait ConvergentSequence: Iterator<Item = f64> + Sized {
             // We can't handle a segment like [2,4,6]
             // But e.g. [2, 2, 2] may have already converged
             if ddx.is_zero() {
-                if dx.is_zero() {
-                    Some(z)
-                } else {
-                    None
-                }
+                if dx.is_zero() { Some(z) } else { None }
             } else {
                 Some(z - dx.powi(2) / ddx)
             }
@@ -56,11 +52,7 @@ pub trait ConvergentSequence: Iterator<Item = f64> + Sized {
             .tuple_windows::<(_, _)>()
             .filter_map(
                 |(a, b)| {
-                    if (a - b).abs() < tol {
-                        Some(b)
-                    } else {
-                        None
-                    }
+                    if (a - b).abs() < tol { Some(b) } else { None }
                 },
             )
             .next()
@@ -90,6 +82,9 @@ mod tests {
             });
         let limit = seq.limit(1e-10);
         let pi_over_4 = std::f64::consts::PI / 4.0;
-        assert!((limit - pi_over_4).abs() < 1e-10, "The limit calculated using Aitken's Δ² process did not converge to π/4 within the tolerance.");
+        assert!(
+            (limit - pi_over_4).abs() < 1e-10,
+            "The limit calculated using Aitken's Δ² process did not converge to π/4 within the tolerance."
+        );
     }
 }

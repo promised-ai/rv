@@ -3,7 +3,7 @@ use std::f64::consts::LN_2;
 
 use super::dos_to_post;
 use crate::consts::{HALF_LN_2PI, HALF_LN_PI};
-use crate::data::{extract_stat_then, GaussianSuffStat};
+use crate::data::{GaussianSuffStat, extract_stat_then};
 use crate::dist::{Gaussian, NormalGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;

@@ -1,8 +1,8 @@
+use nalgebra::base::Norm;
 use nalgebra::base::constraint::{
     SameNumberOfColumns, SameNumberOfRows, ShapeConstraint,
 };
 use nalgebra::base::storage::Storage;
-use nalgebra::base::Norm;
 use nalgebra::{ComplexField, Dim, Matrix};
 use num::Zero;
 

@@ -81,11 +81,7 @@ impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
 
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &X) -> f64 {
         //  P(y=1 | xs) happens to be the posterior mean
-        if y.into_bool() {
-            cache.0
-        } else {
-            cache.1
-        }
+        if y.into_bool() { cache.0 } else { cache.1 }
     }
 }
 

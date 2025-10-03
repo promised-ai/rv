@@ -6,7 +6,7 @@ use serde::ser::{SerializeStruct, Serializer};
 use serde::{Deserialize, Serialize};
 
 use crate::dist::{Categorical, Gaussian, Poisson};
-use crate::misc::{pflips, LogSumExp};
+use crate::misc::{LogSumExp, pflips};
 use crate::traits::{
     Cdf, ContinuousDistr, DiscreteDistr, Entropy, HasDensity, Mean, Mode,
     Parameterized, QuadBounds, Rv, Sampleable, Support, Variance,
@@ -976,7 +976,9 @@ mod tests {
     #[test]
     fn new_should_not_allow_empty_components() {
         let empty_components: Vec<Gaussian> = vec![];
-        assert!(Mixture::new(vec![0.5, 0.5], empty_components.clone()).is_err());
+        assert!(
+            Mixture::new(vec![0.5, 0.5], empty_components.clone()).is_err()
+        );
         assert!(Mixture::new(vec![], empty_components).is_err());
     }
 

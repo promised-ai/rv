@@ -184,11 +184,7 @@ macro_rules! impl_traits {
 
         impl Mean<$kind> for StudentsT {
             fn mean(&self) -> Option<$kind> {
-                if self.v > 1.0 {
-                    Some(0.0)
-                } else {
-                    None
-                }
+                if self.v > 1.0 { Some(0.0) } else { None }
             }
         }
 
@@ -218,11 +214,7 @@ macro_rules! impl_traits {
 
 impl Skewness for StudentsT {
     fn skewness(&self) -> Option<f64> {
-        if self.v > 3.0 {
-            Some(0.0)
-        } else {
-            None
-        }
+        if self.v > 3.0 { Some(0.0) } else { None }
     }
 }
 

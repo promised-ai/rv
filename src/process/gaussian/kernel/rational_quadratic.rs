@@ -1,10 +1,10 @@
-use super::{e2_norm, CovGrad, CovGradError, Kernel, KernelError, E2METRIC};
+use super::{CovGrad, CovGradError, E2METRIC, Kernel, KernelError, e2_norm};
 use nalgebra::base::storage::Storage;
+use nalgebra::{DMatrix, DVector, Dim, Matrix, dvector};
 use nalgebra::{
-    base::constraint::{SameNumberOfColumns, ShapeConstraint},
     Norm,
+    base::constraint::{SameNumberOfColumns, ShapeConstraint},
 };
-use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
 use std::f64;
 
 #[cfg(feature = "serde1")]

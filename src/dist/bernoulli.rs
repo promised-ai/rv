@@ -232,11 +232,7 @@ impl_display!(Bernoulli);
 impl<X: Booleable> HasDensity<X> for Bernoulli {
     fn f(&self, x: &X) -> f64 {
         let val: bool = x.into_bool();
-        if val {
-            self.p
-        } else {
-            1.0_f64 - self.p
-        }
+        if val { self.p } else { 1.0_f64 - self.p }
     }
 
     fn ln_f(&self, x: &X) -> f64 {
@@ -284,11 +280,7 @@ impl<X: Booleable> DiscreteDistr<X> for Bernoulli {
 impl<X: Booleable> Cdf<X> for Bernoulli {
     fn cdf(&self, x: &X) -> f64 {
         let val: bool = x.into_bool();
-        if val {
-            1.0
-        } else {
-            self.q()
-        }
+        if val { 1.0 } else { self.q() }
     }
 }
 
@@ -720,11 +712,7 @@ mod tests {
             let xs: Vec<usize> = b.sample(1000, &mut rng);
             xs.iter().for_each(|&x| f_obs[x] += 1);
             let (_, p) = x2_test(&f_obs, &ps);
-            if p > X2_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > X2_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
     }

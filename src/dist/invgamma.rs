@@ -495,7 +495,7 @@ mod tests {
     #[test]
     fn quad_on_pdf_agrees_with_cdf_range() {
         use peroxide::numerical::integral::{
-            gauss_kronrod_quadrature, Integral,
+            Integral, gauss_kronrod_quadrature,
         };
         let ig = InvGamma::new(5.2, 3.3).unwrap();
         let pdf = |x: f64| ig.f(&x);
@@ -510,7 +510,7 @@ mod tests {
     #[test]
     fn quad_on_pdf_agrees_with_cdf_2() {
         use peroxide::numerical::integral::{
-            gauss_kronrod_quadrature, Integral,
+            Integral, gauss_kronrod_quadrature,
         };
         let ig = InvGamma::new(2.3, 3.1).unwrap();
         let pdf = |x: f64| ig.f(&x);
@@ -629,11 +629,7 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = ig.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);

@@ -1,7 +1,7 @@
 use crate::dist::KsTwoAsymptotic;
 use crate::traits::Cdf;
-use num::integer::binomial;
 use num::Integer;
+use num::integer::binomial;
 
 /// Univariate one-sample [Kolmogorov-Smirnov](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test)
 /// test.
@@ -45,11 +45,7 @@ where
     let n: f64 = xs_r.len() as f64;
     let d = xs_r.iter().enumerate().fold(0.0, |acc, (i, &x)| {
         let diff = ((i as f64) / n - cdf(x)).abs();
-        if diff > acc {
-            diff
-        } else {
-            acc
-        }
+        if diff > acc { diff } else { acc }
     });
 
     let p = 1.0 - ks_cdf(xs.len(), d);

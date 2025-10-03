@@ -295,16 +295,12 @@ mod tests {
         Shifted::new(Gaussian::new(2.0, 4.0).unwrap(), 1.0).unwrap(),
         kurtosis
     );
-    test_shiftable_density!(Shifted::new(
-        Gaussian::new(2.0, 4.0).unwrap(),
-        1.0
-    )
-    .unwrap());
-    test_shiftable_entropy!(Shifted::new(
-        Gaussian::new(2.0, 4.0).unwrap(),
-        1.0
-    )
-    .unwrap());
+    test_shiftable_density!(
+        Shifted::new(Gaussian::new(2.0, 4.0).unwrap(), 1.0).unwrap()
+    );
+    test_shiftable_entropy!(
+        Shifted::new(Gaussian::new(2.0, 4.0).unwrap(), 1.0).unwrap()
+    );
     test_shiftable_cdf!(
         Shifted::new(Gaussian::new(2.0, 4.0).unwrap(), 1.0).unwrap()
     );

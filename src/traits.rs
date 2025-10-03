@@ -1,6 +1,6 @@
 //! Trait definitions
-use crate::data::extract_stat_then;
 pub use crate::data::DataOrSuffStat;
+use crate::data::extract_stat_then;
 use rand::Rng;
 
 pub trait Parameterized: Sized {

@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use crate::data::{extract_stat_then, CategoricalDatum, CategoricalSuffStat};
+use crate::data::{CategoricalDatum, CategoricalSuffStat, extract_stat_then};
 use crate::dist::{Categorical, Dirichlet, SymmetricDirichlet};
 use crate::misc::ln_gammafn;
 use crate::prelude::CategoricalData;

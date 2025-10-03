@@ -702,7 +702,7 @@ mod tests {
     #[test]
     fn quad_on_pdf_agrees_with_cdf_x() {
         use peroxide::numerical::integral::{
-            gauss_kronrod_quadrature, Integral,
+            Integral, gauss_kronrod_quadrature,
         };
         let ig = Gaussian::new(-2.3, 0.5).unwrap();
         let pdf = |x: f64| ig.f(&x);

@@ -1,4 +1,3 @@
-use std::hint::black_box;
 use criterion::BatchSize;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
@@ -6,6 +5,7 @@ use rv::data::GaussianSuffStat;
 use rv::dist::Gaussian;
 use rv::dist::NormalInvChiSquared;
 use rv::traits::{ConjugatePrior, DataOrSuffStat, Sampleable, SuffStat};
+use std::hint::black_box;
 
 fn bench_nix_postpred(c: &mut Criterion) {
     let mut group = c.benchmark_group("NIX ln pp(x)");

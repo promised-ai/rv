@@ -501,11 +501,7 @@ mod tests {
             let xs: Vec<usize> = binom.sample(1000, &mut rng);
             xs.iter().for_each(|&x| f_obs[x] += 1);
             let (_, p) = x2_test(&f_obs, &ps);
-            if p > X2_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > X2_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
     }
@@ -529,11 +525,7 @@ mod tests {
                 (0..1000).map(|_| binom.draw(&mut rng)).collect();
             xs.iter().for_each(|&x| f_obs[x] += 1);
             let (_, p) = x2_test(&f_obs, &ps);
-            if p > X2_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > X2_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
     }

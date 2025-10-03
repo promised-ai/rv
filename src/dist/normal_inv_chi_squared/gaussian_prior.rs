@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::f64::consts::PI;
 
 use crate::consts::HALF_LN_PI;
-use crate::data::{extract_stat_then, GaussianSuffStat};
+use crate::data::{GaussianSuffStat, extract_stat_then};
 use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;

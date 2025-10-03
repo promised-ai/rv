@@ -225,9 +225,17 @@ impl std::error::Error for CovGradError {}
 impl std::fmt::Display for CovGradError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            CovGradError::ShapeMismatch(shapes) => writeln!(f, "Cannot create Covariance Gradient: Shape Mismatch: Shapes {shapes:?}"),
-            CovGradError::Empty => writeln!(f, "Cannot create an empty CovGrad"),
-            CovGradError::ImproperSize(expected, given) => writeln!(f, "Cannot create Covariance Gradient with given shapes. Given: {given}, Expected: {expected}"),
+            CovGradError::ShapeMismatch(shapes) => writeln!(
+                f,
+                "Cannot create Covariance Gradient: Shape Mismatch: Shapes {shapes:?}"
+            ),
+            CovGradError::Empty => {
+                writeln!(f, "Cannot create an empty CovGrad")
+            }
+            CovGradError::ImproperSize(expected, given) => writeln!(
+                f,
+                "Cannot create Covariance Gradient with given shapes. Given: {given}, Expected: {expected}"
+            ),
         }
     }
 }
