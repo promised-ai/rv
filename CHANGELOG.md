@@ -10,6 +10,7 @@
 ### Changed
 - Updated to Rust 2024 Edition
 - Updated `rand`, `rand_xoshiro`, and `rand_distr` deps.
+- Updated nalgebra.
 - `NormalInvChiSquared`, `NormalGamma`, and `NormalInvGamme` `PpCache` for Gaussian conjugate analysis changed. `ln_pp_with_cache` is much faster.
 - `Gamma` `PpCache` for Poisson conjugate analysis has been optimized. `ln_pp_with_cache` is faster.
 - Fixed some typos.
