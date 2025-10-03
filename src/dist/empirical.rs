@@ -19,15 +19,15 @@ use rand::Rng;
 /// use rand::SeedableRng;
 ///
 /// let mut rng = Xoshiro256Plus::seed_from_u64(0xABCD);
-/// let gen = Gaussian::standard();
+/// let dist = Gaussian::standard();
 ///
-/// let sample: Vec<f64> = gen.sample(1000, &mut rng);
+/// let sample: Vec<f64> = dist.sample(1000, &mut rng);
 /// let emp_dist = Empirical::new(sample);
 ///
 /// let ln_f_err: Vec<f64> = linspace(emp_dist.range().0, emp_dist.range().1, 1000)
 ///     .iter()
 ///     .map(|x| {
-///         gen.ln_f(x) - emp_dist.ln_f(x)
+///         dist.ln_f(x) - emp_dist.ln_f(x)
 ///     }).collect();
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
