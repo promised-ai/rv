@@ -705,7 +705,7 @@ mod tests {
 
     #[test]
     fn draw_0() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gev = Gev::new(0.0, 1.0, 0.0).unwrap();
         let cdf = |x: f64| gev.cdf(&x);
 
@@ -724,7 +724,7 @@ mod tests {
 
     #[test]
     fn draw_one_half() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gev = Gev::new(0.0, 1.0, 0.5).unwrap();
         let cdf = |x: f64| gev.cdf(&x);
 
@@ -743,7 +743,7 @@ mod tests {
 
     #[test]
     fn draw_negative_one_half() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gev = Gev::new(0.0, 1.0, -0.5).unwrap();
         let cdf = |x: f64| gev.cdf(&x);
 

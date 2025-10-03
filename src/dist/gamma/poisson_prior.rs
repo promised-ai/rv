@@ -55,12 +55,12 @@ macro_rules! impl_traits {
 
             fn posterior(&self, x: &DataOrSuffStat<$kind, Poisson>) -> Self {
                 let (n, sum) = match x {
-                    DataOrSuffStat::Data(ref xs) => {
+                    &DataOrSuffStat::Data(ref xs) => {
                         let mut stat = PoissonSuffStat::new();
                         xs.iter().for_each(|x| stat.observe(x));
                         (stat.n(), stat.sum())
                     }
-                    DataOrSuffStat::SuffStat(ref stat) => (
+                    &DataOrSuffStat::SuffStat(ref stat) => (
                         <PoissonSuffStat as SuffStat<$kind>>::n(stat),
                         stat.sum(),
                     ),
@@ -85,12 +85,12 @@ macro_rules! impl_traits {
                 x: &DataOrSuffStat<$kind, Poisson>,
             ) -> f64 {
                 let stat: PoissonSuffStat = match x {
-                    DataOrSuffStat::Data(ref xs) => {
+                    &DataOrSuffStat::Data(ref xs) => {
                         let mut stat = PoissonSuffStat::new();
                         xs.iter().for_each(|x| stat.observe(x));
                         stat
                     }
-                    DataOrSuffStat::SuffStat(ref stat) => (*stat).clone(),
+                    &DataOrSuffStat::SuffStat(ref stat) => (*stat).clone(),
                 };
 
                 let data_or_suff: DataOrSuffStat<$kind, Poisson> =
@@ -242,7 +242,7 @@ mod tests {
 
     #[test]
     fn cannot_draw_zero_rate() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let dist = Gamma::new(1.0, 1e-10).unwrap();
         let stream =
             <Gamma as Sampleable<Poisson>>::sample_stream(&dist, &mut rng);

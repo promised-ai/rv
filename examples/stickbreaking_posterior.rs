@@ -8,7 +8,7 @@ fn main() {
         };
         use rv::prelude::*;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
 
         let num_samples = 1_000_000;

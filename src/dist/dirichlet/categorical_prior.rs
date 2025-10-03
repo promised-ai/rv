@@ -242,7 +242,7 @@ mod test {
 
         #[test]
         fn symmetric_prior_draw_log_weights_should_all_be_negative() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let csd = SymmetricDirichlet::new(1.0, 4).unwrap();
             let ctgrl: Categorical = csd.draw(&mut rng);
 
@@ -251,7 +251,7 @@ mod test {
 
         #[test]
         fn symmetric_prior_draw_log_weights_should_be_unique() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let csd = SymmetricDirichlet::new(1.0, 4).unwrap();
             let ctgrl: Categorical = csd.draw(&mut rng);
 
@@ -267,7 +267,7 @@ mod test {
 
         #[test]
         fn symmetric_posterior_draw_log_weights_should_all_be_negative() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
 
             let xs: Vec<u8> = vec![0, 1, 2, 1, 2, 3, 0, 1, 1];
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
@@ -281,7 +281,7 @@ mod test {
 
         #[test]
         fn symmetric_posterior_draw_log_weights_should_be_unique() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
 
             let xs: Vec<u8> = vec![0, 1, 2, 1, 2, 3, 0, 1, 1];
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);

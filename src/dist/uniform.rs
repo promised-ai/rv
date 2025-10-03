@@ -246,12 +246,14 @@ macro_rules! impl_traits {
 
         impl Sampleable<$kind> for Uniform {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let u = rand_distr::Uniform::new(self.a, self.b);
+                let u = rand_distr::Uniform::new(self.a, self.b)
+                    .expect("By construction, this should be valid.");
                 rng.sample(u) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let u = rand_distr::Uniform::new(self.a, self.b);
+                let u = rand_distr::Uniform::new(self.a, self.b)
+                    .expect("By construction, this should be valid.");
                 (0..n).map(|_| rng.sample(u) as $kind).collect()
             }
         }
@@ -427,8 +429,8 @@ mod tests {
 
     #[test]
     fn cdf_inv_cdf_ident() {
-        let mut rng = rand::thread_rng();
-        let ru = rand::distributions::Uniform::new(1.2, 3.4);
+        let mut rng = rand::rng();
+        let ru = rand::distr::Uniform::new(1.2, 3.4).unwrap();
         let u = Uniform::new(1.2, 3.4).unwrap();
         for _ in 0..100 {
             let x: f64 = rng.sample(ru);
@@ -440,7 +442,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let u = Uniform::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| u.cdf(&x);
 
@@ -448,11 +450,7 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = u.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
     }

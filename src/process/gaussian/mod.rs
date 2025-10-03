@@ -275,7 +275,7 @@ where
 
     fn random_params<R: Rng>(&self, rng: &mut R) -> DVector<f64> {
         let n = self.parameters().len();
-        DVector::from_iterator(n, (0..n).map(|_| rng.gen_range(-5.0..5.0)))
+        DVector::from_iterator(n, (0..n).map(|_| rng.random_range(-5.0..5.0)))
     }
 }
 

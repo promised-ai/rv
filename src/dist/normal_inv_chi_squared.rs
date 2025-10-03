@@ -443,6 +443,7 @@ impl std::fmt::Display for NormalInvChiSquaredError {
 mod test {
     use super::*;
     use crate::{test_basic_impls, verify_cache_resets};
+    use rand::SeedableRng;
 
     test_basic_impls!(
         Gaussian,
@@ -491,7 +492,6 @@ mod test {
     );
 
     use ::proptest::prelude::*;
-    use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
 
     proptest! {

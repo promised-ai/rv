@@ -537,7 +537,7 @@ mod tests {
 
         #[test]
         fn draws_should_be_in_support() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             // Small alphas gives us more variability in the simplex, and more
             // variability gives us a better test.
             let dir = Dirichlet::jeffreys(10).unwrap();
@@ -549,7 +549,7 @@ mod tests {
 
         #[test]
         fn sample_should_return_the_proper_number_of_draws() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let dir = Dirichlet::jeffreys(3).unwrap();
             let xs: Vec<Vec<f64>> = dir.sample(88, &mut rng);
             assert_eq!(xs.len(), 88);
@@ -599,7 +599,7 @@ mod tests {
 
         #[test]
         fn sample_should_return_the_proper_number_of_draws() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let symdir = SymmetricDirichlet::jeffreys(3).unwrap();
             let xs: Vec<Vec<f64>> = symdir.sample(88, &mut rng);
             assert_eq!(xs.len(), 88);
@@ -624,7 +624,7 @@ mod tests {
 
         #[test]
         fn draws_should_be_in_support() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             // Small alphas gives us more variability in the simplex, and more
             // variability gives us a better test.
             let symdir = SymmetricDirichlet::jeffreys(10).unwrap();

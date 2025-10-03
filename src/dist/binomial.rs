@@ -485,7 +485,7 @@ mod tests {
 
     #[test]
     fn sample_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let binom = Binomial::new(5, 0.6).unwrap();
         let ps: Vec<f64> = vec![
             0.010_240_000_000_000_008,
@@ -512,7 +512,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let binom = Binomial::new(5, 0.6).unwrap();
         let ps: Vec<f64> = vec![
             0.010_240_000_000_000_008,

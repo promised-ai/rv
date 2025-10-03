@@ -10,7 +10,7 @@ use rv::traits::{ConjugatePrior, DataOrSuffStat, Sampleable, SuffStat};
 fn bench_nix_postpred(c: &mut Criterion) {
     let mut group = c.benchmark_group("NIX ln pp(x)");
     let nix = NormalInvChiSquared::new_unchecked(0.1, 1.2, 2.3, 3.4);
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let g = Gaussian::standard();
 
     group.bench_function("No cache".to_string(), |b| {
@@ -58,7 +58,7 @@ fn bench_nix_postpred(c: &mut Criterion) {
 fn bench_gauss_stat(c: &mut Criterion) {
     let mut group = c.benchmark_group("Gaussian Suffstat");
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let g = Gaussian::standard();
 
     group.bench_function("Forget".to_string(), |b| {

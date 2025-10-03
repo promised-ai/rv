@@ -1,13 +1,13 @@
 use super::StickSequence;
 use crate::dist::Mixture;
-use crate::misc::sorted_uniforms;
 use crate::misc::ConvergentSequence;
+use crate::misc::sorted_uniforms;
 use crate::traits::{
     Cdf, DiscreteDistr, Entropy, HasDensity, InverseCdf, Mode, Sampleable,
     Support,
 };
-use rand::seq::SliceRandom;
 use rand::Rng;
+use rand::seq::SliceRandom;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -247,7 +247,7 @@ impl Sampleable<usize> for StickBreakingDiscrete {
     ///
     /// A single sample as a usize.
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
-        let u: f64 = rng.gen();
+        let u: f64 = rng.random();
         self.invccdf(u)
     }
 
@@ -306,13 +306,13 @@ impl Entropy for &Mixture<StickBreakingDiscrete> {
 mod tests {
     use super::*;
     use crate::prelude::*;
-    use rand::thread_rng;
+    use rand::rng;
 
     #[test]
     fn test_multi_invccdf_sorted() {
         let sticks = StickSequence::new(UnitPowerLaw::new(10.0).unwrap(), None);
         let sbd = StickBreakingDiscrete::new(sticks);
-        let ps = sorted_uniforms(5, &mut thread_rng());
+        let ps = sorted_uniforms(5, &mut rng());
         assert_eq!(
             sbd.multi_invccdf_sorted(&ps),
             ps.iter().rev().map(|p| sbd.invccdf(*p)).collect::<Vec<_>>()

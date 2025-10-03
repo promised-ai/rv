@@ -10,7 +10,7 @@ use rv::traits::{ConjugatePrior, DataOrSuffStat, Sampleable, SuffStat};
 fn bench_ng_postpred(c: &mut Criterion) {
     let mut group = c.benchmark_group("NG ln pp(x)");
     let ng = NormalGamma::new_unchecked(0.1, 1.2, 2.3, 3.4);
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let g = Gaussian::standard();
 
     group.bench_function("No cache".to_string(), |b| {

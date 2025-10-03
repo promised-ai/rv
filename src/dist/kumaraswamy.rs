@@ -375,7 +375,7 @@ macro_rules! impl_kumaraswamy {
 
         impl Sampleable<$kind> for Kumaraswamy {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let p: f64 = rng.gen();
+                let p: f64 = rng.random();
                 invcdf(p, self.a, self.b) as $kind
             }
         }
@@ -486,7 +486,7 @@ mod tests {
 
     #[test]
     fn draw_should_return_values_within_0_to_1() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let kuma = Kumaraswamy::default();
         for _ in 0..100 {
             let x = kuma.draw(&mut rng);
@@ -496,7 +496,7 @@ mod tests {
 
     #[test]
     fn sample_returns_the_correct_number_draws() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let kuma = Kumaraswamy::default();
         let xs: Vec<f64> = kuma.sample(103, &mut rng);
         assert_eq!(xs.len(), 103);
@@ -505,7 +505,7 @@ mod tests {
     #[test]
     fn draws_from_correct_distribution() {
         let lognormal = LogNormal::new(0.0, 0.25).unwrap();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // test is flaky, try a few times
         let passes = (0..N_TRIES).fold(0, |acc, _| {
@@ -517,11 +517,7 @@ mod tests {
             let xs: Vec<f64> = kuma.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
 
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -572,7 +568,7 @@ mod tests {
 
     #[test]
     fn equivalent_mode_to_beta_when_a_or_b_is_1() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // K(a, 1) = B(a, 1) and K(1, b) = B(1, b)
         fn equiv(p: f64) {

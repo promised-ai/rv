@@ -25,7 +25,7 @@ use std::sync::OnceLock;
 /// let geom = Geometric::new(0.5).unwrap();
 ///
 /// // Draw Samples
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 /// let xs: Vec<u32> = geom.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
@@ -196,7 +196,7 @@ impl Geometric {
         X: Unsigned + Integer + Saturating,
         R: Rng,
     {
-        let u: f64 = rng.gen();
+        let u: f64 = rng.random();
         let q = 1.0 - p;
 
         let mut t: X = X::zero();
@@ -418,7 +418,7 @@ mod tests {
     }
 
     fn test_draw_generic(p: f64) {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let geom = Geometric::new(p).unwrap();
 
         // How many bins do we need?
@@ -434,11 +434,7 @@ mod tests {
             let xs: Vec<u32> = geom.sample(1000, &mut rng);
             xs.iter().for_each(|&x| f_obs[x as usize] += 1);
             let (_, p) = x2_test(&f_obs, &ps);
-            if p > X2_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > X2_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
     }

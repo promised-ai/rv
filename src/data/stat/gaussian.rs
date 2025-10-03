@@ -258,7 +258,7 @@ mod tests {
 
     #[test]
     fn incremental_merge() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let g = crate::dist::Gaussian::standard();
 
         let xs: Vec<f64> = g.sample(5, &mut rng);

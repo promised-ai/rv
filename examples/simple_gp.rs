@@ -7,11 +7,11 @@ use rand_xoshiro::Xoshiro256Plus;
 
 #[cfg(feature = "process")]
 use rv::process::{
-    gaussian::{
-        kernel::{ConstantKernel, Kernel, RBFKernel},
-        GaussianProcess, NoiseModel,
-    },
     RandomProcess, RandomProcessMle,
+    gaussian::{
+        GaussianProcess, NoiseModel,
+        kernel::{ConstantKernel, Kernel, RBFKernel},
+    },
 };
 
 /// Example of a noiseless Gaussian process.

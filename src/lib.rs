@@ -29,7 +29,7 @@
 //! // Beta(0.5, 0.5)
 //! let beta = Beta::jeffreys();
 //!
-//! let mut rng = rand::thread_rng();
+//! let mut rng = rand::rng();
 //!
 //! // 100 f64 weights in (0, 1)
 //! let f64s: Vec<f64> = beta.sample(100, &mut rng);
@@ -53,7 +53,7 @@
 //! ```rust
 //! use rv::prelude::*;
 //!
-//! let mut rng = rand::thread_rng();
+//! let mut rng = rand::rng();
 //!
 //! // A sequence of observations
 //! let flips = vec![true, false, true, true, true, false, true];

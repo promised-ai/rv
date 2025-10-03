@@ -385,7 +385,7 @@ mod test {
 
     #[test]
     fn pdf_agrees_with_inv_gamma_special_case() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v_prior = Gamma::new_unchecked(2.0, 1.0);
 
         for v in v_prior.sample_stream(&mut rng).take(1000) {
@@ -407,7 +407,7 @@ mod test {
 
     #[test]
     fn cdf_agrees_with_inv_gamma_special_case() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v_prior = Gamma::new_unchecked(2.0, 1.0);
 
         for v in v_prior.sample_stream(&mut rng).take(1000) {
@@ -422,7 +422,7 @@ mod test {
 
     #[test]
     fn draw_agrees_with_cdf() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ix2 = InvChiSquared::new(1.2).unwrap();
         let cdf = |x: f64| ix2.cdf(&x);
 

@@ -148,7 +148,9 @@ impl Empirical {
 
 impl HasDensity<f64> for Empirical {
     fn f(&self, x: &f64) -> f64 {
-        eprintln!("WARNING: empirical.f is unstable. You probably don't want to use it.");
+        eprintln!(
+            "WARNING: empirical.f is unstable. You probably don't want to use it."
+        );
         match self.pos(*x) {
             Pos::First => 0.0,
             Pos::Last => 0.0,
@@ -178,7 +180,7 @@ impl HasDensity<f64> for Empirical {
 impl Sampleable<f64> for Empirical {
     fn draw<R: Rng>(&self, rng: &mut R) -> f64 {
         let n = self.xs.len();
-        let ix: usize = rng.gen_range(0..n);
+        let ix: usize = rng.random_range(0..n);
         self.xs[ix]
     }
 }
@@ -209,8 +211,7 @@ impl Variance<f64> for Empirical {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dist::Gaussian;
-    use crate::misc::linspace;
+    use crate::{dist::Gaussian, misc::linspace};
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
 
@@ -218,17 +219,17 @@ mod tests {
     #[ignore = "This failure is expected, ln_f should not be used."]
     fn gaussian_sample() {
         let mut rng = Xoshiro256Plus::seed_from_u64(0xABCD);
-        let gen = Gaussian::standard();
-        let sample: Vec<f64> = gen.sample(10000, &mut rng);
+        let dist = Gaussian::standard();
+        let sample: Vec<f64> = dist.sample(10000, &mut rng);
         let emp_dist = Empirical::new(sample);
 
         let (f_errs, cdf_errs): (Vec<f64>, Vec<f64>) =
             linspace(emp_dist.range().0, emp_dist.range().1, 1000)
                 .into_iter()
                 .map(|x| {
-                    let ft = gen.f(&x);
+                    let ft = dist.f(&x);
                     let fe = emp_dist.f(&x);
-                    let cdf_t = gen.cdf(&x);
+                    let cdf_t = dist.cdf(&x);
                     let cdf_e = emp_dist.cdf(&x);
                     (fe - ft, cdf_e - cdf_t)
                 })
@@ -252,7 +253,7 @@ mod tests {
 
     #[test]
     fn draw_smoke() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         // create a distribution with only a few bins so that draw hits all the
         // bins.
         let xs = vec![0.0, 1.0, 2.0];

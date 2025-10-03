@@ -133,7 +133,7 @@ fn stick_stat_unit_powerlaw(sticks: &[f64]) -> (usize, f64) {
         // remaining before the break. In practice, numerical instabilities can
         // cause problems. So we filter to be sure we only consider valid
         // values.
-        .filter(|(&len, remaining)| len < *remaining)
+        .filter(|&(&len, ref remaining)| len < *remaining)
         .map(|(&len, remaining)| 1.0 - len / remaining);
 
     // The sufficient statistic is (n, ∑ᵢ log(1 - pᵢ)) == (n, log ∏ᵢ(1 - pᵢ)).

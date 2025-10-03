@@ -337,7 +337,7 @@ mod tests {
 
     #[test]
     fn draws_should_be_positive_definite() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let slice = vec![
             1.105_768_91,
             -0.201_603_36,

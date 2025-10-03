@@ -601,7 +601,7 @@ mod tests {
 
         let n_tries = 5;
         let x2_pval = 0.2;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let nbin = NegBinomial::new(3.0, 0.6).unwrap();
 
         // How many bins do we need?
@@ -633,7 +633,7 @@ mod tests {
 
         let n_tries = 5;
         let x2_pval = 0.2;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let nbin = NegBinomial::new(3.0, 0.6).unwrap();
 
         // How many bins do we need?

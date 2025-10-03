@@ -194,7 +194,7 @@ impl Sampleable<StickSequence> for StickBreaking {
     ///
     /// A `StickSequence` representing the drawn sample.
     fn draw<R: Rng>(&self, rng: &mut R) -> StickSequence {
-        let seed: u64 = rng.gen();
+        let seed: u64 = rng.random();
 
         let seq = StickSequence::new(self.break_tail.clone(), Some(seed));
         for beta in &self.break_prefix {
@@ -394,7 +394,7 @@ mod tests {
         let ln_m = sb.ln_m(&obs);
 
         let mc_est = {
-            sb.sample_stream(&mut rand::thread_rng())
+            sb.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|sbd: StickBreakingDiscrete| {
                     xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>()
@@ -429,7 +429,7 @@ mod tests {
 
     #[test]
     fn sb_bayes_law() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Prior
         let prior = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
@@ -521,7 +521,7 @@ mod tests {
     fn sb_logposterior_diff() {
         // Like Bayes Law, but takes a quotient to cancel evidence
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
         let seq1: StickSequence = sb.draw(&mut rng);
         let seq2: StickSequence = sb.draw(&mut rng);
@@ -545,7 +545,7 @@ mod tests {
 
     #[test]
     fn sb_posterior_rejection_sampling() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
 
         let num_samples = 1000;

@@ -539,7 +539,7 @@ mod tests {
 
     #[test]
     fn draw_should_return_positive_values() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let bp = BetaPrime::new(2.0, 3.0).unwrap();
         for _ in 0..100 {
             let x: f64 = bp.draw(&mut rng);

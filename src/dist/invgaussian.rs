@@ -287,7 +287,7 @@ macro_rules! impl_traits {
                     ),
                     mu,
                 );
-                let z: f64 = rng.gen();
+                let z: f64 = rng.random();
 
                 if z <= mu / (mu + x) {
                     x as $kind
@@ -413,7 +413,7 @@ mod tests {
 
     #[test]
     fn mode_is_highest_point() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mu_prior = crate::dist::InvGamma::new_unchecked(2.0, 2.0);
         let lambda_prior = crate::dist::InvGamma::new_unchecked(2.0, 2.0);
         for _ in 0..100 {
@@ -433,12 +433,12 @@ mod tests {
     #[test]
     fn quad_on_pdf_agrees_with_cdf_x() {
         use peroxide::numerical::integral::{
-            gauss_kronrod_quadrature, Integral,
+            Integral, gauss_kronrod_quadrature,
         };
         let ig = InvGaussian::new(1.1, 2.5).unwrap();
         // use pdf to hit `supports(x)` first
         let pdf = |x: f64| ig.pdf(&x);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
             let res = gauss_kronrod_quadrature(
@@ -453,7 +453,7 @@ mod tests {
 
     #[test]
     fn draw_vs_kl() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ig = InvGaussian::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| ig.cdf(&x);
 
@@ -461,11 +461,7 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = ig.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);

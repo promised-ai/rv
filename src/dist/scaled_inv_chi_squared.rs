@@ -400,6 +400,7 @@ mod test {
     use crate::dist::{Gamma, InvGamma};
     use crate::misc::ks_test;
     use crate::{test_basic_impls, verify_cache_resets};
+    use rand::SeedableRng;
     use std::f64;
     use std::f64::consts::PI;
 
@@ -513,7 +514,7 @@ mod test {
 
     #[test]
     fn pdf_agrees_with_inv_gamma_special_case() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v_prior = Gamma::new_unchecked(2.0, 1.0);
         let t2_prior = Gamma::new_unchecked(2.0, 1.0);
 
@@ -541,7 +542,7 @@ mod test {
 
     #[test]
     fn cdf_agrees_with_inv_gamma_special_case() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v_prior = Gamma::new_unchecked(2.0, 1.0);
         let t2_prior = Gamma::new_unchecked(2.0, 1.0);
 
@@ -562,7 +563,7 @@ mod test {
 
     #[test]
     fn draw_agrees_with_cdf() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ix2 = ScaledInvChiSquared::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| ix2.cdf(&x);
 
@@ -570,11 +571,7 @@ mod test {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = ix2.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -641,7 +638,6 @@ mod test {
     test_scalable_cdf!(ScaledInvChiSquared::new(4.0, 1.0).unwrap(), ix2);
 
     use ::proptest::prelude::*;
-    use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
 
     proptest! {

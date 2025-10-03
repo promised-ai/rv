@@ -31,7 +31,7 @@ use std::sync::OnceLock;
 /// assert!((pois.cdf(&5_u16) - 0.56347339228807169).abs() < 1E-12);
 ///
 /// // Draw 100 samples
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 /// let xs: Vec<u32> = pois.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
@@ -478,7 +478,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let pois = Poisson::new(2.0).unwrap();
 
         // How many bins do we need?
@@ -506,7 +506,7 @@ mod tests {
     #[test]
     fn kl_divergence_vs_brute() {
         let prior = crate::dist::Gamma::new(1.0, 1.0).unwrap();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..10 {
             let pois_x: Poisson = prior.draw(&mut rng);

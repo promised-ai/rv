@@ -410,7 +410,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let expon = Exponential::new(1.5).unwrap();
         let cdf = |x: f64| expon.cdf(&x);
 

@@ -25,14 +25,13 @@
 //     NIPS (Vol. 12, pp. 554-560).
 
 use rand::seq::SliceRandom;
-use rand::Rng;
-use rand::SeedableRng;
+use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256Plus;
+use rv::ConjugateModel;
 use rv::data::Partition;
 use rv::dist::{Crp, Gaussian, NormalInvGamma};
 use rv::misc::ln_pflips;
 use rv::traits::{ConjugatePrior, HasSuffStat, Rv, Sampleable, SuffStat};
-use rv::ConjugateModel;
 use std::sync::Arc;
 
 // Infinite mixture (CRP) model

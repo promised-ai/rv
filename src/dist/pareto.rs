@@ -629,7 +629,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let par = Pareto::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| par.cdf(&x);
 

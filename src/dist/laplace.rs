@@ -23,7 +23,7 @@ use std::fmt;
 /// let laplace = Laplace::new(0.0, 1.0).expect("Invalid params");
 ///
 /// // 100 draws from Laplace
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 /// let xs: Vec<f64> = laplace.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100);
 /// ```
@@ -470,7 +470,7 @@ mod tests {
     fn draw_test() {
         // Since we've had to implement the laplace draw ourselves, we have to
         // make sure the thing works, so we use the Kolmogorov-Smirnov test.
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let laplace = Laplace::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| laplace.cdf(&x);
 

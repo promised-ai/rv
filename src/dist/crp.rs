@@ -37,7 +37,7 @@ pub struct CrpParameters {
 /// ```
 /// use::rv::prelude::*;
 ///
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 ///
 /// let crp = Crp::new(1.0, 10).expect("Invalid parameters");
 /// let partition = crp.draw(&mut rng);

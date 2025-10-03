@@ -25,7 +25,7 @@ use std::{cell::RefCell, num::NonZeroUsize};
 /// let skel = Skellam::new(5.3, 2.5).unwrap();
 ///
 /// // Draw 100 samples
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 /// let xs: Vec<i32> = skel.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
@@ -435,7 +435,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let pois = Skellam::new(3.0, 3.0).unwrap();
 
         // How many bins do we need?

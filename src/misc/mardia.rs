@@ -61,7 +61,7 @@ mod test {
 
     #[test]
     fn should_pass_for_normal_data() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mvg = MvGaussian::standard(4).unwrap();
 
         let passed = (0..NTRIES).fold(false, |acc, _| {
@@ -79,7 +79,7 @@ mod test {
 
     #[test]
     fn should_not_pass_for_normal_data() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let n = 500;
         let xs = ChiSquared::new(2.0).unwrap().sample(n, &mut rng);
         let ys = Gaussian::standard().sample(n, &mut rng);

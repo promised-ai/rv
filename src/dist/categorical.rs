@@ -387,7 +387,7 @@ mod tests {
 
     #[test]
     fn draw_should_return_numbers_in_0_to_k() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let k = 5;
         let cat = Categorical::uniform(k);
         let mut counts = vec![0; k];
@@ -401,7 +401,7 @@ mod tests {
 
     #[test]
     fn sample_should_return_the_correct_number_of_draws() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let cat = Categorical::uniform(5);
         let xs: Vec<u8> = cat.sample(103, &mut rng);
         assert_eq!(xs.len(), 103);
@@ -433,7 +433,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let cat = Categorical::new(&[1.0, 2.0, 3.0, 4.0]).unwrap();
         let ps: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4];
 

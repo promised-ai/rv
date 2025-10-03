@@ -1,9 +1,9 @@
-use criterion::black_box;
 use criterion::AxisScale;
 use criterion::BatchSize;
 use criterion::BenchmarkId;
 use criterion::Criterion;
 use criterion::PlotConfiguration;
+use criterion::black_box;
 use criterion::{criterion_group, criterion_main};
 use rand::Rng;
 use rv::consts::TWO_PI;
@@ -26,7 +26,7 @@ fn bench_vm_draw(c: &mut Criterion) {
         let vm = &VonMises::new(0.0, k).unwrap();
         group.bench_with_input(BenchmarkId::new("k", k), &k, move |b, _| {
             b.iter_batched_ref(
-                rand::thread_rng,
+                rand::rng,
                 |rng| {
                     black_box::<f64>(vm.draw(rng));
                 },
@@ -50,9 +50,9 @@ fn bench_vm_ln_f(c: &mut Criterion) {
         let vm = &VonMises::new(0.0, k).unwrap();
         group.bench_with_input(BenchmarkId::new("k", k), &k, move |b, _| {
             b.iter_batched_ref(
-                rand::thread_rng,
+                rand::rng,
                 |rng| {
-                    let x: f64 = rng.gen_range(0.0..TWO_PI);
+                    let x: f64 = rng.random_range(0.0..TWO_PI);
                     black_box(vm.ln_f(&x));
                 },
                 BatchSize::SmallInput,
@@ -74,9 +74,9 @@ fn bench_log_i0(c: &mut Criterion) {
     for k in [0.0, 0.5, 1.0, 2.0, 5.0] {
         group.bench_with_input(BenchmarkId::new("k", k), &k, move |b, _| {
             b.iter_batched_ref(
-                rand::thread_rng,
+                rand::rng,
                 |rng| {
-                    let x: f64 = rng.gen_range(0.0..2.0 * PI);
+                    let x: f64 = rng.random_range(0.0..2.0 * PI);
                     black_box(log_i0(x));
                 },
                 BatchSize::SmallInput,

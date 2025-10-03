@@ -67,7 +67,7 @@ impl MvgCache {
 ///
 /// // The draw procedure outlined in the appendices of "Bayesian Data
 /// // Analysis" by Andrew Gelman and colleagues.
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 ///
 /// // 1. Create a multivariate normal with zero mean and covariance matrix S
 /// let mvg = MvGaussian::new(DVector::zeros(k), scale_mat).unwrap();
@@ -550,7 +550,7 @@ impl fmt::Display for MvGaussianError {
 #[cfg(test)]
 mod tests {
     use nalgebra::{dmatrix, dvector};
-    use rand::{thread_rng, SeedableRng};
+    use rand::{SeedableRng, rng};
 
     use super::*;
     use crate::dist::Gaussian;
@@ -680,7 +680,7 @@ mod tests {
         let mu = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
         let mvg = MvGaussian::new(mu, cov).unwrap();
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let xs: Vec<DVector<f64>> = mvg.sample(103, &mut rng);
 
@@ -716,7 +716,7 @@ mod tests {
     fn standard_draw_marginals() {
         use crate::traits::Cdf;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mvg = MvGaussian::standard(2).unwrap();
 
         let g = Gaussian::standard();
@@ -743,7 +743,7 @@ mod tests {
 
     #[test]
     fn standard_draw_mardia() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mvg = MvGaussian::standard(4).unwrap();
 
         let passed = (0..NTRIES).fold(false, |acc, _| {
@@ -761,7 +761,7 @@ mod tests {
 
     #[test]
     fn nonstandard_draw_mardia() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let cov_vals = vec![
             1.017_427_88,
             0.365_866_52,
@@ -822,7 +822,7 @@ mod tests {
             MvGaussian::new(dvector![0.0, 0.0], dmatrix![1.0, 0.0; 0.0, 1.0;])
                 .unwrap();
 
-        let seed: u64 = thread_rng().gen();
+        let seed: u64 = rng().random();
         dbg!(&seed); // Show this for diagnosing issues later.
         let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
 

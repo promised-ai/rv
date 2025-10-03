@@ -32,7 +32,7 @@ pub trait Sampleable<X> {
     /// use rv::traits::*;
     ///
     /// let b = Bernoulli::uniform();
-    /// let mut rng = rand::thread_rng();
+    /// let mut rng = rand::rng();
     /// let x: bool = b.draw(&mut rng); // could be true, could be false.
     /// ```
     fn draw<R: Rng>(&self, rng: &mut R) -> X;
@@ -48,7 +48,7 @@ pub trait Sampleable<X> {
     /// use rv::traits::*;
     ///
     /// let b = Bernoulli::uniform();
-    /// let mut rng = rand::thread_rng();
+    /// let mut rng = rand::rng();
     /// let xs: Vec<bool> = b.sample(22, &mut rng);
     ///
     /// assert_eq!(xs.len(), 22);
@@ -61,7 +61,7 @@ pub trait Sampleable<X> {
     /// use rv::traits::*;
     ///
     /// let gauss = Gaussian::standard();
-    /// let mut rng = rand::thread_rng();
+    /// let mut rng = rand::rng();
     /// let xs: Vec<f64> = gauss.sample(100_000, &mut rng);
     ///
     /// assert::close(xs.iter().sum::<f64>()/100_000.0, 0.0, 1e-2);
@@ -80,7 +80,7 @@ pub trait Sampleable<X> {
     /// use rv::traits::*;
     /// use rv::dist::Gamma;
     ///
-    /// let mut rng = rand::thread_rng();
+    /// let mut rng = rand::rng();
     ///
     /// let gamma = Gamma::new(2.0, 1.0).unwrap();
     ///
@@ -489,7 +489,7 @@ pub trait KlDivergence {
 /// let ncats = 10;
 /// let symdir = SymmetricDirichlet::jeffreys(ncats).unwrap();
 /// let mut suffstat = CategoricalSuffStat::new(10);
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 ///
 /// Categorical::new(&vec![1.0, 1.0, 5.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0])
 ///     .unwrap()

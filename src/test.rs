@@ -13,7 +13,7 @@ macro_rules! test_serde_params {
             use $crate::traits::HasDensity;
             use $crate::traits::Sampleable;
 
-            let mut rng = ::rand::thread_rng();
+            let mut rng = ::rand::rng();
 
             let fx = $fx;
             let xs: Vec<$x_ty> = fx.sample(100, &mut rng);
@@ -44,7 +44,7 @@ macro_rules! test_basic_impls {
 
             #[test]
             fn should_impl_debug_clone_and_partialeq() {
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
                 // make the expression a thing. If we don't do this, calling $fx
                 // reconstructs the distribution which means we don't do caching
                 let fx = $fx;
@@ -70,7 +70,7 @@ macro_rules! test_basic_impls {
 
             #[test]
             fn should_impl_parameterized() {
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
 
                 let fx_1 = $fx;
                 let params = fx_1.emit_params();
@@ -404,7 +404,7 @@ macro_rules! test_conjugate_prior {
                 // If this doesn't work, one of two things could be wrong:
                 // 1. prior.ln_m is wrong
                 // 2. prior.ln_pp is wrong
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
 
                 let pr = $prior;
                 let fx: $Fx = pr.draw(&mut rng);
@@ -442,7 +442,7 @@ macro_rules! test_conjugate_prior {
                 // 2. fx.ln_f(x)
                 // 3. prior.ln_f(fx)
                 // 4. prior.ln_m(x)
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
 
                 let pr = $prior;
                 let fx: $Fx = pr.draw(&mut rng);
@@ -484,7 +484,7 @@ macro_rules! test_conjugate_prior {
                 // 2. fx.ln_f_stat is wrong
                 // 3. prior.m is wrong
                 let n_tries = 5;
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
 
                 let pr = $prior;
 

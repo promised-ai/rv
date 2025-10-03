@@ -422,7 +422,7 @@ macro_rules! dos_to_post {
                 <GaussianSuffStat as SuffStat<f64>>::n(stat),
                 posterior_from_stat($self, &stat),
             ),
-            DataOrSuffStat::Data(ref xs) => {
+            &DataOrSuffStat::Data(ref xs) => {
                 let mut stat = GaussianSuffStat::new();
                 stat.observe_many(xs);
                 (stat.n(), posterior_from_stat($self, &stat))
@@ -432,7 +432,7 @@ macro_rules! dos_to_post {
     ($self: ident, $stat: ident) => {{
         match $stat {
             DataOrSuffStat::SuffStat(stat) => posterior_from_stat($self, &stat),
-            DataOrSuffStat::Data(ref xs) => {
+            &DataOrSuffStat::Data(ref xs) => {
                 let mut stat = GaussianSuffStat::new();
                 stat.observe_many(xs);
                 posterior_from_stat($self, &stat)

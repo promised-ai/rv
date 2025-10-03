@@ -137,7 +137,7 @@ mod tests {
     fn geweke() {
         use crate::test::GewekeTester;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let pr = NormalGamma::new(0.1, 1.2, 0.5, 1.8).unwrap();
         let n_passes = (0..5)
             .map(|_| {
@@ -229,7 +229,7 @@ mod tests {
         let ln_m = ng.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            ng.sample_stream(&mut rand::thread_rng())
+            ng.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| {
                     xs.iter().map(|x| gauss.ln_f(x)).sum::<f64>()
@@ -255,7 +255,7 @@ mod tests {
         let post = ng.posterior(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             // let pr_p = Gamma::new(1.6, 2.2).unwrap();
             // let pr_m = Gaussian::new(1.0, 2.0).unwrap();
             let ln_fs = (0..n_samples).map(|_| {

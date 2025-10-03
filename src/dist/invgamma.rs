@@ -514,7 +514,7 @@ mod tests {
         };
         let ig = InvGamma::new(2.3, 3.1).unwrap();
         let pdf = |x: f64| ig.f(&x);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
             let res = gauss_kronrod_quadrature(
@@ -565,7 +565,7 @@ mod tests {
 
     #[test]
     fn sample_return_correct_number_of_draws() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ig = InvGamma::new(3.0, 2.0).unwrap();
         let xs: Vec<f64> = ig.sample(103, &mut rng);
         assert_eq!(xs.len(), 103);
@@ -573,7 +573,7 @@ mod tests {
 
     #[test]
     fn draw_always_returns_results_in_support() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ig = InvGamma::new(3.0, 2.0).unwrap();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
@@ -621,7 +621,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ig = InvGamma::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| ig.cdf(&x);
 

@@ -31,7 +31,7 @@ use std::fmt;
 /// assert!(!vm.supports(&6.3_f64));
 ///
 /// // 103 VonMises draws
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 /// let xs: Vec<f64> = vm.sample(103, &mut rng);
 /// assert_eq!(xs.len(), 103);
 /// ```
@@ -322,13 +322,13 @@ impl VonMises {
     #[inline]
     pub fn slice_step<R: Rng>(x: f64, mu: f64, k: f64, rng: &mut R) -> f64 {
         // y ~ Uniform(0, exp(k * cos(x - μ)))
-        let logy = k.mul_add((x - mu).cos(), rng.gen::<f64>().ln());
+        let logy = k.mul_add((x - mu).cos(), rng.random::<f64>().ln());
         // Need to solve for x in k cos(x) = logy
         // If logy < -k, then we're below the cos curve
         // In that case, sample uniformly on the circle
         let xmax = if logy < -k { PI } else { (logy / k).acos() };
         // Sample uniformly on [-xmax, xmax] and add μ
-        let x = xmax.mul_add(rng.gen_range(-1.0..=1.0), mu);
+        let x = xmax.mul_add(rng.random_range(-1.0..=1.0), mu);
         // Ensure result is in [0, 2π)
         x.rem_euclid(TWO_PI)
     }
@@ -364,7 +364,7 @@ macro_rules! impl_traits {
             // https://www.researchgate.net/publication/246035131_Efficient_Simulation_of_the_von_Mises_Distribution
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 if self.k.is_zero() {
-                    rng.gen_range(0.0..=TWO_PI) as $kind
+                    rng.random_range(0.0..=TWO_PI) as $kind
                 } else if self.k > 700.0 {
                     let normal = Normal::new(self.mu, 1.0 / self.k).unwrap();
                     rng.sample(normal).rem_euclid(TWO_PI) as $kind
@@ -378,8 +378,8 @@ macro_rules! impl_traits {
                         let t;
                         let u;
                         loop {
-                            let d: f64 = (rng.gen::<f64>() - 0.5).powi(2);
-                            let e: f64 = (rng.gen::<f64>() - 0.5).powi(2);
+                            let d: f64 = (rng.random::<f64>() - 0.5).powi(2);
+                            let e: f64 = (rng.random::<f64>() - 0.5).powi(2);
                             let s: f64 = d + e;
                             if s <= 0.25 {
                                 t = d / e;
@@ -398,7 +398,7 @@ macro_rules! impl_traits {
                     }
 
                     let acf = f.acos();
-                    let x = if rng.gen_bool(0.5) {
+                    let x = if rng.random_bool(0.5) {
                         self.mu + acf
                     } else {
                         self.mu - acf
@@ -511,9 +511,9 @@ mod tests {
     use crate::misc::ks_test;
     use crate::test::density_histogram_test;
     use crate::test_basic_impls;
+    use rand::SeedableRng;
 
     use proptest::prelude::*;
-    use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
 
     const TOL: f64 = 1E-12;
@@ -624,7 +624,7 @@ mod tests {
 
     #[test]
     fn all_samples_should_be_supported() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         // kappa should be low so we get samples at the tails
         let vm = VonMises::new(1.5 * PI, 0.25).unwrap();
         let xs: Vec<f64> = vm.sample(1000, &mut rng);
@@ -633,7 +633,7 @@ mod tests {
 
     #[test]
     fn vm_draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let vm = VonMises::new(1.0, 1.2).unwrap();
         let cdf = |x: f64| vm.cdf(&x);
 
@@ -641,11 +641,7 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = vm.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -654,7 +650,7 @@ mod tests {
     #[test]
     fn slice_step_vs_draw_test() {
         let n_samples = 1_000_000;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mu = 1.5;
         let k = 2.0;
         let vm = VonMises::new(mu, k).unwrap();
@@ -671,7 +667,7 @@ mod tests {
         }
 
         // Use the existing two-sample KS test
-        use crate::misc::{ks_two_sample, KsAlternative, KsMode};
+        use crate::misc::{KsAlternative, KsMode, ks_two_sample};
         let (_, p_value) = ks_two_sample(
             &draw_samples,
             &slice_samples,
@@ -689,7 +685,7 @@ mod tests {
 
     #[test]
     fn vm_density_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mu = 1.0;
         let k = 100.2;
         let vm = VonMises::new(mu, k).unwrap();
@@ -709,7 +705,7 @@ mod tests {
         use crate::traits::SuffStat;
 
         // Create a VonMises distribution
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mu = 1.5;
         let k = 2.0;
         let vm = VonMises::new(mu, k).unwrap();

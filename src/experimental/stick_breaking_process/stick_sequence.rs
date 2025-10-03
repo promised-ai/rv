@@ -53,14 +53,14 @@ pub struct _Inner {
 // Add this function to provide a default RNG
 #[allow(dead_code)]
 fn default_rng() -> Xoshiro256Plus {
-    Xoshiro256Plus::from_entropy()
+    Xoshiro256Plus::from_os_rng()
 }
 
 impl _Inner {
     fn new(seed: Option<u64>) -> _Inner {
         _Inner {
             rng: seed.map_or_else(
-                Xoshiro256Plus::from_entropy,
+                Xoshiro256Plus::from_os_rng,
                 Xoshiro256Plus::seed_from_u64,
             ),
             ccdf: vec![1.0],

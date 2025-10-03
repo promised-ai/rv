@@ -136,7 +136,7 @@ mod test {
     fn geweke() {
         use crate::test::GewekeTester;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let pr = NormalInvGamma::new(0.1, 1.2, 0.5, 1.8).unwrap();
         let n_passes = (0..5)
             .map(|_| {
@@ -221,7 +221,7 @@ mod test {
 
         let (m, v, a, b) = (0.0, 1.2, 2.3, 3.4);
         let nig = NormalInvGamma::new(m, v, a, b).unwrap();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..100 {
             let gauss = nig.draw(&mut rng);
             let ln_f = nig.ln_f(&gauss);
@@ -255,7 +255,7 @@ mod test {
         // let ln_m = alternate_ln_marginal(&xs, m, v, a, b);
 
         let mc_est = {
-            nig.sample_stream(&mut rand::thread_rng())
+            nig.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| {
                     xs.iter().map(|x| gauss.ln_f(x)).sum::<f64>()
@@ -281,7 +281,7 @@ mod test {
         let ln_m = nig.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let pr_m = Gaussian::new(1.0, 8.0).unwrap();
             let pr_s = Gamma::new(2.0, 0.4).unwrap();
             let ln_fs = (0..n_samples).map(|_| {
@@ -313,7 +313,7 @@ mod test {
         // let ln_m = alternate_ln_marginal(&xs, m, v, a, b);
 
         let mc_est = {
-            post.sample_stream(&mut rand::thread_rng())
+            post.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| gauss.ln_f(&y))
                 .logsumexp()

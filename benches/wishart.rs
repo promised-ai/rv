@@ -15,7 +15,7 @@ fn bench_wishart(c: &mut Criterion) {
             |b, &dims| {
                 let iw = InvWishart::identity(dims);
                 b.iter_batched_ref(
-                    rand::thread_rng,
+                    rand::rng,
                     |mut rng| {
                         black_box::<DMatrix<f64>>(iw.draw(&mut rng));
                     },

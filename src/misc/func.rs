@@ -1,6 +1,6 @@
 use crate::consts::{LN_2PI, LN_PI};
-use rand::distributions::Open01;
 use rand::Rng;
+use rand::distr::Open01;
 use special::Gamma;
 use std::cmp::Ordering;
 use std::fmt::Debug;
@@ -184,11 +184,7 @@ fn binary_search(cws: &[f64], r: f64) -> usize {
 #[inline]
 fn catflip_bisection(cws: &[f64], r: f64) -> Option<usize> {
     let ix = binary_search(cws, r);
-    if ix < cws.len() {
-        Some(ix)
-    } else {
-        None
-    }
+    if ix < cws.len() { Some(ix) } else { None }
 }
 
 #[inline]
@@ -209,7 +205,7 @@ pub fn gumbel_pflip(weights: &[f64], rng: &mut impl Rng) -> usize {
     assert!(!weights.is_empty(), "Empty container");
     weights
         .iter()
-        .map(|w| (w, rng.gen::<f64>().ln()))
+        .map(|w| (w, rng.random::<f64>().ln()))
         .enumerate()
         .max_by(|(_, (w1, l1)), (_, (w2, l2))| {
             (*w2 * l1).partial_cmp(&(*w1 * l2)).unwrap()
@@ -224,7 +220,7 @@ pub fn pflip(weights: &[f64], sum: Option<f64>, rng: &mut impl Rng) -> usize {
     let sum = sum.unwrap_or_else(|| weights.iter().sum::<f64>());
 
     let mut cwt = 0.0;
-    let r: f64 = rng.gen::<f64>() * sum;
+    let r: f64 = rng.random::<f64>() * sum;
     for (ix, w) in weights.iter().enumerate() {
         cwt += w;
         if cwt > r {
@@ -240,11 +236,11 @@ pub fn pflips(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 
     let cws: Vec<f64> = cumsum(weights);
     let scale: f64 = *cws.last().unwrap();
-    let u = rand::distributions::Uniform::new(0.0, 1.0);
+    let u = rand::distr::StandardUniform;
 
     (0..n)
         .map(|_| {
-            let r = rng.sample(u) * scale;
+            let r = rng.sample::<f64, _>(u) * scale;
             if let Some(ix) = catflip(&cws, r) {
                 ix
             } else {
@@ -268,7 +264,7 @@ pub fn pflips(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 /// let weights: Vec<f64> = vec![0.4, 0.2, 0.3, 0.1];
 /// let ln_weights: Vec<f64> = weights.iter().map(|&w| w.ln()).collect();
 ///
-/// let xs = ln_pflips(&ln_weights, 100, true, &mut rand::thread_rng());
+/// let xs = ln_pflips(&ln_weights, 100, true, &mut rand::rng());
 ///
 /// assert_eq!(xs.len(), 100);
 /// assert!(xs.iter().all(|&x| x <= 3));
@@ -284,7 +280,7 @@ pub fn pflips(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 ///
 /// let ln_weights: Vec<f64> = vec![-LN_2, NEG_INFINITY, -LN_2];
 ///
-/// let xs = ln_pflips(&ln_weights, 100, true, &mut rand::thread_rng());
+/// let xs = ln_pflips(&ln_weights, 100, true, &mut rand::rng());
 ///
 /// let zero_count = xs.iter().filter(|&&x| x == 0).count();
 /// let one_count = xs.iter().filter(|&&x| x == 1).count();
@@ -335,7 +331,7 @@ where
 {
     ln_weights
         .into_iter()
-        .map(|ln_w| (*ln_w.borrow(), rng.gen::<f64>().ln()))
+        .map(|ln_w| (*ln_w.borrow(), rng.random::<f64>().ln()))
         .enumerate()
         .max_by(|(_, (ln_w1, l1)), (_, (ln_w2, l2))| {
             l1.partial_cmp(&(l2 * (*ln_w1 - *ln_w2).exp())).unwrap()
@@ -441,10 +437,10 @@ pub fn ln_fact(n: usize) -> f64 {
 /// # Example
 ///
 /// ```
-/// use rand::thread_rng;
+/// use rand::rng;
 /// use rv::misc::sorted_uniforms;
 ///    
-/// let mut rng = thread_rng();
+/// let mut rng = rng();
 /// let n = 10000;
 /// let xs = sorted_uniforms(n, &mut rng);
 /// assert_eq!(xs.len(), n);
@@ -464,13 +460,13 @@ pub fn ln_fact(n: usize) -> f64 {
 /// ```
 pub fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
     let mut xs: Vec<_> = (0..n)
-        .map(|_| -rng.gen::<f64>().ln())
+        .map(|_| -rng.random::<f64>().ln())
         .scan(0.0, |state, x| {
             *state += x;
             Some(*state)
         })
         .collect();
-    let max = *xs.last().unwrap() - rng.gen::<f64>().ln();
+    let max = *xs.last().unwrap() - rng.random::<f64>().ln();
     (0..n).for_each(|i| xs[i] /= max);
     xs
 }
@@ -852,7 +848,7 @@ mod tests {
 
     use crate::prelude::ChiSquared;
     use crate::traits::Cdf;
-    use rand::thread_rng;
+    use rand::{SeedableRng, rng};
 
     const TOL: f64 = 1E-12;
 
@@ -937,11 +933,11 @@ mod tests {
 
     #[test]
     fn bisection_and_standard_catflip_equivalence() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..1000 {
-            let n: usize = rng.gen_range(10..100);
+            let n: usize = rng.random_range(10..100);
             let cws: Vec<f64> = (1..=n).map(|i| i as f64).collect();
-            let u2 = rand::distributions::Uniform::new(0.0, n as f64);
+            let u2 = rand::distr::Uniform::new(0.0, n as f64).unwrap();
             let r = rng.sample(u2);
 
             let ix1 = catflip_standard(&cws, r).unwrap();
@@ -974,7 +970,7 @@ mod tests {
 
         let ln_weights: Vec<f64> = vec![-LN_2, f64::NEG_INFINITY, -LN_2];
 
-        let xs = ln_pflips(&ln_weights, 100, true, &mut rand::thread_rng());
+        let xs = ln_pflips(&ln_weights, 100, true, &mut rand::rng());
 
         let zero_count = xs.iter().filter(|&&x| x == 0).count();
         let one_count = xs.iter().filter(|&&x| x == 1).count();
@@ -987,7 +983,7 @@ mod tests {
 
     #[test]
     fn test_sorted_uniforms() {
-        let mut rng = thread_rng();
+        let mut rng = rng();
         let n = 1000;
         let xs = sorted_uniforms(n, &mut rng);
         assert_eq!(xs.len(), n);
@@ -1033,7 +1029,6 @@ mod tests {
 
     use crate::prelude::Gaussian;
     use crate::traits::Sampleable;
-    use rand::SeedableRng;
     #[test]
     fn ln_pflip_sampling_distribution() {
         let n_samples = 1_000;

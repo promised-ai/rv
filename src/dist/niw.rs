@@ -34,7 +34,7 @@ mod mvg_prior;
 ///
 /// let niw = NormalInvWishart::new(mu, k, df, scale).unwrap();
 ///
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 ///
 /// let mvg: MvGaussian = niw.draw(&mut rng);
 /// ```
