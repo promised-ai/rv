@@ -1,11 +1,26 @@
 # Changelog
 
-## [0.19.0]
+## [0.19.0] - 2025-10-03
+
+### Added
+- Added product distributions expressible via tuples. (Note: Sufficient statistics are locked behind the `experimental` option since their behavior is not certain.)
+- Added `ScaledPrior` and `ShiftedPrior` wrappers.
+
 
 ### Changed
 - Merry Christmas
 - `NormalInvChiSquared`, `NormalGamma`, and `NormalInvGamme` `PpCache` for Gaussian conjugate analysis changed. `ln_pp_with_cache` is much faster.
 - `Gamma` `PpCache` for Poisson conjugate analysis has been optimized. `ln_pp_with_cache` is faster.
+- Fixed some typos.
+- GitHub CI uses nightly since experimental features require nightly rust.
+- `OnceLock` removed on distribution initialization in favor of uniform initialization cost over threads.
+- Reworked `extract_stat` internals.
+- `CDVM` was cleaned up, errors expanded, and parameters made more clear.
+- Von Mises were sped up.
+- `LogSumExp` was fixed when encountering -inf.
+- `NormalInvGamma::ln_pp` was sped up.
+- `NIX` `PpCache` was sped up by 20%.
+- `NiX` Posterior predictive has its speed improved.
 
 ## [0.18.1] - 2025-02-28
 

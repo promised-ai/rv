@@ -161,7 +161,7 @@ where
     let (min_s, max_s) = cdf_x
         .iter()
         .zip(cdf_y.iter())
-        .map(|(cx, cy)| (cx - cy))
+        .map(|(cx, cy)| cx - cy)
         .fold((f64::MAX, f64::MIN), |(min, max), z| {
             let new_min = min.min(z);
             let new_max = max.max(z);
