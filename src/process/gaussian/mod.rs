@@ -817,4 +817,23 @@ mod tests {
         assert!(gp.k_chol().l().relative_eq(&expected_k_chol, 1E-7, 1E-7));
         Ok(())
     }
+
+    #[test]
+    fn train_with_non_psd_noise_model() {
+        let xs: DMatrix<f64> = DMatrix::from_column_slice(1, 1, &[0.]);
+        let ys: DVector<f64> = xs.map(|x| x * x.sin()).column(0).into();
+        let noise: DVector<f64> = DVector::from_row_slice(&[-1.0]);
+
+        let res = GaussianProcess::train(
+            ConstantKernel::new_unchecked(0.0),
+            xs,
+            ys,
+            NoiseModel::PerPoint(noise),
+        );
+
+        assert!(matches!(
+            res,
+            Err(GaussianProcessError::NotPositiveSemiDefinite)
+        ));
+    }
 }

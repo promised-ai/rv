@@ -149,3 +149,83 @@ where
             .collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rand::{SeedableRng, rngs::SmallRng};
+
+    use super::*;
+    use crate::{
+        dist::{Bernoulli, Beta, ChiSquared},
+        traits::Cdf,
+    };
+
+    #[test]
+    fn basic() {
+        let mut model = ConjugateModel::new(
+            &Bernoulli::uniform(),
+            Arc::new(Beta::jeffreys()),
+        );
+
+        model.observe_many(&[true, false]);
+        assert_eq!(model.n(), 2);
+        assert::close(model.ln_m(), -8.0_f64.ln(), 1e-6);
+
+        model.forget(&true);
+        assert_eq!(model.n(), 1);
+        assert::close(model.ln_m(), 0.5_f64.ln(), 1e-6);
+
+        let mut other_model = ConjugateModel::new(
+            &Bernoulli::uniform(),
+            Arc::new(Beta::jeffreys()),
+        );
+
+        other_model.observe_many(&[true, true]);
+        model.merge(other_model);
+
+        assert_eq!(model.n(), 3);
+        assert_eq!(model.suffstat.k(), 2);
+    }
+
+    #[test]
+    fn density() {
+        let mut model = ConjugateModel::new(
+            &Bernoulli::uniform(),
+            Arc::new(Beta::jeffreys()),
+        );
+
+        model.observe_many(&[true, false]);
+
+        assert::close(model.ln_f(&true), (1.5_f64 / (1.5 + 1.5)).ln(), 1e-6);
+        assert::close(model.ln_pp(&true), (1.5_f64 / (1.5 + 1.5)).ln(), 1e-6);
+    }
+
+    #[test]
+    fn sample() {
+        let mut rng = SmallRng::seed_from_u64(0x1234);
+
+        let mut model = ConjugateModel::new(
+            &Bernoulli::uniform(),
+            Arc::new(Beta::jeffreys()),
+        );
+
+        model.observe_many(&[true, false]);
+
+        let sample = model.sample(1000, &mut rng);
+
+        let alpha = 1.5;
+        let beta = 1.5;
+        let p_expected = alpha / (alpha + beta);
+
+        let p_observed = sample
+            .iter()
+            .map(|x| if *x { 1.0 } else { 0.0 })
+            .sum::<f64>()
+            / (sample.len() as f64);
+
+        let x2 = (p_observed - p_expected).powi(2) / p_expected
+            + (p_observed - p_expected).powi(2) / (1.0 - p_expected);
+
+        assert!(ChiSquared::new_unchecked(1.0).cdf(&x2) < 0.05);
+    }
+}

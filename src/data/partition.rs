@@ -5,6 +5,25 @@ use crate::impl_display;
 use crate::misc::vec_to_string;
 use std::fmt;
 
+/// A Partition of data by index.
+///
+/// # Example
+/// ```rust
+/// use rv::data::Partition;
+///
+/// let part = Partition::new();
+///
+/// // It starts off empty
+/// assert_eq!(part.z(), &[]);
+/// assert_eq!(part.counts(), &[]);
+/// assert!(part.is_empty());
+///
+/// // We can derive the partition from assignments
+/// let part = Partition::from_z(vec![0, 0, 1, 1, 2]).expect("Non-empty assignments are valid");
+/// assert_eq!(part.z(), &[0, 0, 1, 1, 2]);
+/// assert_eq!(part.counts(), &[2, 2, 1]);
+/// assert!(!part.is_empty());
+/// ```
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]

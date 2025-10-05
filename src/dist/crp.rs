@@ -85,6 +85,15 @@ impl Crp {
     }
 
     /// Create a new Crp without checking whether the parameters are valid.
+    ///
+    /// ```rust
+    /// use rv::dist::Crp;
+    ///
+    /// let crp = Crp::new_unchecked(3.0, 10);
+    ///
+    /// assert_eq!(crp.alpha(), 3.0);
+    /// assert_eq!(crp.n(), 10);
+    /// ```
     #[inline]
     #[must_use]
     pub fn new_unchecked(alpha: f64, n: usize) -> Self {
@@ -297,20 +306,23 @@ impl Parameterized for Crp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    // use crate::test_basic_impls;
 
     const TOL: f64 = 1E-12;
-
-    // test_basic_impls!(
-    //     Crp::new(1.0, 10).unwrap(),
-    //     Partition::new_unchecked(vec![0; 10], vec![10])
-    // );
 
     #[test]
     fn new() {
         let crp = Crp::new(1.2, 808).unwrap();
         assert::close(crp.alpha, 1.2, TOL);
         assert_eq!(crp.n, 808);
+    }
+
+    #[test]
+    fn params() {
+        let crp = Crp::new(1.2, 808).unwrap();
+        let params = crp.emit_params();
+
+        let new_crp = Crp::from_params(params);
+        assert_eq!(crp, new_crp);
     }
 
     // TODO: More tests!
