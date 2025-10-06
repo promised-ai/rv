@@ -10,6 +10,17 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// A wrapper for distributions that adds a scale parameter
+///
+/// # Example
+/// ```rust
+/// use rv::prelude::*;
+/// use rv::dist::{Scaled, Gaussian};
+///
+/// let scaled = Scaled::new(Gaussian::standard(), 5.0).expect("Valid Input");
+///
+/// assert_eq!(scaled.mean(), Some(0.0));
+/// assert_eq!(scaled.variance(), Some(25.0));
+/// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -55,6 +66,21 @@ impl<D> Scaled<D> {
     /// positive. We could easily allow scale to be negative, which would give
     /// us "reflected" distributions. But this breaks when we try to allow some
     /// distributions to absorb the scale parameter, so it's disallowed.
+    ///
+    /// # Example
+    /// ```rust
+    /// use rv::prelude::*;
+    /// use rv::dist::{Scaled, Gaussian};
+    ///
+    /// let success = Scaled::new(Gaussian::standard(), 5.0);
+    /// assert!(matches!(success, Ok(_)));
+    ///
+    /// let negaitive_scale = Scaled::new(Gaussian::standard(), -5.0);
+    /// assert!(matches!(negaitive_scale, Err(ScaledError::NegativeScale(_))));
+    ///
+    /// let non_normal_scale = Scaled::new(Gaussian::standard(), f64::INFINITY);
+    /// assert!(matches!(non_normal_scale, Err(ScaledError::NonNormalScale(_))));
+    /// ```
     pub fn new(parent: D, scale: f64) -> Result<Self, ScaledError> {
         if !scale.is_normal() {
             Err(ScaledError::NonNormalScale(scale))
@@ -85,6 +111,19 @@ impl<D> Scaled<D> {
         }
     }
 
+    /// Create a Scaled model from the internal components without checking for validity.
+    ///
+    /// # Example
+    /// ```rust
+    /// use rv::prelude::*;
+    /// use rv::dist::Scaled;
+    ///
+    /// let scale: f64 = 5.0;
+    /// let rate: f64 = scale.recip();
+    /// let logjac: f64 = scale.abs().ln();
+    ///
+    /// let _ = Scaled::from_parts_unchecked(Gaussian::standard(), scale, rate, logjac);
+    /// ```
     pub fn from_parts_unchecked(
         parent: D,
         scale: f64,
@@ -98,26 +137,96 @@ impl<D> Scaled<D> {
             logjac,
         }
     }
+
+    /// Return a reference to the parent distribution.
+    ///
+    /// # Example
+    /// ```rust
+    /// use rv::prelude::*;
+    /// use rv::dist::{Scaled, Gaussian};
+    ///
+    /// let scaled = Scaled::new(Gaussian::standard(), 5.0).unwrap();
+    ///
+    /// let dist: &Gaussian = scaled.parent();
+    /// ```
     pub fn parent(&self) -> &D {
         &self.parent
     }
+
+    /// Return a mutable reference to the parent distribution.
+    ///
+    /// # Example
+    /// ```rust
+    /// use rv::prelude::*;
+    /// use rv::dist::{Scaled, Gaussian};
+    ///
+    /// let mut scaled = Scaled::new(Gaussian::standard(), 5.0).unwrap();
+    ///
+    /// let dist: &mut Gaussian = scaled.parent_mut();
+    /// ```
 
     pub fn parent_mut(&mut self) -> &mut D {
         &mut self.parent
     }
 
+    /// Return the scale for this Scaled distribution
+    /// # Example
+    /// ```rust
+    /// use rv::prelude::*;
+    /// use rv::dist::{Scaled, Gaussian};
+    ///
+    /// let scaled = Scaled::new(Gaussian::standard(), 5.0).unwrap();
+    /// assert_eq!(scaled.scale(), 5.0);
+    /// ```
     pub fn scale(&self) -> f64 {
         self.scale
     }
 
+    /// Return the rate for this Scaled distribution
+    /// # Example
+    /// ```rust
+    /// use rv::prelude::*;
+    /// use rv::dist::{Scaled, Gaussian};
+    ///
+    /// let scaled = Scaled::new(Gaussian::standard(), 5.0).unwrap();
+    /// assert_eq!(scaled.rate(), 5.0_f64.recip());
+    /// ```
     pub fn rate(&self) -> f64 {
         self.rate
     }
 
+    /// Return the log jacobian for this Scaled distribution
+    /// # Example
+    /// ```rust
+    /// use rv::prelude::*;
+    /// use rv::dist::{Scaled, Gaussian};
+    ///
+    /// let scaled = Scaled::new(Gaussian::standard(), 5.0).unwrap();
+    /// assert_eq!(scaled.logjac(), 5.0_f64.ln());
+    /// ```
     pub fn logjac(&self) -> f64 {
         self.logjac
     }
 
+    /// Apply a mapping function to the parameters of the inner distribution, leaving the scaling
+    /// unchanged.
+    ///
+    ///
+    /// # Example
+    /// ```rust
+    /// use rv::prelude::*;
+    /// use rv::dist::{Scaled, Gaussian};
+    ///
+    /// let scaled = Scaled::new(Gaussian::standard(), 5.0).unwrap();
+    ///
+    /// let new_scaled = scaled.map_parent_params(|p| GaussianParameters {
+    ///     mu: p.mu + 1.0,
+    ///     sigma: p.sigma,
+    /// });
+    ///
+    /// assert_eq!(new_scaled.scale(), 5.0);
+    /// assert_eq!(new_scaled.parent().mean(), Some(1.0))
+    /// ```
     pub fn map_parent_params(
         &self,
         f: impl Fn(D::Parameters) -> D::Parameters,
@@ -321,12 +430,40 @@ where
 #[cfg(test)]
 mod tests {
 
+    use rand::SeedableRng;
+    use rand::rngs::SmallRng;
+
     use crate::prelude::*;
     use crate::test_scalable_cdf;
     use crate::test_scalable_density;
     use crate::test_scalable_entropy;
     use crate::test_scalable_invcdf;
     use crate::test_scalable_method;
+
+    #[test]
+    fn symmetric_parameters() {
+        let a = Scaled::new_unchecked(Gaussian::standard(), 3.0);
+        let b = Scaled::from_params(a.emit_params());
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn support_is_scaled() {
+        let a = Scaled::new_unchecked(Uniform::new_unchecked(0.0, 1.0), 3.0);
+
+        assert!(a.supports(&2.5));
+        assert!(!a.supports(&3.5));
+    }
+
+    #[test]
+    fn draws_are_scaled() {
+        let a = Scaled::new_unchecked(Shifted::new_unchecked(Delta, 1.0), 3.0);
+        let mut rng = SmallRng::seed_from_u64(0x1234);
+        let x: f64 = a.draw(&mut rng);
+
+        assert_eq!(x, 3.0);
+    }
 
     test_scalable_method!(
         Scaled::new(Gaussian::new(2.0, 4.0).unwrap(), 3.0).unwrap(),

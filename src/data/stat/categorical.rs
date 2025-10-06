@@ -159,4 +159,20 @@ mod tests {
         assert_eq!(stat.counts()[2], 3.0);
         assert_eq!(stat.counts()[3], 4.0);
     }
+
+    #[test]
+    fn merge() {
+        let mut a = CategoricalSuffStat::new(5);
+        let mut b = CategoricalSuffStat::new(5);
+        let mut c = CategoricalSuffStat::new(5);
+
+        a.observe_many(&[1_usize, 2, 3]);
+        b.observe_many(&[3_usize, 3, 4]);
+
+        c.observe_many(&[1_usize, 2, 3, 3, 3, 4]);
+
+        <CategoricalSuffStat as SuffStat<usize>>::merge(&mut a, b);
+
+        assert_eq!(a, c);
+    }
 }

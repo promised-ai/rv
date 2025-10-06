@@ -73,6 +73,8 @@
 //! // (true) given the observed flips (posterior predictive)?
 //! let p_heads = prior.pp(&true, &obs);
 //! ```
+
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 #![warn(
     clippy::all,
     clippy::imprecise_flops,
