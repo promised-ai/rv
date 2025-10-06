@@ -17,6 +17,7 @@ mod cauchy;
 mod cdvm;
 mod chi_squared;
 mod crp;
+mod delta;
 mod dirichlet;
 mod discrete_uniform;
 mod empirical;
@@ -67,6 +68,7 @@ pub use cauchy::{Cauchy, CauchyError, CauchyParameters};
 pub use cdvm::{Cdvm, CdvmError, CdvmParameters};
 pub use chi_squared::{ChiSquared, ChiSquaredError, ChiSquaredParameters};
 pub use crp::{Crp, CrpError, CrpParameters};
+pub use delta::Delta;
 pub use dirichlet::{
     Dirichlet, DirichletError, SymmetricDirichlet, SymmetricDirichletParameters,
 };
