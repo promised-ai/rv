@@ -142,7 +142,7 @@ mod tests {
     fn new() {
         let sf = CategoricalSuffStat::new(4);
         assert_eq!(sf.counts.len(), 4);
-        assert_eq!(sf.n, 0);
+        assert_eq!(sf.n(), 0);
         assert!(sf.counts.iter().all(|&ct| ct.abs() < 1E-12));
     }
 
@@ -172,7 +172,20 @@ mod tests {
         c.observe_many(&[1_usize, 2, 3, 3, 3, 4]);
 
         <CategoricalSuffStat as SuffStat<usize>>::merge(&mut a, b);
-
         assert_eq!(a, c);
+    }
+
+    #[test]
+    fn observe_forget() {
+        let mut stat = CategoricalSuffStat::new(5);
+
+        stat.observe_many(&[0_usize, 0, 1, 1, 2]);
+
+        assert_eq!(stat.n(), 5);
+        assert_eq!(stat.counts(), &[2.0, 2.0, 1.0, 0.0, 0.0]);
+
+        stat.forget(&1_usize);
+        assert_eq!(stat.n(), 4);
+        assert_eq!(stat.counts(), &[2.0, 1.0, 1.0, 0.0, 0.0]);
     }
 }

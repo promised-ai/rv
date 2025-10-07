@@ -31,6 +31,25 @@ impl BetaSuffStat {
 
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
+    ///
+    /// # Example
+    /// ```rust
+    /// use rv::data::BetaSuffStat;
+    /// use rv::prelude::SuffStat;
+    ///
+    /// let data: Vec<f64> = vec![0.1, 0.2, 0.3];
+    ///
+    /// let mut stat_b = BetaSuffStat::new();
+    /// stat_b.observe_many(&data);
+    ///
+    /// let n = data.len();
+    /// let sum_ln_x = data.iter().map(|x: &f64| x.ln()).sum();
+    /// let sum_ln_1mx = data.iter().map(|x: &f64| (1.0-x).ln()).sum();
+    ///
+    /// let stat_a = BetaSuffStat::from_parts_unchecked(n, sum_ln_x, sum_ln_1mx);
+    ///
+    /// assert_eq!(stat_a, stat_b);
+    /// ```
     #[inline]
     #[must_use]
     pub fn from_parts_unchecked(
@@ -148,3 +167,45 @@ macro_rules! impl_suffstat {
 
 impl_suffstat!(f32);
 impl_suffstat!(f64);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn observe_forget() {
+        let mut stat = BetaSuffStat::new();
+
+        stat.observe(&0.1);
+        stat.observe(&0.2);
+
+        assert_eq!(stat.n(), 2);
+        assert::close(stat.sum_ln_x, (0.1_f64).ln() + (0.2_f64).ln(), 1e-10);
+
+        stat.forget(&0.1);
+
+        assert_eq!(stat.n(), 1);
+        assert::close(stat.sum_ln_x, (0.2_f64).ln(), 1e-10);
+
+        stat.forget(&0.2);
+
+        assert_eq!(stat.n(), 0);
+        assert_eq!(stat.sum_ln_x, 0.0);
+    }
+
+    #[test]
+    fn merge() {
+        let mut a = BetaSuffStat::new();
+        let mut b = BetaSuffStat::new();
+        let mut c = BetaSuffStat::new();
+
+        a.observe_many(&[0.1_f64, 0.2, 0.3]);
+        b.observe_many(&[0.9_f64, 0.8, 0.7]);
+
+        c.observe_many(&[0.1_f64, 0.2, 0.3, 0.9, 0.8, 0.7]);
+
+        <BetaSuffStat as SuffStat<f64>>::merge(&mut a, b);
+
+        assert_eq!(a, c);
+    }
+}

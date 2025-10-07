@@ -349,23 +349,168 @@ tuple_impls!(
     10 => (0 T0 X0 F0 1 T1 X1 F1 2 T2 X2 F2 3 T3 X3 F3 4 T4 X4 F4 5 T5 X5 F5 6 T6 X6 F6 7 T7 X7 F7 8 T8 X8 F8 9 T9 X9 F9)
     11 => (0 T0 X0 F0 1 T1 X1 F1 2 T2 X2 F2 3 T3 X3 F3 4 T4 X4 F4 5 T5 X5 F5 6 T6 X6 F6 7 T7 X7 F7 8 T8 X8 F8 9 T9 X9 F9 10 T10 X10 F10)
     12 => (0 T0 X0 F0 1 T1 X1 F1 2 T2 X2 F2 3 T3 X3 F3 4 T4 X4 F4 5 T5 X5 F5 6 T6 X6 F6 7 T7 X7 F7 8 T8 X8 F8 9 T9 X9 F9 10 T10 X10 F10 11 T11 X11 F11)
-    13 => (0 T0 X0 F0 1 T1 X1 F1 2 T2 X2 F2 3 T3 X3 F3 4 T4 X4 F4 5 T5 X5 F5 6 T6 X6 F6 7 T7 X7 F7 8 T8 X8 F8 9 T9 X9 F9 10 T10 X10 F10 11 T11 X11 F11 12 T12 X12 F12)
-    14 => (0 T0 X0 F0 1 T1 X1 F1 2 T2 X2 F2 3 T3 X3 F3 4 T4 X4 F4 5 T5 X5 F5 6 T6 X6 F6 7 T7 X7 F7 8 T8 X8 F8 9 T9 X9 F9 10 T10 X10 F10 11 T11 X11 F11 12 T12 X12 F12 13 T13 X13 F13)
-    15 => (0 T0 X0 F0 1 T1 X1 F1 2 T2 X2 F2 3 T3 X3 F3 4 T4 X4 F4 5 T5 X5 F5 6 T6 X6 F6 7 T7 X7 F7 8 T8 X8 F8 9 T9 X9 F9 10 T10 X10 F10 11 T11 X11 F11 12 T12 X12 F12 13 T13 X13 F13 14 T14 X14 F14)
-    16 => (0 T0 X0 F0 1 T1 X1 F1 2 T2 X2 F2 3 T3 X3 F3 4 T4 X4 F4 5 T5 X5 F5 6 T6 X6 F6 7 T7 X7 F7 8 T8 X8 F8 9 T9 X9 F9 10 T10 X10 F10 11 T11 X11 F11 12 T12 X12 F12 13 T13 X13 F13 14 T14 X14 F14 15 T15 X15 F15)
 );
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::{dist::Gaussian, traits::HasDensity};
+    use rand::SeedableRng;
 
-    #[test]
-    fn independent_product_gaussians() {
-        let f = (Gaussian::standard(), Gaussian::standard());
-        let g = Gaussian::standard();
-
-        assert_eq!(f.ln_f(&(0.0, 0.0)), 2.0 * g.ln_f(&0.0));
+    macro_rules! tuple_sampleable_test {
+        ($($len:expr => ($($n:tt $x:tt)*))+) => {
+            let mut rng = rand::rngs::SmallRng::seed_from_u64(0x1234);
+            $(
+                let d: ($($n,)*) = ($(<$n>::standard(),)*);
+                let _x: ($($x,)*) = d.draw(&mut rng);
+            )+
+        };
     }
+
+    macro_rules! tuple_density_test {
+        ($($len:expr => ($($n:tt $x:tt)*))+) => {
+            $(
+                let d: ($($n,)*) = ($(<$n>::standard(),)*);
+                let lnf0 = d.ln_f(&($($x::default(),)*));
+                assert::close(lnf0, ($len as f64) * Gaussian::standard().ln_f(&0.0_f64), 1e-10);
+            )+
+        };
+    }
+
+    macro_rules! tuple_support_test{
+        ($($len:expr => ($($n:tt $x:tt)*))+) => {
+            // TODO: This isn't really checking anything...
+            let mut rng = rand::rngs::SmallRng::seed_from_u64(0x1234);
+            $(
+                let d: ($($n,)*) = ($(<$n>::standard(),)*);
+                let x: ($($x,)*) = d.draw(&mut rng);
+                let supported = d.supports(&x);
+                assert!(supported);
+            )+
+        };
+    }
+
+    macro_rules! tuple_continuous_test {
+        ($($len:expr => ($($n:tt $x:tt)*))+) => {
+            let mut rng = rand::rngs::SmallRng::seed_from_u64(0x1234);
+            $(
+                let d: ($($n,)*) = ($(<$n>::standard(),)*);
+                let x: ($($x,)*) = d.draw(&mut rng);
+                assert::close(d.ln_f(&x), d.ln_pdf(&x), 1e-10);
+            )+
+        };
+    }
+
+    macro_rules! tuple_mean_median_mode_test {
+        ($($len:expr => ($($n:ty, $x:ty),*))+) => {
+            $(
+                let d: ($($n,)*) = ($(<$n>::standard(),)*);
+                let mean: ($($x,)*) = d.mean().unwrap();
+                let median: ($($x,)*) = d.median().unwrap();
+                let mode: ($($x,)*) = d.mode().unwrap();
+
+                assert_eq!(mean, mode);
+                assert_eq!(mean, median);
+
+                let mean: [f64; $len] = mean.into();
+
+                for m in mean {
+                    assert_eq!(m, 0.0);
+                }
+            )+
+        };
+    }
+
+    macro_rules! tuple_impls_test {
+        ($($len:expr => ($($n:ty, $x:tt),*))+) => {
+            #[test]
+            fn sampleable() {
+                tuple_sampleable_test!(
+                    $(
+                        $len => ($($n $x)*)
+                    )+
+                );
+            }
+            #[test]
+            fn product_of_gaussians_are_independent() {
+                tuple_density_test!(
+                    $(
+                        $len => ($($n $x)*)
+                    )+
+                );
+            }
+
+            #[test]
+            fn support() {
+                tuple_support_test!(
+                    $(
+                        $len => ($($n $x)*)
+                    )+
+                );
+            }
+
+            #[test]
+            fn continuous_has_pdf() {
+                tuple_continuous_test!(
+                    $(
+                        $len => ($($n $x)*)
+                    )+
+                );
+            }
+
+            #[test]
+            fn mean_and_mode() {
+                tuple_mean_median_mode_test!(
+                    $(
+                        $len => ($($n, $x),*)
+                    )+
+                );
+            }
+            /*
+            tuple_cdf_test!(
+                $(
+                    $len => ($($n $t $x)*)
+                )+
+            );
+            tuple_suff_stat_test!(
+                $(
+                    $len => ($($n $t $x)*)
+                )+
+            );
+            tuple_has_suffstat_test!(
+                $(
+                    $len => ($($n $t $x)*)
+                )+
+            );
+            tuple_entropy_test!(
+                $(
+                    $len => ($($n $t)*)
+                )+
+            );
+            tuple_conjugate_prior_test!(
+                $(
+                    $len => ($($n $t $x $f)*)
+                )+
+            );
+            */
+        };
+    }
+
+    tuple_impls_test!(
+      //0 =>  ()
+      1 =>  (Gaussian, f64)
+      2 =>  (Gaussian, f64, Gaussian, f64)
+      3 =>  (Gaussian, f64, Gaussian, f64, Gaussian, f64)
+      4 =>  (Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64)
+      5 =>  (Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64)
+      6 =>  (Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64)
+      7 =>  (Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64)
+      8 =>  (Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64)
+      9 =>  (Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64)
+      10 => (Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64)
+      11 => (Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64)
+      12 => (Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64, Gaussian, f64)
+    );
 
     #[cfg(feature = "experimental")]
     #[test]

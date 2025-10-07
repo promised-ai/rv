@@ -164,7 +164,6 @@ impl<D> Scaled<D> {
     ///
     /// let dist: &mut Gaussian = scaled.parent_mut();
     /// ```
-
     pub fn parent_mut(&mut self) -> &mut D {
         &mut self.parent
     }

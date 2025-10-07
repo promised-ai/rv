@@ -185,7 +185,7 @@ impl Mode<usize> for StickBreakingDiscrete {
         let w0 = self.sticks.weight(0);
         // Once the unallocated mass is less than that of the first stick, the
         // allocated mass is guaranteed to contain the mode.
-        let n = self.sticks.extendmap_ccdf(
+        self.sticks.extendmap_ccdf(
             |ccdf| ccdf.last().unwrap() < &w0,
             |ccdf| {
                 let weights: Vec<f64> =
@@ -196,8 +196,7 @@ impl Mode<usize> for StickBreakingDiscrete {
                     .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
                     .map(|(i, _)| i)
             },
-        );
-        n
+        )
     }
 }
 
