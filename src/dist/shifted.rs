@@ -52,8 +52,8 @@ impl<D> Shifted<D> {
     /// ```rust
     /// use rv::prelude::*;
     ///
-    /// let _ok = Shifted::new(Gaussian::Standard(), 5.0).unwrap();
-    /// let _err = Shifted::new(Gaussian::Standard(), f64::INFINITY);
+    /// let _ok = Shifted::new(Gaussian::standard(), 5.0).unwrap();
+    /// let _err = Shifted::new(Gaussian::standard(), f64::INFINITY);
     /// ```
     pub fn new(parent: D, shift: f64) -> Result<Self, ShiftedError> {
         if shift.is_finite() {
@@ -74,7 +74,7 @@ impl<D> Shifted<D> {
     /// ```rust
     /// use rv::prelude::*;
     ///
-    /// let dist = Shifted::new(Gaussian::Standard(), 5.0).unwrap();
+    /// let dist = Shifted::new(Gaussian::standard(), 5.0).unwrap();
     ///
     /// assert_eq!(dist.shift(), 5.0);
     /// ```
