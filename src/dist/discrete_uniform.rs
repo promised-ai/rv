@@ -113,6 +113,7 @@ where
     }
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl<T> fmt::Display for DiscreteUniform<T>
 where
     T: DuParam + fmt::Display,
@@ -258,6 +259,7 @@ impl<T: DuParam> Kurtosis for DiscreteUniform<T> {
 
 impl std::error::Error for DiscreteUniformError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for DiscreteUniformError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

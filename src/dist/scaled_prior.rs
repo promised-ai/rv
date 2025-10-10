@@ -40,6 +40,7 @@ pub enum ScaledPriorError {
 
 impl std::error::Error for ScaledPriorError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for ScaledPriorError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

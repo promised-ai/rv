@@ -35,7 +35,10 @@ use std::fmt;
 //     }
 // }
 
-/// [CDVM distribution](https://arxiv.org/pdf/2009.05437),
+/// Conditionalized Discrete von Mises (CDVM)
+///
+/// This is defined under "Definition 4" in
+/// [Families of discrete circular distributions with some novel applications](https://arxiv.org/pdf/2009.05437),
 /// A unimodal distribution over x in (0, m-1) where m is the number of categories.
 ///
 /// Note that in while the paper uses μ ∈ [0, 2π), we use μ ∈ [0, m)
@@ -90,6 +93,20 @@ impl Cdvm {
     /// * `mu` - mean direction (must be in [0, modulus))
     /// * `k` - concentration (must be non-negative)
     /// * `modulus` - Number of categories
+    ///
+    /// # Example
+    /// ```rust
+    /// use rv::prelude::*;
+    /// use rv::dist::{Cdvm, CdvmError};
+    ///
+    /// assert!(matches!(Cdvm::new(5, f64::INFINITY, 0.0), Err(CdvmError::MuNotFinite { .. })));
+    /// assert!(matches!(Cdvm::new(5, 0.0, f64::INFINITY), Err(CdvmError::KNotFinite { .. })));
+    /// assert!(matches!(Cdvm::new(5, 0.0, -1.0), Err(CdvmError::KNegative { .. })));
+    /// assert!(matches!(Cdvm::new(2, 1.0, 1.0), Err(CdvmError::InvalidCategories { .. })));
+    ///
+    /// let cdvm = Cdvm::new(3, 1.0, 1.0).expect("valid parameters");
+    ///
+    /// ```
     pub fn new(modulus: usize, mu: f64, k: f64) -> Result<Self, CdvmError> {
         // Validate parameters
         if !mu.is_finite() {
@@ -110,14 +127,14 @@ impl Cdvm {
 
     // Test that dependent fields are properly set
     // This is just for testing purposes
-    #[must_use]
-    pub fn is_consistent(&self) -> bool {
+    #[cfg(test)]
+    fn is_consistent(&self) -> bool {
         let other = Cdvm::new(self.modulus, self.mu, self.k).unwrap();
-        self.mu == other.mu
-            && self.k == other.k
-            && self.modulus == other.modulus
-            && self.log_norm_const == other.log_norm_const
-            && self.twopi_over_m == other.twopi_over_m
+        self.mu() == other.mu()
+            && self.k() == other.k()
+            && self.modulus() == other.modulus()
+            && self.log_norm_const() == other.log_norm_const()
+            && self.twopi_over_m() == other.twopi_over_m()
     }
 
     /// Creates a new CDVM without checking whether the parameters are valid.
@@ -258,6 +275,7 @@ impl_display!(Cdvm);
 
 impl std::error::Error for CdvmError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for CdvmError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -322,8 +340,11 @@ impl HasSuffStat<usize> for Cdvm {
 
 #[cfg(test)]
 mod tests {
+    use crate::misc::x2_test;
+
     use super::*;
     use proptest::prelude::*;
+    use rand::{SeedableRng, rngs::SmallRng};
 
     const TOL: f64 = 1E-12;
 
@@ -485,5 +506,30 @@ mod tests {
             prop_assert!(cdvm.is_consistent(),
                 "CDVM not consistent after set_mu: m={}, mu1={}, mu2={}, k={}", m, mu1, mu2, k);
         }
+    }
+
+    #[test]
+    fn f_is_probability_measure() {
+        let dist = Cdvm::new_unchecked(10, 5.0, 0.5);
+
+        assert::close((0..10).map(|i| dist.f(&i)).sum::<f64>(), 1.0, 1e-10);
+    }
+
+    #[test]
+    fn ln_f_agrees_with_draw() {
+        let mut rng = SmallRng::from_os_rng();
+        let dist = Cdvm::new_unchecked(10, 5.0, 0.5);
+
+        let sample = dist.sample(100_000, &mut rng);
+        let ps: Vec<f64> = (0..10).map(|i| dist.f(&i)).collect();
+
+        let observed_counts =
+            sample.into_iter().fold(vec![0; 10], |mut acc, x| {
+                acc[x] += 1;
+                acc
+            });
+
+        let (_, p) = x2_test(&observed_counts, &ps);
+        assert!(p > 0.05);
     }
 }

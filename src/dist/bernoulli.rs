@@ -369,6 +369,7 @@ impl Variance<f64> for Bernoulli {
 
 impl std::error::Error for BernoulliError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for BernoulliError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

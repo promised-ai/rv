@@ -380,6 +380,7 @@ impl_traits!(f64);
 
 impl std::error::Error for InvGaussianError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for InvGaussianError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

@@ -287,6 +287,7 @@ impl_traits!(f32);
 
 impl std::error::Error for CauchyError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for CauchyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

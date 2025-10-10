@@ -274,6 +274,7 @@ impl Support<Partition> for Crp {
 
 impl std::error::Error for CrpError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for CrpError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

@@ -116,6 +116,7 @@ pub use nalgebra;
 #[macro_export]
 macro_rules! impl_display {
     ($kind: ty) => {
+        #[cfg_attr(coverage_nightly, coverage(off))]
         impl ::std::fmt::Display for $kind {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 write!(f, "{}", String::from(self))

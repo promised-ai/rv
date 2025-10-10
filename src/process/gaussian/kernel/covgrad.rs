@@ -13,6 +13,7 @@ pub struct CovGrad {
     slices: Vec<DMatrix<f64>>,
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for CovGrad {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.slices.iter().try_for_each(|s| write!(f, "{s}"))
@@ -222,6 +223,7 @@ pub enum CovGradError {
 
 impl std::error::Error for CovGradError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl std::fmt::Display for CovGradError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

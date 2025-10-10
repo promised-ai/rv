@@ -77,6 +77,7 @@ pub enum PartitionError {
 
 impl std::error::Error for PartitionError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for PartitionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

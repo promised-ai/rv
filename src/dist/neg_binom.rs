@@ -320,6 +320,7 @@ impl_traits!(u32);
 
 impl std::error::Error for NegBinomialError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for NegBinomialError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

@@ -395,6 +395,7 @@ impl ContinuousDistr<Gaussian> for NormalGamma {}
 
 impl std::error::Error for NormalGammaError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for NormalGammaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

@@ -662,6 +662,7 @@ where
 
 impl std::error::Error for MixtureError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for MixtureError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

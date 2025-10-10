@@ -528,6 +528,7 @@ impl HasSuffStat<DVector<f64>> for MvGaussian {
 
 impl std::error::Error for MvGaussianError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for MvGaussianError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

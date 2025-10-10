@@ -378,6 +378,7 @@ impl_traits!(f32);
 
 impl std::error::Error for ScaledInvChiSquaredError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for ScaledInvChiSquaredError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

@@ -421,6 +421,81 @@ mod tests {
         };
     }
 
+    macro_rules! tuple_cdf_test {
+        ($($len:expr => ($($n:tt $x:tt)*))+) => {
+            let mut rng = rand::rngs::SmallRng::seed_from_u64(0x1234);
+            $(
+                let d: ($($n,)*) = ($(<$n>::standard(),)*);
+                let x: ($($x,)*) = d.draw(&mut rng);
+
+                let cdf = d.cdf(&x);
+                let dparts: [_; $len] = d.into();
+                let xparts: [f64; $len] = x.into();
+
+                let cdf_product: f64 = dparts.into_iter()
+                    .zip(xparts.into_iter())
+                    .map(|(d, x)| d.cdf(&x))
+                    .reduce(|acc, x| acc * x)
+                    .unwrap();
+
+                assert::close(cdf, cdf_product, 1e-10);
+            )+
+        };
+    }
+
+    macro_rules! tuple_entropy_test {
+        ($($len:expr => ($($n:tt $x:tt)*))+) => {
+            $(
+                let d: ($($n,)*) = ($(<$n>::standard(),)*);
+
+                let entropy = d.entropy();
+                let dparts: [_; $len] = d.into();
+
+                let entropy_sum: f64 = dparts.into_iter()
+                    .map(|d| d.entropy())
+                    .sum();
+
+                assert::close(entropy, entropy_sum, 1e-10);
+            )+
+        };
+    }
+
+    macro_rules! tuple_has_suffstat_test {
+        ($($len:expr => ($($n:tt $x:tt)*))+) => {
+            let mut rng = rand::rngs::SmallRng::seed_from_u64(0x1234);
+            use $crate::data::GaussianSuffStat;
+            $(
+                let d: ($($n,)*) = ($(<$n>::standard(),)*);
+                let mut stat = <($($n,)*) as HasSuffStat<($($x,)*)>>::empty_suffstat(&d);
+                let sample: Vec<($($x,)*)> = d.sample(5, &mut rng);
+                //assert_eq!(SuffStat::<($($x,)*)>::n(&stat), 0);
+
+                sample.iter().for_each(|x| stat.observe(x));
+                //assert_eq!(SuffStat::<($($x,)*)>::n(&stat), 5);
+
+
+                let mut stat_b = <($($n,)*) as HasSuffStat<($($x,)*)>>::empty_suffstat(&d);
+                sample.iter().skip(2).for_each(|x| stat_b.observe(x));
+                let mut stat_c = <($($n,)*) as HasSuffStat<($($x,)*)>>::empty_suffstat(&d);
+                sample.iter().take(2).for_each(|x| stat_c.observe(x));
+
+                SuffStat::<($($x,)*)>::merge(&mut stat_b, stat_c);
+
+                let state_array: [GaussianSuffStat; $len] = stat.clone().into();
+                let state_b_array: [GaussianSuffStat; $len] = stat_b.into();
+
+                for i in 0..$len {
+                    assert_eq!(state_array[i].n(), state_b_array[i].n());
+                    assert::close(state_array[i].mean(), state_b_array[i].mean(), 1e-10);
+                    assert::close(state_array[i].sum_x_sq(), state_b_array[i].sum_x_sq(), 1e-10);
+                }
+
+                sample.iter().take(2).for_each(|x| stat.forget(x));
+                //assert_eq!(SuffStat::<($($x,)*)>::n(&stat), 3);
+            )+
+        };
+    }
+
     macro_rules! tuple_impls_test {
         ($($len:expr => ($($n:ty, $x:tt),*))+) => {
             #[test]
@@ -466,27 +541,34 @@ mod tests {
                     )+
                 );
             }
+
+            #[test]
+            fn cdf() {
+                tuple_cdf_test!(
+                    $(
+                        $len => ($($n $x)*)
+                    )+
+                );
+            }
+            #[test]
+            fn entropy() {
+                tuple_entropy_test!(
+                    $(
+                        $len => ($($n $x)*)
+                    )+
+                );
+            }
+
+            #[cfg(feature = "experimental")]
+            #[test]
+            fn suffstat() {
+                tuple_has_suffstat_test!(
+                    $(
+                        $len => ($($n $x)*)
+                    )+
+                );
+            }
             /*
-            tuple_cdf_test!(
-                $(
-                    $len => ($($n $t $x)*)
-                )+
-            );
-            tuple_suff_stat_test!(
-                $(
-                    $len => ($($n $t $x)*)
-                )+
-            );
-            tuple_has_suffstat_test!(
-                $(
-                    $len => ($($n $t $x)*)
-                )+
-            );
-            tuple_entropy_test!(
-                $(
-                    $len => ($($n $t)*)
-                )+
-            );
             tuple_conjugate_prior_test!(
                 $(
                     $len => ($($n $t $x $f)*)

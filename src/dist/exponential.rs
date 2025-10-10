@@ -287,6 +287,7 @@ impl_traits!(f32);
 
 impl std::error::Error for ExponentialError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for ExponentialError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

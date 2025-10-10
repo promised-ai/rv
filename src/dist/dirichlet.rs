@@ -473,6 +473,7 @@ impl Support<Vec<f64>> for Dirichlet {
 impl std::error::Error for SymmetricDirichletError {}
 impl std::error::Error for DirichletError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for SymmetricDirichletError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

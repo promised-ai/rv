@@ -250,6 +250,7 @@ impl Default for BetaPrime {
     }
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl From<&BetaPrime> for String {
     fn from(bp: &BetaPrime) -> String {
         format!("BetaPrime(α: {}, β: {})", bp.alpha, bp.beta)
@@ -358,6 +359,7 @@ impl Variance<f64> for BetaPrime {
 
 impl std::error::Error for BetaPrimeError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for BetaPrimeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -448,11 +450,14 @@ mod tests {
     use rand_xoshiro::Xoshiro256Plus;
 
     use super::*;
-    use crate::test_basic_impls;
+    use crate::{
+        misc::{KsAlternative, KsMode, ks_two_sample},
+        test_basic_impls,
+    };
 
     const TOL: f64 = 1E-12;
 
-    test_basic_impls!(f64, BetaPrime, BetaPrime::new(1.0, 1.0).unwrap());
+    test_basic_impls!(f64, BetaPrime, BetaPrime::default());
 
     #[test]
     fn new() {
@@ -562,6 +567,29 @@ mod tests {
             // The CDFs should match at these corresponding points
             assert::close(beta.cdf(&x), bp.cdf(&y), 1e-12);
         }
+    }
+
+    #[test]
+    fn draw_and_sample_are_consistent() {
+        let mut rng = rand::rng();
+        let bp = BetaPrime::new(2.0, 3.0).unwrap();
+
+        let draw_sample: Vec<f64> =
+            (0..1000).map(|_| bp.draw(&mut rng)).collect();
+        let sample_sample: Vec<f64> = bp.sample(1000, &mut rng);
+
+        let (stat, p) = ks_two_sample(
+            &draw_sample,
+            &sample_sample,
+            KsMode::Auto,
+            KsAlternative::TwoSided,
+        )
+        .unwrap();
+
+        dbg!(&p);
+        dbg!(stat);
+
+        assert!(p > 0.05);
     }
 
     #[cfg(feature = "experimental")]

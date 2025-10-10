@@ -20,6 +20,17 @@ pub struct ShiftedParameters<D: Parameterized> {
 }
 
 /// A wrapper for distributions that adds a shift parameter
+///
+/// # Example
+/// ```rust
+/// use rv::prelude::*;
+/// use rv::dist::{Shifted, Gaussian};
+///
+/// let shifted = Shifted::new(Gaussian::standard(), 5.0).expect("Valid Input");
+///
+/// assert_eq!(shifted.mean(), Some(5.0));
+/// assert_eq!(shifted.variance(), Some(1.0));
+/// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -35,6 +46,15 @@ pub enum ShiftedError {
 }
 
 impl<D> Shifted<D> {
+    /// Create a new shifted distribution with a given parent distribution and a offset parameter.
+    ///
+    /// # Example
+    /// ```rust
+    /// use rv::prelude::*;
+    ///
+    /// let _ok = Shifted::new(Gaussian::Standard(), 5.0).unwrap();
+    /// let _err = Shifted::new(Gaussian::Standard(), f64::INFINITY);
+    /// ```
     pub fn new(parent: D, shift: f64) -> Result<Self, ShiftedError> {
         if shift.is_finite() {
             Ok(Shifted { parent, shift })
@@ -43,10 +63,21 @@ impl<D> Shifted<D> {
         }
     }
 
+    /// Create a new Shifted distribution without checking the shift parameter is finite.
     pub fn new_unchecked(parent: D, shift: f64) -> Self {
         Shifted { parent, shift }
     }
 
+    /// Extract the shift from a given Shifted distribution
+    ///
+    /// # Example
+    /// ```rust
+    /// use rv::prelude::*;
+    ///
+    /// let dist = Shifted::new(Gaussian::Standard(), 5.0).unwrap();
+    ///
+    /// assert_eq!(dist.shift(), 5.0);
+    /// ```
     pub fn shift(&self) -> f64 {
         self.shift
     }
@@ -274,6 +305,23 @@ mod tests {
     use crate::test_shiftable_entropy;
     use crate::test_shiftable_invcdf;
     use crate::test_shiftable_method;
+
+    #[test]
+    fn symmetric_parameters() {
+        let a = Shifted::new_unchecked(Gaussian::standard(), 3.0);
+        let b = Shifted::from_params(a.emit_params());
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn support_is_shifted() {
+        let a = Shifted::new_unchecked(Uniform::new_unchecked(0.0, 1.0), 3.0);
+
+        assert!(a.supports(&3.5));
+        assert!(!a.supports(&4.5));
+        assert!(!a.supports(&0.5));
+    }
 
     test_shiftable_method!(
         Shifted::new(Gaussian::new(2.0, 4.0).unwrap(), 1.0).unwrap(),

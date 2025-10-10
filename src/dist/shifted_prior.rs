@@ -36,6 +36,7 @@ pub enum ShiftedPriorError {
 
 impl std::error::Error for ShiftedPriorError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for ShiftedPriorError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

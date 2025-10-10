@@ -449,6 +449,7 @@ impl Entropy for Kumaraswamy {
 
 impl std::error::Error for KumaraswamyError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for KumaraswamyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

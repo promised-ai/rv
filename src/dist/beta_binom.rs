@@ -427,6 +427,7 @@ impl_int_traits!(i64);
 
 impl std::error::Error for BetaBinomialError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for BetaBinomialError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

@@ -449,6 +449,7 @@ impl_traits!(f64);
 
 impl std::error::Error for GevError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for GevError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

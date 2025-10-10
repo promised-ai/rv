@@ -473,6 +473,7 @@ impl_traits!(f64);
 
 impl std::error::Error for GaussianError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for GaussianError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
