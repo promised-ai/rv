@@ -102,7 +102,7 @@ impl Cdvm {
     /// assert!(matches!(Cdvm::new(5, f64::INFINITY, 0.0), Err(CdvmError::MuNotFinite { .. })));
     /// assert!(matches!(Cdvm::new(5, 0.0, f64::INFINITY), Err(CdvmError::KNotFinite { .. })));
     /// assert!(matches!(Cdvm::new(5, 0.0, -1.0), Err(CdvmError::KNegative { .. })));
-    /// assert!(matches!(Cdvm::new(2, 1.0, 1.0), Err(CdvmError::InvalidCategories { .. })));
+    /// assert!(matches!(Cdvm::new(1, 1.0, 1.0), Err(CdvmError::InvalidCategories { .. })));
     ///
     /// let cdvm = Cdvm::new(3, 1.0, 1.0).expect("valid parameters");
     ///
