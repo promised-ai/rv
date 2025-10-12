@@ -497,4 +497,11 @@ mod tests {
 
         assert::close(ln_f_base, ln_f_stat, TOL);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Categorical::new(&[0.2, 0.3, 0.5]).unwrap();
+        let dist_b = Categorical::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

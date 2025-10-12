@@ -112,6 +112,17 @@ pub enum VonMisesError {
 
 impl VonMises {
     /// Create a new `VonMises` distribution with mean mu, and precision, k.
+    ///
+    /// # Example
+    /// ```rust
+    /// use rv::dist::{VonMises, VonMisesError};
+    ///
+    /// assert!(matches!(VonMises::new(f64::INFINITY, 0.0), Err(VonMisesError::MuNotFinite{ .. })));
+    /// assert!(matches!(VonMises::new(5.0, -1.0), Err(VonMisesError::KTooLow{ .. })));
+    /// assert!(matches!(VonMises::new(5.0, f64::INFINITY), Err(VonMisesError::KNotFinite{ .. })));
+    ///
+    /// assert!(matches!(VonMises::new(5.0, 3.0), Ok(..)));
+    /// ```
     pub fn new(mu: f64, k: f64) -> Result<Self, VonMisesError> {
         if !mu.is_finite() {
             Err(VonMisesError::MuNotFinite { mu })
@@ -749,5 +760,18 @@ mod tests {
                 sample, mu, k
             );
         }
+    }
+
+    #[test]
+    fn entropy() {
+        let vm = VonMises::new(3.4, 5.6).unwrap();
+        assert::close(vm.entropy(), 0.610734, 1e-5);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = VonMises::new(3.0, 5.0).unwrap();
+        let vm_b = VonMises::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
     }
 }

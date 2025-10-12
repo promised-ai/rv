@@ -831,4 +831,11 @@ mod tests {
             assert::close(pdf_1, pdf_2, 1e-14);
         }
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Beta::new(0.8, 0.4).unwrap();
+        let dist_b = Beta::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

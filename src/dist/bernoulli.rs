@@ -387,6 +387,7 @@ impl fmt::Display for BernoulliError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dist::Bernoulli;
     use crate::misc::x2_test;
     use crate::test_basic_impls;
 
@@ -743,5 +744,12 @@ mod tests {
             <Bernoulli as HasSuffStat<bool>>::ln_f_stat(&bern, &stat);
 
         assert::close(ln_f_base, ln_f_stat, TOL);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Bernoulli::new(0.8).unwrap();
+        let dist_b = Bernoulli::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

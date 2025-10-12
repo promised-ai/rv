@@ -833,4 +833,11 @@ mod tests {
     test_scalable_density!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
     test_scalable_entropy!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
     test_scalable_cdf!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Gev::new(3.0, 4.0, 5.0).unwrap();
+        let dist_b = Gev::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

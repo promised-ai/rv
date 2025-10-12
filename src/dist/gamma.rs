@@ -557,4 +557,11 @@ mod tests {
     test_scalable_density!(Gamma::new(2.0, 4.0).unwrap());
     test_scalable_entropy!(Gamma::new(2.0, 4.0).unwrap());
     test_scalable_cdf!(Gamma::new(2.0, 4.0).unwrap());
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Gamma::new(3.0, 5.0).unwrap();
+        let dist_b = Gamma::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

@@ -469,4 +469,11 @@ mod tests {
         0.57,
         0.12
     );
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Geometric::new(0.8).unwrap();
+        let dist_b = Geometric::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

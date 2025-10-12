@@ -435,4 +435,11 @@ mod test {
 
         assert!(passes > 0);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = InvChiSquared::new(1.5).unwrap();
+        let dist_b = InvChiSquared::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

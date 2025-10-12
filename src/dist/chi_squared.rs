@@ -327,4 +327,11 @@ mod tests {
         });
         assert!(passes > 0);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = ChiSquared::new(2.5).unwrap();
+        let dist_b = ChiSquared::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

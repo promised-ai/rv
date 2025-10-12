@@ -194,7 +194,7 @@ where
             DataOrSuffStat::Data(xs) => {
                 xs.iter().map(|&x| x * self.rate).collect()
             }
-            DataOrSuffStat::SuffStat(_) => vec![], // Not handling suffstat for now
+            DataOrSuffStat::SuffStat(_) => vec![], // XXX: Not handling suffstat for now
         };
 
         self.parent
@@ -282,5 +282,13 @@ mod tests {
         // Values should be finite (actual values will depend on implementation)
         assert!(ln_m.is_finite());
         assert!(ln_pp.is_finite());
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let prior = NormalInvChiSquared::new_unchecked(0.0, 1.0, 2.0, 1.0);
+        let dist_a = ScaledPrior::new(prior, 5.0).unwrap();
+        let dist_b = ScaledPrior::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

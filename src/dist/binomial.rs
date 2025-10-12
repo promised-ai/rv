@@ -529,4 +529,11 @@ mod tests {
         });
         assert!(passes > 0);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Binomial::new(20, 0.4).unwrap();
+        let dist_b = Binomial::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

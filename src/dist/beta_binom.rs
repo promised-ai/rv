@@ -489,4 +489,11 @@ mod tests {
         let pmfs: Vec<f64> = (0..=10).map(|k| beta_binom.pmf(&k)).collect();
         assert::close(pmfs, target, 1E-6);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = BetaBinomial::new(10, 0.8, 0.4).unwrap();
+        let dist_b = BetaBinomial::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

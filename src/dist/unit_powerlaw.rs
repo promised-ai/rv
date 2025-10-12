@@ -611,4 +611,11 @@ mod tests {
             assert::close(pdf_1, pdf_2, 1e-14);
         }
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = UnitPowerLaw::new(0.5).unwrap();
+        let vm_b = UnitPowerLaw::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
+    }
 }

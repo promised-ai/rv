@@ -367,4 +367,11 @@ mod tests {
         });
         assert!(passes > 0);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = DiscreteUniform::new(0_u32, 10_u32).unwrap();
+        let dist_b = DiscreteUniform::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

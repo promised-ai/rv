@@ -263,4 +263,11 @@ mod tests {
             let _x: f64 = emp_dist.draw(&mut rng);
         }
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Empirical::new(vec![0.0, 0.2, 0.3]);
+        let dist_b = Empirical::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

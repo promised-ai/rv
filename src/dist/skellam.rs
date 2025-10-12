@@ -470,4 +470,11 @@ mod tests {
         });
         assert!(passes > 0);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = Skellam::new(5.0, 4.5).unwrap();
+        let vm_b = Skellam::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
+    }
 }

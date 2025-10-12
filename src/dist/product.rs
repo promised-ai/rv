@@ -152,6 +152,7 @@ macro_rules! tuple_suff_stat {
         $(
 
             #[cfg(feature = "experimental")]
+            #[cfg_attr(coverage_nightly, coverage(off))]
             impl<$($t,)*$($x,)*> SuffStat<($($x,)*)> for ($($t,)*)
             where
                 $($t: SuffStat<$x>,)*
@@ -189,6 +190,7 @@ macro_rules! tuple_has_suffstat {
     ($($len:expr => ($($n:tt $t:ident $x:ident)*))+) => {
         $(
             #[cfg(feature = "experimental")]
+            #[cfg_attr(coverage_nightly, coverage(off))]
             impl<$($t,)*$($x,)*> HasSuffStat<($($x,)*)> for ($($t,)*)
             where
                 $($t: HasSuffStat<$x>,)*
@@ -213,6 +215,7 @@ macro_rules! tuple_conjugate_prior {
     ($($len:expr => ($($n:tt $t:ident $x:ident $f:ident)*))+) => {
         $(
             #[cfg(feature = "experimental")]
+            #[cfg_attr(coverage_nightly, coverage(off))]
             impl<$($t,)*$($x,)*$($f,)*> ConjugatePrior<($($x,)*),($($f,)*)> for ($($t,)*)
             where
                 $($x: Copy,)*

@@ -512,4 +512,11 @@ mod tests {
     test_scalable_density!(Laplace::new(2.0, 1.0).unwrap());
     test_scalable_entropy!(Laplace::new(2.0, 1.0).unwrap());
     test_scalable_cdf!(Laplace::new(2.0, 1.0).unwrap());
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Laplace::new(3.0, 4.0).unwrap();
+        let dist_b = Laplace::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

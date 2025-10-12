@@ -398,4 +398,30 @@ mod tests {
         let iw = InvWishart::new(inv_scale, 5).unwrap();
         assert::close(iw.ln_f(&x), -6.187_876_016_819_759, TOL);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let slice = vec![
+            1.105_768_91,
+            -0.201_603_36,
+            0.093_788_34,
+            -0.193_390_29,
+            -0.201_603_36,
+            0.667_947_86,
+            -0.460_209_05,
+            -0.628_069_51,
+            0.093_788_34,
+            -0.460_209_05,
+            1.152_632_84,
+            0.984_436_41,
+            -0.193_390_29,
+            -0.628_069_51,
+            0.984_436_41,
+            1.210_501_89,
+        ];
+        let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
+        let dist_a = InvWishart::new(inv_scale, 5).unwrap();
+        let dist_b = InvWishart::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

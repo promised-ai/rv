@@ -420,4 +420,11 @@ mod test {
         let (_, alpha) = ks_test(&sample, |x| ks.cdf(&x));
         assert!(alpha >= 0.05);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = KsTwoAsymptotic::new();
+        let dist_b = KsTwoAsymptotic::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

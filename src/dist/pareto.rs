@@ -656,4 +656,11 @@ mod tests {
     test_scalable_density!(Pareto::new(2.0, 4.0).unwrap());
     test_scalable_entropy!(Pareto::new(2.0, 4.0).unwrap());
     test_scalable_cdf!(Pareto::new(2.0, 4.0).unwrap());
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = Pareto::new(5.0, 6.0).unwrap();
+        let vm_b = Pareto::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
+    }
 }

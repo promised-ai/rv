@@ -666,4 +666,11 @@ mod tests {
 
         assert::close(kuma_1.f(&0.5_f64), kuma_2.f(&0.5_f64), 1E-12);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Kumaraswamy::new(3.0, 4.0).unwrap();
+        let dist_b = Kumaraswamy::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

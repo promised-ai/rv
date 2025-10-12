@@ -484,4 +484,11 @@ mod tests {
 
         assert::close(ln_f_base, ln_f_stat, 1e-12);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = InvGaussian::new(1.5, 3.5).unwrap();
+        let dist_b = InvGaussian::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

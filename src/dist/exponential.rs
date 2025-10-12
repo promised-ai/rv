@@ -439,4 +439,11 @@ mod tests {
     test_scalable_entropy!(Exponential::new(2.0).unwrap());
     test_scalable_cdf!(Exponential::new(2.0).unwrap());
     test_scalable_invcdf!(Exponential::new(2.0).unwrap());
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Exponential::new(5.0).unwrap();
+        let dist_b = Exponential::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

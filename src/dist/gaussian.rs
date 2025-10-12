@@ -783,4 +783,11 @@ mod tests {
 
     #[cfg(feature = "serde1")]
     crate::test_serde_params!(Gaussian::new(-1.3, 2.4).unwrap(), Gaussian, f64);
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Gaussian::new(3.0, 5.0).unwrap();
+        let dist_b = Gaussian::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

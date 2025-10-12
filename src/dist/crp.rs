@@ -326,5 +326,12 @@ mod tests {
         assert_eq!(crp, new_crp);
     }
 
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Crp::new(1.5, 710).unwrap();
+        let dist_b = Crp::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
+
     // TODO: More tests!
 }

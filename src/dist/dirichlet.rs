@@ -655,4 +655,11 @@ mod tests {
             PI
         );
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = SymmetricDirichlet::new(1.5, 7).unwrap();
+        let dist_b = SymmetricDirichlet::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

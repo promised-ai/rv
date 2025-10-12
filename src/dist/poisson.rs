@@ -578,4 +578,11 @@ mod tests {
 
         assert::close(ln_f_base, ln_f_stat, TOL);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = Poisson::new(5.0).unwrap();
+        let vm_b = Poisson::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
+    }
 }

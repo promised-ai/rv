@@ -665,4 +665,11 @@ mod tests {
         // ln_pp should be log of the cache
         assert_eq!(ln_pp, cache.ln());
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = BetaPrime::new(0.8, 0.4).unwrap();
+        let dist_b = BetaPrime::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

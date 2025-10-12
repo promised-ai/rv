@@ -481,4 +481,11 @@ mod tests {
     test_scalable_entropy!(Cauchy::new(2.0, 4.0).unwrap());
     test_scalable_cdf!(Cauchy::new(2.0, 4.0).unwrap());
     test_scalable_invcdf!(Cauchy::new(2.0, 4.0).unwrap());
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Cauchy::new(2.0, 4.0).unwrap();
+        let dist_b = Cauchy::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

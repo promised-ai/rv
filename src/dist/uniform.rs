@@ -487,4 +487,11 @@ mod tests {
     test_scalable_entropy!(Uniform::new(2.0, 4.0).unwrap());
     test_scalable_cdf!(Uniform::new(2.0, 4.0).unwrap());
     test_scalable_invcdf!(Uniform::new(2.0, 4.0).unwrap());
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = Uniform::new(0.5, 10.4).unwrap();
+        let vm_b = Uniform::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
+    }
 }

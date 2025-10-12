@@ -532,4 +532,11 @@ mod tests {
         let (_, p) = x2_test(&observed_counts, &ps);
         assert!(p > 0.05);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Cdvm::new(10, 5.0, 6.0).unwrap();
+        let dist_b = Cdvm::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

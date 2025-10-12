@@ -304,4 +304,11 @@ mod tests {
         let m: f64 = StudentsT::new(2.3).unwrap().mode().unwrap();
         assert::close(m, 0.0, TOL);
     }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = StudentsT::new(0.5).unwrap();
+        let vm_b = StudentsT::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
+    }
 }
