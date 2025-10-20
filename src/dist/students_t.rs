@@ -3,10 +3,22 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{
+    ContinuousDistr, HasDensity, Kurtosis, Mean, Median, Mode, Parameterized,
+    Sampleable, Scalable, Shiftable, Skewness, Support, Variance,
+};
 use rand::Rng;
 use std::f64::consts::PI;
 use std::fmt;
+
+/// Parameters for Student's T distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct StudentsTParameters {
+    /// Degrees of freedom, ν, in (0, ∞)
+    pub v: f64,
+}
 
 /// [Student's T distribution](https://en.wikipedia.org/wiki/Student%27s_t-distribution)
 /// over x in (-∞, ∞).
@@ -19,16 +31,19 @@ pub struct StudentsT {
 }
 
 impl Parameterized for StudentsT {
-    type Parameters = f64;
+    type Parameters = StudentsTParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.v()
+        Self::Parameters { v: self.v() }
     }
 
-    fn from_params(v: Self::Parameters) -> Self {
-        Self::new_unchecked(v)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.v)
     }
 }
+
+crate::impl_shiftable!(StudentsT);
+crate::impl_scalable!(StudentsT);
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -53,15 +68,17 @@ impl StudentsT {
         }
     }
 
-    /// Creates a new StudentsT without checking whether the parameter is
+    /// Creates a new `StudentsT` without checking whether the parameter is
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(v: f64) -> Self {
         StudentsT { v }
     }
 
     /// Get the degrees of freedom, v
     #[inline]
+    #[must_use]
     pub fn v(&self) -> f64 {
         self.v
     }
@@ -167,11 +184,7 @@ macro_rules! impl_traits {
 
         impl Mean<$kind> for StudentsT {
             fn mean(&self) -> Option<$kind> {
-                if self.v > 1.0 {
-                    Some(0.0)
-                } else {
-                    None
-                }
+                if self.v > 1.0 { Some(0.0) } else { None }
             }
         }
 
@@ -201,11 +214,7 @@ macro_rules! impl_traits {
 
 impl Skewness for StudentsT {
     fn skewness(&self) -> Option<f64> {
-        if self.v > 3.0 {
-            Some(0.0)
-        } else {
-            None
-        }
+        if self.v > 3.0 { Some(0.0) } else { None }
     }
 }
 
@@ -226,12 +235,13 @@ impl_traits!(f32);
 
 impl std::error::Error for StudentsTError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for StudentsTError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::VNotFinite { v } => write!(f, "non-finite v: {}", v),
+            Self::VNotFinite { v } => write!(f, "non-finite v: {v}"),
             Self::VTooLow { v } => {
-                write!(f, "v ({}) must be greater than zero", v)
+                write!(f, "v ({v}) must be greater than zero")
             }
         }
     }
@@ -293,5 +303,12 @@ mod tests {
     fn mode() {
         let m: f64 = StudentsT::new(2.3).unwrap().mode().unwrap();
         assert::close(m, 0.0, TOL);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = StudentsT::new(0.5).unwrap();
+        let vm_b = StudentsT::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
     }
 }

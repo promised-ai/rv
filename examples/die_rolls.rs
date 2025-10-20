@@ -1,9 +1,9 @@
 use rv::dist::{Categorical, SymmetricDirichlet};
 use rv::prelude::CategoricalData;
-use rv::traits::*;
+use rv::traits::{ConjugatePrior, DataOrSuffStat, Sampleable};
 
 fn main() {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     // Roll a die (0...5) that comes up 5 half the time
     let ctgrl = Categorical::new(&[1.0, 1.0, 1.0, 1.0, 1.0, 5.0]).unwrap();
@@ -19,9 +19,9 @@ fn main() {
     // Posterior predictive probability of the next die roll being 5 given the
     // observed rolls.
     let pp_5: f64 = prior.pp(&5_u8, &obs);
-    println!("P(y = 5 | rolls) = {}", pp_5);
+    println!("P(y = 5 | rolls) = {pp_5}");
 
     // Draw a sample from the posterior distribution P(θ|x)
     let weights: Vec<f64> = prior.posterior(&obs).draw(&mut rng);
-    println!("Die weight sample: {:?}", weights);
+    println!("Die weight sample: {weights:?}");
 }

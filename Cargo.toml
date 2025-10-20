@@ -1,6 +1,6 @@
 [package]
 name = "rv"
-version = "0.18.1"
+version = "0.19.0"
 authors = ["Baxter Eaves", "Michael Schmidt", "Chad Scherrer"]
 description = "Random variables"
 repository = "https://github.com/promised-ai/rv"
@@ -8,46 +8,54 @@ readme = "README.md"
 license = "MIT"
 keywords = ["Probability", "Statistics", "Bayesian", "Machine-learning"]
 categories = ["science"]
-edition = "2021"
+edition = "2024"
 include = ["README.md", "src/**/*", "benches/*", "Cargo.toml"]
-rust-version = "1.72"
+rust-version = "1.85"
 
 [badges]
-github = { repository = "promised-ai/rv", tag = "v0.17.0" }
+github = { repository = "promised-ai/rv", tag = "v0.19.0" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-argmin = { version = "0.10", optional = true }
-argmin-math = { version = "0.4", optional = true, features = ["nalgebra_v0_32"] }
+argmin = { version = "0.11", optional = true }
+argmin-math = { version = "0.5", optional = true, features = [
+    "nalgebra_latest",
+] }
 doc-comment = "0.3"
-lru = "0.12"
-nalgebra = { version = "0.32", optional = true }
+lru = "0.16"
+nalgebra = { version = "0.34", optional = true }
 num = "0.4"
-rand = { version = "0.8", features = ["small_rng"] }
-rand_distr = "0.4"
-serde = {version = "1", features = ["derive"], optional = true}
-special = "0.10"
+rand = { version = "0.9", features = ["small_rng"] }
+rand_distr = "0.5"
+serde = { version = "1", features = ["derive"], optional = true }
+special = "0.11"
 num-traits = "0.2"
-rand_xoshiro = { version = "0.6", optional = true, features=["serde1"]}
-itertools = "0.13"
+rand_xoshiro = "0.7"
+itertools = "0.14"
+paste = "1.0"
 
 [dev-dependencies]
 assert = "0.7"
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.7", features = ["html_reports"] }
 indoc = "2"
-peroxide = { version = "0.37" }
+peroxide = { version = "0.40" }
 proptest = "1.5"
 serde_yaml = "0.9"
 serde_json = "1"
 approx = "0.5"
-rand_xoshiro = "0.6"
 
 [features]
 serde1 = ["serde", "nalgebra/serde-serialize"]
 arraydist = ["nalgebra"]
-process = ["serde", "nalgebra/serde-serialize", "argmin", "argmin-math", "arraydist"]
+process = [
+    "serde",
+    "nalgebra/serde-serialize",
+    "argmin",
+    "argmin-math",
+    "arraydist",
+]
 datum = []
-experimental = ["rand_xoshiro"]
+experimental = []
 
 [package.metadata.docs.rs]
 all-features = true
@@ -90,3 +98,18 @@ required-features = ["arraydist"]
 [[bench]]
 name = "mixture_entropy"
 harness = false
+
+[[bench]]
+name = "nix"
+harness = false
+
+[[bench]]
+name = "ng"
+harness = false
+
+[[bench]]
+name = "vonmises"
+harness = false
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage_nightly)'] }

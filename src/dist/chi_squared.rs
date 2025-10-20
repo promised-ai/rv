@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, HasDensity, Kurtosis, Mean, Mode, Parameterized,
+    Sampleable, Scalable, Shiftable, Skewness, Support, Variance,
+};
 use rand::Rng;
 use special::Gamma;
 use std::f64::consts::LN_2;
@@ -20,6 +23,16 @@ use std::fmt;
 ///
 /// let x2 = ChiSquared::new(2.0).unwrap();
 /// ```
+///
+/// Parameters struct for the Chi-squared distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct ChiSquaredParameters {
+    /// Degrees of freedom in (0, ∞)
+    pub k: f64,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -29,14 +42,14 @@ pub struct ChiSquared {
 }
 
 impl Parameterized for ChiSquared {
-    type Parameters = f64;
+    type Parameters = ChiSquaredParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.k()
+        Self::Parameters { k: self.k() }
     }
 
-    fn from_params(k: Self::Parameters) -> Self {
-        Self::new_unchecked(k)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.k)
     }
 }
 
@@ -66,9 +79,10 @@ impl ChiSquared {
         }
     }
 
-    /// Create a new ChiSquared without checking whether the parameters are
+    /// Create a new `ChiSquared` without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(k: f64) -> Self {
         ChiSquared { k }
     }
@@ -83,6 +97,7 @@ impl ChiSquared {
     /// assert_eq!(x2.k(), 1.2);
     /// ```
     #[inline]
+    #[must_use]
     pub fn k(&self) -> f64 {
         self.k
     }
@@ -124,7 +139,7 @@ impl ChiSquared {
 
     #[inline]
     pub fn set_k_unchecked(&mut self, k: f64) {
-        self.k = k
+        self.k = k;
     }
 }
 
@@ -194,6 +209,9 @@ macro_rules! impl_traits {
     };
 }
 
+crate::impl_shiftable!(ChiSquared);
+crate::impl_scalable!(ChiSquared);
+
 impl Skewness for ChiSquared {
     fn skewness(&self) -> Option<f64> {
         Some((8.0 / self.k).sqrt())
@@ -211,13 +229,14 @@ impl_traits!(f32);
 
 impl std::error::Error for ChiSquaredError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for ChiSquaredError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::KTooLow { k } => {
-                write!(f, "k ({}) must be greater than zero", k)
+                write!(f, "k ({k}) must be greater than zero")
             }
-            Self::KNotFinite { k } => write!(f, "k ({}) must be finite", k),
+            Self::KNotFinite { k } => write!(f, "k ({k}) must be finite"),
         }
     }
 }
@@ -296,7 +315,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let x2 = ChiSquared::new(2.5).unwrap();
         let cdf = |x: f64| x2.cdf(&x);
 
@@ -304,12 +323,15 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = x2.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = ChiSquared::new(2.5).unwrap();
+        let dist_b = ChiSquared::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

@@ -7,12 +7,16 @@ use rand_distr::Normal;
 use special::Error as _;
 use std::f64::consts::SQRT_2;
 use std::fmt;
-use std::sync::OnceLock;
 
-use crate::consts::*;
+use crate::consts::{HALF_LN_2PI, HALF_LN_2PI_E};
 use crate::data::GaussianSuffStat;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::HasDensity;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasSuffStat, InverseCdf, KlDivergence,
+    Kurtosis, Mean, Median, Mode, Parameterized, QuadBounds, Sampleable,
+    Scalable, Shiftable, Skewness, Support, Variance,
+};
 
 /// Gaussian / [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution),
 /// N(μ, σ) over real values.
@@ -39,14 +43,15 @@ use crate::traits::*;
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+#[cfg_attr(feature = "serde1", serde(try_from = "GaussianParameters"))]
+#[cfg_attr(feature = "serde1", serde(into = "GaussianParameters"))]
 pub struct Gaussian {
     /// Mean
     mu: f64,
     /// Standard deviation
     sigma: f64,
     /// Cached log(sigma)
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_sigma: OnceLock<f64>,
+    ln_sigma: f64,
 }
 
 impl PartialEq for Gaussian {
@@ -55,9 +60,28 @@ impl PartialEq for Gaussian {
     }
 }
 
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct GaussianParameters {
     pub mu: f64,
     pub sigma: f64,
+}
+
+impl TryFrom<GaussianParameters> for Gaussian {
+    type Error = GaussianError;
+
+    fn try_from(params: GaussianParameters) -> Result<Self, Self::Error> {
+        Gaussian::new(params.mu, params.sigma)
+    }
+}
+
+impl From<Gaussian> for GaussianParameters {
+    fn from(gauss: Gaussian) -> Self {
+        GaussianParameters {
+            mu: gauss.mu,
+            sigma: gauss.sigma,
+        }
+    }
 }
 
 impl Parameterized for Gaussian {
@@ -104,7 +128,7 @@ impl Gaussian {
             Ok(Gaussian {
                 mu,
                 sigma,
-                ln_sigma: OnceLock::new(),
+                ln_sigma: sigma.ln(),
             })
         }
     }
@@ -112,11 +136,12 @@ impl Gaussian {
     /// Creates a new Gaussian without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
         Gaussian {
             mu,
             sigma,
-            ln_sigma: OnceLock::new(),
+            ln_sigma: sigma.ln(),
         }
     }
 
@@ -131,11 +156,12 @@ impl Gaussian {
     /// assert_eq!(gauss, Gaussian::new(0.0, 1.0).unwrap());
     /// ```
     #[inline]
+    #[must_use]
     pub fn standard() -> Self {
         Gaussian {
             mu: 0.0,
             sigma: 1.0,
-            ln_sigma: OnceLock::from(0.0),
+            ln_sigma: 0.0,
         }
     }
 
@@ -150,6 +176,7 @@ impl Gaussian {
     /// assert_eq!(gauss.mu(), 2.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn mu(&self) -> f64 {
         self.mu
     }
@@ -179,11 +206,11 @@ impl Gaussian {
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), GaussianError> {
-        if !mu.is_finite() {
-            Err(GaussianError::MuNotFinite { mu })
-        } else {
+        if mu.is_finite() {
             self.set_mu_unchecked(mu);
             Ok(())
+        } else {
+            Err(GaussianError::MuNotFinite { mu })
         }
     }
 
@@ -204,6 +231,7 @@ impl Gaussian {
     /// assert_eq!(gauss.sigma(), 1.5);
     /// ```
     #[inline]
+    #[must_use]
     pub fn sigma(&self) -> f64 {
         self.sigma
     }
@@ -249,13 +277,7 @@ impl Gaussian {
     #[inline]
     pub fn set_sigma_unchecked(&mut self, sigma: f64) {
         self.sigma = sigma;
-        self.ln_sigma = OnceLock::new();
-    }
-
-    /// Evaluate or fetch cached log sigma
-    #[inline]
-    fn ln_sigma(&self) -> f64 {
-        *self.ln_sigma.get_or_init(|| self.sigma.ln())
+        self.ln_sigma = sigma.ln();
     }
 }
 
@@ -273,12 +295,50 @@ impl From<&Gaussian> for String {
 
 impl_display!(Gaussian);
 
+impl Shiftable for Gaussian {
+    type Output = Self;
+    type Error = GaussianError;
+
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Self::new(self.mu() + shift, self.sigma())
+    }
+
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Self::new_unchecked(self.mu() + shift, self.sigma())
+    }
+}
+
+impl Scalable for Gaussian {
+    type Output = Self;
+    type Error = GaussianError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Self::new(self.mu() * scale, self.sigma() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Self::new_unchecked(self.mu() * scale, self.sigma() * scale)
+    }
+}
+
 macro_rules! impl_traits {
     ($kind:ty) => {
         impl HasDensity<$kind> for Gaussian {
             fn ln_f(&self, x: &$kind) -> f64 {
                 let k = (f64::from(*x) - self.mu) / self.sigma;
-                (0.5 * k).mul_add(-k, -self.ln_sigma()) - HALF_LN_2PI
+                (0.5 * k).mul_add(-k, -self.ln_sigma) - HALF_LN_2PI
             }
         }
 
@@ -312,7 +372,7 @@ macro_rules! impl_traits {
 
         impl InverseCdf<$kind> for Gaussian {
             fn invcdf(&self, p: f64) -> $kind {
-                assert!(!((p <= 0.0) || (1.0 <= p)), "P out of range");
+                assert!((0.0..=1.0).contains(&p), "P out of range");
 
                 let x = (self.sigma * SQRT_2)
                     .mul_add(2.0_f64.mul_add(p, -1.0).inv_error(), self.mu);
@@ -354,7 +414,7 @@ macro_rules! impl_traits {
                     + self
                         .mu
                         .mul_add(-2.0 * stat.sum_x(), n * self.mu * self.mu);
-                -n.mul_add(self.ln_sigma() + HALF_LN_2PI, z * expterm)
+                -n.mul_add(self.ln_sigma + HALF_LN_2PI, z * expterm)
             }
         }
     };
@@ -368,7 +428,7 @@ impl Variance<f64> for Gaussian {
 
 impl Entropy for Gaussian {
     fn entropy(&self) -> f64 {
-        HALF_LN_2PI_E + self.ln_sigma()
+        HALF_LN_2PI_E + self.ln_sigma
     }
 }
 
@@ -406,20 +466,23 @@ impl QuadBounds for Gaussian {
     }
 }
 
+#[cfg(feature = "experimental")]
+impl_traits!(f16);
 impl_traits!(f32);
 impl_traits!(f64);
 
 impl std::error::Error for GaussianError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for GaussianError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {mu}"),
             Self::SigmaTooLow { sigma } => {
-                write!(f, "sigma ({}) must be greater than zero", sigma)
+                write!(f, "sigma ({sigma}) must be greater than zero")
             }
             Self::SigmaNotFinite { sigma } => {
-                write!(f, "non-finite sigma: {}", sigma)
+                write!(f, "non-finite sigma: {sigma}")
             }
         }
     }
@@ -428,12 +491,42 @@ impl fmt::Display for GaussianError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_basic_impls;
-    use std::f64;
-
     const TOL: f64 = 1E-12;
 
+    use crate::test_basic_impls;
     test_basic_impls!(f64, Gaussian);
+
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_invcdf;
+    use crate::test_shiftable_method;
+
+    test_shiftable_method!(Gaussian::new(2.0, 4.0).unwrap(), mean);
+    test_shiftable_method!(Gaussian::new(2.0, 4.0).unwrap(), median);
+    test_shiftable_method!(Gaussian::new(2.0, 4.0).unwrap(), variance);
+    test_shiftable_method!(Gaussian::new(2.0, 4.0).unwrap(), skewness);
+    test_shiftable_method!(Gaussian::new(2.0, 4.0).unwrap(), kurtosis);
+    test_shiftable_density!(Gaussian::new(2.0, 4.0).unwrap());
+    test_shiftable_entropy!(Gaussian::new(2.0, 4.0).unwrap());
+    test_shiftable_cdf!(Gaussian::new(2.0, 4.0).unwrap());
+    test_shiftable_invcdf!(Gaussian::new(2.0, 4.0).unwrap());
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_invcdf;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Gaussian::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(Gaussian::new(2.0, 4.0).unwrap(), median);
+    test_scalable_method!(Gaussian::new(2.0, 4.0).unwrap(), variance);
+    test_scalable_method!(Gaussian::new(2.0, 4.0).unwrap(), skewness);
+    test_scalable_method!(Gaussian::new(2.0, 4.0).unwrap(), kurtosis);
+    test_scalable_density!(Gaussian::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(Gaussian::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(Gaussian::new(2.0, 4.0).unwrap());
+    test_scalable_invcdf!(Gaussian::new(2.0, 4.0).unwrap());
 
     #[test]
     fn new() {
@@ -490,17 +583,17 @@ mod tests {
 
     #[test]
     fn draws_should_be_finite() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gauss = Gaussian::standard();
         for _ in 0..100 {
             let x: f64 = gauss.draw(&mut rng);
-            assert!(x.is_finite())
+            assert!(x.is_finite());
         }
     }
 
     #[test]
     fn sample_length() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gauss = Gaussian::standard();
         let xs: Vec<f64> = gauss.sample(10, &mut rng);
         assert_eq!(xs.len(), 10);
@@ -596,25 +689,25 @@ mod tests {
 
     #[test]
     fn quantile_agree_with_cdf() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gauss = Gaussian::standard();
         let xs: Vec<f64> = gauss.sample(100, &mut rng);
 
-        xs.iter().for_each(|x| {
+        for x in &xs {
             let p = gauss.cdf(x);
             let y: f64 = gauss.quantile(p);
             assert::close(y, *x, TOL);
-        })
+        }
     }
 
     #[test]
     fn quad_on_pdf_agrees_with_cdf_x() {
         use peroxide::numerical::integral::{
-            gauss_kronrod_quadrature, Integral,
+            Integral, gauss_kronrod_quadrature,
         };
         let ig = Gaussian::new(-2.3, 0.5).unwrap();
         let pdf = |x: f64| ig.f(&x);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
             let res = gauss_kronrod_quadrature(
@@ -673,6 +766,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+
         let data: Vec<f64> = vec![0.1, 0.23, 1.4, 0.65, 0.22, 3.1];
         let mut stat = GaussianSuffStat::new();
         stat.observe_many(&data);
@@ -684,5 +779,15 @@ mod tests {
             <Gaussian as HasSuffStat<f64>>::ln_f_stat(&gauss, &stat);
 
         assert::close(ln_f_base, ln_f_stat, TOL);
+    }
+
+    #[cfg(feature = "serde1")]
+    crate::test_serde_params!(Gaussian::new(-1.3, 2.4).unwrap(), Gaussian, f64);
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Gaussian::new(3.0, 5.0).unwrap();
+        let dist_b = Gaussian::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

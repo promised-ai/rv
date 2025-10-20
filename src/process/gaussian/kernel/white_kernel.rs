@@ -1,7 +1,7 @@
 use super::{CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
-use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
+use nalgebra::{DMatrix, DVector, Dim, Matrix, dvector};
 use std::f64;
 
 #[cfg(feature = "serde1")]
@@ -17,7 +17,7 @@ pub struct WhiteKernel {
 }
 
 impl WhiteKernel {
-    /// Create a new WhiteKernel with the given level of noise
+    /// Create a new `WhiteKernel` with the given level of noise
     pub fn new(noise_level: f64) -> Result<Self, KernelError> {
         if noise_level <= 0.0 {
             return Err(KernelError::ParameterOutOfBounds {
@@ -29,7 +29,8 @@ impl WhiteKernel {
         Ok(Self { noise_level })
     }
 
-    /// Create a new WhiteKernel without check the parameters
+    /// Create a new `WhiteKernel` without check the parameters
+    #[must_use]
     pub fn new_unchecked(noise_level: f64) -> Self {
         Self { noise_level }
     }

@@ -2,7 +2,7 @@ use criterion::BatchSize;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use rv::dist::{Gaussian, Mixture, NormalGamma, SymmetricDirichlet};
-use rv::traits::*;
+use rv::traits::{Entropy, Sampleable};
 
 fn bench_gmm_entropy(c: &mut Criterion) {
     let ng = NormalGamma::new_unchecked(0.0, 1.0, 1.0, 1.0);
@@ -11,7 +11,7 @@ fn bench_gmm_entropy(c: &mut Criterion) {
     c.bench_function("4-component GMM entropy", move |b| {
         b.iter_batched_ref(
             || {
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
                 let weights: Vec<f64> = symdir.draw(&mut rng);
                 let components: Vec<Gaussian> = ng.sample(4, &mut rng);
                 Mixture::new(weights, components).unwrap()
@@ -20,7 +20,7 @@ fn bench_gmm_entropy(c: &mut Criterion) {
                 let _q: f64 = mm.entropy();
             },
             BatchSize::SmallInput,
-        )
+        );
     });
 }
 

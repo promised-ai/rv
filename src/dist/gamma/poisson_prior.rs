@@ -3,8 +3,11 @@ use rand::Rng;
 use crate::data::PoissonSuffStat;
 use crate::dist::poisson::PoissonError;
 use crate::dist::{Gamma, Poisson};
-use crate::misc::ln_binom;
-use crate::traits::*;
+use crate::misc::ln_gammafn;
+use crate::traits::{
+    ConjugatePrior, ContinuousDistr, DataOrSuffStat, HasDensity, HasSuffStat,
+    Mean, Sampleable, SuffStat, Support,
+};
 
 impl HasDensity<Poisson> for Gamma {
     fn ln_f(&self, x: &Poisson) -> f64 {
@@ -23,7 +26,7 @@ impl Sampleable<Poisson> for Gamma {
             Err(PoissonError::RateTooLow { .. }) => {
                 Poisson::new_unchecked(f64::EPSILON)
             }
-            Err(err) => panic!("Failed to draw Possion: {}", err),
+            Err(err) => panic!("Failed to draw Possion: {err}"),
         }
     }
 }
@@ -46,16 +49,21 @@ macro_rules! impl_traits {
             type MCache = f64;
             type PpCache = (f64, f64, f64);
 
+            fn empty_stat(&self) -> <Poisson as HasSuffStat<$kind>>::Stat {
+                PoissonSuffStat::new()
+            }
+
             fn posterior(&self, x: &DataOrSuffStat<$kind, Poisson>) -> Self {
                 let (n, sum) = match x {
-                    DataOrSuffStat::Data(ref xs) => {
+                    &DataOrSuffStat::Data(ref xs) => {
                         let mut stat = PoissonSuffStat::new();
                         xs.iter().for_each(|x| stat.observe(x));
                         (stat.n(), stat.sum())
                     }
-                    DataOrSuffStat::SuffStat(ref stat) => {
-                        (stat.n(), stat.sum())
-                    }
+                    &DataOrSuffStat::SuffStat(ref stat) => (
+                        <PoissonSuffStat as SuffStat<$kind>>::n(stat),
+                        stat.sum(),
+                    ),
                 };
 
                 let a = self.shape() + sum;
@@ -77,12 +85,12 @@ macro_rules! impl_traits {
                 x: &DataOrSuffStat<$kind, Poisson>,
             ) -> f64 {
                 let stat: PoissonSuffStat = match x {
-                    DataOrSuffStat::Data(ref xs) => {
+                    &DataOrSuffStat::Data(ref xs) => {
                         let mut stat = PoissonSuffStat::new();
                         xs.iter().for_each(|x| stat.observe(x));
                         stat
                     }
-                    DataOrSuffStat::SuffStat(ref stat) => (*stat).clone(),
+                    &DataOrSuffStat::SuffStat(ref stat) => (*stat).clone(),
                 };
 
                 let data_or_suff: DataOrSuffStat<$kind, Poisson> =
@@ -104,7 +112,11 @@ macro_rules! impl_traits {
                 let post = self.posterior(x);
                 let r = post.shape();
                 let p = 1.0 / (1.0 + post.rate());
-                (r, p, p.ln())
+                let ln_p = -post.rate().ln_1p();
+                let ln_gamma_r = ln_gammafn(post.shape());
+
+                let z = (1.0 - p).ln().mul_add(r, -ln_gamma_r);
+                (z, r, ln_p)
             }
 
             fn ln_pp_with_cache(
@@ -112,10 +124,10 @@ macro_rules! impl_traits {
                 cache: &Self::PpCache,
                 y: &$kind,
             ) -> f64 {
-                let (r, p, ln_p) = cache;
+                let (z, r, ln_p) = cache;
                 let k = f64::from(*y);
-                let bnp = ln_binom(k + r - 1.0, k);
-                bnp + (1.0 - p).ln() * r + k * ln_p
+                let bnp = ln_gammafn(k + r) - ln_gammafn(k + 1.0);
+                z + k * ln_p + bnp
             }
         }
     };
@@ -201,7 +213,7 @@ mod tests {
                 dist.ln_pp(&inputs[i], &DataOrSuffStat::from(&vec![])),
                 expected[i],
                 TOL,
-            )
+            );
         }
     }
 
@@ -230,7 +242,7 @@ mod tests {
 
     #[test]
     fn cannot_draw_zero_rate() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let dist = Gamma::new(1.0, 1e-10).unwrap();
         let stream =
             <Gamma as Sampleable<Poisson>>::sample_stream(&dist, &mut rng);

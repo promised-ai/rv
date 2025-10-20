@@ -4,7 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, Kurtosis, Mean, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use special::Gamma as _;
 use std::fmt;
@@ -95,6 +99,7 @@ impl Gamma {
 
     /// Creates a new Gamma without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(shape: f64, rate: f64) -> Self {
         Gamma {
             shape,
@@ -283,7 +288,11 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for Gamma {
             fn cdf(&self, x: &$kind) -> f64 {
-                (self.rate * f64::from(*x)).inc_gamma(self.shape)
+                if *x <= 0.0 {
+                    0.0
+                } else {
+                    (self.rate * f64::from(*x)).inc_gamma(self.shape)
+                }
             }
         }
 
@@ -337,22 +346,38 @@ impl_traits!(f64);
 
 impl std::error::Error for GammaError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for GammaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ShapeTooLow { shape } => {
-                write!(f, "rate ({}) must be greater than zero", shape)
+                write!(f, "rate ({shape}) must be greater than zero")
             }
             Self::ShapeNotFinite { shape } => {
-                write!(f, "non-finite rate: {}", shape)
+                write!(f, "non-finite rate: {shape}")
             }
             Self::RateTooLow { rate } => {
-                write!(f, "rate ({}) must be greater than zero", rate)
+                write!(f, "rate ({rate}) must be greater than zero")
             }
             Self::RateNotFinite { rate } => {
-                write!(f, "non-finite rate: {}", rate)
+                write!(f, "non-finite rate: {rate}")
             }
         }
+    }
+}
+
+crate::impl_shiftable!(Gamma);
+
+impl Scalable for Gamma {
+    type Output = Gamma;
+    type Error = GammaError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error> {
+        Ok(Gamma::new_unchecked(self.shape, self.rate / scale))
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output {
+        Gamma::new_unchecked(self.shape, self.rate / scale)
     }
 }
 
@@ -506,7 +531,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gam = Gamma::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| gam.cdf(&x);
 
@@ -514,13 +539,29 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = gam.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
+    }
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Gamma::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(Gamma::new(2.0, 4.0).unwrap(), variance);
+    test_scalable_method!(Gamma::new(2.0, 4.0).unwrap(), skewness);
+    test_scalable_method!(Gamma::new(2.0, 4.0).unwrap(), kurtosis);
+    test_scalable_density!(Gamma::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(Gamma::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(Gamma::new(2.0, 4.0).unwrap());
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Gamma::new(3.0, 5.0).unwrap();
+        let dist_b = Gamma::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

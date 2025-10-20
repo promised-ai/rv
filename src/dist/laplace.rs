@@ -3,7 +3,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, Kurtosis, Mean, Median, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use std::f64::consts::{E, FRAC_1_SQRT_2, LN_2};
 use std::fmt;
@@ -19,7 +23,7 @@ use std::fmt;
 /// let laplace = Laplace::new(0.0, 1.0).expect("Invalid params");
 ///
 /// // 100 draws from Laplace
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 /// let xs: Vec<f64> = laplace.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100);
 /// ```
@@ -31,6 +35,44 @@ pub struct Laplace {
     mu: f64,
     /// Scale in (0, ∞)
     b: f64,
+}
+
+impl Shiftable for Laplace {
+    type Output = Laplace;
+    type Error = LaplaceError;
+
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Laplace::new(self.mu() + shift, self.b())
+    }
+
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Laplace::new_unchecked(self.mu() + shift, self.b())
+    }
+}
+
+impl Scalable for Laplace {
+    type Output = Laplace;
+    type Error = LaplaceError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Laplace::new(self.mu() * scale, self.b() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Laplace::new_unchecked(self.mu() * scale, self.b() * scale)
+    }
 }
 
 pub struct LaplaceParameters {
@@ -82,6 +124,7 @@ impl Laplace {
     /// Creates a new Laplace without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(mu: f64, b: f64) -> Self {
         Laplace { mu, b }
     }
@@ -96,6 +139,7 @@ impl Laplace {
     /// assert_eq!(laplace.mu(), -1.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn mu(&self) -> f64 {
         self.mu
     }
@@ -148,6 +192,7 @@ impl Laplace {
     /// assert_eq!(laplace.b(), 2.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn b(&self) -> f64 {
         self.b
     }
@@ -299,14 +344,15 @@ impl_traits!(f32);
 
 impl std::error::Error for LaplaceError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for LaplaceError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {mu}"),
             Self::BTooLow { b } => {
-                write!(f, "b ({}) must be greater than zero", b)
+                write!(f, "b ({b}) must be greater than zero")
             }
-            Self::BNotFinite { b } => write!(f, "non-finite b: {}", b),
+            Self::BNotFinite { b } => write!(f, "non-finite b: {b}"),
         }
     }
 }
@@ -425,7 +471,7 @@ mod tests {
     fn draw_test() {
         // Since we've had to implement the laplace draw ourselves, we have to
         // make sure the thing works, so we use the Kolmogorov-Smirnov test.
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let laplace = Laplace::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| laplace.cdf(&x);
 
@@ -433,12 +479,44 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = laplace.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
+    }
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_method;
+
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), mean);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), median);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), mode);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), variance);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), skewness);
+    test_shiftable_method!(Laplace::new(2.0, 1.0).unwrap(), kurtosis);
+    test_shiftable_density!(Laplace::new(2.0, 1.0).unwrap());
+    test_shiftable_entropy!(Laplace::new(2.0, 1.0).unwrap());
+    test_shiftable_cdf!(Laplace::new(2.0, 1.0).unwrap());
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), mean);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), median);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), mode);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), variance);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), skewness);
+    test_scalable_method!(Laplace::new(2.0, 1.0).unwrap(), kurtosis);
+    test_scalable_density!(Laplace::new(2.0, 1.0).unwrap());
+    test_scalable_entropy!(Laplace::new(2.0, 1.0).unwrap());
+    test_scalable_cdf!(Laplace::new(2.0, 1.0).unwrap());
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Laplace::new(3.0, 4.0).unwrap();
+        let dist_b = Laplace::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

@@ -6,8 +6,11 @@ use serde::ser::{SerializeStruct, Serializer};
 use serde::{Deserialize, Serialize};
 
 use crate::dist::{Categorical, Gaussian, Poisson};
-use crate::misc::{pflips, LogSumExp};
-use crate::traits::*;
+use crate::misc::{LogSumExp, pflips};
+use crate::traits::{
+    Cdf, ContinuousDistr, DiscreteDistr, Entropy, HasDensity, Mean, Mode,
+    Parameterized, QuadBounds, Rv, Sampleable, Support, Variance,
+};
 use rand::Rng;
 use std::fmt;
 use std::sync::OnceLock;
@@ -53,7 +56,7 @@ impl<Fx: Parameterized> Parameterized for Mixture<Fx> {
         let component_params = self
             .components()
             .iter()
-            .map(|cpnt| cpnt.emit_params())
+            .map(super::super::traits::Parameterized::emit_params)
             .collect();
 
         Self::Parameters {
@@ -158,6 +161,7 @@ impl<Fx> Mixture<Fx> {
 
     /// Creates a new Mixture without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(weights: Vec<f64>, components: Vec<Fx>) -> Self {
         Mixture {
             weights,
@@ -190,15 +194,13 @@ impl<Fx> Mixture<Fx> {
     /// # Notes
     ///
     /// Assumes mixtures are valid.
+    #[must_use]
     pub fn combine(mut mixtures: Vec<Mixture<Fx>>) -> Self {
         // The total number of components
         let k_total: usize = mixtures.iter().fold(0, |acc, mm| acc + mm.k());
 
         // The number of non-empty mixtures
-        let n: u32 = mixtures
-            .iter()
-            .map(|mm| if mm.k() == 0 { 0 } else { 1 })
-            .sum();
+        let n: u32 = mixtures.iter().map(|mm| u32::from(mm.k() != 0)).sum();
 
         if n == 0 {
             // everything is empty, return empty
@@ -210,14 +212,14 @@ impl<Fx> Mixture<Fx> {
         let mut weights: Vec<f64> = Vec::with_capacity(k_total);
         let mut components: Vec<Fx> = Vec::with_capacity(k_total);
 
-        mixtures.iter_mut().for_each(|mm| {
+        for mm in &mut mixtures {
             mm.weights.drain(..).zip(mm.components.drain(..)).for_each(
                 |(w, cpnt)| {
                     weights.push(w / nf);
                     components.push(cpnt);
                 },
             );
-        });
+        }
 
         Mixture::new_unchecked(weights, components)
     }
@@ -295,7 +297,7 @@ impl<Fx> Mixture<Fx> {
                 n_components: self.components.len(),
                 n_weights: weights.len(),
             });
-        };
+        }
 
         validate_weights(&weights)?;
 
@@ -341,14 +343,14 @@ impl<Fx> Mixture<Fx> {
         &mut self,
         components: Vec<Fx>,
     ) -> Result<(), MixtureError> {
-        if components.len() != self.components.len() {
+        if components.len() == self.components.len() {
+            self.components = components;
+            Ok(())
+        } else {
             Err(MixtureError::ComponentWeightLengthMismatch {
                 n_components: components.len(),
                 n_weights: self.weights.len(),
             })
-        } else {
-            self.components = components;
-            Ok(())
         }
     }
 
@@ -660,16 +662,17 @@ where
 
 impl std::error::Error for MixtureError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for MixtureError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::WeightsEmpty => write!(f, "empty weights vector"),
             Self::ComponentsEmpty => write!(f, "empty components vector"),
             Self::WeightsDoNotSumToOne { sum } => {
-                write!(f, "weights sum to {} but should sum to one", sum)
+                write!(f, "weights sum to {sum} but should sum to one")
             }
             Self::WeightTooLow { ix, weight } => {
-                write!(f, "weight at index {} was too low: {} <= 0", ix, weight)
+                write!(f, "weight at index {ix} was too low: {weight} <= 0")
             }
             Self::ComponentWeightLengthMismatch {
                 n_weights,
@@ -677,9 +680,8 @@ impl fmt::Display for MixtureError {
             } => write!(
                 f,
                 "weights and components had a different number of \
-                    entries. weights had {} entries but components had {} \
-                    entries",
-                n_weights, n_components
+                    entries. weights had {n_weights} entries but components had {n_components} \
+                    entries"
             ),
         }
     }
@@ -811,7 +813,7 @@ where
         .iter()
         .filter_map(|cpnt| {
             let mode = cpnt.mode();
-            let std = cpnt.variance().map(|v| v.sqrt());
+            let std = cpnt.variance().map(f64::sqrt);
             match (&state, (mode, std)) {
                 ((Some(m1), s1), (Some(m2), s2)) => {
                     if (m2 - *m1)
@@ -975,7 +977,9 @@ mod tests {
     #[test]
     fn new_should_not_allow_empty_components() {
         let empty_components: Vec<Gaussian> = vec![];
-        assert!(Mixture::new(vec![0.5, 0.5], empty_components.clone()).is_err());
+        assert!(
+            Mixture::new(vec![0.5, 0.5], empty_components.clone()).is_err()
+        );
         assert!(Mixture::new(vec![], empty_components).is_err());
     }
 
@@ -1045,7 +1049,7 @@ mod tests {
 
     #[test]
     fn mean_of_sample_should_be_weighted_dist_means_uniform() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mm = Mixture::new(
             vec![0.5, 0.5],
             vec![
@@ -1073,7 +1077,7 @@ mod tests {
 
     #[test]
     fn mean_of_sample_should_be_weighted_dist_means_nonuniform() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mm = Mixture::new(
             vec![0.9, 0.1],
             vec![
@@ -1377,7 +1381,7 @@ mod tests {
         fn gauss_mixture_quad_bounds_have_zero_pdf() {
             use crate::dist::{InvGamma, Poisson};
 
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let pois = Poisson::new(7.0).unwrap();
 
             let mu_prior = Gaussian::new(0.0, 5.0).unwrap();

@@ -5,7 +5,11 @@ use crate::consts::LN_2PI_E;
 use crate::data::PoissonSuffStat;
 use crate::impl_display;
 use crate::misc::ln_fact;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, DiscreteDistr, Entropy, HasDensity, HasSuffStat, KlDivergence,
+    Kurtosis, Mean, Mode, Parameterized, Sampleable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use rand_distr::Poisson as RPoisson;
 use special::Gamma as _;
@@ -27,7 +31,7 @@ use std::sync::OnceLock;
 /// assert!((pois.cdf(&5_u16) - 0.56347339228807169).abs() < 1E-12);
 ///
 /// // Draw 100 samples
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 /// let xs: Vec<u32> = pois.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
@@ -63,6 +67,16 @@ use std::sync::OnceLock;
 ///
 /// assert_eq!(mode, 2)
 /// ```
+///
+/// Parameters for the Poisson distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct PoissonParameters {
+    /// Rate parameter
+    pub rate: f64,
+}
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -74,14 +88,14 @@ pub struct Poisson {
 }
 
 impl Parameterized for Poisson {
-    type Parameters = f64;
+    type Parameters = PoissonParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.rate()
+        Self::Parameters { rate: self.rate() }
     }
 
-    fn from_params(rate: Self::Parameters) -> Self {
-        Self::new_unchecked(rate)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.rate)
     }
 }
 
@@ -116,6 +130,7 @@ impl Poisson {
 
     /// Creates a new Poisson without checking whether the parameter is valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(rate: f64) -> Self {
         Poisson {
             rate,
@@ -329,14 +344,15 @@ impl_traits!(usize);
 
 impl std::error::Error for PoissonError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for PoissonError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::RateTooLow { rate } => {
-                write!(f, "rate ({}) must be greater than zero", rate)
+                write!(f, "rate ({rate}) must be greater than zero")
             }
             Self::RateNotFinite { rate } => {
-                write!(f, "non-finite rate: {}", rate)
+                write!(f, "non-finite rate: {rate}")
             }
         }
     }
@@ -463,7 +479,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let pois = Poisson::new(2.0).unwrap();
 
         // How many bins do we need?
@@ -479,11 +495,7 @@ mod tests {
             let xs: Vec<u32> = pois.sample(1000, &mut rng);
             xs.iter().for_each(|&x| f_obs[x as usize] += 1);
             let (_, p) = x2_test(&f_obs, &ps);
-            if p > X2_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > X2_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
     }
@@ -491,7 +503,7 @@ mod tests {
     #[test]
     fn kl_divergence_vs_brute() {
         let prior = crate::dist::Gamma::new(1.0, 1.0).unwrap();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..10 {
             let pois_x: Poisson = prior.draw(&mut rng);
@@ -520,7 +532,7 @@ mod tests {
         rates.iter().zip(hs.iter()).for_each(|(rate, h)| {
             let pois = Poisson::new(*rate).unwrap();
             assert::close(*h, pois.entropy(), TOL);
-        })
+        });
     }
 
     #[test]
@@ -552,6 +564,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+
         let data: Vec<u32> = vec![1, 2, 2, 8, 10, 3];
         let mut stat = PoissonSuffStat::new();
         stat.observe_many(&data);
@@ -563,5 +577,12 @@ mod tests {
             <Poisson as HasSuffStat<u32>>::ln_f_stat(&pois, &stat);
 
         assert::close(ln_f_base, ln_f_stat, TOL);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = Poisson::new(5.0).unwrap();
+        let vm_b = Poisson::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
     }
 }

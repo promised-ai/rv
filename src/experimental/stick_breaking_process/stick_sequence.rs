@@ -7,7 +7,7 @@ use std::sync::{Arc, RwLock};
 // use super::sticks_stat::StickBreakingSuffStat;
 use crate::experimental::stick_breaking_process::stick_breaking::PartialWeights;
 use crate::prelude::UnitPowerLaw;
-use crate::traits::*;
+use crate::traits::Rv;
 
 // We'd like to be able to serialize and deserialize StickSequence, but serde can't handle
 // `Arc` or `RwLock`. So we use `StickSequenceFmt` as an intermediate type.
@@ -45,19 +45,31 @@ impl From<StickSequence> for StickSequenceFmt {
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct _Inner {
+    #[cfg_attr(feature = "serde1", serde(skip, default = "default_rng"))]
     rng: Xoshiro256Plus,
     ccdf: Vec<f64>,
+}
+
+// Add this function to provide a default RNG
+#[allow(dead_code)]
+fn default_rng() -> Xoshiro256Plus {
+    Xoshiro256Plus::from_os_rng()
 }
 
 impl _Inner {
     fn new(seed: Option<u64>) -> _Inner {
         _Inner {
             rng: seed.map_or_else(
-                Xoshiro256Plus::from_entropy,
+                Xoshiro256Plus::from_os_rng,
                 Xoshiro256Plus::seed_from_u64,
             ),
             ccdf: vec![1.0],
         }
+    }
+
+    #[must_use]
+    pub fn ccdf(&self) -> &[f64] {
+        &self.ccdf
     }
 
     fn extend<B: Rv<f64> + Clone>(&mut self, breaker: &B) -> f64 {
@@ -109,7 +121,7 @@ impl PartialEq<StickSequence> for StickSequence {
 }
 
 impl StickSequence {
-    /// Creates a new StickSequence with the given breaker and optional seed.
+    /// Creates a new `StickSequence` with the given breaker and optional seed.
     ///
     /// # Arguments
     ///
@@ -304,7 +316,7 @@ impl StickSequence {
         PartialWeights(w)
     }
 
-    /// Returns a clone of the breaker used in this StickSequence.
+    /// Returns a clone of the breaker used in this `StickSequence`.
     ///
     /// # Returns
     ///

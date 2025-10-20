@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_binom;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, DiscreteDistr, HasDensity, Kurtosis, Mean, Parameterized, Sampleable,
+    Skewness, Support, Variance,
+};
 use rand::Rng;
 use std::f64;
 use std::fmt;
@@ -109,6 +112,7 @@ impl Binomial {
     /// Creates a new Binomial without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(n: u64, p: f64) -> Self {
         Binomial { n, p }
     }
@@ -123,6 +127,7 @@ impl Binomial {
     /// assert_eq!(binom.p(), 0.5);
     /// ```
     #[inline]
+    #[must_use]
     pub fn uniform(n: u64) -> Self {
         Binomial::new_unchecked(n, 0.5)
     }
@@ -137,6 +142,7 @@ impl Binomial {
     /// assert_eq!(binom, Binomial::new(11, 0.5).unwrap());
     /// ```
     #[inline]
+    #[must_use]
     pub fn n(&self) -> u64 {
         self.n
     }
@@ -177,7 +183,7 @@ impl Binomial {
     /// Set the value of n without input validation
     #[inline]
     pub fn set_n_unchecked(&mut self, n: u64) {
-        self.n = n
+        self.n = n;
     }
 
     /// Get the probability of success
@@ -190,6 +196,7 @@ impl Binomial {
     /// assert_eq!(binom.p(), 0.2);
     /// ```
     #[inline]
+    #[must_use]
     pub fn p(&self) -> f64 {
         self.p
     }
@@ -249,6 +256,7 @@ impl Binomial {
     /// assert_eq!(binom.q(), 0.8);
     /// ```
     #[inline]
+    #[must_use]
     pub fn q(&self) -> f64 {
         1.0 - self.p
     }
@@ -344,12 +352,12 @@ impl fmt::Display for BinomialError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::PLessThanZero { p } => {
-                write!(f, "p ({}) was less than zero", p)
+                write!(f, "p ({p}) was less than zero")
             }
             Self::PGreaterThanOne { p } => {
-                write!(f, "p ({}) was greater than zero", p)
+                write!(f, "p ({p}) was greater than zero")
             }
-            Self::PNotFinite { p } => write!(f, "p ({}) was non-finite", p),
+            Self::PNotFinite { p } => write!(f, "p ({p}) was non-finite"),
             Self::NIsZero => write!(f, "n was zero"),
         }
     }
@@ -477,7 +485,7 @@ mod tests {
 
     #[test]
     fn sample_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let binom = Binomial::new(5, 0.6).unwrap();
         let ps: Vec<f64> = vec![
             0.010_240_000_000_000_008,
@@ -493,18 +501,14 @@ mod tests {
             let xs: Vec<usize> = binom.sample(1000, &mut rng);
             xs.iter().for_each(|&x| f_obs[x] += 1);
             let (_, p) = x2_test(&f_obs, &ps);
-            if p > X2_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > X2_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
     }
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let binom = Binomial::new(5, 0.6).unwrap();
         let ps: Vec<f64> = vec![
             0.010_240_000_000_000_008,
@@ -521,12 +525,15 @@ mod tests {
                 (0..1000).map(|_| binom.draw(&mut rng)).collect();
             xs.iter().for_each(|&x| f_obs[x] += 1);
             let (_, p) = x2_test(&f_obs, &ps);
-            if p > X2_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > X2_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Binomial::new(20, 0.4).unwrap();
+        let dist_b = Binomial::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

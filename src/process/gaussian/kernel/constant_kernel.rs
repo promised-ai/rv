@@ -1,7 +1,7 @@
 use super::{CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
-use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
+use nalgebra::{DMatrix, DVector, Dim, Matrix, dvector};
 use std::f64;
 
 #[cfg(feature = "serde1")]
@@ -29,6 +29,7 @@ impl ConstantKernel {
     }
 
     /// Create a new constant function kernel without checking the parameters
+    #[must_use]
     pub fn new_unchecked(scale: f64) -> Self {
         Self { scale }
     }

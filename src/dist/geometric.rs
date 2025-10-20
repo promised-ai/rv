@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::dist::Uniform;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, DiscreteDistr, Entropy, HasDensity, Kurtosis, Mean, Parameterized,
+    Sampleable, Skewness, Support, Variance,
+};
 use num::{Bounded, FromPrimitive, Integer, Saturating, ToPrimitive, Unsigned};
 use rand::Rng;
 use std::fmt;
@@ -22,10 +25,20 @@ use std::sync::OnceLock;
 /// let geom = Geometric::new(0.5).unwrap();
 ///
 /// // Draw Samples
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 /// let xs: Vec<u32> = geom.sample(100, &mut rng);
 /// assert_eq!(xs.len(), 100)
 /// ```
+///
+/// Parameters for the Geometric distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct GeometricParameters {
+    /// Success probability
+    pub p: f64,
+}
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -40,14 +53,14 @@ pub struct Geometric {
 }
 
 impl Parameterized for Geometric {
-    type Parameters = f64;
+    type Parameters = GeometricParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.p()
+        Self::Parameters { p: self.p() }
     }
 
-    fn from_params(p: Self::Parameters) -> Self {
-        Self::new_unchecked(p)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.p)
     }
 }
 
@@ -91,6 +104,7 @@ impl Geometric {
     /// Creates a new Geometric without checking whether the parameter is
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(p: f64) -> Self {
         Geometric {
             p,
@@ -182,7 +196,7 @@ impl Geometric {
         X: Unsigned + Integer + Saturating,
         R: Rng,
     {
-        let u: f64 = rng.gen();
+        let u: f64 = rng.random();
         let q = 1.0 - p;
 
         let mut t: X = X::zero();
@@ -301,16 +315,17 @@ impl Entropy for Geometric {
 
 impl std::error::Error for GeometricError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for GeometricError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::PTooLow { p } => {
-                write!(f, "p ({}) must be greater than zero", p)
+                write!(f, "p ({p}) must be greater than zero")
             }
             Self::PGreaterThanOne { p } => {
-                write!(f, "p was less greater than one: {}", p)
+                write!(f, "p was less greater than one: {p}")
             }
-            Self::PNotFinite { p } => write!(f, "p was non-finite: {}", p),
+            Self::PNotFinite { p } => write!(f, "p was non-finite: {p}"),
         }
     }
 }
@@ -404,7 +419,7 @@ mod tests {
     }
 
     fn test_draw_generic(p: f64) {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let geom = Geometric::new(p).unwrap();
 
         // How many bins do we need?
@@ -420,23 +435,19 @@ mod tests {
             let xs: Vec<u32> = geom.sample(1000, &mut rng);
             xs.iter().for_each(|&x| f_obs[x as usize] += 1);
             let (_, p) = x2_test(&f_obs, &ps);
-            if p > X2_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > X2_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
     }
 
     #[test]
     fn draw_test_05() {
-        test_draw_generic(0.5)
+        test_draw_generic(0.5);
     }
 
     #[test]
     fn draw_test_02() {
-        test_draw_generic(0.2)
+        test_draw_generic(0.2);
     }
 
     verify_cache_resets!(
@@ -458,4 +469,11 @@ mod tests {
         0.57,
         0.12
     );
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Geometric::new(0.8).unwrap();
+        let dist_b = Geometric::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
+    }
 }

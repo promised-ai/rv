@@ -8,7 +8,7 @@
 //  A_square      4 * r^2      4         # in square
 //
 use rv::dist::Uniform;
-use rv::traits::*;
+use rv::traits::Sampleable;
 use std::f64::consts::PI;
 
 fn main() {
@@ -19,8 +19,8 @@ fn main() {
     let u = Uniform::new(-1.0, 1.0).unwrap();
 
     // The rand number steam consumes the rng
-    let mut rng1 = rand::thread_rng();
-    let mut rng2 = rand::thread_rng();
+    let mut rng1 = rand::rng();
+    let mut rng2 = rand::rng();
 
     let pi_est = u
         .sample_stream(&mut rng1)

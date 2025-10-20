@@ -1,7 +1,7 @@
-use super::{e2_norm, CovGrad, CovGradError, Kernel, KernelError};
+use super::{CovGrad, CovGradError, Kernel, KernelError, e2_norm};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
-use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
+use nalgebra::{DMatrix, DVector, Dim, Matrix, dvector};
 use std::f64;
 
 #[cfg(feature = "serde1")]
@@ -38,7 +38,8 @@ impl RBFKernel {
         }
     }
 
-    /// Create a new RBFKernel without checking parameters
+    /// Create a new `RBFKernel` without checking parameters
+    #[must_use]
     pub fn new_unchecked(length_scale: f64) -> Self {
         Self { length_scale }
     }

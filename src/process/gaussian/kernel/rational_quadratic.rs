@@ -1,10 +1,10 @@
-use super::{e2_norm, CovGrad, CovGradError, Kernel, KernelError, E2METRIC};
+use super::{CovGrad, CovGradError, E2METRIC, Kernel, KernelError, e2_norm};
 use nalgebra::base::storage::Storage;
+use nalgebra::{DMatrix, DVector, Dim, Matrix, dvector};
 use nalgebra::{
-    base::constraint::{SameNumberOfColumns, ShapeConstraint},
     Norm,
+    base::constraint::{SameNumberOfColumns, ShapeConstraint},
 };
-use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
 use std::f64;
 
 #[cfg(feature = "serde1")]
@@ -24,7 +24,7 @@ pub struct RationalQuadratic {
 }
 
 impl RationalQuadratic {
-    /// Create a new RationalQuadratic kernel
+    /// Create a new `RationalQuadratic` kernel
     pub fn new(scale: f64, mixture: f64) -> Result<Self, KernelError> {
         if scale <= 0.0 {
             Err(KernelError::ParameterOutOfBounds {
@@ -43,7 +43,8 @@ impl RationalQuadratic {
         }
     }
 
-    /// Create a new RationalQuadratic without checking values
+    /// Create a new `RationalQuadratic` without checking values
+    #[must_use]
     pub fn new_unchecked(scale: f64, mixture: f64) -> Self {
         Self { scale, mixture }
     }

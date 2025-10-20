@@ -14,9 +14,20 @@ use crate::data::Partition;
 use crate::impl_display;
 use crate::misc::ln_gammafn;
 use crate::misc::pflip;
-use crate::traits::*;
+use crate::traits::{HasDensity, Parameterized, Sampleable, Support};
 use rand::Rng;
 use std::fmt;
+
+/// Parameters for the Chinese Restaurant Process distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct CrpParameters {
+    /// Discount parameter
+    pub alpha: f64,
+    /// number of items in the partition
+    pub n: usize,
+}
 
 /// [Chinese Restaurant Process](https://en.wikipedia.org/wiki/Chinese_restaurant_process),
 /// a distribution over partitions.
@@ -26,7 +37,7 @@ use std::fmt;
 /// ```
 /// use::rv::prelude::*;
 ///
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 ///
 /// let crp = Crp::new(1.0, 10).expect("Invalid parameters");
 /// let partition = crp.draw(&mut rng);
@@ -74,7 +85,17 @@ impl Crp {
     }
 
     /// Create a new Crp without checking whether the parameters are valid.
+    ///
+    /// ```rust
+    /// use rv::dist::Crp;
+    ///
+    /// let crp = Crp::new_unchecked(3.0, 10);
+    ///
+    /// assert_eq!(crp.alpha(), 3.0);
+    /// assert_eq!(crp.n(), 10);
+    /// ```
     #[inline]
+    #[must_use]
     pub fn new_unchecked(alpha: f64, n: usize) -> Self {
         Crp { alpha, n }
     }
@@ -89,6 +110,7 @@ impl Crp {
     /// assert_eq!(crp.alpha(), 1.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn alpha(&self) -> f64 {
         self.alpha
     }
@@ -145,6 +167,7 @@ impl Crp {
     /// assert_eq!(crp.n(), 12);
     /// ```
     #[inline]
+    #[must_use]
     pub fn n(&self) -> usize {
         self.n
     }
@@ -251,37 +274,63 @@ impl Support<Partition> for Crp {
 
 impl std::error::Error for CrpError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for CrpError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::AlphaTooLow { alpha } => {
-                write!(f, "alpha ({}) must be greater than zero", alpha)
+                write!(f, "alpha ({alpha}) must be greater than zero")
             }
             Self::AlphaNotFinite { alpha } => {
-                write!(f, "alpha ({}) was non-finite", alpha)
+                write!(f, "alpha ({alpha}) was non-finite")
             }
             Self::NIsZero => write!(f, "n must be greater than zero"),
         }
     }
 }
 
+impl Parameterized for Crp {
+    type Parameters = CrpParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        CrpParameters {
+            alpha: self.alpha,
+            n: self.n,
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.alpha, params.n)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    // use crate::test_basic_impls;
 
     const TOL: f64 = 1E-12;
-
-    // test_basic_impls!(
-    //     Crp::new(1.0, 10).unwrap(),
-    //     Partition::new_unchecked(vec![0; 10], vec![10])
-    // );
 
     #[test]
     fn new() {
         let crp = Crp::new(1.2, 808).unwrap();
         assert::close(crp.alpha, 1.2, TOL);
         assert_eq!(crp.n, 808);
+    }
+
+    #[test]
+    fn params() {
+        let crp = Crp::new(1.2, 808).unwrap();
+        let params = crp.emit_params();
+
+        let new_crp = Crp::from_params(params);
+        assert_eq!(crp, new_crp);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Crp::new(1.5, 710).unwrap();
+        let dist_b = Crp::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 
     // TODO: More tests!

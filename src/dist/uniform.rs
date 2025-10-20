@@ -3,7 +3,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Kurtosis, Mean,
+    Median, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use std::f64;
 use std::fmt;
@@ -27,6 +31,18 @@ use std::sync::OnceLock;
 /// assert!((u.cdf(&3.0_f64) - y(3.0)).abs() < 1E-12);
 /// assert!((u.cdf(&3.2_f64) - y(3.2)).abs() < 1E-12);
 /// ```
+///
+/// Parameters for the Uniform distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct UniformParameters {
+    /// Lower bound
+    pub a: f64,
+    /// Upper bound
+    pub b: f64,
+}
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -38,15 +54,50 @@ pub struct Uniform {
     lnf: OnceLock<f64>,
 }
 
-impl Parameterized for Uniform {
-    type Parameters = (f64, f64);
+impl Shiftable for Uniform {
+    type Output = Uniform;
+    type Error = UniformError;
 
-    fn emit_params(&self) -> Self::Parameters {
-        (self.a(), self.b())
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Uniform::new(self.a() + shift, self.b() + shift)
     }
 
-    fn from_params((a, b): Self::Parameters) -> Self {
-        Self::new_unchecked(a, b)
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Uniform::new_unchecked(self.a() + shift, self.b() + shift)
+    }
+}
+
+impl Scalable for Uniform {
+    type Output = Uniform;
+    type Error = UniformError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error> {
+        Uniform::new(self.a() * scale, self.b() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output {
+        Uniform::new_unchecked(self.a() * scale, self.b() * scale)
+    }
+}
+
+impl Parameterized for Uniform {
+    type Parameters = UniformParameters;
+
+    fn emit_params(&self) -> Self::Parameters {
+        Self::Parameters {
+            a: self.a(),
+            b: self.b(),
+        }
+    }
+
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.a, params.b)
     }
 }
 
@@ -86,6 +137,7 @@ impl Uniform {
     /// Creates a new Uniform without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(a: f64, b: f64) -> Self {
         Uniform {
             a,
@@ -123,7 +175,7 @@ impl Uniform {
     /// Set the value of a without checking if a is valid
     pub fn set_a_unchecked(&mut self, a: f64) {
         self.lnf = OnceLock::new();
-        self.a = a
+        self.a = a;
     }
 
     /// Get the upper bound, b
@@ -155,7 +207,7 @@ impl Uniform {
     /// Set the value of b without checking if b is valid
     pub fn set_b_unchecked(&mut self, b: f64) {
         self.lnf = OnceLock::new();
-        self.b = b
+        self.b = b;
     }
 
     #[inline]
@@ -194,12 +246,14 @@ macro_rules! impl_traits {
 
         impl Sampleable<$kind> for Uniform {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let u = rand_distr::Uniform::new(self.a, self.b);
+                let u = rand_distr::Uniform::new(self.a, self.b)
+                    .expect("By construction, this should be valid.");
                 rng.sample(u) as $kind
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let u = rand_distr::Uniform::new(self.a, self.b);
+                let u = rand_distr::Uniform::new(self.a, self.b)
+                    .expect("By construction, this should be valid.");
                 (0..n).map(|_| rng.sample(u) as $kind).collect()
             }
         }
@@ -282,14 +336,15 @@ impl_traits!(f32);
 
 impl std::error::Error for UniformError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for UniformError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidInterval { a, b } => {
-                write!(f, "invalid interval: (a, b) = ({}, {})", a, b)
+                write!(f, "invalid interval: (a, b) = ({a}, {b})")
             }
-            Self::ANotFinite { a } => write!(f, "non-finite a: {}", a),
-            Self::BNotFinite { b } => write!(f, "non-finite b: {}", b),
+            Self::ANotFinite { a } => write!(f, "non-finite a: {a}"),
+            Self::BNotFinite { b } => write!(f, "non-finite b: {b}"),
         }
     }
 }
@@ -375,8 +430,8 @@ mod tests {
 
     #[test]
     fn cdf_inv_cdf_ident() {
-        let mut rng = rand::thread_rng();
-        let ru = rand::distributions::Uniform::new(1.2, 3.4);
+        let mut rng = rand::rng();
+        let ru = rand::distr::Uniform::new(1.2, 3.4).unwrap();
         let u = Uniform::new(1.2, 3.4).unwrap();
         for _ in 0..100 {
             let x: f64 = rng.sample(ru);
@@ -388,7 +443,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let u = Uniform::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| u.cdf(&x);
 
@@ -396,12 +451,47 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = u.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
+    }
+
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_invcdf;
+    use crate::test_shiftable_method;
+
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), mean);
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), median);
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), variance);
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), skewness);
+    test_shiftable_method!(Uniform::new(2.0, 4.0).unwrap(), kurtosis);
+    test_shiftable_density!(Uniform::new(2.0, 4.0).unwrap());
+    test_shiftable_entropy!(Uniform::new(2.0, 4.0).unwrap());
+    test_shiftable_cdf!(Uniform::new(2.0, 4.0).unwrap());
+    test_shiftable_invcdf!(Uniform::new(2.0, 4.0).unwrap());
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_invcdf;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Uniform::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(Uniform::new(2.0, 4.0).unwrap(), median);
+    test_scalable_method!(Uniform::new(2.0, 4.0).unwrap(), variance);
+    test_scalable_method!(Uniform::new(2.0, 4.0).unwrap(), skewness);
+    test_scalable_method!(Uniform::new(2.0, 4.0).unwrap(), kurtosis);
+    test_scalable_density!(Uniform::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(Uniform::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(Uniform::new(2.0, 4.0).unwrap());
+    test_scalable_invcdf!(Uniform::new(2.0, 4.0).unwrap());
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = Uniform::new(0.5, 10.4).unwrap();
+        let vm_b = Uniform::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
     }
 }

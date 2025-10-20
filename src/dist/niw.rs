@@ -3,7 +3,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::dist::{InvWishart, MvGaussian};
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    ContinuousDistr, HasDensity, Parameterized, Sampleable, Support,
+};
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
 use std::fmt;
@@ -32,7 +34,7 @@ mod mvg_prior;
 ///
 /// let niw = NormalInvWishart::new(mu, k, df, scale).unwrap();
 ///
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 ///
 /// let mvg: MvGaussian = niw.draw(&mut rng);
 /// ```
@@ -143,9 +145,10 @@ impl NormalInvWishart {
         Ok(NormalInvWishart { mu, k, df, scale })
     }
 
-    /// Creates a new NormalInvWishart without checking whether the parameters
+    /// Creates a new `NormalInvWishart` without checking whether the parameters
     /// are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(
         mu: DVector<f64>,
         k: f64,
@@ -157,18 +160,21 @@ impl NormalInvWishart {
 
     /// Get the number of dimensions
     #[inline]
+    #[must_use]
     pub fn ndims(&self) -> usize {
         self.mu.len()
     }
 
     /// Get a reference to the mu vector
     #[inline]
+    #[must_use]
     pub fn mu(&self) -> &DVector<f64> {
         &self.mu
     }
 
     /// Get the k parameter
     #[inline]
+    #[must_use]
     pub fn k(&self) -> f64 {
         self.k
     }
@@ -192,6 +198,7 @@ impl NormalInvWishart {
 
     /// Get the degrees of freedom, df
     #[inline]
+    #[must_use]
     pub fn df(&self) -> usize {
         self.df
     }
@@ -216,6 +223,7 @@ impl NormalInvWishart {
 
     /// Get a reference to the scale matrix
     #[inline]
+    #[must_use]
     pub fn scale(&self) -> &DMatrix<f64> {
         &self.scale
     }
@@ -301,29 +309,26 @@ impl ContinuousDistr<MvGaussian> for NormalInvWishart {}
 
 impl std::error::Error for NormalInvWishartError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for NormalInvWishartError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::KTooLow { k } => {
-                write!(f, "k ({}) must be greater than zero", k)
+                write!(f, "k ({k}) must be greater than zero")
             }
             Self::DfLessThanDimensions { df, ndims } => write!(
                 f,
                 "df, the degrees of freedom must be greater than or \
-                    equal to the number of dimensions, but {} < {}",
-                df, ndims
+                    equal to the number of dimensions, but {df} < {ndims}"
             ),
-            Self::ScaleMatrixNotSquare { nrows, ncols } => write!(
-                f,
-                "The scale matrix is not square: {} x {}",
-                nrows, ncols
-            ),
+            Self::ScaleMatrixNotSquare { nrows, ncols } => {
+                write!(f, "The scale matrix is not square: {nrows} x {ncols}")
+            }
             Self::MuScaleDimensionMismatch { n_mu, n_scale } => write!(
                 f,
-                "The mu vector (nrows = {}) must have the same \
+                "The mu vector (nrows = {n_mu}) must have the same \
                     number of entries as the scale matrix has columns/rows \
-                    (ndims = {}). ",
-                n_mu, n_scale
+                    (ndims = {n_scale}). "
             ),
         }
     }

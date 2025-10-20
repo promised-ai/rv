@@ -20,6 +20,7 @@ pub struct CategoricalSuffStat {
 
 impl CategoricalSuffStat {
     #[inline]
+    #[must_use]
     pub fn new(k: usize) -> Self {
         CategoricalSuffStat {
             n: 0,
@@ -30,6 +31,7 @@ impl CategoricalSuffStat {
     /// Create a sufficient statistic from components without checking whether
     /// they are valid.
     #[inline]
+    #[must_use]
     pub fn from_parts_unchecked(n: usize, counts: Vec<f64>) -> Self {
         CategoricalSuffStat { n, counts }
     }
@@ -50,6 +52,7 @@ impl CategoricalSuffStat {
     /// assert_eq!(stat.n(), 3);
     /// ```
     #[inline]
+    #[must_use]
     pub fn n(&self) -> usize {
         self.n
     }
@@ -70,6 +73,7 @@ impl CategoricalSuffStat {
     /// assert_eq!(*stat.counts(), vec![1.0, 0.0, 2.0]);
     /// ```
     #[inline]
+    #[must_use]
     pub fn counts(&self) -> &Vec<f64> {
         &self.counts
     }
@@ -118,6 +122,16 @@ impl<X: CategoricalDatum> SuffStat<X> for CategoricalSuffStat {
         self.n -= 1;
         self.counts[ix] -= 1.0;
     }
+
+    fn merge(&mut self, other: Self) {
+        self.n += other.n;
+        self.counts
+            .iter_mut()
+            .zip(other.counts.iter().copied())
+            .for_each(|(ct, ct_o)| {
+                *ct += ct_o;
+            });
+    }
 }
 
 #[cfg(test)]
@@ -128,8 +142,8 @@ mod tests {
     fn new() {
         let sf = CategoricalSuffStat::new(4);
         assert_eq!(sf.counts.len(), 4);
-        assert_eq!(sf.n, 0);
-        assert!(sf.counts.iter().all(|&ct| ct.abs() < 1E-12))
+        assert_eq!(sf.n(), 0);
+        assert!(sf.counts.iter().all(|&ct| ct.abs() < 1E-12));
     }
 
     #[test]
@@ -144,5 +158,34 @@ mod tests {
         assert_eq!(stat.counts()[1], 2.0);
         assert_eq!(stat.counts()[2], 3.0);
         assert_eq!(stat.counts()[3], 4.0);
+    }
+
+    #[test]
+    fn merge() {
+        let mut a = CategoricalSuffStat::new(5);
+        let mut b = CategoricalSuffStat::new(5);
+        let mut c = CategoricalSuffStat::new(5);
+
+        a.observe_many(&[1_usize, 2, 3]);
+        b.observe_many(&[3_usize, 3, 4]);
+
+        c.observe_many(&[1_usize, 2, 3, 3, 3, 4]);
+
+        <CategoricalSuffStat as SuffStat<usize>>::merge(&mut a, b);
+        assert_eq!(a, c);
+    }
+
+    #[test]
+    fn observe_forget() {
+        let mut stat = CategoricalSuffStat::new(5);
+
+        stat.observe_many(&[0_usize, 0, 1, 1, 2]);
+
+        assert_eq!(stat.n(), 5);
+        assert_eq!(stat.counts(), &[2.0, 2.0, 1.0, 0.0, 0.0]);
+
+        stat.forget(&1_usize);
+        assert_eq!(stat.n(), 4);
+        assert_eq!(stat.counts(), &[2.0, 1.0, 1.0, 0.0, 0.0]);
     }
 }

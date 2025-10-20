@@ -1,99 +1,143 @@
 use std::collections::BTreeMap;
+use std::f64::consts::PI;
 
 use crate::consts::HALF_LN_PI;
-use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
+use crate::data::{GaussianSuffStat, extract_stat_then};
 use crate::dist::{Gaussian, NormalInvChiSquared};
 use crate::gaussian_prior_geweke_testable;
-
+use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
-use crate::traits::*;
+use crate::traits::{ConjugatePrior, DataOrSuffStat, HasSuffStat, Sampleable};
+
+#[derive(Clone, Debug)]
+pub struct PosteriorParameters {
+    pub mn: f64,
+    pub kn: f64,
+    pub vn: f64,
+    pub s2n: f64,
+}
+
+impl From<PosteriorParameters> for NormalInvChiSquared {
+    fn from(
+        PosteriorParameters { mn, kn, vn, s2n }: PosteriorParameters,
+    ) -> Self {
+        NormalInvChiSquared::new(mn, kn, vn, s2n).unwrap()
+    }
+}
 
 // XXX: Check out section 6.3 from Kevin Murphy's paper
 // https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf
 fn posterior_from_stat(
     nix: &NormalInvChiSquared,
     stat: &GaussianSuffStat,
-) -> NormalInvChiSquared {
+) -> PosteriorParameters {
+    let (m, k, v, s2) = nix.params();
+
     if stat.n() == 0 {
-        return nix.clone();
+        return PosteriorParameters {
+            mn: m,
+            kn: k,
+            vn: v,
+            s2n: s2,
+        };
     }
 
     let n = stat.n() as f64;
 
-    let (m, k, v, s2) = nix.params();
-
     let xbar = stat.mean();
-    let sum_x = xbar * n;
-    // Sum (x - xbar)^2
-    //   = Sum[ x*x - 2x*xbar + xbar*xbar ]
-    //   = Sum[x^2] + n * xbar^2 - 2 * xbar + Sum[x]
-    //   = Sum[x^2] + n * xbar^2 - 2 * n *xbar^2
-    //   = Sum[x^2] - n * xbar^2
-    let mid = (n * xbar).mul_add(-xbar, stat.sum_x_sq());
 
     let kn = k + n;
-    let divby_k_plus_n = kn.recip();
+    let kn_recip = kn.recip();
     let vn = v + n;
-    let mn = k.mul_add(m, sum_x) * divby_k_plus_n;
+    let mn = k.mul_add(m, stat.sum_x()) * kn_recip;
     let diff_m_xbar = m - xbar;
-    let s2n = ((n * k * divby_k_plus_n) * diff_m_xbar)
-        .mul_add(diff_m_xbar, v.mul_add(s2, mid))
-        / vn;
+    let s2n = v.mul_add(
+        s2,
+        ((n * k * kn_recip) * diff_m_xbar)
+            .mul_add(diff_m_xbar, stat.sum_sq_diff()),
+    ) / vn;
 
-    NormalInvChiSquared::new(mn, kn, vn, s2n)
-        .expect("Invalid posterior params.")
+    PosteriorParameters { mn, kn, vn, s2n }
 }
 
-impl ConjugatePrior<f64, Gaussian> for NormalInvChiSquared {
-    type Posterior = Self;
-    type MCache = f64;
-    type PpCache = (GaussianSuffStat, f64);
+macro_rules! impl_traits {
+    ($kind: ty) => {
+        impl ConjugatePrior<$kind, Gaussian> for NormalInvChiSquared {
+            type Posterior = Self;
+            type MCache = f64;
+            type PpCache = (PosteriorParameters, f64);
 
-    fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
-            posterior_from_stat(self, &stat)
-        })
-    }
+            fn empty_stat(&self) -> <Gaussian as HasSuffStat<$kind>>::Stat {
+                GaussianSuffStat::new()
+            }
 
-    #[inline]
-    fn ln_m_cache(&self) -> Self::MCache {
-        self.ln_z()
-    }
+            fn posterior_from_suffstat(
+                &self,
+                stat: &GaussianSuffStat,
+            ) -> Self::Posterior {
+                posterior_from_stat(self, stat).into()
+            }
 
-    fn ln_m_with_cache(
-        &self,
-        cache: &Self::MCache,
-        x: &DataOrSuffStat<f64, Gaussian>,
-    ) -> f64 {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
-            let n = stat.n() as f64;
-            let post = posterior_from_stat(self, &stat);
-            let lnz_n = post.ln_z();
-            n.mul_add(-HALF_LN_PI, lnz_n - cache)
-        })
-    }
+            #[inline]
+            fn ln_m_cache(&self) -> Self::MCache {
+                self.ln_z()
+            }
 
-    #[inline]
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
-        let stat = extract_stat(x, GaussianSuffStat::new);
-        let post_n = posterior_from_stat(self, &stat);
-        let lnz_n = post_n.ln_z();
-        (stat, lnz_n)
-        // post_n
-    }
+            fn ln_m_with_cache(
+                &self,
+                cache: &Self::MCache,
+                x: &DataOrSuffStat<$kind, Gaussian>,
+            ) -> f64 {
+                extract_stat_then(self, x, |stat: &GaussianSuffStat| {
+                    let n = stat.n() as f64;
+                    let post: Self = posterior_from_stat(self, stat).into();
+                    let lnz_n = post.ln_z();
+                    n.mul_add(-HALF_LN_PI, lnz_n - cache)
+                })
+            }
 
-    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
-        let mut stat = cache.0;
-        let lnz_n = cache.1;
+            fn ln_pp_cache(
+                &self,
+                x: &DataOrSuffStat<$kind, Gaussian>,
+            ) -> Self::PpCache {
+                extract_stat_then(self, x, |stat: &GaussianSuffStat| {
+                    let post = posterior_from_stat(self, stat);
+                    let kn = post.kn;
+                    let vn = post.vn;
 
-        stat.observe(y);
-        let post_m = posterior_from_stat(self, &stat);
+                    let z = 0.5_f64.mul_add(
+                        (kn / ((kn + 1.0) * PI * vn * post.s2n)).ln(),
+                        ln_gammafn((vn + 1.0) / 2.0) - ln_gammafn(vn / 2.0),
+                    );
+                    (post, z)
+                })
+            }
 
-        let lnz_m = post_m.ln_z();
+            fn ln_pp_with_cache(
+                &self,
+                cache: &Self::PpCache,
+                y: &$kind,
+            ) -> f64 {
+                let post = &cache.0;
+                let z = cache.1;
+                let kn = post.kn;
 
-        -HALF_LN_PI + lnz_m - lnz_n
-    }
+                let diff = f64::from(*y) - post.mn;
+
+                ((post.vn + 1.0) / 2.0).mul_add(
+                    -((kn * diff * diff) / ((kn + 1.0) * post.vn * post.s2n))
+                        .ln_1p(),
+                    z,
+                )
+            }
+        }
+    };
 }
+
+#[cfg(feature = "experimental")]
+impl_traits!(f16);
+impl_traits!(f32);
+impl_traits!(f64);
 
 gaussian_prior_geweke_testable!(NormalInvChiSquared, Gaussian);
 
@@ -115,17 +159,13 @@ mod test {
     fn geweke() {
         use crate::test::GewekeTester;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let pr = NormalInvChiSquared::new(0.1, 1.2, 0.5, 1.8).unwrap();
         let n_passes = (0..5)
             .map(|_| {
                 let mut tester = GewekeTester::new(pr.clone(), 20);
                 tester.run_chains(5_000, 20, &mut rng);
-                if tester.eval(0.025).is_ok() {
-                    1_u8
-                } else {
-                    0_u8
-                }
+                u8::from(tester.eval(0.025).is_ok())
             })
             .sum::<u8>();
         assert!(n_passes > 1);
@@ -213,7 +253,10 @@ mod test {
     #[test]
     fn posterior_of_nothing_is_prior() {
         let prior = NormalInvChiSquared::new_unchecked(1.2, 2.3, 3.4, 4.5);
-        let post = prior.posterior(&DataOrSuffStat::from(&vec![]));
+        let post = <NormalInvChiSquared as ConjugatePrior<f64, _>>::posterior(
+            &prior,
+            &DataOrSuffStat::from(&vec![]),
+        );
         assert_eq!(prior.m(), post.m());
         assert_eq!(prior.k(), post.k());
         assert_eq!(prior.v(), post.v());
@@ -223,6 +266,7 @@ mod test {
     #[test]
     fn ln_m_single_datum_vs_monte_carlo() {
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 1_000_000;
         let x: f64 = -0.3;
@@ -233,7 +277,7 @@ mod test {
         let ln_m = nix.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            nix.sample_stream(&mut rand::thread_rng())
+            nix.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| gauss.ln_f(&x))
                 .logsumexp()
@@ -246,6 +290,7 @@ mod test {
     #[test]
     fn ln_m_vs_monte_carlo() {
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 1_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -255,7 +300,7 @@ mod test {
         let ln_m = nix.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            nix.sample_stream(&mut rand::thread_rng())
+            nix.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| {
                     xs.iter().map(|x| gauss.ln_f(x)).sum::<f64>()
@@ -270,6 +315,7 @@ mod test {
     #[test]
     fn ln_pp_vs_monte_carlo() {
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 1_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -281,7 +327,7 @@ mod test {
         let ln_pp = nix.ln_pp(&y, &DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            post.sample_stream(&mut rand::thread_rng())
+            post.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| gauss.ln_f(&y))
                 .logsumexp()
@@ -294,6 +340,7 @@ mod test {
     #[test]
     fn ln_pp_single_vs_monte_carlo() {
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 1_000_000;
         let x: f64 = -0.3;
@@ -304,7 +351,7 @@ mod test {
             nix.ln_pp(&x, &DataOrSuffStat::<f64, Gaussian>::from(&vec![]));
 
         let mc_est = {
-            nix.sample_stream(&mut rand::thread_rng())
+            nix.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| gauss.ln_f(&x))
                 .logsumexp()
@@ -337,6 +384,7 @@ mod test {
     #[test]
     fn ln_pp_vs_t() {
         use crate::dist::StudentsT;
+        use crate::traits::HasDensity;
 
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let y: f64 = -0.3;

@@ -3,16 +3,20 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, Kurtosis, Mean, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use std::f64;
 use std::fmt;
 
-/// [Pareto distribution](https://en.wikipedia.org/wiki/Pareto_distribution) Pareto(x_m, α)
-/// over x in (x_m, ∞).
+/// [Pareto distribution](https://en.wikipedia.org/wiki/Pareto_distribution) `Pareto(x_m`, α)
+/// over x in (`x_m`, ∞).
 ///
 /// **NOTE**: The Pareto distribution is parameterized in terms of shape, α, and
-/// scale, x_m.
+/// scale, `x_m`.
 ///
 /// ```math
 ///                α x_m^α
@@ -25,6 +29,25 @@ use std::fmt;
 pub struct Pareto {
     shape: f64,
     scale: f64,
+}
+
+impl Scalable for Pareto {
+    type Output = Pareto;
+    type Error = ParetoError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Pareto::new(self.shape(), self.scale() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Pareto::new_unchecked(self.shape(), self.scale() * scale)
+    }
 }
 
 pub struct ParetoParameters {
@@ -47,6 +70,8 @@ impl Parameterized for Pareto {
     }
 }
 
+crate::impl_shiftable!(Pareto);
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -62,7 +87,7 @@ pub enum ParetoError {
 }
 
 impl Pareto {
-    /// Create a new `Pareto` distribution with shape (α) and scale (x_m).
+    /// Create a new `Pareto` distribution with shape (α) and scale (`x_m`).
     pub fn new(shape: f64, scale: f64) -> Result<Self, ParetoError> {
         if shape <= 0.0 {
             Err(ParetoError::ShapeTooLow { shape })
@@ -79,6 +104,7 @@ impl Pareto {
 
     /// Creates a new Pareto without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(shape: f64, scale: f64) -> Self {
         Pareto { shape, scale }
     }
@@ -93,6 +119,7 @@ impl Pareto {
     /// assert_eq!(pareto.shape(), 1.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn shape(&self) -> f64 {
         self.shape
     }
@@ -150,6 +177,7 @@ impl Pareto {
     /// assert_eq!(pareto.scale(), 2.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn scale(&self) -> f64 {
         self.scale
     }
@@ -279,7 +307,7 @@ impl Variance<f64> for Pareto {
 
 impl Entropy for Pareto {
     fn entropy(&self) -> f64 {
-        ((self.scale / self.shape) * (1.0 + 1.0 / self.shape).exp()).log10()
+        (self.scale / self.shape).ln() + 1.0 + self.shape.recip()
     }
 }
 
@@ -316,20 +344,21 @@ impl_traits!(f64);
 
 impl std::error::Error for ParetoError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for ParetoError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ShapeTooLow { shape } => {
-                write!(f, "rate ({}) must be greater than zero", shape)
+                write!(f, "rate ({shape}) must be greater than zero")
             }
             Self::ShapeNotFinite { shape } => {
-                write!(f, "non-finite rate: {}", shape)
+                write!(f, "non-finite rate: {shape}")
             }
             Self::ScaleTooLow { scale } => {
-                write!(f, "scale ({}) must be greater than zero", scale)
+                write!(f, "scale ({scale}) must be greater than zero")
             }
             Self::ScaleNotFinite { scale } => {
-                write!(f, "non-finite scale: {}", scale)
+                write!(f, "non-finite scale: {scale}")
             }
         }
     }
@@ -600,16 +629,8 @@ mod tests {
     }
 
     #[test]
-    fn entropy() {
-        let par1 = Pareto::new(1.0, 1.0).unwrap();
-        let par2 = Pareto::new(1.2, 3.4).unwrap();
-        assert::close(par1.entropy(), 0.868_588_963_806_503_6, TOL);
-        assert::close(par2.entropy(), 1.248_504_221_150_592_1, TOL);
-    }
-
-    #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let par = Pareto::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| par.cdf(&x);
 
@@ -617,13 +638,29 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = par.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
+    }
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Pareto::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(Pareto::new(2.0, 4.0).unwrap(), variance);
+    test_scalable_method!(Pareto::new(2.0, 4.0).unwrap(), skewness);
+    test_scalable_method!(Pareto::new(2.0, 4.0).unwrap(), kurtosis);
+    test_scalable_density!(Pareto::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(Pareto::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(Pareto::new(2.0, 4.0).unwrap());
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = Pareto::new(5.0, 6.0).unwrap();
+        let vm_b = Pareto::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
     }
 }

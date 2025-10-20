@@ -10,7 +10,7 @@ mod gaussian_prior;
 use crate::dist::{Gaussian, ScaledInvChiSquared};
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{HasDensity, Parameterized, Sampleable};
 use rand::Rng;
 use std::sync::OnceLock;
 
@@ -90,9 +90,9 @@ impl NormalInvChiSquared {
     /// # Arguments
     /// - m: The prior mean
     /// - k: How strongly we believe the prior mean (in prior
-    ///      pseudo-observations)
+    ///   pseudo-observations)
     /// - v: How strongly we believe the prior variance (in prior
-    ///      pseudo-observations)
+    ///   pseudo-observations)
     /// - s2: The prior variance
     pub fn new(
         m: f64,
@@ -125,9 +125,10 @@ impl NormalInvChiSquared {
         }
     }
 
-    /// Creates a new NormalInvChiSquared without checking whether the
+    /// Creates a new `NormalInvChiSquared` without checking whether the
     /// parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(m: f64, k: f64, v: f64, s2: f64) -> Self {
         NormalInvChiSquared {
             m,
@@ -403,7 +404,11 @@ impl Sampleable<Gaussian> for NormalInvChiSquared {
         let post_sigma: f64 = sigma / self.k.sqrt();
         let mu: f64 = Gaussian::new(self.m, post_sigma)
             .map_err(|err| {
-                panic!("Invalid μ params when drawing Gaussian: {}", err)
+                panic!(
+                    "Invalid μ params when drawing Gaussian: {err}, \
+                     self: {self:?}, var: {var}, sigma: {sigma}, \
+                     post_sigma: {post_sigma}"
+                )
             })
             .unwrap()
             .draw(&mut rng);
@@ -414,21 +419,22 @@ impl Sampleable<Gaussian> for NormalInvChiSquared {
 
 impl std::error::Error for NormalInvChiSquaredError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl std::fmt::Display for NormalInvChiSquaredError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::MNotFinite { m } => write!(f, "non-finite m: {}", m),
-            Self::KNotFinite { k } => write!(f, "non-finite k: {}", k),
-            Self::VNotFinite { v } => write!(f, "non-finite v: {}", v),
-            Self::S2NotFinite { s2 } => write!(f, "non-finite s2: {}", s2),
+            Self::MNotFinite { m } => write!(f, "non-finite m: {m}"),
+            Self::KNotFinite { k } => write!(f, "non-finite k: {k}"),
+            Self::VNotFinite { v } => write!(f, "non-finite v: {v}"),
+            Self::S2NotFinite { s2 } => write!(f, "non-finite s2: {s2}"),
             Self::KTooLow { k } => {
-                write!(f, "k ({}) must be greater than zero", k)
+                write!(f, "k ({k}) must be greater than zero")
             }
             Self::VTooLow { v } => {
-                write!(f, "v ({}) must be greater than zero", v)
+                write!(f, "v ({v}) must be greater than zero")
             }
             Self::S2TooLow { s2 } => {
-                write!(f, "s2 ({}) must be greater than zero", s2)
+                write!(f, "s2 ({s2}) must be greater than zero")
             }
         }
     }
@@ -438,6 +444,7 @@ impl std::fmt::Display for NormalInvChiSquaredError {
 mod test {
     use super::*;
     use crate::{test_basic_impls, verify_cache_resets};
+    use rand::SeedableRng;
 
     test_basic_impls!(
         Gaussian,
@@ -484,4 +491,28 @@ mod test {
         3.4,
         0.8
     );
+
+    use ::proptest::prelude::*;
+    use rand_xoshiro::Xoshiro256Plus;
+
+    proptest! {
+        #[test]
+        fn draw_always_returns_positive_finite_value(
+            m in -1e300..1e100_f64,
+            k in 1e-300..1e100_f64,
+            v in 1e-300..1e100_f64,
+            s2 in 1e-300..1e100_f64,
+            seed in 0_u64..1000_u64,
+        ) {
+            if let Ok(nix) = NormalInvChiSquared::new(m, k, v, s2) {
+                let mut rng = Xoshiro256Plus::seed_from_u64(seed);
+                let gaussian = nix.draw(&mut rng);
+
+                prop_assert!(gaussian.mu().is_finite());
+                prop_assert!(gaussian.sigma() > 0.0);
+                prop_assert!(gaussian.sigma().is_finite());
+            }
+
+        }
+    }
 }

@@ -1,10 +1,10 @@
 use crate::misc::bessel::bessel_ikv_temme;
 
-use super::{e2_norm, CovGrad, CovGradError, Kernel, KernelError};
+use super::{CovGrad, CovGradError, Kernel, KernelError, e2_norm};
 use crate::misc::gammafn;
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
-use nalgebra::{dvector, DMatrix, DVector, Dim, Matrix};
+use nalgebra::{DMatrix, DVector, Dim, Matrix, dvector};
 use std::f64;
 
 #[cfg(feature = "serde1")]
@@ -49,6 +49,7 @@ impl MaternKernel {
     }
 
     /// Create a new `MaternKernel` with `nu` and `length_scale` without checking inputs.
+    #[must_use]
     pub fn new_unchecked(nu: f64, length_scale: f64) -> Self {
         Self { nu, length_scale }
     }
@@ -133,7 +134,7 @@ impl Kernel for MaternKernel {
                     let tmp = sqrt_two_nu * r;
                     dm[(i, j)] = c
                         * tmp.powf(self.nu)
-                        * bessel_ikv_temme(self.nu, tmp).unwrap().1
+                        * bessel_ikv_temme(self.nu, tmp).unwrap().1;
                 }
             }
         }

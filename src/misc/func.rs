@@ -1,6 +1,6 @@
 use crate::consts::{LN_2PI, LN_PI};
-use rand::distributions::Open01;
 use rand::Rng;
+use rand::distr::Open01;
 use special::Gamma;
 use std::cmp::Ordering;
 use std::fmt::Debug;
@@ -24,13 +24,13 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
     let n = xs.len();
     xs.iter().enumerate().for_each(|(i, x)| {
         let to_push = if i == n - 1 {
-            format!("{:?}]", x)
+            format!("{x:?}]")
         } else if i < max_entries - 1 {
-            format!("{:?}, ", x)
+            format!("{x:?}, ")
         } else if i == (max_entries - 1) && n > max_entries {
             String::from("... , ")
         } else {
-            format!("{:?}]", x)
+            format!("{x:?}]")
         };
 
         out.push_str(to_push.as_str());
@@ -48,6 +48,7 @@ pub fn vec_to_string<T: Debug>(xs: &[T], max_entries: usize) -> String {
 ///
 /// assert!((ln_binom(4.0, 2.0) - 6.0_f64.ln()) < 1E-12);
 /// ```
+#[must_use]
 pub fn ln_binom(n: f64, k: f64) -> f64 {
     ln_gammafn(n + 1.0) - ln_gammafn(k + 1.0) - ln_gammafn(n - k + 1.0)
 }
@@ -67,6 +68,7 @@ pub fn ln_binom(n: f64, k: f64) -> f64 {
 /// This function is a wrapper around `special::Gamma::gamma`.. The name `gamma`
 /// is reserved for possible future use in standard libraries. This function is
 /// purely to avoid warnings resulting from this.
+#[must_use]
 pub fn gammafn(x: f64) -> f64 {
     Gamma::gamma(x)
 }
@@ -87,10 +89,12 @@ pub fn gammafn(x: f64) -> f64 {
 /// This function is a wrapper around `special::Gamma::ln_gamma`.. The name
 /// `ln_gamma` is reserved for possible future use in standard libraries. This
 /// function is purely to avoid warnings resulting from this.
+#[must_use]
 pub fn ln_gammafn(x: f64) -> f64 {
     Gamma::ln_gamma(x).0
 }
 
+#[must_use]
 pub fn log1pexp(x: f64) -> f64 {
     if x <= -37.0 {
         f64::exp(x)
@@ -103,6 +107,7 @@ pub fn log1pexp(x: f64) -> f64 {
     }
 }
 
+#[must_use]
 pub fn logaddexp(x: f64, y: f64) -> f64 {
     if x > y {
         x + log1pexp(y - x)
@@ -128,7 +133,7 @@ where
             self.fold((f64::NEG_INFINITY, 0.0), |(alpha, r), x| {
                 let x = *x.borrow();
                 if x == f64::NEG_INFINITY {
-                    return (alpha, r);
+                    (alpha, r)
                 } else if x <= alpha {
                     (alpha, r + (x - alpha).exp())
                 } else {
@@ -179,11 +184,7 @@ fn binary_search(cws: &[f64], r: f64) -> usize {
 #[inline]
 fn catflip_bisection(cws: &[f64], r: f64) -> Option<usize> {
     let ix = binary_search(cws, r);
-    if ix < cws.len() {
-        Some(ix)
-    } else {
-        None
-    }
+    if ix < cws.len() { Some(ix) } else { None }
 }
 
 #[inline]
@@ -204,7 +205,7 @@ pub fn gumbel_pflip(weights: &[f64], rng: &mut impl Rng) -> usize {
     assert!(!weights.is_empty(), "Empty container");
     weights
         .iter()
-        .map(|w| (w, rng.gen::<f64>().ln()))
+        .map(|w| (w, rng.random::<f64>().ln()))
         .enumerate()
         .max_by(|(_, (w1, l1)), (_, (w2, l2))| {
             (*w2 * l1).partial_cmp(&(*w1 * l2)).unwrap()
@@ -219,14 +220,14 @@ pub fn pflip(weights: &[f64], sum: Option<f64>, rng: &mut impl Rng) -> usize {
     let sum = sum.unwrap_or_else(|| weights.iter().sum::<f64>());
 
     let mut cwt = 0.0;
-    let r: f64 = rng.gen::<f64>() * sum;
+    let r: f64 = rng.random::<f64>() * sum;
     for (ix, w) in weights.iter().enumerate() {
         cwt += w;
         if cwt > r {
             return ix;
         }
     }
-    panic!("Could not draw from {:?}", weights)
+    panic!("Could not draw from {weights:?}")
 }
 
 /// Draw `n` indices in proportion to their `weights`
@@ -235,17 +236,16 @@ pub fn pflips(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 
     let cws: Vec<f64> = cumsum(weights);
     let scale: f64 = *cws.last().unwrap();
-    let u = rand::distributions::Uniform::new(0.0, 1.0);
+    let u = rand::distr::StandardUniform;
 
     (0..n)
         .map(|_| {
-            let r = rng.sample(u) * scale;
-            match catflip(&cws, r) {
-                Some(ix) => ix,
-                None => {
-                    let wsvec = weights.to_vec();
-                    panic!("Could not draw from {:?}", wsvec)
-                }
+            let r = rng.sample::<f64, _>(u) * scale;
+            if let Some(ix) = catflip(&cws, r) {
+                ix
+            } else {
+                let wsvec = weights.to_vec();
+                panic!("Could not draw from {wsvec:?}")
             }
         })
         .collect()
@@ -264,7 +264,7 @@ pub fn pflips(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 /// let weights: Vec<f64> = vec![0.4, 0.2, 0.3, 0.1];
 /// let ln_weights: Vec<f64> = weights.iter().map(|&w| w.ln()).collect();
 ///
-/// let xs = ln_pflips(&ln_weights, 100, true, &mut rand::thread_rng());
+/// let xs = ln_pflips(&ln_weights, 100, true, &mut rand::rng());
 ///
 /// assert_eq!(xs.len(), 100);
 /// assert!(xs.iter().all(|&x| x <= 3));
@@ -280,7 +280,7 @@ pub fn pflips(weights: &[f64], n: usize, rng: &mut impl Rng) -> Vec<usize> {
 ///
 /// let ln_weights: Vec<f64> = vec![-LN_2, NEG_INFINITY, -LN_2];
 ///
-/// let xs = ln_pflips(&ln_weights, 100, true, &mut rand::thread_rng());
+/// let xs = ln_pflips(&ln_weights, 100, true, &mut rand::rng());
 ///
 /// let zero_count = xs.iter().filter(|&&x| x == 0).count();
 /// let one_count = xs.iter().filter(|&&x| x == 1).count();
@@ -314,25 +314,24 @@ pub fn ln_pflips<R: Rng>(
     (0..n)
         .map(|_| {
             let r = rng.sample(Open01);
-            match catflip(&cws, r) {
-                Some(ix) => ix,
-                None => {
-                    let wsvec = ln_weights.to_vec();
-                    panic!("Could not draw from {:?}", wsvec)
-                }
+            if let Some(ix) = catflip(&cws, r) {
+                ix
+            } else {
+                let wsvec = ln_weights.to_vec();
+                panic!("Could not draw from {wsvec:?}")
             }
         })
         .collect()
 }
 
-pub fn ln_pflip<R: Rng>(
-    ln_weights: &[f64],
-    _normed: bool,
-    rng: &mut R,
-) -> usize {
+pub fn ln_pflip<R: Rng, I>(ln_weights: I, _normed: bool, rng: &mut R) -> usize
+where
+    I: IntoIterator,
+    I::Item: std::borrow::Borrow<f64>,
+{
     ln_weights
-        .iter()
-        .map(|ln_w| (ln_w, rng.gen::<f64>().ln()))
+        .into_iter()
+        .map(|ln_w| (*ln_w.borrow(), rng.random::<f64>().ln()))
         .enumerate()
         .max_by(|(_, (ln_w1, l1)), (_, (ln_w2, l2))| {
             l1.partial_cmp(&(l2 * (*ln_w1 - *ln_w2).exp())).unwrap()
@@ -385,6 +384,7 @@ pub fn argmax<T: PartialOrd>(xs: &[T]) -> Vec<usize> {
 ///
 /// * `p` - Positive integer degrees of freedom
 /// * `a` - The number for which to compute the multivariate gamma
+#[must_use]
 pub fn lnmv_gamma(p: usize, a: f64) -> f64 {
     let pf = p as f64;
     let a0 = pf * (pf - 1.0) / 4.0 * LN_PI;
@@ -397,6 +397,7 @@ pub fn lnmv_gamma(p: usize, a: f64) -> f64 {
 ///
 /// * `p` - Positive integer degrees of freedom
 /// * `a` - The number for which to compute the multivariate gamma
+#[must_use]
 pub fn mvgamma(p: usize, a: f64) -> f64 {
     lnmv_gamma(p, a).exp()
 }
@@ -410,6 +411,7 @@ pub fn mvgamma(p: usize, a: f64) -> f64 {
 /// Cook](https://www.johndcook.com/blog/csharp_log_factorial/)
 ///
 ///
+#[must_use]
 pub fn ln_fact(n: usize) -> f64 {
     if n < 254 {
         LN_FACT[n]
@@ -435,10 +437,10 @@ pub fn ln_fact(n: usize) -> f64 {
 /// # Example
 ///
 /// ```
-/// use rand::thread_rng;
+/// use rand::rng;
 /// use rv::misc::sorted_uniforms;
 ///    
-/// let mut rng = thread_rng();
+/// let mut rng = rng();
 /// let n = 10000;
 /// let xs = sorted_uniforms(n, &mut rng);
 /// assert_eq!(xs.len(), n);
@@ -458,15 +460,23 @@ pub fn ln_fact(n: usize) -> f64 {
 /// ```
 pub fn sorted_uniforms<R: Rng>(n: usize, rng: &mut R) -> Vec<f64> {
     let mut xs: Vec<_> = (0..n)
-        .map(|_| -rng.gen::<f64>().ln())
+        .map(|_| -rng.random::<f64>().ln())
         .scan(0.0, |state, x| {
             *state += x;
             Some(*state)
         })
         .collect();
-    let max = *xs.last().unwrap() - rng.gen::<f64>().ln();
+    let max = *xs.last().unwrap() - rng.random::<f64>().ln();
     (0..n).for_each(|i| xs[i] /= max);
     xs
+}
+
+#[allow(dead_code)]
+pub(crate) fn eq_or_close(a: f64, b: f64, tol: f64) -> bool {
+    a == b                                           // Really equal, or both -Inf or Inf
+        || a.is_nan() && b.is_nan()                  // Both NaN
+        || (a - b).abs() < tol                       // Small absolute difference
+        || 2.0 * (a - b).abs() / (a + b).abs() < tol // Small relative difference
 }
 
 const LN_FACT: [f64; 255] = [
@@ -784,7 +794,7 @@ mod tests {
     proptest! {
         #[test]
         fn test_log1pexp_close_to_ln_1p_exp(x in -100.0..100.0_f64) {
-            let expected = (1.0 + x.exp()).ln();
+            let expected = x.exp().ln_1p();
             let actual = log1pexp(x);
             prop_assert!((expected - actual).abs() < 1e-10);
         }
@@ -838,7 +848,7 @@ mod tests {
 
     use crate::prelude::ChiSquared;
     use crate::traits::Cdf;
-    use rand::thread_rng;
+    use rand::{SeedableRng, rng};
 
     const TOL: f64 = 1E-12;
 
@@ -895,7 +905,7 @@ mod tests {
                 prop_assert!(result == f64::NEG_INFINITY);
             } else {
                 // Naive implementation for comparison
-                let max_x = xs.iter().cloned().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+                let max_x = xs.iter().copied().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
                 let sum_exp = xs.iter().map(|&x| (x - max_x).exp()).sum::<f64>();
                 let expected = max_x + sum_exp.ln();
 
@@ -923,11 +933,11 @@ mod tests {
 
     #[test]
     fn bisection_and_standard_catflip_equivalence() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..1000 {
-            let n: usize = rng.gen_range(10..100);
+            let n: usize = rng.random_range(10..100);
             let cws: Vec<f64> = (1..=n).map(|i| i as f64).collect();
-            let u2 = rand::distributions::Uniform::new(0.0, n as f64);
+            let u2 = rand::distr::Uniform::new(0.0, n as f64).unwrap();
             let r = rng.sample(u2);
 
             let ix1 = catflip_standard(&cws, r).unwrap();
@@ -960,7 +970,7 @@ mod tests {
 
         let ln_weights: Vec<f64> = vec![-LN_2, f64::NEG_INFINITY, -LN_2];
 
-        let xs = ln_pflips(&ln_weights, 100, true, &mut rand::thread_rng());
+        let xs = ln_pflips(&ln_weights, 100, true, &mut rand::rng());
 
         let zero_count = xs.iter().filter(|&&x| x == 0).count();
         let one_count = xs.iter().filter(|&&x| x == 1).count();
@@ -973,7 +983,7 @@ mod tests {
 
     #[test]
     fn test_sorted_uniforms() {
-        let mut rng = thread_rng();
+        let mut rng = rng();
         let n = 1000;
         let xs = sorted_uniforms(n, &mut rng);
         assert_eq!(xs.len(), n);
@@ -992,10 +1002,10 @@ mod tests {
             let mut next_bin = 0.01;
             let mut bin_pop = 0;
 
-            for x in xs.iter() {
+            for x in &xs {
                 bin_pop += 1;
                 if *x > next_bin {
-                    let obs = bin_pop as f64;
+                    let obs = f64::from(bin_pop);
                     let exp = n as f64 / 100.0;
                     t += (obs - exp).powi(2) / exp;
                     bin_pop = 0;
@@ -1004,7 +1014,7 @@ mod tests {
             }
 
             // The last bin
-            let obs = bin_pop as f64;
+            let obs = f64::from(bin_pop);
             let exp = n as f64 / 100.0;
             t += (obs - exp).powi(2) / exp;
         }
@@ -1015,5 +1025,48 @@ mod tests {
         let chi2 = ChiSquared::new(99.0).unwrap();
         let p = chi2.sf(&t);
         assert!(p > alpha);
+    }
+
+    use crate::prelude::Gaussian;
+    use crate::traits::Sampleable;
+    #[test]
+    fn ln_pflip_sampling_distribution() {
+        let n_samples = 1_000;
+        let mut rng = rand::rngs::StdRng::seed_from_u64(123);
+
+        // Calculate expected probabilities
+        let ln_weights =
+            Gaussian::new(0.0, 1.0).unwrap().sample(n_samples, &mut rng);
+        let log_normalizer: f64 = ln_weights.iter().logsumexp();
+        let expected: Vec<f64> = ln_weights
+            .iter()
+            .map(|w| (w - log_normalizer).exp() * n_samples as f64)
+            .collect();
+
+        // Collect samples
+        let mut counts = vec![0; ln_weights.len()];
+        for _ in 0..n_samples {
+            let sample = ln_pflip(&ln_weights, false, &mut rng);
+            counts[sample] += 1;
+        }
+        // Compute chi-squared statistic
+        let chi_squared: f64 = counts
+            .iter()
+            .zip(expected.iter())
+            .map(|(obs, exp)| {
+                let diff = f64::from(*obs) - exp;
+                diff * diff / exp
+            })
+            .sum();
+
+        // Degrees of freedom is number of categories minus 1
+        let dof = ln_weights.len() - 1;
+        let chi2 = ChiSquared::new(dof as f64).unwrap();
+        let p_value = chi2.sf(&chi_squared);
+
+        assert!(
+            p_value > 0.01,
+            "Chi-squared test failed: p-value = {p_value}"
+        );
     }
 }

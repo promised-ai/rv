@@ -5,7 +5,11 @@ use serde::{Deserialize, Serialize};
 use crate::data::InvGammaSuffStat;
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, Kurtosis, Mean,
+    Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use special::Gamma as _;
 use std::fmt;
@@ -28,6 +32,26 @@ pub struct InvGamma {
     scale: f64,
 }
 
+crate::impl_shiftable!(InvGamma);
+
+impl Scalable for InvGamma {
+    type Output = InvGamma;
+    type Error = InvGammaError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        InvGamma::new(self.shape(), self.scale() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        InvGamma::new_unchecked(self.shape(), self.scale() * scale)
+    }
+}
 pub struct InvGammaParameters {
     pub shape: f64,
     pub scale: f64,
@@ -82,9 +106,10 @@ impl InvGamma {
         }
     }
 
-    /// Creates a new InvGamma without checking whether the parameters are
+    /// Creates a new `InvGamma` without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(shape: f64, scale: f64) -> Self {
         InvGamma { shape, scale }
     }
@@ -99,6 +124,7 @@ impl InvGamma {
     /// assert_eq!(ig.shape(), 1.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn shape(&self) -> f64 {
         self.shape
     }
@@ -156,6 +182,7 @@ impl InvGamma {
     /// assert_eq!(ig.scale(), 2.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn scale(&self) -> f64 {
         self.scale
     }
@@ -237,9 +264,28 @@ macro_rules! impl_traits {
 
         impl Sampleable<$kind> for InvGamma {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
+                const MAX_TRIES: usize = 10;
                 let g = rand_distr::Gamma::new(self.shape, self.scale.recip())
                     .unwrap();
-                (1.0 / rng.sample(g)) as $kind
+
+                let mut x = 1.0 / rng.sample(g);
+                let mut found_finite = x.is_finite();
+
+                if !found_finite {
+                    for _ in 0..MAX_TRIES - 1 {
+                        x = 1.0 / rng.sample(g);
+                        if x.is_finite() {
+                            found_finite = true;
+                            break;
+                        }
+                    }
+                }
+
+                if found_finite {
+                    x as $kind
+                } else {
+                    <$kind>::MAX
+                }
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
@@ -259,7 +305,11 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for InvGamma {
             fn cdf(&self, x: &$kind) -> f64 {
-                1.0 - (self.scale / f64::from(*x)).inc_gamma(self.shape)
+                if *x <= 0.0 {
+                    0.0
+                } else {
+                    1.0 - (self.scale / f64::from(*x)).inc_gamma(self.shape)
+                }
             }
         }
 
@@ -352,16 +402,16 @@ impl fmt::Display for InvGammaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ShapeTooLow { shape } => {
-                write!(f, "rate ({}) must be greater than zero", shape)
+                write!(f, "rate ({shape}) must be greater than zero")
             }
             Self::ShapeNotFinite { shape } => {
-                write!(f, "non-finite rate: {}", shape)
+                write!(f, "non-finite rate: {shape}")
             }
             Self::ScaleTooLow { scale } => {
-                write!(f, "scale ({}) must be greater than zero", scale)
+                write!(f, "scale ({scale}) must be greater than zero")
             }
             Self::ScaleNotFinite { scale } => {
-                write!(f, "non-finite scale: {}", scale)
+                write!(f, "non-finite scale: {scale}")
             }
         }
     }
@@ -445,7 +495,7 @@ mod tests {
     #[test]
     fn quad_on_pdf_agrees_with_cdf_range() {
         use peroxide::numerical::integral::{
-            gauss_kronrod_quadrature, Integral,
+            Integral, gauss_kronrod_quadrature,
         };
         let ig = InvGamma::new(5.2, 3.3).unwrap();
         let pdf = |x: f64| ig.f(&x);
@@ -460,11 +510,11 @@ mod tests {
     #[test]
     fn quad_on_pdf_agrees_with_cdf_2() {
         use peroxide::numerical::integral::{
-            gauss_kronrod_quadrature, Integral,
+            Integral, gauss_kronrod_quadrature,
         };
         let ig = InvGamma::new(2.3, 3.1).unwrap();
         let pdf = |x: f64| ig.f(&x);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
             let res = gauss_kronrod_quadrature(
@@ -515,7 +565,7 @@ mod tests {
 
     #[test]
     fn sample_return_correct_number_of_draws() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ig = InvGamma::new(3.0, 2.0).unwrap();
         let xs: Vec<f64> = ig.sample(103, &mut rng);
         assert_eq!(xs.len(), 103);
@@ -523,7 +573,7 @@ mod tests {
 
     #[test]
     fn draw_always_returns_results_in_support() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ig = InvGamma::new(3.0, 2.0).unwrap();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
@@ -571,7 +621,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ig = InvGamma::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| ig.cdf(&x);
 
@@ -579,11 +629,7 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = ig.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -591,6 +637,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+
         let data: Vec<f64> = vec![0.1, 0.23, 1.4, 0.65, 0.22, 3.1];
         let mut stat = InvGammaSuffStat::new();
         stat.observe_many(&data);
@@ -603,4 +651,17 @@ mod tests {
 
         assert::close(ln_f_base, ln_f_stat, 1e-12);
     }
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(InvGamma::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(InvGamma::new(2.0, 4.0).unwrap(), variance);
+    test_scalable_method!(InvGamma::new(2.0, 4.0).unwrap(), skewness);
+    test_scalable_method!(InvGamma::new(2.0, 4.0).unwrap(), kurtosis);
+    test_scalable_density!(InvGamma::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(InvGamma::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(InvGamma::new(2.0, 4.0).unwrap());
 }

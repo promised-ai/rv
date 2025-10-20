@@ -138,6 +138,7 @@ fn chbevl(x: f64, coeffs: &[f64]) -> f64 {
 }
 
 /// Modified Bessel function, I<sub>0</sub>(x)
+#[must_use]
 pub fn i0(x: f64) -> f64 {
     let ax = x.abs();
 
@@ -150,7 +151,25 @@ pub fn i0(x: f64) -> f64 {
     }
 }
 
+/// Logarithm of Modified Bessel function, `log I<sub>0</sub>(x)`
+#[must_use]
+pub fn log_i0(x: f64) -> f64 {
+    let ax = x.abs();
+
+    if ax <= 8.0 {
+        let y = ax.mul_add(0.5, -2.0);
+        ax + chbevl(y, &BESSI0_COEFFS_A).ln()
+    } else {
+        0.5_f64.mul_add(
+            -ax.ln(),
+            ax + chbevl(32.0_f64.mul_add(ax.recip(), -2.0), &BESSI0_COEFFS_B)
+                .ln(),
+        )
+    }
+}
+
 /// Modified Bessel function, I<sub>1</sub>(x)
+#[must_use]
 pub fn i1(x: f64) -> f64 {
     let z = x.abs();
     let res = if z <= 8.0 {
@@ -181,6 +200,7 @@ pub enum BesselIvError {
 
 impl std::error::Error for BesselIvError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl std::fmt::Display for BesselIvError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -237,9 +257,8 @@ pub fn bessel_iv(v: f64, z: f64) -> Result<f64, BesselIvError> {
             return Ok(1.0);
         } else if v < 0.0 {
             return Err(BesselIvError::Overflow);
-        } else {
-            return Ok(0.0);
         }
+        return Ok(0.0);
     }
 
     let az = z.abs();
@@ -597,7 +616,7 @@ const ASYMPTOTIC_UFACTORS: [[f64; N_UFACTOR_TERMS]; N_UFACTORS] = [
 ///Compute Iv, Kv from (AMS5 9.7.7 + 9.7.8), asymptotic expansion for large v
 ///
 /// Heavily inspired by
-/// https://github.com/scipy/scipy/blob/1984f97749a355a6767cea55cad5d1dc6977ad5f/scipy/special/cephes/scipy_iv.c#L249
+/// <https://github.com/scipy/scipy/blob/1984f97749a355a6767cea55cad5d1dc6977ad5f/scipy/special/cephes/scipy_iv.c#L249>
 fn bessel_ikv_asymptotic_uniform(
     v: f64,
     x: f64,
@@ -671,7 +690,7 @@ fn bessel_ikv_asymptotic_uniform(
 /// Compute I(v, x) and K(v, x) simultaneously by Temme's method, see
 /// Temme, Journal of Computational Physics, vol 19, 324 (1975)
 /// Heavily inspired by
-/// https://github.com/scipy/scipy/blob/1984f97749a355a6767cea55cad5d1dc6977ad5f/scipy/special/cephes/scipy_iv.c#L532
+/// <https://github.com/scipy/scipy/blob/1984f97749a355a6767cea55cad5d1dc6977ad5f/scipy/special/cephes/scipy_iv.c#L532>
 #[allow(clippy::many_single_char_names)]
 pub(crate) fn bessel_ikv_temme(
     v: f64,
@@ -839,7 +858,7 @@ fn cf2_ik(v: f64, x: f64) -> Result<(f64, f64), BesselIvError> {
     Err(BesselIvError::FailedToConverge)
 }
 
-/// Evaluate continued fraction fv = I_(v+1) / I_v, derived from
+/// Evaluate continued fraction fv = I_(v+1) / `I_v`, derived from
 /// Abramowitz and Stegun, Handbook of Mathematical Functions, 1972, 9.1.73 */
 #[allow(clippy::many_single_char_names)]
 fn cf1_ik(v: f64, x: f64) -> Result<f64, BesselIvError> {
@@ -883,10 +902,10 @@ fn cf1_ik(v: f64, x: f64) -> Result<f64, BesselIvError> {
     Err(BesselIvError::FailedToConverge)
 }
 
-/// Compute I_v from (AMS5 9.7.1), asymptotic expansion for large |z|
-///  I_v ~ exp(x)/sqrt(2 pi x) ( 1 + (4*v*v-1)/8x + (4*v*v-1)(4*v*v-9)/8x/2! + ...)
+/// Compute `I_v` from (AMS5 9.7.1), asymptotic expansion for large |z|
+///  `I_v` ~ exp(x)/sqrt(2 pi x) ( 1 + (4*v*v-1)/8x + (4*v*v-1)(4*v*v-9)/8x/2! + ...)
 ///  Heavily inspired by
-///  https://github.com/scipy/scipy/blob/1984f97749a355a6767cea55cad5d1dc6977ad5f/scipy/special/cephes/scipy_iv.c#L145
+///  <https://github.com/scipy/scipy/blob/1984f97749a355a6767cea55cad5d1dc6977ad5f/scipy/special/cephes/scipy_iv.c#L145>
 fn bessel_iv_asymptotic(v: f64, x: f64) -> Result<f64, BesselIvError> {
     let prefactor = x.exp() / (2.0 * std::f64::consts::PI * x).sqrt();
 
@@ -1070,5 +1089,24 @@ mod tests {
         let (i, k) = bessel_ikv_asymptotic_uniform(100.0, 60.0).unwrap();
         assert::close(i, 2.883_277_090_649_164e-7, TOL);
         assert::close(k, 1.487_001_275_494_647_4e4, TOL);
+    }
+
+    #[test]
+    fn proptest_i0_vs_log_i0() {
+        use proptest::prelude::*;
+
+        proptest!(|(x: f64)| {
+            // Skip NaN/infinite inputs
+            prop_assume!(x.is_finite());
+
+            let i0_val = i0(x);
+            let log_i0_val = log_i0(x);
+
+            // i0 should equal exp(log_i0) within tolerance
+            // Only check when values are in reasonable range to avoid overflow
+            if i0_val.is_finite() && log_i0_val.is_finite() && log_i0_val < 700.0 {
+                assert::close(i0_val.ln(), log_i0_val, 1e-10);
+            }
+        });
     }
 }

@@ -4,6 +4,32 @@ use approx::RelativeEq;
 use crate::traits::Rv;
 use std::collections::BTreeMap;
 
+#[cfg(feature = "serde1")]
+#[macro_export]
+macro_rules! test_serde_params {
+    ($fx: expr, $fx_ty: ty, $x_ty: ty) => {
+        #[test]
+        fn test_serde_ln_f() {
+            use $crate::traits::HasDensity;
+            use $crate::traits::Sampleable;
+
+            let mut rng = ::rand::rng();
+
+            let fx = $fx;
+            let xs: Vec<$x_ty> = fx.sample(100, &mut rng);
+            let ln_fs: Vec<f64> = xs.iter().map(|x| fx.ln_f(x)).collect();
+
+            let json = ::serde_json::to_string(&fx).unwrap();
+            let fx_2: $fx_ty = ::serde_json::from_str(&json).unwrap();
+
+            for (x, ln_f) in xs.iter().zip(ln_fs.iter()) {
+                let ln_f_2 = fx_2.ln_f(x);
+                ::assert::close(*ln_f, ln_f_2, 1e-14);
+            }
+        }
+    };
+}
+
 // tests that Clone, Debug, and PartialEq are implemented for a distribution
 // Tests that partial eq is not sensitive to OnceCell initialization, which
 // often happens in ln_f is called
@@ -18,7 +44,7 @@ macro_rules! test_basic_impls {
 
             #[test]
             fn should_impl_debug_clone_and_partialeq() {
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
                 // make the expression a thing. If we don't do this, calling $fx
                 // reconstructs the distribution which means we don't do caching
                 let fx = $fx;
@@ -44,7 +70,7 @@ macro_rules! test_basic_impls {
 
             #[test]
             fn should_impl_parameterized() {
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
 
                 let fx_1 = $fx;
                 let params = fx_1.emit_params();
@@ -188,10 +214,10 @@ fn append_stats(
         }
     }
 
-    for (k, v) in src.iter() {
+    for (k, v) in src {
         sink.get_mut(k)
             .map(|vals| vals.push(*v))
-            .expect("failed to push")
+            .expect("failed to push");
     }
 }
 
@@ -216,10 +242,7 @@ where
         let errors = self.errs();
         errors.iter().try_for_each(|(name, err)| {
             if *err > max_err {
-                Err(format!(
-                    "P-P Error {} ({}) exceeds max ({})",
-                    name, err, max_err
-                ))
+                Err(format!("P-P Error {name} ({err}) exceeds max ({max_err})"))
             } else {
                 Ok(())
             }
@@ -230,7 +253,7 @@ where
     pub fn errs(&self) -> Vec<(String, f64)> {
         use crate::dist::Empirical;
         let mut errors: Vec<(String, f64)> = Vec::new();
-        for (stat_name, prior_stats) in self.prior_chain_stats.iter() {
+        for (stat_name, prior_stats) in &self.prior_chain_stats {
             let post_stats = &self.posterior_chain_stats[stat_name];
             let emp_prior = Empirical::new(prior_stats.clone());
             let emp_post = Empirical::new(post_stats.clone());
@@ -256,8 +279,8 @@ where
             let xs: Vec<X> = fx.sample(self.nx, rng);
             let stats = self.pr.geweke_stats(&fx, &xs);
 
-            append_stats(n, &stats, &mut self.prior_chain_stats)
-        })
+            append_stats(n, &stats, &mut self.prior_chain_stats);
+        });
     }
 
     pub fn run_posterior_chain<R: rand::Rng>(
@@ -276,8 +299,8 @@ where
 
             let stats = self.pr.geweke_stats(&fx, &xs);
 
-            append_stats(n, &stats, &mut self.posterior_chain_stats)
-        })
+            append_stats(n, &stats, &mut self.posterior_chain_stats);
+        });
     }
 }
 
@@ -357,6 +380,8 @@ macro_rules! test_conjugate_prior {
     };
     ($X: ty, $Fx: ty, $Pr: ident, $prior: expr, mctol=$tol: expr, n=$n: expr) => {
         mod conjugate_prior {
+            use $crate::traits::SuffStat;
+
             use super::*;
 
             fn random_xs(
@@ -379,7 +404,7 @@ macro_rules! test_conjugate_prior {
                 // If this doesn't work, one of two things could be wrong:
                 // 1. prior.ln_m is wrong
                 // 2. prior.ln_pp is wrong
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
 
                 let pr = $prior;
                 let fx: $Fx = pr.draw(&mut rng);
@@ -410,13 +435,14 @@ macro_rules! test_conjugate_prior {
 
             #[test]
             fn bayes_law() {
+                use $crate::traits::HasDensity;
                 // test that p(θ|x) == p(x|θ)p(θ)/p(x)
                 // If this doesn't work, one of the following is wrong
                 // 1. prior.posterior.ln_f(fx)
                 // 2. fx.ln_f(x)
                 // 3. prior.ln_f(fx)
                 // 4. prior.ln_m(x)
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
 
                 let pr = $prior;
                 let fx: $Fx = pr.draw(&mut rng);
@@ -458,7 +484,7 @@ macro_rules! test_conjugate_prior {
                 // 2. fx.ln_f_stat is wrong
                 // 3. prior.m is wrong
                 let n_tries = 5;
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
 
                 let pr = $prior;
 
@@ -504,4 +530,168 @@ macro_rules! test_conjugate_prior {
             }
         }
     };
+}
+
+use crate::prelude::ChiSquared;
+use crate::traits::Cdf;
+/// # Arguments
+/// * `samples` - The data samples to test
+/// * `density_fn` - A function that returns the unnormalized density at a given point
+/// * `num_bins` - Number of constant-width bins to use
+/// * `normalized` - Whether the given density is normalized
+///
+/// # Returns
+/// * Result<f64, Box<dyn std::error::Error>>
+pub fn density_histogram_test<F>(
+    samples: &[f64],
+    num_bins: usize,
+    density_fn: F,
+    normalized: bool,
+) -> Result<f64, Box<dyn std::error::Error>>
+where
+    F: Fn(f64) -> f64,
+{
+    if samples.is_empty() {
+        return Err("Sample set is empty".into());
+    }
+    if num_bins < 2 {
+        return Err("Need at least 2 bins for chi-square test".into());
+    }
+
+    // Find min and max of the samples
+    let min_val = samples.iter().fold(f64::INFINITY, |a, &b| a.min(b));
+    let max_val = samples.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
+    let range = max_val - min_val;
+
+    // Create histogram with constant width bins
+    let mut hist: Vec<usize> = vec![0; num_bins];
+
+    // Fill histogram with samples
+    for &sample in samples {
+        let u = (sample - min_val) / range; // 0 ≤ u ≤ 1
+        let bin_ix = ((u * num_bins as f64) as usize).min(num_bins - 1);
+        hist[bin_ix] += 1;
+    }
+
+    // Calculate bin width for Simpson's rule
+    let bin_width = (max_val - min_val) / num_bins as f64;
+
+    // Calculate expected frequencies using Simpson's rule to integrate the density function
+    let mut expected_counts = Vec::with_capacity(num_bins);
+    let mut total_integral = 0.0;
+
+    for bin_ix in 0..num_bins {
+        let bin_start = (bin_ix as f64).mul_add(bin_width, min_val);
+        let bin_mid = bin_start + bin_width / 2.0;
+        let bin_end = bin_start + bin_width;
+
+        // Apply Simpson's rule for each bin
+        let integral = (bin_width / 6.0)
+            * (4.0_f64.mul_add(density_fn(bin_mid), density_fn(bin_start))
+                + density_fn(bin_end));
+
+        expected_counts.push(integral);
+        total_integral += integral;
+    }
+
+    // Scale the expected counts so the total matches the number of samples
+    let scale_factor = if normalized {
+        samples.len() as f64
+    } else {
+        samples.len() as f64 / total_integral
+    };
+    for expected in &mut expected_counts {
+        *expected *= scale_factor;
+    }
+
+    // Calculate chi-square statistic
+    let mut test_stat = 0.0;
+    let mut valid_bins = 0;
+
+    for bin_ix in 0..num_bins {
+        let observed = hist[bin_ix];
+        let expected = expected_counts[bin_ix];
+
+        // Skip bins with expected count less than 5 (chi-square assumption)
+        if expected >= 5.0 {
+            test_stat += (observed as f64 - expected).powi(2) / expected;
+            valid_bins += 1;
+        }
+    }
+
+    // Degrees of freedom = number of bins - 1
+    let df = valid_bins - 1;
+
+    if df <= 0 {
+        return Err("Not enough valid bins (with expected count >= 5) for chi-square test".into());
+    }
+
+    // Calculate p-value
+    let chi_dist = ChiSquared::new(f64::from(df))?;
+    let p_value = 1.0 - chi_dist.cdf(&test_stat);
+
+    Ok(p_value)
+}
+
+mod tests {
+
+    #[test]
+    fn test_density_histogram_gaussian() {
+        use crate::prelude::Gaussian;
+        use crate::test::density_histogram_test;
+        use crate::traits::HasDensity;
+        use crate::traits::Sampleable;
+        use rand::SeedableRng;
+        use rand_xoshiro::Xoshiro256Plus;
+
+        let mut rng = Xoshiro256Plus::seed_from_u64(1);
+        let dist = Gaussian::default();
+
+        // Generate samples from standard normal
+        let n = 10_000;
+        let n_bins = 100;
+        let samples: Vec<f64> = (0..n).map(|_| dist.draw(&mut rng)).collect();
+
+        // Test against standard normal density function
+        let density_fn = |x: f64| dist.f(&x);
+
+        for normalized in [true, false] {
+            let p_value = density_histogram_test(
+                &samples, n_bins, density_fn, normalized,
+            )
+            .unwrap();
+
+            assert!(p_value > 0.05);
+        }
+    }
+
+    #[test]
+    fn test_density_histogram_exponential() {
+        use crate::prelude::Exponential;
+        use crate::test::density_histogram_test;
+        use crate::traits::HasDensity;
+        use crate::traits::Sampleable;
+        use rand::SeedableRng;
+        use rand_xoshiro::Xoshiro256Plus;
+
+        let mut rng = Xoshiro256Plus::seed_from_u64(1);
+        let dist = Exponential::default();
+
+        // Generate samples from standard normal
+        let n = 10_000;
+        let n_bins = 100;
+        let samples: Vec<f64> = (0..n).map(|_| dist.draw(&mut rng)).collect();
+
+        // Test against standard normal density function
+        let density_fn = |x: f64| dist.f(&x);
+
+        for normalized in [true, false] {
+            let p_value = density_histogram_test(
+                &samples, n_bins, density_fn, normalized,
+            )
+            .unwrap();
+
+            assert!(p_value > 0.05);
+        }
+    }
 }

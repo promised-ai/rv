@@ -5,14 +5,17 @@ use crate::consts::HALF_LN_2PI_E;
 use crate::consts::LN_2PI;
 use crate::data::MvGaussianSuffStat;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    ContinuousDistr, Entropy, HasDensity, HasSuffStat, Mean, Mode,
+    Parameterized, Sampleable, Support, Variance,
+};
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dyn};
 use rand::Rng;
 use std::fmt;
 use std::sync::OnceLock;
 
-/// Cache for MvGaussian Internals
+/// Cache for `MvGaussian` Internals
 #[derive(Clone, Debug)]
 struct MvgCache {
     /// Covariant Matrix Cholesky Decomposition
@@ -64,7 +67,7 @@ impl MvgCache {
 ///
 /// // The draw procedure outlined in the appendices of "Bayesian Data
 /// // Analysis" by Andrew Gelman and colleagues.
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 ///
 /// // 1. Create a multivariate normal with zero mean and covariance matrix S
 /// let mvg = MvGaussian::new(DVector::zeros(k), scale_mat).unwrap();
@@ -192,7 +195,7 @@ impl MvGaussian {
     ///
     /// # Arguments
     /// - mu: k-length mean vector
-    /// - cov_chol: Cholesky decomposition of k-by-k positive-definite covariance matrix
+    /// - `cov_chol`: Cholesky decomposition of k-by-k positive-definite covariance matrix
     /// ```rust
     /// use nalgebra::{DMatrix, DVector};
     /// use rv::prelude::*;
@@ -217,28 +220,30 @@ impl MvGaussian {
     ) -> Result<Self, MvGaussianError> {
         let l = cov_chol.l();
         let cov = &l * &l.transpose();
-        if mu.len() != cov.nrows() {
+        if mu.len() == cov.nrows() {
+            let cache = OnceLock::from(MvgCache::from_chol(cov_chol));
+            Ok(MvGaussian { mu, cov, cache })
+        } else {
             Err(MvGaussianError::MuCovDimensionMismatch {
                 n_mu: mu.len(),
                 n_cov: cov.nrows(),
             })
-        } else {
-            let cache = OnceLock::from(MvgCache::from_chol(cov_chol));
-            Ok(MvGaussian { mu, cov, cache })
         }
     }
 
-    /// Creates a new MvGaussian from mean and covariance without checking
+    /// Creates a new `MvGaussian` from mean and covariance without checking
     /// whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(mu: DVector<f64>, cov: DMatrix<f64>) -> Self {
         let cache = OnceLock::from(MvgCache::from_cov(&cov).unwrap());
         MvGaussian { mu, cov, cache }
     }
 
-    /// Creates a new MvGaussian from mean and covariance's Cholesky factorization
+    /// Creates a new `MvGaussian` from mean and covariance's Cholesky factorization
     /// without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_cholesky_unchecked(
         mu: DVector<f64>,
         cov_chol: Cholesky<f64, Dyn>,
@@ -322,14 +327,14 @@ impl MvGaussian {
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: DVector<f64>) -> Result<(), MvGaussianError> {
-        if mu.len() != self.cov.nrows() {
+        if mu.len() == self.cov.nrows() {
+            self.mu = mu;
+            Ok(())
+        } else {
             Err(MvGaussianError::MuCovDimensionMismatch {
                 n_mu: mu.len(),
                 n_cov: self.cov.nrows(),
             })
-        } else {
-            self.mu = mu;
-            Ok(())
         }
     }
 
@@ -523,6 +528,7 @@ impl HasSuffStat<DVector<f64>> for MvGaussian {
 
 impl std::error::Error for MvGaussianError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for MvGaussianError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -532,15 +538,12 @@ impl fmt::Display for MvGaussianError {
             }
             Self::MuCovDimensionMismatch { n_mu, n_cov } => write!(
                 f,
-                "mean vector and covariance matrix do not align. mu is {} \
-                    dimensions but cov is {} dimensions",
-                n_mu, n_cov
+                "mean vector and covariance matrix do not align. mu is {n_mu} \
+                    dimensions but cov is {n_cov} dimensions"
             ),
-            Self::CovNotSquare { nrows, ncols } => write!(
-                f,
-                "covariance matrix is not square ({} x {})",
-                nrows, ncols
-            ),
+            Self::CovNotSquare { nrows, ncols } => {
+                write!(f, "covariance matrix is not square ({nrows} x {ncols})")
+            }
         }
     }
 }
@@ -548,7 +551,7 @@ impl fmt::Display for MvGaussianError {
 #[cfg(test)]
 mod tests {
     use nalgebra::{dmatrix, dvector};
-    use rand::{thread_rng, SeedableRng};
+    use rand::{SeedableRng, rng};
 
     use super::*;
     use crate::dist::Gaussian;
@@ -582,7 +585,7 @@ mod tests {
         assert_eq!(
             mvg,
             Err(MvGaussianError::MuCovDimensionMismatch { n_mu: 3, n_cov: 4 })
-        )
+        );
     }
 
     #[test]
@@ -593,7 +596,7 @@ mod tests {
         assert_eq!(
             mvg,
             Err(MvGaussianError::MuCovDimensionMismatch { n_mu: 3, n_cov: 2 })
-        )
+        );
     }
 
     #[test]
@@ -678,7 +681,7 @@ mod tests {
         let mu = DVector::<f64>::from_column_slice(&[0.5, 3.1, -6.2]);
         let mvg = MvGaussian::new(mu, cov).unwrap();
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let xs: Vec<DVector<f64>> = mvg.sample(103, &mut rng);
 
@@ -712,7 +715,9 @@ mod tests {
 
     #[test]
     fn standard_draw_marginals() {
-        let mut rng = rand::thread_rng();
+        use crate::traits::Cdf;
+
+        let mut rng = rand::rng();
         let mvg = MvGaussian::standard(2).unwrap();
 
         let g = Gaussian::standard();
@@ -739,7 +744,7 @@ mod tests {
 
     #[test]
     fn standard_draw_mardia() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mvg = MvGaussian::standard(4).unwrap();
 
         let passed = (0..NTRIES).fold(false, |acc, _| {
@@ -757,7 +762,7 @@ mod tests {
 
     #[test]
     fn nonstandard_draw_mardia() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let cov_vals = vec![
             1.017_427_88,
             0.365_866_52,
@@ -788,6 +793,8 @@ mod tests {
 
     #[test]
     fn suff_stat_ln_f() {
+        use crate::traits::SuffStat;
+
         let f = MvGaussian::new(
             dvector![1.0, 2.0],
             dmatrix![1.0, 3.0/5.0; 3.0/5.0, 2.0;],
@@ -805,6 +812,8 @@ mod tests {
 
     #[test]
     fn suff_stat_ln_f_fuzzy() {
+        use crate::traits::SuffStat;
+
         let f = MvGaussian::new(
             dvector![1.0, 2.0],
             dmatrix![1.0, 3.0/5.0; 3.0/5.0, 2.0;],
@@ -814,7 +823,7 @@ mod tests {
             MvGaussian::new(dvector![0.0, 0.0], dmatrix![1.0, 0.0; 0.0, 1.0;])
                 .unwrap();
 
-        let seed: u64 = thread_rng().gen();
+        let seed: u64 = rng().random();
         dbg!(&seed); // Show this for diagnosing issues later.
         let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
 

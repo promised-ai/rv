@@ -1,5 +1,8 @@
 //! Continuous uniform distribution, U(a, b) on the interval x in [a, b]
-use crate::traits::*;
+use crate::traits::{
+    Cdf, DiscreteDistr, Entropy, HasDensity, InverseCdf, Kurtosis, Mean,
+    Median, Parameterized, Sampleable, Skewness, Support, Variance,
+};
 use num::{FromPrimitive, Integer, ToPrimitive};
 use rand::Rng;
 use rand_distr::uniform::SampleUniform;
@@ -65,7 +68,7 @@ impl<T: DuParam> DiscreteUniform<T> {
         }
     }
 
-    /// Creates a new DiscreteUniform without checking whether the parameters
+    /// Creates a new `DiscreteUniform` without checking whether the parameters
     /// are valid.
     #[inline]
     pub fn new_unchecked(a: T, b: T) -> Self {
@@ -110,6 +113,7 @@ where
     }
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl<T> fmt::Display for DiscreteUniform<T>
 where
     T: DuParam + fmt::Display,
@@ -139,12 +143,14 @@ where
     X: Integer + From<T>,
 {
     fn draw<R: Rng>(&self, rng: &mut R) -> X {
-        let d = rand::distributions::Uniform::new_inclusive(self.a, self.b);
+        let d = rand::distr::Uniform::new_inclusive(self.a, self.b)
+            .expect("By construction, this should be valid");
         X::from(rng.sample(d))
     }
 
     fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<X> {
-        let d = rand::distributions::Uniform::new_inclusive(self.a, self.b);
+        let d = rand::distr::Uniform::new_inclusive(self.a, self.b)
+            .expect("By construction, this should be valid");
         rng.sample_iter(&d).take(n).map(X::from).collect()
     }
 }
@@ -253,6 +259,7 @@ impl<T: DuParam> Kurtosis for DiscreteUniform<T> {
 
 impl std::error::Error for DiscreteUniformError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for DiscreteUniformError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -335,8 +342,8 @@ mod tests {
 
     #[test]
     fn cdf_inv_cdf_ident() {
-        let mut rng = rand::thread_rng();
-        let ru = rand::distributions::Uniform::new_inclusive(0_u32, 100_u32);
+        let mut rng = rand::rng();
+        let ru = rand::distr::Uniform::new_inclusive(0_u32, 100_u32).unwrap();
         let u = DiscreteUniform::new(0_u32, 100_u32).unwrap();
         for _ in 0..100 {
             let x: u32 = rng.sample(ru);
@@ -348,7 +355,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let u = DiscreteUniform::new(0_u32, 100_u32).unwrap();
         let cdf = |x: u64| u.cdf(&x);
 
@@ -356,12 +363,15 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<u64> = u.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = DiscreteUniform::new(0_u32, 10_u32).unwrap();
+        let dist_b = DiscreteUniform::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

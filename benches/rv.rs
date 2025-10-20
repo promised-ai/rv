@@ -1,9 +1,9 @@
-use criterion::black_box;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use nalgebra::{DMatrix, DVector};
 use rv::data::Partition;
 use rv::prelude::*;
+use std::hint::black_box;
 
 // Takes a list of tuple-like inputs and builds benchmarks.
 // Each entry contains:
@@ -34,27 +34,27 @@ macro_rules! benchrv {
         fn $fn_name(c: &mut Criterion) {
             let mut group = c.benchmark_group($bench_name);
             group.bench_function("ln_f", |b| {
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
                 let fx = $ctor;
                 let x: $xtype = fx.draw(&mut rng);
                 b.iter(|| fx.ln_f(black_box(&x)))
             });
             group.bench_function("draw", |b| {
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
                 let fx = $ctor;
                 b.iter(|| {
                     let _x: $xtype = fx.draw(&mut rng);
                 });
             });
             group.bench_function("sample 5", |b| {
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
                 let fx = $ctor;
                 b.iter(|| {
                     let _xs: Vec<$xtype> = fx.sample(5, &mut rng);
                 })
             });
             group.bench_function("stream, 5", |b| {
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
                 let fx = $ctor;
                 b.iter(|| {
                     let _count: usize =

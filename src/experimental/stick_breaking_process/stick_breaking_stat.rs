@@ -43,6 +43,7 @@ impl StickBreakingSuffStat {
     /// # Returns
     ///
     /// A new instance of `StickBreakingSuffStat`.
+    #[must_use]
     pub fn new() -> Self {
         Self {
             n: 0,
@@ -52,12 +53,14 @@ impl StickBreakingSuffStat {
     }
 
     /// Returns the number of breaks observed in the stick-breaking process.
+    #[must_use]
     pub fn num_breaks(&self) -> usize {
         self.num_breaks
     }
 
     /// Returns the sum of the logarithms of the remaining stick lengths after
     /// each break.
+    #[must_use]
     pub fn sum_log_q(&self) -> f64 {
         self.sum_log_q
     }
@@ -94,7 +97,7 @@ impl From<&&[f64]> for StickBreakingSuffStat {
 //     }
 // }
 
-/// Computes the sufficient statistic for a UnitPowerLaw distribution from a sequence of stick lengths.
+/// Computes the sufficient statistic for a `UnitPowerLaw` distribution from a sequence of stick lengths.
 ///
 /// This function processes a sequence of stick lengths resulting from a stick-breaking process
 /// parameterized by a UnitPowerLaw(α), which is equivalent to a Beta(α,1) distribution. It calculates
@@ -130,7 +133,7 @@ fn stick_stat_unit_powerlaw(sticks: &[f64]) -> (usize, f64) {
         // remaining before the break. In practice, numerical instabilities can
         // cause problems. So we filter to be sure we only consider valid
         // values.
-        .filter(|(&len, remaining)| len < *remaining)
+        .filter(|&(&len, ref remaining)| len < *remaining)
         .map(|(&len, remaining)| 1.0 - len / remaining);
 
     // The sufficient statistic is (n, ∑ᵢ log(1 - pᵢ)) == (n, log ∏ᵢ(1 - pᵢ)).
@@ -204,5 +207,15 @@ impl SuffStat<&[f64]> for StickBreakingSuffStat {
         self.n -= 1;
         self.num_breaks -= num_breaks;
         self.sum_log_q -= sum_log_q;
+    }
+
+    fn merge(&mut self, other: Self) {
+        if other.n == 0 {
+            return;
+        }
+        self.n += other.n;
+        self.sum_log_q += other.sum_log_q;
+        // FIXME: is this right?
+        self.num_breaks += other.num_breaks;
     }
 }

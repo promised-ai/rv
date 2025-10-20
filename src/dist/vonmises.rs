@@ -2,15 +2,22 @@
 use serde::{Deserialize, Serialize};
 
 use crate::consts::LN_2PI;
+use crate::consts::TWO_PI;
+use crate::data::VonMisesSuffStat;
 use crate::impl_display;
 use crate::misc::bessel;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, Mean, Median, Mode,
+    Parameterized, Sampleable, Scalable, Support, Variance,
+};
+use num::Zero;
 use rand::Rng;
+use rand_distr::Normal;
 use std::f64::consts::PI;
 use std::fmt;
 
 /// [VonMises distribution](https://en.wikipedia.org/wiki/Von_Mises_distribution)
-/// on the circular interval (0, 2π]
+/// on the circular interval [0, 2π)
 ///
 /// # Example
 ///
@@ -24,11 +31,11 @@ use std::fmt;
 /// assert!(!vm.supports(&6.3_f64));
 ///
 /// // 103 VonMises draws
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 /// let xs: Vec<f64> = vm.sample(103, &mut rng);
 /// assert_eq!(xs.len(), 103);
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct VonMises {
@@ -37,7 +44,15 @@ pub struct VonMises {
     /// Sort of like precision. Higher k implies lower variance.
     k: f64,
     // bessel:i0(k), save some cycles
-    i0_k: f64,
+    log_i0_k: f64,
+    sin_mu: f64,
+    cos_mu: f64,
+}
+
+impl PartialEq for VonMises {
+    fn eq(&self, other: &Self) -> bool {
+        self.mu == other.mu && self.k == other.k
+    }
 }
 
 pub struct VonMisesParameters {
@@ -58,45 +73,109 @@ impl Parameterized for VonMises {
     fn from_params(params: Self::Parameters) -> Self {
         Self::new_unchecked(params.mu, params.k)
     }
+
+    fn map_params(
+        &self,
+        f: impl Fn(Self::Parameters) -> Self::Parameters,
+    ) -> VonMises {
+        let params0 = self.emit_params();
+        let (mu0, k0) = (params0.mu, params0.k);
+        let (mu, k) = {
+            let params = f(params0);
+            (params.mu, params.k)
+        };
+        let log_i0_k = if k == k0 {
+            self.log_i0_k()
+        } else {
+            bessel::log_i0(k)
+        };
+        let (sin_mu, cos_mu) = if mu == mu0 {
+            (self.sin_mu(), self.cos_mu())
+        } else {
+            mu.sin_cos()
+        };
+        VonMises::from_parts_unchecked(mu, k, log_i0_k, sin_mu, cos_mu)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum VonMisesError {
-    /// The mu parameter is less than zero or greater than `2*PI`
-    MuOutOfBounds { mu: f64 },
     /// The mu parameter is infinite or NaN
     MuNotFinite { mu: f64 },
-    /// The k parameter is less than or equal to zero
+    /// The k parameter is less than zero
     KTooLow { k: f64 },
     /// The k parameter is infinite or NaN
     KNotFinite { k: f64 },
 }
 
 impl VonMises {
-    /// Create a new VonMises distribution with mean mu, and precision, k.
+    /// Create a new `VonMises` distribution with mean mu, and precision, k.
+    ///
+    /// # Example
+    /// ```rust
+    /// use rv::dist::{VonMises, VonMisesError};
+    ///
+    /// assert!(matches!(VonMises::new(f64::INFINITY, 0.0), Err(VonMisesError::MuNotFinite{ .. })));
+    /// assert!(matches!(VonMises::new(5.0, -1.0), Err(VonMisesError::KTooLow{ .. })));
+    /// assert!(matches!(VonMises::new(5.0, f64::INFINITY), Err(VonMisesError::KNotFinite{ .. })));
+    ///
+    /// assert!(matches!(VonMises::new(5.0, 3.0), Ok(..)));
+    /// ```
     pub fn new(mu: f64, k: f64) -> Result<Self, VonMisesError> {
-        if !(0.0..=2.0 * PI).contains(&mu) {
-            Err(VonMisesError::MuOutOfBounds { mu })
-        } else if !mu.is_finite() {
+        if !mu.is_finite() {
             Err(VonMisesError::MuNotFinite { mu })
-        } else if k <= 0.0 {
+        } else if k < 0.0 {
             Err(VonMisesError::KTooLow { k })
         } else if !k.is_finite() {
             Err(VonMisesError::KNotFinite { k })
         } else {
-            let i0_k = bessel::i0(k);
-            Ok(VonMises { mu, k, i0_k })
+            let mu = mu.rem_euclid(TWO_PI);
+            let (sin_mu, cos_mu) = mu.sin_cos();
+            let log_i0_k = bessel::log_i0(k);
+            Ok(VonMises {
+                mu,
+                k,
+                log_i0_k,
+                sin_mu,
+                cos_mu,
+            })
         }
     }
 
-    /// Creates a new VonMises without checking whether the parameters are
+    /// Creates a new `VonMises` without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(mu: f64, k: f64) -> Self {
-        let i0_k = bessel::i0(k);
-        VonMises { mu, k, i0_k }
+        let (sin_mu, cos_mu) = mu.sin_cos();
+        let log_i0_k = bessel::log_i0(k);
+        VonMises {
+            mu,
+            k,
+            log_i0_k,
+            sin_mu,
+            cos_mu,
+        }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn from_parts_unchecked(
+        mu: f64,
+        k: f64,
+        log_i0_k: f64,
+        sin_mu: f64,
+        cos_mu: f64,
+    ) -> Self {
+        VonMises {
+            mu,
+            k,
+            log_i0_k,
+            sin_mu,
+            cos_mu,
+        }
     }
 
     /// Get the mean parameter, mu
@@ -109,8 +188,24 @@ impl VonMises {
     /// assert_eq!(vm.mu(), 0.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn mu(&self) -> f64 {
         self.mu
+    }
+
+    #[must_use]
+    pub fn sin_mu(&self) -> f64 {
+        self.sin_mu
+    }
+
+    #[must_use]
+    pub fn cos_mu(&self) -> f64 {
+        self.cos_mu
+    }
+
+    #[inline]
+    fn log_i0_k(&self) -> f64 {
+        self.log_i0_k
     }
 
     /// Set the value of mu
@@ -135,22 +230,17 @@ impl VonMises {
     /// assert!(vm.set_mu(0.0).is_ok());
     /// assert!(vm.set_mu(2.0 * std::f64::consts::PI).is_ok());
     ///
-    /// assert!(vm.set_mu(0.0 - 0.001).is_err());
-    /// assert!(vm.set_mu(2.0 * std::f64::consts::PI + 0.001).is_err());
-    ///
     /// assert!(vm.set_mu(f64::NEG_INFINITY).is_err());
     /// assert!(vm.set_mu(f64::INFINITY).is_err());
     /// assert!(vm.set_mu(f64::NAN).is_err());
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), VonMisesError> {
-        if !mu.is_finite() {
-            Err(VonMisesError::MuNotFinite { mu })
-        } else if !(0.0..=2.0 * PI).contains(&mu) {
-            Err(VonMisesError::MuOutOfBounds { mu })
-        } else {
-            self.set_mu_unchecked(mu);
+        if mu.is_finite() {
+            self.set_mu_unchecked(mu.rem_euclid(2.0 * PI));
             Ok(())
+        } else {
+            Err(VonMisesError::MuNotFinite { mu })
         }
     }
 
@@ -158,6 +248,9 @@ impl VonMises {
     #[inline]
     pub fn set_mu_unchecked(&mut self, mu: f64) {
         self.mu = mu;
+        let (sin_mu, cos_mu) = mu.sin_cos();
+        self.sin_mu = sin_mu;
+        self.cos_mu = cos_mu;
     }
 
     /// Get the precision parameter, k
@@ -170,6 +263,7 @@ impl VonMises {
     /// assert_eq!(vm.k(), 1.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn k(&self) -> f64 {
         self.k
     }
@@ -199,7 +293,6 @@ impl VonMises {
     /// assert!(vm.set_k(0.1).is_ok());
     ///
     /// // Must be greater than zero
-    /// assert!(vm.set_k(0.0).is_err());
     /// assert!(vm.set_k(-1.0).is_err());
     ///
     /// assert!(vm.set_k(f64::INFINITY).is_err());
@@ -208,7 +301,7 @@ impl VonMises {
     /// ```
     #[inline]
     pub fn set_k(&mut self, k: f64) -> Result<(), VonMisesError> {
-        if k <= 0.0 {
+        if k < 0.0 {
             Err(VonMisesError::KTooLow { k })
         } else if !k.is_finite() {
             Err(VonMisesError::KNotFinite { k })
@@ -222,13 +315,39 @@ impl VonMises {
     #[inline]
     pub fn set_k_unchecked(&mut self, k: f64) {
         self.k = k;
-        self.i0_k = bessel::i0(k);
+        self.log_i0_k = bessel::log_i0(k);
+    }
+
+    /// Perform a slice sampling step for the `VonMises` distribution
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The current value of x
+    /// * `mu` - The mean of the distribution
+    /// * `k` - The concentration parameter
+    /// * `rng` - The random number generator
+    ///
+    /// # Returns
+    ///
+    /// The new value of x
+    #[inline]
+    pub fn slice_step<R: Rng>(x: f64, mu: f64, k: f64, rng: &mut R) -> f64 {
+        // y ~ Uniform(0, exp(k * cos(x - μ)))
+        let logy = k.mul_add((x - mu).cos(), rng.random::<f64>().ln());
+        // Need to solve for x in k cos(x) = logy
+        // If logy < -k, then we're below the cos curve
+        // In that case, sample uniformly on the circle
+        let xmax = if logy < -k { PI } else { (logy / k).acos() };
+        // Sample uniformly on [-xmax, xmax] and add μ
+        let x = xmax.mul_add(rng.random_range(-1.0..=1.0), mu);
+        // Ensure result is in [0, 2π)
+        x.rem_euclid(TWO_PI)
     }
 }
 
 impl Default for VonMises {
     fn default() -> Self {
-        VonMises::new(PI, 1.0).unwrap()
+        VonMises::new(0.0, 0.0).unwrap()
     }
 }
 
@@ -239,14 +358,14 @@ impl From<&VonMises> for String {
 }
 
 impl_display!(VonMises);
+crate::impl_scalable!(VonMises);
 
 macro_rules! impl_traits {
     ($kind:ty) => {
         impl HasDensity<$kind> for VonMises {
             fn ln_f(&self, x: &$kind) -> f64 {
-                // TODO: could also cache ln(i0_k)
                 let xf = f64::from(*x);
-                self.k.mul_add((xf - self.mu).cos(), -LN_2PI) - self.i0_k.ln()
+                self.k.mul_add((xf - self.mu).cos(), -LN_2PI) - self.log_i0_k()
             }
         }
 
@@ -255,31 +374,47 @@ macro_rules! impl_traits {
             //     von Mises distribution. Applied Statistics, 152-157.
             // https://www.researchgate.net/publication/246035131_Efficient_Simulation_of_the_von_Mises_Distribution
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let u = rand::distributions::Open01;
-                let tau = 1.0 + 4.0_f64.mul_add(self.k * self.k, 1.0).sqrt();
-                let rho = (tau * (2.0 * tau).sqrt()) / (2.0 * self.k);
-                let r = rho.mul_add(rho, 1.0) / (2.0 * rho);
-
-                loop {
-                    let u1: f64 = rng.sample(u);
-                    let u2: f64 = rng.sample(u);
-
-                    let z: f64 = (PI * u1).cos();
-                    let f = r.mul_add(z, 1.0) / (r + z);
-                    let c = self.k * (r - f);
-
-                    if (c.mul_add(2.0 - c, -u2) >= 0.0)
-                        || ((c / u2).ln() + 1.0 - c >= 0.0)
-                    {
-                        let u3: f64 = rng.sample(u);
-                        let y = (u3 - 0.5).signum().mul_add(f.acos(), self.mu);
-                        let x = y.rem_euclid(2.0 * PI) as $kind;
-                        if self.supports(&x) {
-                            return x;
-                        } else {
-                            panic!("VonMises does not support {}", x);
+                if self.k.is_zero() {
+                    rng.random_range(0.0..=TWO_PI) as $kind
+                } else if self.k > 700.0 {
+                    let normal = Normal::new(self.mu, 1.0 / self.k).unwrap();
+                    rng.sample(normal).rem_euclid(TWO_PI) as $kind
+                } else {
+                    let tau =
+                        1.0 + 4.0_f64.mul_add(self.k * self.k, 1.0).sqrt();
+                    let rho = (tau - (2.0 * tau).sqrt()) / (2.0 * self.k);
+                    let r = rho.mul_add(rho, 1.0) / (2.0 * rho);
+                    let mut f;
+                    loop {
+                        let t;
+                        let u;
+                        loop {
+                            let d: f64 = (rng.random::<f64>() - 0.5).powi(2);
+                            let e: f64 = (rng.random::<f64>() - 0.5).powi(2);
+                            let s: f64 = d + e;
+                            if s <= 0.25 {
+                                t = d / e;
+                                u = 4.0 * s;
+                                break;
+                            }
+                        }
+                        let z = (1.0 - t) / (1.0 + t);
+                        f = r.mul_add(z, 1.0) / (r + z);
+                        let c = self.k * (r - f);
+                        if (c.mul_add(2.0 - c, -u) > 0.0)
+                            || ((c / u).ln() + 1.0 - c >= 0.0)
+                        {
+                            break;
                         }
                     }
+
+                    let acf = f.acos();
+                    let x = if rng.random_bool(0.5) {
+                        self.mu + acf
+                    } else {
+                        self.mu - acf
+                    };
+                    x.rem_euclid(TWO_PI) as $kind
                 }
             }
         }
@@ -308,7 +443,7 @@ macro_rules! impl_traits {
         impl Support<$kind> for VonMises {
             fn supports(&self, x: &$kind) -> bool {
                 let xf = f64::from(*x);
-                (0.0..=2.0 * PI).contains(&xf)
+                (0.0..=TWO_PI).contains(&xf)
             }
         }
 
@@ -333,16 +468,34 @@ macro_rules! impl_traits {
         // This is the circular variance
         impl Variance<$kind> for VonMises {
             fn variance(&self) -> Option<$kind> {
-                let v: f64 = 1.0 - bessel::i1(self.k) / self.i0_k;
+                let v: f64 = 1.0 - bessel::i1(self.k) / self.log_i0_k().exp();
                 Some(v as $kind)
             }
         }
     };
 }
 
+impl HasSuffStat<f64> for VonMises {
+    type Stat = VonMisesSuffStat;
+
+    fn empty_suffstat(&self) -> Self::Stat {
+        VonMisesSuffStat::new()
+    }
+
+    fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
+        self.k.mul_add(
+            stat.sum_cos()
+                .mul_add(self.cos_mu(), stat.sum_sin() * self.sin_mu()),
+            -(stat.n() as f64 * (self.log_i0_k() + LN_2PI)),
+        )
+    }
+}
+
 impl Entropy for VonMises {
     fn entropy(&self) -> f64 {
-        -self.k * bessel::i1(self.k) / self.i0_k + LN_2PI + self.i0_k.ln()
+        -self.k * bessel::i1(self.k) / self.log_i0_k().exp()
+            + LN_2PI
+            + self.log_i0_k()
     }
 }
 
@@ -351,16 +504,14 @@ impl_traits!(f64);
 
 impl std::error::Error for VonMisesError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for VonMisesError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
-            Self::KNotFinite { k } => write!(f, "non-finite k: {}", k),
-            Self::MuOutOfBounds { mu } => {
-                write!(f, "mu was {} but must be in range [0, 2*PI]", mu)
-            }
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {mu}"),
+            Self::KNotFinite { k } => write!(f, "non-finite k: {k}"),
             Self::KTooLow { k } => {
-                write!(f, "k ({}) must be greater than zero", k)
+                write!(f, "k ({k}) must be greater than zero")
             }
         }
     }
@@ -370,7 +521,12 @@ impl fmt::Display for VonMisesError {
 mod tests {
     use super::*;
     use crate::misc::ks_test;
+    use crate::test::density_histogram_test;
     use crate::test_basic_impls;
+    use rand::SeedableRng;
+
+    use proptest::prelude::*;
+    use rand_xoshiro::Xoshiro256Plus;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;
@@ -382,15 +538,7 @@ mod tests {
     fn new_should_allow_mu_in_0_2pi() {
         assert!(VonMises::new(0.0, 1.0).is_ok());
         assert!(VonMises::new(PI, 1.0).is_ok());
-        assert!(VonMises::new(2.0 * PI, 1.0).is_ok());
-    }
-
-    #[test]
-    fn new_should_not_allow_mu_outside_0_2pi() {
-        assert!(VonMises::new(-PI, 1.0).is_err());
-        assert!(VonMises::new(-f64::EPSILON, 1.0).is_err());
-        assert!(VonMises::new(2.0_f64.mul_add(PI, 0.001), 1.0).is_err());
-        assert!(VonMises::new(100.0, 1.0).is_err());
+        assert!(VonMises::new(TWO_PI, 1.0).is_ok());
     }
 
     #[test]
@@ -488,7 +636,7 @@ mod tests {
 
     #[test]
     fn all_samples_should_be_supported() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         // kappa should be low so we get samples at the tails
         let vm = VonMises::new(1.5 * PI, 0.25).unwrap();
         let xs: Vec<f64> = vm.sample(1000, &mut rng);
@@ -497,7 +645,7 @@ mod tests {
 
     #[test]
     fn vm_draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let vm = VonMises::new(1.0, 1.2).unwrap();
         let cdf = |x: f64| vm.cdf(&x);
 
@@ -505,13 +653,125 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = vm.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn slice_step_vs_draw_test() {
+        let n_samples = 1_000_000;
+        let mut rng = rand::rng();
+        let mu = 1.5;
+        let k = 2.0;
+        let vm = VonMises::new(mu, k).unwrap();
+
+        // Generate samples using draw method
+        let draw_samples: Vec<f64> = vm.sample(n_samples, &mut rng);
+
+        // Generate samples using slice_step method
+        let mut slice_samples = Vec::with_capacity(n_samples);
+        let mut x = PI; // Start at a reasonable value
+        for _ in 0..n_samples {
+            x = VonMises::slice_step(x, mu, k, &mut rng);
+            slice_samples.push(x);
+        }
+
+        // Use the existing two-sample KS test
+        use crate::misc::{KsAlternative, KsMode, ks_two_sample};
+        let (_, p_value) = ks_two_sample(
+            &draw_samples,
+            &slice_samples,
+            KsMode::Auto,
+            KsAlternative::TwoSided,
+        )
+        .unwrap();
+
+        dbg!(p_value);
+        assert!(
+            p_value > 0.01,
+            "Slice step sampling failed KS test with p-value {p_value}"
+        );
+    }
+
+    #[test]
+    fn vm_density_test() {
+        let mut rng = rand::rng();
+        let mu = 1.0;
+        let k = 100.2;
+        let vm = VonMises::new(mu, k).unwrap();
+        let xs: Vec<f64> = vm.sample(10_000, &mut rng);
+        let density_fn = |x: f64| (k * (x - mu).cos()).exp();
+        let normalized = false;
+        let num_bins = 100;
+        let p_value =
+            density_histogram_test(&xs, num_bins, density_fn, normalized)
+                .unwrap();
+        dbg!(p_value);
+        assert!(p_value > 0.01);
+    }
+
+    #[test]
+    fn ln_f_vs_ln_f_stat_test() {
+        use crate::traits::SuffStat;
+
+        // Create a VonMises distribution
+        let mut rng = rand::rng();
+        let mu = 1.5;
+        let k = 2.0;
+        let vm = VonMises::new(mu, k).unwrap();
+
+        // 1. Generate a sample
+        let sample_size = 100;
+        let xs: Vec<f64> = vm.sample(sample_size, &mut rng);
+
+        // 2. Find the ln_f of the sample (direct log-likelihood)
+        let ln_f_sum: f64 = xs.iter().map(|x| vm.ln_f(x)).sum();
+
+        // 3. Aggregate the sample into a suffstat
+        let mut stat = vm.empty_suffstat();
+        for x in &xs {
+            stat.observe(x);
+        }
+
+        // 4. Compute ln_f_stat
+        let ln_f_stat_result = vm.ln_f_stat(&stat);
+
+        // 5. Assert that they are close
+        assert::close(ln_f_sum, ln_f_stat_result, 1e-10);
+    }
+
+    proptest! {
+        #[test]
+        fn vonmises_draw_produces_valid_range(
+            mu in -10.0..10.0,
+            k in 0.0..10000.0,
+            seed: u64
+        ) {
+            let vm = VonMises::new(mu, k).unwrap();
+            let mut rng = Xoshiro256Plus::seed_from_u64(seed);
+
+            let sample: f64 = vm.draw(&mut rng);
+
+            prop_assert!(
+                (0.0..2.0 * std::f64::consts::PI).contains(&sample),
+                "Sample {} not in range [0, 2π) for VonMises({}, {})",
+                sample, mu, k
+            );
+        }
+    }
+
+    #[test]
+    fn entropy() {
+        let vm = VonMises::new(3.4, 5.6).unwrap();
+        assert::close(vm.entropy(), 0.610734, 1e-5);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = VonMises::new(3.0, 5.0).unwrap();
+        let vm_b = VonMises::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
     }
 }

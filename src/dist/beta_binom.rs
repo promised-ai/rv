@@ -9,8 +9,12 @@ use std::fmt;
 use std::sync::OnceLock;
 
 use crate::impl_display;
-use crate::misc::{ln_binom, ln_pflips};
-use crate::traits::*;
+use crate::misc::ln_gammafn;
+use crate::misc::ln_pflips;
+use crate::traits::{
+    Cdf, DiscreteDistr, HasDensity, Mean, Parameterized, Sampleable, Support,
+    Variance,
+};
 
 /// [Beta Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
 /// over k in {0, ..., n}
@@ -61,9 +65,9 @@ pub struct BetaBinomial {
     alpha: f64,
     /// Analogous to Beta Distribution β parameter
     beta: f64,
-    // ln_beta(alpha, beta)
+    // ln_gamma(n+1) - ln_beta(alpha, beta)
     #[cfg_attr(feature = "serde1", serde(skip))]
-    ln_beta_ab: OnceLock<f64>,
+    ln_z: OnceLock<f64>,
 }
 
 pub struct BetaBinomialParameters {
@@ -140,29 +144,30 @@ impl BetaBinomial {
                 n,
                 alpha,
                 beta,
-                ln_beta_ab: OnceLock::new(),
+                ln_z: OnceLock::new(),
             })
         }
     }
 
-    /// Creates a new BetaBinomial without checking whether the parameters are
+    /// Creates a new `BetaBinomial` without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(n: u32, alpha: f64, beta: f64) -> Self {
         BetaBinomial {
             n,
             alpha,
             beta,
-            ln_beta_ab: OnceLock::new(),
+            ln_z: OnceLock::new(),
         }
     }
 
     /// Evaluate or fetch cached log sigma
     #[inline]
-    fn ln_beta_ab(&self) -> f64 {
-        *self
-            .ln_beta_ab
-            .get_or_init(|| self.alpha.ln_beta(self.beta))
+    fn ln_z(&self) -> f64 {
+        *self.ln_z.get_or_init(|| {
+            ln_gammafn(f64::from(self.n) + 1.0) - self.alpha.ln_beta(self.beta)
+        })
     }
 
     /// Get `n`, the number of trials.
@@ -232,8 +237,8 @@ impl BetaBinomial {
     /// Set alpha without input validation
     #[inline]
     pub fn set_alpha_unchecked(&mut self, alpha: f64) {
-        self.ln_beta_ab = OnceLock::new();
-        self.alpha = alpha
+        self.ln_z = OnceLock::new();
+        self.alpha = alpha;
     }
 
     /// Get the `beta` parameter
@@ -288,8 +293,8 @@ impl BetaBinomial {
     /// Set beta without input validation
     #[inline]
     pub fn set_beta_unchecked(&mut self, beta: f64) {
-        self.ln_beta_ab = OnceLock::new();
-        self.beta = beta
+        self.ln_z = OnceLock::new();
+        self.beta = beta;
     }
 
     /// Set the value of the n parameter
@@ -328,7 +333,7 @@ impl BetaBinomial {
     /// Set the value of n without input validation
     #[inline]
     pub fn set_n_unchecked(&mut self, n: u32) {
-        self.n = n
+        self.n = n;
     }
 }
 
@@ -346,9 +351,9 @@ macro_rules! impl_int_traits {
             fn ln_f(&self, k: &$kind) -> f64 {
                 let nf = f64::from(self.n);
                 let kf = *k as f64;
-                ln_binom(nf, kf)
+                -ln_gammafn(kf + 1.0) - ln_gammafn(nf - kf + 1.0)
                     + (kf + self.alpha).ln_beta(nf - kf + self.beta)
-                    - self.ln_beta_ab()
+                    + self.ln_z()
             }
         }
 
@@ -422,20 +427,21 @@ impl_int_traits!(i64);
 
 impl std::error::Error for BetaBinomialError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for BetaBinomialError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::AlphaTooLow { alpha } => {
-                write!(f, "alpha ({}) must be greater than zero", alpha)
+                write!(f, "alpha ({alpha}) must be greater than zero")
             }
             Self::AlphaNotFinite { alpha } => {
-                write!(f, "alpha ({}) was non finite", alpha)
+                write!(f, "alpha ({alpha}) was non finite")
             }
             Self::BetaTooLow { beta } => {
-                write!(f, "beta ({}) must be greater than zero", beta)
+                write!(f, "beta ({beta}) must be greater than zero")
             }
             Self::BetaNotFinite { beta } => {
-                write!(f, "beta ({}) was non finite", beta)
+                write!(f, "beta ({beta}) was non finite")
             }
             Self::NIsZero => write!(f, "n was zero"),
         }
@@ -482,5 +488,12 @@ mod tests {
         ];
         let pmfs: Vec<f64> = (0..=10).map(|k| beta_binom.pmf(&k)).collect();
         assert::close(pmfs, target, 1E-6);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = BetaBinomial::new(10, 0.8, 0.4).unwrap();
+        let dist_b = BetaBinomial::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

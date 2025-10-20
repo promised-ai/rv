@@ -25,8 +25,14 @@ impl StickBreakingDiscreteSuffStat {
     /// # Returns
     ///
     /// A new `StickBreakingDiscreteSuffStat` instance.
+    #[must_use]
     pub fn new() -> Self {
         Self { counts: Vec::new() }
+    }
+
+    #[must_use]
+    pub fn from_counts(counts: Vec<usize>) -> Self {
+        Self { counts }
     }
 
     /// Calculates break pairs for probabilities.
@@ -36,6 +42,7 @@ impl StickBreakingDiscreteSuffStat {
     /// # Returns
     ///
     /// A vector of `(usize, usize)` pairs for calculating probabilities.
+    #[must_use]
     pub fn break_pairs(&self) -> Vec<(usize, usize)> {
         let mut s = self.counts.iter().sum();
         self.counts
@@ -52,6 +59,7 @@ impl StickBreakingDiscreteSuffStat {
     /// # Returns
     ///
     /// A reference to the vector of counts.
+    #[must_use]
     pub fn counts(&self) -> &Vec<usize> {
         &self.counts
     }
@@ -138,7 +146,7 @@ impl SuffStat<usize> for StickBreakingDiscreteSuffStat {
     /// * `i` - The index at which to increment the count.
     fn observe(&mut self, i: &usize) {
         if self.counts.len() < *i + 1 {
-            self.counts.resize(*i + 1, 0)
+            self.counts.resize(*i + 1, 0);
         }
         self.counts[*i] += 1;
     }
@@ -155,6 +163,16 @@ impl SuffStat<usize> for StickBreakingDiscreteSuffStat {
     fn forget(&mut self, i: &usize) {
         assert!(self.counts[*i] > 0, "No observations of {i} to forget.");
         self.counts[*i] -= 1;
+    }
+
+    fn merge(&mut self, other: Self) {
+        if other.counts.len() > self.counts.len() {
+            self.counts.resize(other.counts.len(), 0);
+        }
+        self.counts
+            .iter_mut()
+            .zip(other.counts.iter())
+            .for_each(|(ct_a, &ct_b)| *ct_a += ct_b);
     }
 }
 #[cfg(test)]

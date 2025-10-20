@@ -3,7 +3,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::dist::MvGaussian;
 use crate::misc::lnmv_gamma;
-use crate::traits::*;
+use crate::traits::{
+    ContinuousDistr, HasDensity, Mean, Mode, Parameterized, Sampleable, Support,
+};
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
 use std::f64::consts::LN_2;
@@ -77,7 +79,7 @@ impl InvWishart {
     /// p-by-p inverse scale matrix, **Ψ**, and degrees of freedom, ν > p - 1.
     ///
     /// # Arguments
-    /// - inv_scale: p-dimensional inverse scale matrix, **Ψ**
+    /// - `inv_scale`: p-dimensional inverse scale matrix, **Ψ**
     /// - df: Degrees of freedom, ν > p - 1
     #[inline]
     pub fn new(
@@ -88,9 +90,10 @@ impl InvWishart {
         Ok(InvWishart { inv_scale, df })
     }
 
-    /// Creates a new InvWishart without checking whether the parameters are
+    /// Creates a new `InvWishart` without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(inv_scale: DMatrix<f64>, df: usize) -> Self {
         InvWishart { inv_scale, df }
     }
@@ -98,6 +101,7 @@ impl InvWishart {
     /// Create an Inverse Wishart distribution, W<sup>-1</sup>(**I**<sup>p</sup>,
     /// p)
     #[inline]
+    #[must_use]
     pub fn identity(dims: usize) -> Self {
         InvWishart {
             inv_scale: DMatrix::identity(dims, dims),
@@ -106,18 +110,21 @@ impl InvWishart {
     }
 
     #[inline]
+    #[must_use]
     pub fn ndims(&self) -> usize {
         self.inv_scale.nrows()
     }
 
     /// Get a reference to the inverse scale parameter
     #[inline]
+    #[must_use]
     pub fn inv_scale(&self) -> &DMatrix<f64> {
         &self.inv_scale
     }
 
     /// Get the degrees of freedom
     #[inline]
+    #[must_use]
     pub fn df(&self) -> usize {
         self.df
     }
@@ -244,20 +251,18 @@ impl Mode<DMatrix<f64>> for InvWishart {
 
 impl std::error::Error for InvWishartError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for InvWishartError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::DfLessThanDimensions { df, ndims } => write!(
                 f,
                 "df, the degrees of freedom must be greater than or \
-                    equal to the number of dimensions, but {} < {}",
-                df, ndims
+                    equal to the number of dimensions, but {df} < {ndims}"
             ),
-            Self::ScaleMatrixNotSquare { nrows, ncols } => write!(
-                f,
-                "The scale matrix is not square: {} x {}",
-                nrows, ncols
-            ),
+            Self::ScaleMatrixNotSquare { nrows, ncols } => {
+                write!(f, "The scale matrix is not square: {nrows} x {ncols}")
+            }
         }
     }
 }
@@ -295,14 +300,14 @@ mod tests {
     fn ln_f_standard_ident() {
         let iw = InvWishart::identity(4);
         let x = DMatrix::<f64>::identity(4, 4);
-        assert::close(iw.ln_f(&x), -11.430_949_807_317_218, TOL)
+        assert::close(iw.ln_f(&x), -11.430_949_807_317_218, TOL);
     }
 
     #[test]
     fn ln_f_standard_mode() {
         let iw = InvWishart::identity(4);
         let x = DMatrix::<f64>::identity(4, 4) / 9.0;
-        assert::close(iw.ln_f(&x), 12.119_092_584_734_73, TOL)
+        assert::close(iw.ln_f(&x), 12.119_092_584_734_73, TOL);
     }
 
     #[test]
@@ -328,12 +333,12 @@ mod tests {
         let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
         let iw = InvWishart::new(inv_scale, 5).unwrap();
         let x = DMatrix::<f64>::identity(4, 4);
-        assert::close(iw.ln_f(&x), -18.939_673_925_150_9, TOL)
+        assert::close(iw.ln_f(&x), -18.939_673_925_150_9, TOL);
     }
 
     #[test]
     fn draws_should_be_positive_definite() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let slice = vec![
             1.105_768_91,
             -0.201_603_36,
@@ -391,6 +396,32 @@ mod tests {
         let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
         let x = inv_scale.clone();
         let iw = InvWishart::new(inv_scale, 5).unwrap();
-        assert::close(iw.ln_f(&x), -6.187_876_016_819_759, TOL)
+        assert::close(iw.ln_f(&x), -6.187_876_016_819_759, TOL);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let slice = vec![
+            1.105_768_91,
+            -0.201_603_36,
+            0.093_788_34,
+            -0.193_390_29,
+            -0.201_603_36,
+            0.667_947_86,
+            -0.460_209_05,
+            -0.628_069_51,
+            0.093_788_34,
+            -0.460_209_05,
+            1.152_632_84,
+            0.984_436_41,
+            -0.193_390_29,
+            -0.628_069_51,
+            0.984_436_41,
+            1.210_501_89,
+        ];
+        let inv_scale: DMatrix<f64> = DMatrix::from_row_slice(4, 4, &slice);
+        let dist_a = InvWishart::new(inv_scale, 5).unwrap();
+        let dist_b = InvWishart::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

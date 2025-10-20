@@ -1,9 +1,10 @@
 use crate::experimental::stick_breaking_process::StickBreakingDiscrete;
 use crate::experimental::stick_breaking_process::StickBreakingDiscreteSuffStat;
-// use crate::experimental::stick_breaking_process::StickBreakingSuffStat;
 use crate::experimental::stick_breaking_process::StickSequence;
 use crate::prelude::*;
-use crate::traits::*;
+use crate::traits::{
+    ConjugatePrior, HasDensity, HasSuffStat, Sampleable, SuffStat,
+};
 use itertools::Either;
 use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
@@ -13,10 +14,10 @@ use special::Beta as BetaFn;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+/// Represents a stick-breaking process.
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
-/// Represents a stick-breaking process.
 pub struct StickBreaking {
     break_prefix: Vec<Beta>,
     break_tail: UnitPowerLaw,
@@ -50,12 +51,22 @@ impl StickBreaking {
         }
     }
 
+    pub fn new_with_prefix(
+        break_prefix: Vec<Beta>,
+        break_tail: UnitPowerLaw,
+    ) -> Self {
+        Self {
+            break_prefix,
+            break_tail,
+        }
+    }
+
     pub fn from_alpha(alpha: f64) -> Result<Self, UnitPowerLawError> {
         let breaker = UnitPowerLaw::new(alpha)?;
         Ok(Self::new(breaker))
     }
 
-    /// Sets the alpha parameter for both the break_tail and all Beta distributions in break_prefix.
+    /// Sets the alpha parameter for both the `break_tail` and all Beta distributions in `break_prefix`.
     ///
     /// # Arguments
     ///
@@ -173,7 +184,7 @@ impl HasDensity<PartialWeights> for StickBreaking {
 }
 
 impl Sampleable<StickSequence> for StickBreaking {
-    /// Draws a sample from the StickBreaking distribution.
+    /// Draws a sample from the `StickBreaking` distribution.
     ///
     /// # Arguments
     ///
@@ -183,7 +194,7 @@ impl Sampleable<StickSequence> for StickBreaking {
     ///
     /// A `StickSequence` representing the drawn sample.
     fn draw<R: Rng>(&self, rng: &mut R) -> StickSequence {
-        let seed: u64 = rng.gen();
+        let seed: u64 = rng.random();
 
         let seq = StickSequence::new(self.break_tail.clone(), Some(seed));
         for beta in &self.break_prefix {
@@ -192,14 +203,6 @@ impl Sampleable<StickSequence> for StickBreaking {
         }
         seq
     }
-}
-
-fn rising_pow(x: f64, n: usize) -> f64 {
-    let mut r = 1.0;
-    for k in 0..n {
-        r *= x + k as f64;
-    }
-    r
 }
 
 fn rising_beta_prod(x: f64, a: usize, y: f64, b: usize) -> f64 {
@@ -241,6 +244,12 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
     type MCache = ();
     type PpCache = Self::Posterior;
 
+    fn empty_stat(
+        &self,
+    ) -> <StickBreakingDiscrete as HasSuffStat<usize>>::Stat {
+        StickBreakingDiscreteSuffStat::new()
+    }
+
     /// Computes the logarithm of the marginal likelihood cache.
     fn ln_m_cache(&self) -> Self::MCache {}
 
@@ -278,22 +287,6 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
         StickBreaking {
             break_prefix: new_prefix,
             break_tail: self.break_tail.clone(),
-        }
-    }
-
-    fn posterior(
-        &self,
-        x: &DataOrSuffStat<usize, StickBreakingDiscrete>,
-    ) -> Self::Posterior {
-        match x {
-            DataOrSuffStat::Data(xs) => {
-                let mut stat = StickBreakingDiscreteSuffStat::new();
-                stat.observe_many(xs);
-                self.posterior_from_suffstat(&stat)
-            }
-            DataOrSuffStat::SuffStat(stat) => {
-                self.posterior_from_suffstat(stat)
-            }
         }
     }
 
@@ -401,7 +394,7 @@ mod tests {
         let ln_m = sb.ln_m(&obs);
 
         let mc_est = {
-            sb.sample_stream(&mut rand::thread_rng())
+            sb.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|sbd: StickBreakingDiscrete| {
                     xs.iter().map(|x| sbd.ln_f(x)).sum::<f64>()
@@ -436,7 +429,7 @@ mod tests {
 
     #[test]
     fn sb_bayes_law() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Prior
         let prior = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
@@ -528,7 +521,7 @@ mod tests {
     fn sb_logposterior_diff() {
         // Like Bayes Law, but takes a quotient to cancel evidence
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
         let seq1: StickSequence = sb.draw(&mut rng);
         let seq2: StickSequence = sb.draw(&mut rng);
@@ -552,7 +545,7 @@ mod tests {
 
     #[test]
     fn sb_posterior_rejection_sampling() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
 
         let num_samples = 1000;
@@ -582,7 +575,9 @@ mod tests {
         // Chi-square test is not exact, so we'll trim to only consider cases
         // where expected count is at least 5.
         let expected_counts = (0..)
-            .map(|j| post.m(&DataOrSuffStat::Data(&[j])) * num_samples as f64)
+            .map(|j| {
+                post.m(&DataOrSuffStat::Data(&[j])) * f64::from(num_samples)
+            })
             .take_while(|x| *x > 5.0);
 
         let ts = counts
@@ -593,7 +588,7 @@ mod tests {
         let t: &f64 = &ts.clone().sum();
         let p = ChiSquared::new(dof).unwrap().sf(t);
 
-        assert!(p > 0.001, "p-value = {}", p);
+        assert!(p > 0.001, "p-value = {p}");
     }
 
     #[test]

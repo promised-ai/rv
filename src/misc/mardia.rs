@@ -5,6 +5,7 @@ use nalgebra::{DMatrix, DVector};
 /// [Mardia's
 /// test](https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Multivariate_normality_tests) for multivariate normality.
 #[allow(clippy::many_single_char_names)]
+#[must_use]
 pub fn mardia(xs: &[DVector<f64>]) -> (f64, f64) {
     let dims = xs[0].len();
     let n = xs.len() as f64;
@@ -60,7 +61,7 @@ mod test {
 
     #[test]
     fn should_pass_for_normal_data() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mvg = MvGaussian::standard(4).unwrap();
 
         let passed = (0..NTRIES).fold(false, |acc, _| {
@@ -78,7 +79,7 @@ mod test {
 
     #[test]
     fn should_not_pass_for_normal_data() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let n = 500;
         let xs = ChiSquared::new(2.0).unwrap().sample(n, &mut rng);
         let ys = Gaussian::standard().sample(n, &mut rng);

@@ -3,7 +3,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, KlDivergence,
+    Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Scalable,
+    Shiftable, Skewness, Support, Variance,
+};
 use rand::Rng;
 use rand_distr::Exp;
 use std::f64;
@@ -23,12 +27,43 @@ use std::fmt;
 /// let expon = Exponential::new(1.5).unwrap();
 /// let interval: (f64, f64) = expon.interval(0.5);  // (0.19, 0.92)
 /// ```
+///
+/// Parameters for the Exponential distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct ExponentialParameters {
+    /// λ > 0, rate or inverse scale
+    pub rate: f64,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Exponential {
     /// λ > 0, rate or inverse scale
     rate: f64,
+}
+
+crate::impl_shiftable!(Exponential);
+
+impl Scalable for Exponential {
+    type Output = Exponential;
+    type Error = ExponentialError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Exponential::new(self.rate() / scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Exponential::new_unchecked(self.rate() / scale)
+    }
 }
 
 impl Default for Exponential {
@@ -38,14 +73,14 @@ impl Default for Exponential {
 }
 
 impl Parameterized for Exponential {
-    type Parameters = f64;
+    type Parameters = ExponentialParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.rate()
+        Self::Parameters { rate: self.rate() }
     }
 
-    fn from_params(rate: Self::Parameters) -> Self {
-        Self::new_unchecked(rate)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.rate)
     }
 }
 
@@ -78,6 +113,7 @@ impl Exponential {
     /// Creates a new Exponential without checking whether the parameter is
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(rate: f64) -> Self {
         Exponential { rate }
     }
@@ -92,6 +128,7 @@ impl Exponential {
     /// assert_eq!(expon.rate(), 1.3);
     /// ```
     #[inline]
+    #[must_use]
     pub fn rate(&self) -> f64 {
         self.rate
     }
@@ -250,14 +287,15 @@ impl_traits!(f32);
 
 impl std::error::Error for ExponentialError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for ExponentialError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::RateTooLow { rate } => {
-                write!(f, "rate ({}) must be greater than zero", rate)
+                write!(f, "rate ({rate}) must be greater than zero")
             }
             Self::RateNotFinite { rate } => {
-                write!(f, "non-finite rate: {}", rate)
+                write!(f, "non-finite rate: {rate}")
             }
         }
     }
@@ -373,7 +411,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let expon = Exponential::new(1.5).unwrap();
         let cdf = |x: f64| expon.cdf(&x);
 
@@ -381,12 +419,31 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = expon.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
+    }
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_invcdf;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Exponential::new(2.0).unwrap(), mean);
+    test_scalable_method!(Exponential::new(2.0).unwrap(), median);
+    test_scalable_method!(Exponential::new(2.0).unwrap(), variance);
+    test_scalable_method!(Exponential::new(2.0).unwrap(), skewness);
+    test_scalable_method!(Exponential::new(2.0).unwrap(), kurtosis);
+    test_scalable_density!(Exponential::new(2.0).unwrap());
+    test_scalable_entropy!(Exponential::new(2.0).unwrap());
+    test_scalable_cdf!(Exponential::new(2.0).unwrap());
+    test_scalable_invcdf!(Exponential::new(2.0).unwrap());
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Exponential::new(5.0).unwrap();
+        let dist_b = Exponential::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

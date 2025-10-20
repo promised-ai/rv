@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, HasDensity, Kurtosis, Mean, Mode, Parameterized,
+    Sampleable, Scalable, Shiftable, Skewness, Support, Variance,
+};
 use rand::Rng;
 use special::Gamma;
 use std::f64::consts::LN_2;
@@ -21,6 +24,16 @@ use std::sync::OnceLock;
 ///
 /// let ix2 = InvChiSquared::new(2.0).unwrap();
 /// ```
+///
+/// Parameters for the Inverse Chi-squared distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct InvChiSquaredParameters {
+    /// Degrees of freedom in (0, ∞)
+    pub v: f64,
+}
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -33,14 +46,14 @@ pub struct InvChiSquared {
 }
 
 impl Parameterized for InvChiSquared {
-    type Parameters = f64;
+    type Parameters = InvChiSquaredParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.v()
+        Self::Parameters { v: self.v() }
     }
 
-    fn from_params(v: Self::Parameters) -> Self {
-        Self::new_unchecked(v)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.v)
     }
 }
 
@@ -49,6 +62,9 @@ impl PartialEq for InvChiSquared {
         self.v == other.v
     }
 }
+
+crate::impl_shiftable!(InvChiSquared);
+crate::impl_scalable!(InvChiSquared);
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -79,9 +95,10 @@ impl InvChiSquared {
         }
     }
 
-    /// Create a new InvChiSquared without checking whether the parameters are
+    /// Create a new `InvChiSquared` without checking whether the parameters are
     /// valid.
     #[inline(always)]
+    #[must_use]
     pub fn new_unchecked(v: f64) -> Self {
         InvChiSquared {
             v,
@@ -219,7 +236,11 @@ macro_rules! impl_traits {
         impl Cdf<$kind> for InvChiSquared {
             fn cdf(&self, x: &$kind) -> f64 {
                 let x64 = f64::from(*x);
-                1.0 - (2.0 * x64).recip().inc_gamma(self.v / 2.0)
+                if x64 <= 0.0 {
+                    0.0
+                } else {
+                    1.0 - (2.0 * x64).recip().inc_gamma(self.v / 2.0)
+                }
             }
         }
     };
@@ -256,9 +277,9 @@ impl fmt::Display for InvChiSquaredError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::VTooLow { v } => {
-                write!(f, "v ({}) must be greater than zero", v)
+                write!(f, "v ({v}) must be greater than zero")
             }
-            Self::VNotFinite { v } => write!(f, "v ({}) must be finite", v),
+            Self::VNotFinite { v } => write!(f, "v ({v}) must be finite"),
         }
     }
 }
@@ -364,7 +385,7 @@ mod test {
 
     #[test]
     fn pdf_agrees_with_inv_gamma_special_case() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v_prior = Gamma::new_unchecked(2.0, 1.0);
 
         for v in v_prior.sample_stream(&mut rng).take(1000) {
@@ -386,7 +407,7 @@ mod test {
 
     #[test]
     fn cdf_agrees_with_inv_gamma_special_case() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v_prior = Gamma::new_unchecked(2.0, 1.0);
 
         for v in v_prior.sample_stream(&mut rng).take(1000) {
@@ -401,7 +422,7 @@ mod test {
 
     #[test]
     fn draw_agrees_with_cdf() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ix2 = InvChiSquared::new(1.2).unwrap();
         let cdf = |x: f64| ix2.cdf(&x);
 
@@ -409,13 +430,16 @@ mod test {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = ix2.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = InvChiSquared::new(1.5).unwrap();
+        let dist_b = InvChiSquared::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 use crate::consts;
 use crate::impl_display;
 use crate::misc::gammafn;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, Mean, Median, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Support, Variance,
+};
 use rand::Rng;
 use std::f32;
 use std::f64;
@@ -54,6 +57,48 @@ impl Parameterized for Gev {
     }
 }
 
+impl Shiftable for Gev {
+    type Output = Gev;
+    type Error = GevError;
+
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Gev::new(self.loc() + shift, self.scale(), self.shape())
+    }
+
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Gev::new_unchecked(self.loc() + shift, self.scale(), self.shape())
+    }
+}
+
+impl Scalable for Gev {
+    type Output = Gev;
+    type Error = GevError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Gev::new(self.loc() * scale, self.scale() * scale, self.shape())
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Gev::new_unchecked(
+            self.loc() * scale,
+            self.scale() * scale,
+            self.shape(),
+        )
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -86,6 +131,7 @@ impl Gev {
 
     /// Creates a new Gev without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(loc: f64, scale: f64, shape: f64) -> Self {
         Gev { loc, scale, shape }
     }
@@ -101,6 +147,7 @@ impl Gev {
     /// assert_eq!(gev.loc(), 1.2);
     /// ```
     #[inline]
+    #[must_use]
     pub fn loc(&self) -> f64 {
         self.loc
     }
@@ -130,18 +177,18 @@ impl Gev {
     /// ```
     #[inline]
     pub fn set_loc(&mut self, loc: f64) -> Result<(), GevError> {
-        if !loc.is_finite() {
-            Err(GevError::LocNotFinite { loc })
-        } else {
+        if loc.is_finite() {
             self.set_loc_unchecked(loc);
             Ok(())
+        } else {
+            Err(GevError::LocNotFinite { loc })
         }
     }
 
     /// Set the loc parameter without input validation
     #[inline]
     pub fn set_loc_unchecked(&mut self, loc: f64) {
-        self.loc = loc
+        self.loc = loc;
     }
 
     /// Get the shape parameter
@@ -155,6 +202,7 @@ impl Gev {
     /// assert_eq!(gev.shape(), 3.4);
     /// ```
     #[inline]
+    #[must_use]
     pub fn shape(&self) -> f64 {
         self.shape
     }
@@ -184,18 +232,18 @@ impl Gev {
     /// ```
     #[inline]
     pub fn set_shape(&mut self, shape: f64) -> Result<(), GevError> {
-        if !shape.is_finite() {
-            Err(GevError::ShapeNotFinite { shape })
-        } else {
+        if shape.is_finite() {
             self.set_shape_unchecked(shape);
             Ok(())
+        } else {
+            Err(GevError::ShapeNotFinite { shape })
         }
     }
 
     /// Set the shape parameter without input validation
     #[inline]
     pub fn set_shape_unchecked(&mut self, shape: f64) {
-        self.shape = shape
+        self.shape = shape;
     }
 
     /// Get the scale parameter
@@ -209,6 +257,7 @@ impl Gev {
     /// assert_eq!(gev.scale(), 2.3);
     /// ```
     #[inline]
+    #[must_use]
     pub fn scale(&self) -> f64 {
         self.scale
     }
@@ -253,7 +302,7 @@ impl Gev {
     /// Set the scale parameter without input validation
     #[inline]
     pub fn set_scale_unchecked(&mut self, scale: f64) {
-        self.scale = scale
+        self.scale = scale;
     }
 }
 
@@ -400,18 +449,19 @@ impl_traits!(f64);
 
 impl std::error::Error for GevError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for GevError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::LocNotFinite { loc } => write!(f, "non-finite loc: {}", loc),
+            Self::LocNotFinite { loc } => write!(f, "non-finite loc: {loc}"),
             Self::ShapeNotFinite { shape } => {
-                write!(f, "non-finite shape: {}", shape)
+                write!(f, "non-finite shape: {shape}")
             }
             Self::ScaleNotFinite { scale } => {
-                write!(f, "non-finite scale: {}", scale)
+                write!(f, "non-finite scale: {scale}")
             }
             Self::ScaleTooLow { scale } => {
-                write!(f, "scale ({}) must be greater than zero", scale)
+                write!(f, "scale ({scale}) must be greater than zero")
             }
         }
     }
@@ -656,18 +706,14 @@ mod tests {
 
     #[test]
     fn draw_0() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gev = Gev::new(0.0, 1.0, 0.0).unwrap();
         let cdf = |x: f64| gev.cdf(&x);
 
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = gev.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -675,18 +721,14 @@ mod tests {
 
     #[test]
     fn draw_one_half() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gev = Gev::new(0.0, 1.0, 0.5).unwrap();
         let cdf = |x: f64| gev.cdf(&x);
 
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = gev.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -694,18 +736,14 @@ mod tests {
 
     #[test]
     fn draw_negative_one_half() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let gev = Gev::new(0.0, 1.0, -0.5).unwrap();
         let cdf = |x: f64| gev.cdf(&x);
 
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = gev.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -742,5 +780,64 @@ mod tests {
         assert::close(m1, 1.644_934_066_848_226_4, TOL);
         assert::close(m2, f64::INFINITY, TOL);
         assert::close(m3, 0.858_407_346_410_206_8, TOL);
+    }
+
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_method;
+
+    test_shiftable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), mean, a);
+    test_shiftable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), median, a);
+    test_shiftable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), variance, a);
+    test_shiftable_density!(Gev::new(2.0, 4.0, 1.0).unwrap(), a);
+    test_shiftable_entropy!(Gev::new(2.0, 4.0, 1.0).unwrap(), a);
+    test_shiftable_cdf!(Gev::new(2.0, 4.0, 1.0).unwrap(), a);
+
+    test_shiftable_method!(Gev::new(2.0, 4.0, 0.0).unwrap(), mean, b);
+    test_shiftable_method!(Gev::new(2.0, 4.0, 0.0).unwrap(), median, b);
+    test_shiftable_method!(Gev::new(2.0, 4.0, 0.0).unwrap(), variance, b);
+    test_shiftable_density!(Gev::new(2.0, 4.0, 0.0).unwrap(), b);
+    test_shiftable_entropy!(Gev::new(2.0, 4.0, 0.0).unwrap(), b);
+    test_shiftable_cdf!(Gev::new(2.0, 4.0, 0.0).unwrap(), b);
+
+    test_shiftable_method!(Gev::new(2.0, 4.0, -1.0).unwrap(), mean, c);
+    test_shiftable_method!(Gev::new(2.0, 4.0, -1.0).unwrap(), median, c);
+    test_shiftable_method!(Gev::new(2.0, 4.0, -1.0).unwrap(), variance, c);
+    test_shiftable_density!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
+    test_shiftable_entropy!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
+    test_shiftable_cdf!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), mean, a);
+    test_scalable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), median, a);
+    test_scalable_method!(Gev::new(2.0, 4.0, 1.0).unwrap(), variance, a);
+    test_scalable_density!(Gev::new(2.0, 4.0, 1.0).unwrap(), a);
+    test_scalable_entropy!(Gev::new(2.0, 4.0, 1.0).unwrap(), a);
+    test_scalable_cdf!(Gev::new(2.0, 4.0, 1.0).unwrap(), a);
+
+    test_scalable_method!(Gev::new(2.0, 4.0, 0.0).unwrap(), mean, b);
+    test_scalable_method!(Gev::new(2.0, 4.0, 0.0).unwrap(), median, b);
+    test_scalable_method!(Gev::new(2.0, 4.0, 0.0).unwrap(), variance, b);
+    test_scalable_density!(Gev::new(2.0, 4.0, 0.0).unwrap(), b);
+    test_scalable_entropy!(Gev::new(2.0, 4.0, 0.0).unwrap(), b);
+    test_scalable_cdf!(Gev::new(2.0, 4.0, 0.0).unwrap(), b);
+
+    test_scalable_method!(Gev::new(2.0, 4.0, -1.0).unwrap(), mean, c);
+    test_scalable_method!(Gev::new(2.0, 4.0, -1.0).unwrap(), median, c);
+    test_scalable_method!(Gev::new(2.0, 4.0, -1.0).unwrap(), variance, c);
+    test_scalable_density!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
+    test_scalable_entropy!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
+    test_scalable_cdf!(Gev::new(2.0, 4.0, -1.0).unwrap(), c);
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Gev::new(3.0, 4.0, 5.0).unwrap();
+        let dist_b = Gev::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

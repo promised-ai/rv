@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::consts::LN_PI;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Median, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Support,
+};
 use rand::Rng;
 use rand_distr::Cauchy as RCauchy;
 use std::f64::consts::{FRAC_1_PI, PI};
@@ -31,7 +34,6 @@ pub struct Cauchy {
     /// scale, γ, in (0, ∞)
     scale: f64,
 }
-
 pub struct CauchyParameters {
     pub loc: f64,
     pub scale: f64,
@@ -84,6 +86,7 @@ impl Cauchy {
 
     /// Create a new Cauchy without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(loc: f64, scale: f64) -> Self {
         Cauchy { loc, scale }
     }
@@ -98,6 +101,7 @@ impl Cauchy {
     /// assert_eq!(c.loc(), 0.1);
     /// ```
     #[inline]
+    #[must_use]
     pub fn loc(&self) -> f64 {
         self.loc
     }
@@ -150,6 +154,7 @@ impl Cauchy {
     /// assert_eq!(c.scale(), 1.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn scale(&self) -> f64 {
         self.scale
     }
@@ -282,19 +287,57 @@ impl_traits!(f32);
 
 impl std::error::Error for CauchyError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for CauchyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::LocNotFinite { loc } => {
-                write!(f, "loc ({}) must be finite", loc)
+                write!(f, "loc ({loc}) must be finite")
             }
             Self::ScaleTooLow { scale } => {
-                write!(f, "scale ({}) must be greater than zero", scale)
+                write!(f, "scale ({scale}) must be greater than zero")
             }
             Self::ScaleNotFinite { scale } => {
-                write!(f, "scale ({}) must be finite", scale)
+                write!(f, "scale ({scale}) must be finite")
             }
         }
+    }
+}
+
+impl Shiftable for Cauchy {
+    type Output = Cauchy;
+    type Error = CauchyError;
+
+    fn shifted(self, shift: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Cauchy::new(self.loc() + shift, self.scale())
+    }
+
+    fn shifted_unchecked(self, shift: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Cauchy::new_unchecked(self.loc() + shift, self.scale())
+    }
+}
+impl Scalable for Cauchy {
+    type Output = Cauchy;
+    type Error = CauchyError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        Cauchy::new(self.loc() * scale, self.scale() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        Cauchy::new_unchecked(self.loc() * scale, self.scale() * scale)
     }
 }
 
@@ -338,7 +381,7 @@ mod tests {
 
     #[test]
     fn inv_cdf_ident() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let c = Cauchy::default();
         for _ in 0..100 {
             let x: f64 = c.draw(&mut rng);
@@ -401,7 +444,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let c = Cauchy::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| c.cdf(&x);
 
@@ -409,13 +452,40 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = c.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
+    }
+
+    use crate::test_shiftable_cdf;
+    use crate::test_shiftable_density;
+    use crate::test_shiftable_entropy;
+    use crate::test_shiftable_invcdf;
+    use crate::test_shiftable_method;
+
+    test_shiftable_method!(Cauchy::new(2.0, 4.0).unwrap(), median);
+    test_shiftable_density!(Cauchy::new(2.0, 4.0).unwrap());
+    test_shiftable_entropy!(Cauchy::new(2.0, 4.0).unwrap());
+    test_shiftable_cdf!(Cauchy::new(2.0, 4.0).unwrap());
+    test_shiftable_invcdf!(Cauchy::new(2.0, 4.0).unwrap());
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_invcdf;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(Cauchy::new(2.0, 4.0).unwrap(), median);
+    test_scalable_density!(Cauchy::new(2.0, 4.0).unwrap());
+    test_scalable_entropy!(Cauchy::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(Cauchy::new(2.0, 4.0).unwrap());
+    test_scalable_invcdf!(Cauchy::new(2.0, 4.0).unwrap());
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Cauchy::new(2.0, 4.0).unwrap();
+        let dist_b = Cauchy::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

@@ -2,9 +2,13 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::consts::*;
+use crate::consts::HALF_LN_2PI;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Kurtosis, Mean,
+    Median, Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness,
+    Support, Variance,
+};
 use rand::Rng;
 use special::Error as _;
 use std::f64::consts::SQRT_2;
@@ -19,6 +23,27 @@ pub struct LogNormal {
     mu: f64,
     /// log scale standard deviation
     sigma: f64,
+}
+
+crate::impl_shiftable!(LogNormal);
+
+impl Scalable for LogNormal {
+    type Output = LogNormal;
+    type Error = LogNormalError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        LogNormal::new(self.mu() + scale.ln(), self.sigma())
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        LogNormal::new_unchecked(self.mu() + scale.ln(), self.sigma())
+    }
 }
 
 pub struct LogNormalParameters {
@@ -54,7 +79,7 @@ pub enum LogNormalError {
 }
 
 impl LogNormal {
-    /// Create a new LogNormal distribution
+    /// Create a new `LogNormal` distribution
     ///
     /// # Arguments
     /// - mu: log scale mean
@@ -72,9 +97,10 @@ impl LogNormal {
         }
     }
 
-    /// Creates a new LogNormal without checking whether the parameters are
+    /// Creates a new `LogNormal` without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(mu: f64, sigma: f64) -> Self {
         LogNormal { mu, sigma }
     }
@@ -89,6 +115,7 @@ impl LogNormal {
     /// assert_eq!(lognormal, LogNormal::new(0.0, 1.0).unwrap());
     /// ```
     #[inline]
+    #[must_use]
     pub fn standard() -> Self {
         LogNormal {
             mu: 0.0,
@@ -106,6 +133,7 @@ impl LogNormal {
     /// assert_eq!(lognormal.mu(), -1.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn mu(&self) -> f64 {
         self.mu
     }
@@ -135,11 +163,11 @@ impl LogNormal {
     /// ```
     #[inline]
     pub fn set_mu(&mut self, mu: f64) -> Result<(), LogNormalError> {
-        if !mu.is_finite() {
-            Err(LogNormalError::MuNotFinite { mu })
-        } else {
+        if mu.is_finite() {
             self.set_mu_unchecked(mu);
             Ok(())
+        } else {
+            Err(LogNormalError::MuNotFinite { mu })
         }
     }
 
@@ -159,6 +187,7 @@ impl LogNormal {
     /// assert_eq!(lognormal.sigma(), 2.0);
     /// ```
     #[inline]
+    #[must_use]
     pub fn sigma(&self) -> f64 {
         self.sigma
     }
@@ -290,7 +319,7 @@ macro_rules! impl_traits {
 
         impl Mode<$kind> for LogNormal {
             fn mode(&self) -> Option<$kind> {
-                Some(self.sigma.mul_add(-self.sigma, self.mu) as $kind)
+                Some((self.sigma.mul_add(-self.sigma, self.mu) as $kind).exp())
             }
         }
     };
@@ -335,15 +364,16 @@ impl_traits!(f64);
 
 impl std::error::Error for LogNormalError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for LogNormalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {mu}"),
             Self::SigmaTooLow { sigma } => {
-                write!(f, "sigma ({}) must be greater than zero", sigma)
+                write!(f, "sigma ({sigma}) must be greater than zero")
             }
             Self::SigmaNotFinite { sigma } => {
-                write!(f, "non-finite sigma: {}", sigma)
+                write!(f, "non-finite sigma: {sigma}")
             }
         }
     }
@@ -383,12 +413,6 @@ mod tests {
     }
 
     #[test]
-    fn mode() {
-        let mode: f64 = LogNormal::new(4.0, 2.0).unwrap().mode().unwrap();
-        assert::close(mode, 0.0, TOL);
-    }
-
-    #[test]
     fn variance() {
         let lognorm_1 = LogNormal::new(3.4, 1.0).unwrap();
         let lognorm_2 = LogNormal::new(1.0, 3.0).unwrap();
@@ -406,17 +430,17 @@ mod tests {
 
     #[test]
     fn draws_should_be_finite() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let lognorm = LogNormal::standard();
         for _ in 0..100 {
             let x: f64 = lognorm.draw(&mut rng);
-            assert!(x.is_finite())
+            assert!(x.is_finite());
         }
     }
 
     #[test]
     fn sample_length() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let lognorm = LogNormal::standard();
         let xs: Vec<f64> = lognorm.sample(10, &mut rng);
         assert_eq!(xs.len(), 10);
@@ -512,4 +536,19 @@ mod tests {
         let lognorm = LogNormal::standard();
         assert::close(lognorm.entropy(), 1.418_938_533_204_672_7, TOL);
     }
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_entropy;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), mean);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), median);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), mode);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), variance);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), skewness);
+    test_scalable_method!(LogNormal::new(2.0, 1.0).unwrap(), kurtosis);
+    test_scalable_density!(LogNormal::new(2.0, 1.0).unwrap());
+    test_scalable_entropy!(LogNormal::new(2.0, 1.0).unwrap());
+    test_scalable_cdf!(LogNormal::new(2.0, 1.0).unwrap());
 }

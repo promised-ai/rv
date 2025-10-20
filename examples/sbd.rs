@@ -1,14 +1,12 @@
-use rand::SeedableRng;
-use rv::prelude::*;
-
-#[cfg(feature = "experimental")]
-use rv::experimental::stick_breaking_process::{
-    StickBreaking, StickBreakingDiscrete, StickSequence,
-};
-
 fn main() {
     #[cfg(feature = "experimental")]
     {
+        use rand_xoshiro::rand_core::SeedableRng;
+        use rv::experimental::stick_breaking_process::{
+            StickBreaking, StickBreakingDiscrete, StickSequence,
+        };
+        use rv::prelude::*;
+
         // Instantiate a stick-breaking process
         let alpha = 10.0;
         let sbp = StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
@@ -23,11 +21,11 @@ fn main() {
         let start = std::time::Instant::now();
         let entropy = sbd.entropy();
         let duration = start.elapsed();
-        println!("Entropy: {}", entropy);
-        println!("Time elapsed in entropy() is: {:?}", duration);
+        println!("Entropy: {entropy}");
+        println!("Time elapsed in entropy() is: {duration:?}");
 
         let num_weights = sbd.stick_sequence().num_weights_unstable();
 
-        println!("num weights: {}", num_weights);
+        println!("num weights: {num_weights}");
     }
 }

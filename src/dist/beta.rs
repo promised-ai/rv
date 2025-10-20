@@ -4,7 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::BetaSuffStat;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, Kurtosis, Mean,
+    Mode, Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use special::Beta as _;
 use special::Gamma as _;
@@ -131,6 +135,7 @@ impl Beta {
 
     /// Creates a new Beta without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(alpha: f64, beta: f64) -> Self {
         Beta {
             alpha,
@@ -149,6 +154,7 @@ impl Beta {
     /// assert_eq!(beta, Beta::new(1.0, 1.0).unwrap());
     /// ```
     #[inline]
+    #[must_use]
     pub fn uniform() -> Self {
         Beta {
             alpha: 1.0,
@@ -168,6 +174,7 @@ impl Beta {
     /// assert_eq!(beta, Beta::new(0.5, 0.5).unwrap());
     /// ```
     #[inline]
+    #[must_use]
     pub fn jeffreys() -> Self {
         Beta {
             alpha: 0.5,
@@ -369,11 +376,7 @@ macro_rules! impl_traits {
                         None
                     }
                 } else if (self.beta - 1.0).abs() < f64::EPSILON {
-                    if self.alpha > 1.0 {
-                        Some(1.0)
-                    } else {
-                        None
-                    }
+                    if self.alpha > 1.0 { Some(1.0) } else { None }
                 } else {
                     None
                 }
@@ -397,6 +400,9 @@ macro_rules! impl_traits {
         }
     };
 }
+
+crate::impl_shiftable!(Beta);
+crate::impl_scalable!(Beta);
 
 impl Variance<f64> for Beta {
     fn variance(&self) -> Option<f64> {
@@ -444,20 +450,21 @@ impl_traits!(f64);
 
 impl std::error::Error for BetaError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for BetaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::AlphaTooLow { alpha } => {
-                write!(f, "alpha ({}) must be greater than zero", alpha)
+                write!(f, "alpha ({alpha}) must be greater than zero")
             }
             Self::AlphaNotFinite { alpha } => {
-                write!(f, "alpha ({}) was non finite", alpha)
+                write!(f, "alpha ({alpha}) was non finite")
             }
             Self::BetaTooLow { beta } => {
-                write!(f, "beta ({}) must be greater than zero", beta)
+                write!(f, "beta ({beta}) must be greater than zero")
             }
             Self::BetaNotFinite { beta } => {
-                write!(f, "beta ({}) was non finite", beta)
+                write!(f, "beta ({beta}) was non finite")
             }
         }
     }
@@ -598,7 +605,7 @@ mod tests {
 
     #[test]
     fn draw_should_return_values_within_0_to_1() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let beta = Beta::jeffreys();
         for _ in 0..100 {
             let x = beta.draw(&mut rng);
@@ -608,7 +615,7 @@ mod tests {
 
     #[test]
     fn sample_returns_the_correct_number_draws() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let beta = Beta::jeffreys();
         let xs: Vec<f32> = beta.sample(103, &mut rng);
         assert_eq!(xs.len(), 103);
@@ -704,7 +711,7 @@ mod tests {
 
     #[test]
     fn draw_test_alpha_beta_gt_one() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let beta = Beta::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| beta.cdf(&x);
 
@@ -712,11 +719,7 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = beta.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -724,7 +727,7 @@ mod tests {
 
     #[test]
     fn draw_test_alpha_beta_lt_one() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let beta = Beta::new(0.2, 0.7).unwrap();
         let cdf = |x: f64| beta.cdf(&x);
 
@@ -732,11 +735,7 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = beta.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -744,7 +743,7 @@ mod tests {
 
     #[test]
     fn beta_u_should_never_draw_1() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let beta = Beta::new(0.5, 0.5).unwrap();
 
         let some_1 = beta
@@ -756,6 +755,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+
         let data: Vec<f64> = vec![0.1, 0.23, 0.4, 0.65, 0.22, 0.31];
         let mut stat = BetaSuffStat::new();
         stat.observe_many(&data);
@@ -771,21 +772,21 @@ mod tests {
 
     #[test]
     fn set_alpha() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..100 {
-            let a1 = rng.gen::<f64>();
-            let b1 = rng.gen::<f64>();
+            let a1 = rng.random::<f64>();
+            let b1 = rng.random::<f64>();
             let mut beta1 = Beta::new(a1, b1).unwrap();
 
             // Any value in the unit interval
-            let x: f64 = rng.gen();
+            let x: f64 = rng.random();
 
             // Evaluate the pdf to force computation of `ln_beta_ab`
             let _ = beta1.pdf(&x);
 
             // Next we'll `set_alpha` to a2, and compare with a fresh Beta
-            let a2 = rng.gen::<f64>();
+            let a2 = rng.random::<f64>();
 
             // Setting the new values
             beta1.set_alpha(a2).unwrap();
@@ -802,21 +803,21 @@ mod tests {
 
     #[test]
     fn set_beta() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..100 {
-            let a1 = rng.gen::<f64>();
-            let b1 = rng.gen::<f64>();
+            let a1 = rng.random::<f64>();
+            let b1 = rng.random::<f64>();
             let mut beta1 = Beta::new(a1, b1).unwrap();
 
             // Any value in the unit interval
-            let x: f64 = rng.gen();
+            let x: f64 = rng.random();
 
             // Evaluate the pdf to force computation of `ln_beta_ab`
             let _ = beta1.pdf(&x);
 
             // Next we'll `set_beta` to b2, and compare this with a fresh Beta
-            let b2 = rng.gen::<f64>();
+            let b2 = rng.random::<f64>();
 
             // Setting the new values
             beta1.set_beta(b2).unwrap();
@@ -829,5 +830,12 @@ mod tests {
 
             assert::close(pdf_1, pdf_2, 1e-14);
         }
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Beta::new(0.8, 0.4).unwrap();
+        let dist_b = Beta::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

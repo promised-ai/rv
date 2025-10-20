@@ -1,14 +1,14 @@
-use itertools::Either;
-use peroxide::statistics::stat::Statistics;
-use rv::prelude::*;
-
-#[cfg(feature = "experimental")]
-use rv::experimental::stick_breaking_process::*;
-
 fn main() {
     #[cfg(feature = "experimental")]
     {
-        let mut rng = rand::thread_rng();
+        use itertools::Either;
+        use peroxide::fuga::Statistics;
+        use rv::experimental::stick_breaking_process::{
+            BreakSequence, StickBreaking, StickBreakingDiscrete, StickSequence,
+        };
+        use rv::prelude::*;
+
+        let mut rng = rand::rng();
         let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
 
         let num_samples = 1_000_000;
@@ -35,7 +35,7 @@ fn main() {
                     .iter()
                     .map(|breaks: &Vec<f64>| *breaks.get(j).unwrap())
                     .collect(),
-            )
+            );
         }
 
         let break_dists: Vec<Beta> = dist

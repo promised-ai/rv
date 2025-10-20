@@ -5,14 +5,14 @@ use rv::prelude::*;
 /// We have to assign values 0, ..., n-1 to the enum values so they map to
 /// indices in the categorical weights
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Hash)]
 enum Color {
     Red = 0,
     Blue = 1,
     Green = 2,
 }
 
-/// Then we implement the CatgoricalDatum trait for Color which has methods to
+/// Then we implement the `CatgoricalDatum` trait for Color which has methods to
 /// convert to and from a usize index.
 impl CategoricalDatum for Color {
     fn into_usize(self) -> usize {
@@ -24,13 +24,13 @@ impl CategoricalDatum for Color {
             0 => Color::Red,
             1 => Color::Blue,
             2 => Color::Green,
-            _ => panic!("Cannot convert {} to Color", n),
+            _ => panic!("Cannot convert {n} to Color"),
         }
     }
 }
 
 fn main() {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let ctgrl = Categorical::new(&[0.25, 0.25, 0.5]).unwrap();
 
@@ -40,5 +40,5 @@ fn main() {
 
     // Take 10 draws from {Red, Blue, Green} according to the distribution.
     let xs: Vec<Color> = ctgrl.sample(10, &mut rng);
-    println!("xs: {:?}", xs);
+    println!("xs: {xs:?}");
 }

@@ -4,7 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{BernoulliSuffStat, Booleable};
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, DiscreteDistr, Entropy, HasDensity, HasSuffStat, KlDivergence,
+    Kurtosis, Mean, Median, Mode, Parameterized, Sampleable, Skewness, Support,
+    Variance,
+};
 use rand::Rng;
 use std::f64;
 use std::fmt;
@@ -30,6 +34,15 @@ use std::fmt;
 ///
 /// b.pmf(&2_u8); // panics
 /// ```
+///
+/// Parameters struct for Bernoulli distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct BernoulliParameters {
+    /// Probability of a success (x=1)
+    pub p: f64,
+}
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -40,14 +53,14 @@ pub struct Bernoulli {
 }
 
 impl Parameterized for Bernoulli {
-    type Parameters = f64;
+    type Parameters = BernoulliParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.p()
+        Self::Parameters { p: self.p() }
     }
 
     fn from_params(params: Self::Parameters) -> Self {
-        Self::new_unchecked(params)
+        Self::new_unchecked(params.p)
     }
 }
 
@@ -71,7 +84,7 @@ impl Bernoulli {
     /// ```rust
     /// # use rv::dist::Bernoulli;
     /// # use rv::traits::*;
-    /// # let mut rng = rand::thread_rng();
+    /// # let mut rng = rand::rng();
     /// let b = Bernoulli::new(0.5).unwrap();
     ///
     /// let coin_flips: Vec<bool> = b.sample(5, &mut rng);
@@ -102,6 +115,7 @@ impl Bernoulli {
     /// Creates a new Bernoulli without checking whether parameter value is
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(p: f64) -> Self {
         Bernoulli { p }
     }
@@ -118,6 +132,7 @@ impl Bernoulli {
     /// assert_eq!(b.q(), 0.5);
     /// ```
     #[inline]
+    #[must_use]
     pub fn uniform() -> Self {
         Bernoulli { p: 0.5 }
     }
@@ -133,6 +148,7 @@ impl Bernoulli {
     /// assert_eq!(b.p(), 0.2);
     /// ```
     #[inline]
+    #[must_use]
     pub fn p(&self) -> f64 {
         self.p
     }
@@ -193,6 +209,7 @@ impl Bernoulli {
     /// assert_eq!(b.q(), 0.8);
     /// ```
     #[inline]
+    #[must_use]
     pub fn q(&self) -> f64 {
         1.0 - self.p
     }
@@ -215,11 +232,7 @@ impl_display!(Bernoulli);
 impl<X: Booleable> HasDensity<X> for Bernoulli {
     fn f(&self, x: &X) -> f64 {
         let val: bool = x.into_bool();
-        if val {
-            self.p
-        } else {
-            1.0_f64 - self.p
-        }
+        if val { self.p } else { 1.0_f64 - self.p }
     }
 
     fn ln_f(&self, x: &X) -> f64 {
@@ -267,11 +280,7 @@ impl<X: Booleable> DiscreteDistr<X> for Bernoulli {
 impl<X: Booleable> Cdf<X> for Bernoulli {
     fn cdf(&self, x: &X) -> f64 {
         let val: bool = x.into_bool();
-        if val {
-            1.0
-        } else {
-            self.q()
-        }
+        if val { 1.0 } else { self.q() }
     }
 }
 
@@ -360,16 +369,17 @@ impl Variance<f64> for Bernoulli {
 
 impl std::error::Error for BernoulliError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for BernoulliError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::PLessThanZero { p } => {
-                write!(f, "p was less than zero: {}", p)
+                write!(f, "p was less than zero: {p}")
             }
             Self::PGreaterThanOne { p } => {
-                write!(f, "p was less greater than one: {}", p)
+                write!(f, "p was less greater than one: {p}")
             }
-            Self::PNotFinite { p } => write!(f, "p was non-finite: {}", p),
+            Self::PNotFinite { p } => write!(f, "p was non-finite: {p}"),
         }
     }
 }
@@ -377,6 +387,7 @@ impl fmt::Display for BernoulliError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dist::Bernoulli;
     use crate::misc::x2_test;
     use crate::test_basic_impls;
 
@@ -412,12 +423,12 @@ mod tests {
             Err(BernoulliError::PNotFinite { .. }) => (),
             Err(_) => panic!("wrong error"),
             Ok(_) => panic!("should've errored"),
-        };
+        }
         match Bernoulli::new(f64::INFINITY) {
             Err(BernoulliError::PNotFinite { .. }) => (),
             Err(_) => panic!("wrong error"),
             Ok(_) => panic!("should've errored"),
-        };
+        }
     }
 
     #[test]
@@ -506,7 +517,7 @@ mod tests {
 
     #[test]
     fn sample_bools_should_draw_the_correct_number_of_samples() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let n = 103;
         let xs: Vec<bool> = Bernoulli::uniform().sample(n, &mut rng);
         assert_eq!(xs.len(), n);
@@ -514,7 +525,7 @@ mod tests {
 
     #[test]
     fn sample_ints_should_draw_the_correct_number_of_samples() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let n = 103;
         let xs: Vec<i16> = Bernoulli::uniform().sample(n, &mut rng);
         assert_eq!(xs.len(), n);
@@ -694,7 +705,7 @@ mod tests {
 
     #[test]
     fn draw_test() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let b = Bernoulli::new(0.7).unwrap();
         let ps: Vec<f64> = vec![0.3, 0.7];
 
@@ -703,11 +714,7 @@ mod tests {
             let xs: Vec<usize> = b.sample(1000, &mut rng);
             xs.iter().for_each(|&x| f_obs[x] += 1);
             let (_, p) = x2_test(&f_obs, &ps);
-            if p > X2_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > X2_PVAL { acc + 1 } else { acc }
         });
         assert!(passes > 0);
     }
@@ -724,6 +731,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+
         let data: Vec<bool> = vec![true, false, false, false, true];
         let mut stat = BernoulliSuffStat::new();
         stat.observe_many(&data);
@@ -735,5 +744,12 @@ mod tests {
             <Bernoulli as HasSuffStat<bool>>::ln_f_stat(&bern, &stat);
 
         assert::close(ln_f_base, ln_f_stat, TOL);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Bernoulli::new(0.8).unwrap();
+        let dist_b = Bernoulli::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

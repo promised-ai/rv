@@ -5,7 +5,9 @@ use serde::{Deserialize, Serialize};
 use crate::impl_display;
 use crate::misc::ln_gammafn;
 use crate::misc::vec_to_string;
-use crate::traits::*;
+use crate::traits::{
+    ContinuousDistr, HasDensity, Parameterized, Sampleable, Support,
+};
 use rand::Rng;
 use rand_distr::Gamma as RGamma;
 use std::fmt;
@@ -25,7 +27,7 @@ mod categorical_prior;
 pub struct SymmetricDirichlet {
     alpha: f64,
     k: usize,
-    /// Cached ln_gamma(alpha)
+    /// Cached `ln_gamma(alpha)`
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_gamma_alpha: OnceLock<f64>,
 }
@@ -91,9 +93,10 @@ impl SymmetricDirichlet {
         }
     }
 
-    /// Create a new SymmetricDirichlet without checking whether the parameters
+    /// Create a new `SymmetricDirichlet` without checking whether the parameters
     /// are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(alpha: f64, k: usize) -> Self {
         Self {
             alpha,
@@ -313,6 +316,7 @@ impl Dirichlet {
     /// Creates a new Dirichlet without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(alphas: Vec<f64>) -> Self {
         Dirichlet { alphas }
     }
@@ -384,12 +388,14 @@ impl Dirichlet {
 
     /// The length of `alphas` / the number of categories
     #[inline]
+    #[must_use]
     pub fn k(&self) -> usize {
         self.alphas.len()
     }
 
     /// Get a reference to the weights vector, `alphas`
     #[inline]
+    #[must_use]
     pub fn alphas(&self) -> &Vec<f64> {
         &self.alphas
     }
@@ -407,11 +413,11 @@ impl ContinuousDistr<Vec<f64>> for SymmetricDirichlet {}
 
 impl Support<Vec<f64>> for SymmetricDirichlet {
     fn supports(&self, x: &Vec<f64>) -> bool {
-        if x.len() != self.k {
-            false
-        } else {
+        if x.len() == self.k {
             let sum = x.iter().fold(0.0, |acc, &xi| acc + xi);
             x.iter().all(|&xi| xi > 0.0) && (1.0 - sum).abs() < 1E-12
+        } else {
+            false
         }
     }
 }
@@ -455,11 +461,11 @@ impl ContinuousDistr<Vec<f64>> for Dirichlet {}
 
 impl Support<Vec<f64>> for Dirichlet {
     fn supports(&self, x: &Vec<f64>) -> bool {
-        if x.len() != self.alphas.len() {
-            false
-        } else {
+        if x.len() == self.alphas.len() {
             let sum = x.iter().fold(0.0, |acc, &xi| acc + xi);
             x.iter().all(|&xi| xi > 0.0) && (1.0 - sum).abs() < 1E-12
+        } else {
+            false
         }
     }
 }
@@ -467,14 +473,15 @@ impl Support<Vec<f64>> for Dirichlet {
 impl std::error::Error for SymmetricDirichletError {}
 impl std::error::Error for DirichletError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for SymmetricDirichletError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::AlphaTooLow { alpha } => {
-                write!(f, "alpha ({}) must be greater than zero", alpha)
+                write!(f, "alpha ({alpha}) must be greater than zero")
             }
             Self::AlphaNotFinite { alpha } => {
-                write!(f, "alpha ({}) was non-finite", alpha)
+                write!(f, "alpha ({alpha}) was non-finite")
             }
             Self::KIsZero => write!(f, "k must be greater than zero"),
         }
@@ -487,10 +494,10 @@ impl fmt::Display for DirichletError {
             Self::KIsZero => write!(f, "k must be greater than zero"),
             Self::AlphasEmpty => write!(f, "alphas vector was empty"),
             Self::AlphaTooLow { ix, alpha } => {
-                write!(f, "Invalid alpha at index {}: {} <= 0.0", ix, alpha)
+                write!(f, "Invalid alpha at index {ix}: {alpha} <= 0.0")
             }
             Self::AlphaNotFinite { ix, alpha } => {
-                write!(f, "Non-finite alpha at index {}: {}", ix, alpha)
+                write!(f, "Non-finite alpha at index {ix}: {alpha}")
             }
         }
     }
@@ -531,7 +538,7 @@ mod tests {
 
         #[test]
         fn draws_should_be_in_support() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             // Small alphas gives us more variability in the simplex, and more
             // variability gives us a better test.
             let dir = Dirichlet::jeffreys(10).unwrap();
@@ -543,7 +550,7 @@ mod tests {
 
         #[test]
         fn sample_should_return_the_proper_number_of_draws() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let dir = Dirichlet::jeffreys(3).unwrap();
             let xs: Vec<Vec<f64>> = dir.sample(88, &mut rng);
             assert_eq!(xs.len(), 88);
@@ -593,7 +600,7 @@ mod tests {
 
         #[test]
         fn sample_should_return_the_proper_number_of_draws() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let symdir = SymmetricDirichlet::jeffreys(3).unwrap();
             let xs: Vec<Vec<f64>> = symdir.sample(88, &mut rng);
             assert_eq!(xs.len(), 88);
@@ -618,7 +625,7 @@ mod tests {
 
         #[test]
         fn draws_should_be_in_support() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             // Small alphas gives us more variability in the simplex, and more
             // variability gives us a better test.
             let symdir = SymmetricDirichlet::jeffreys(10).unwrap();
@@ -647,5 +654,12 @@ mod tests {
             1.2,
             PI
         );
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = SymmetricDirichlet::new(1.5, 7).unwrap();
+        let dist_b = SymmetricDirichlet::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

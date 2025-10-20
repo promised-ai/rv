@@ -1,7 +1,9 @@
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::traits::*;
+use crate::traits::{
+    Cdf, HasDensity, Mean, Parameterized, Sampleable, Variance,
+};
 use rand::Rng;
 
 /// An empirical distribution derived from samples.
@@ -17,15 +19,15 @@ use rand::Rng;
 /// use rand::SeedableRng;
 ///
 /// let mut rng = Xoshiro256Plus::seed_from_u64(0xABCD);
-/// let gen = Gaussian::standard();
+/// let dist = Gaussian::standard();
 ///
-/// let sample: Vec<f64> = gen.sample(1000, &mut rng);
+/// let sample: Vec<f64> = dist.sample(1000, &mut rng);
 /// let emp_dist = Empirical::new(sample);
 ///
 /// let ln_f_err: Vec<f64> = linspace(emp_dist.range().0, emp_dist.range().1, 1000)
 ///     .iter()
 ///     .map(|x| {
-///         gen.ln_f(x) - emp_dist.ln_f(x)
+///         dist.ln_f(x) - emp_dist.ln_f(x)
 ///     }).collect();
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -64,6 +66,7 @@ impl Parameterized for Empirical {
 
 impl Empirical {
     /// Create a new Empirical distribution with the given observed values
+    #[must_use]
     pub fn new(mut xs: Vec<f64>) -> Self {
         xs.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
         let min = xs[0];
@@ -97,6 +100,7 @@ impl Empirical {
     }
 
     /// Compute the CDF of a number of values
+    #[must_use]
     pub fn empcdfs(&self, values: &[f64]) -> Vec<f64> {
         values
             .iter()
@@ -108,6 +112,7 @@ impl Empirical {
     }
 
     /// A utility for computing a P-P plot.
+    #[must_use]
     pub fn pp(&self, other: &Self) -> (Vec<f64>, Vec<f64>) {
         let mut xys = self.xs.clone();
         xys.append(&mut other.xs.clone());
@@ -116,6 +121,7 @@ impl Empirical {
     }
 
     /// Area between CDF-CDF (1-1) line
+    #[must_use]
     pub fn err(&self, other: &Self) -> f64 {
         let (fxs, fys) = self.pp(other);
         let diff: Vec<f64> = fxs
@@ -128,12 +134,13 @@ impl Empirical {
         for i in 1..fxs.len() {
             let step = fxs[i] - fxs[i - 1];
             let trap = diff[i] + diff[i - 1];
-            q += step * trap
+            q += step * trap;
         }
         q / 2.0
     }
 
     /// Return the range of non-zero support for this distribution.
+    #[must_use]
     pub fn range(&self) -> &(f64, f64) {
         &self.range
     }
@@ -141,7 +148,9 @@ impl Empirical {
 
 impl HasDensity<f64> for Empirical {
     fn f(&self, x: &f64) -> f64 {
-        eprintln!("WARNING: empirical.f is unstable. You probably don't want to use it.");
+        eprintln!(
+            "WARNING: empirical.f is unstable. You probably don't want to use it."
+        );
         match self.pos(*x) {
             Pos::First => 0.0,
             Pos::Last => 0.0,
@@ -171,7 +180,7 @@ impl HasDensity<f64> for Empirical {
 impl Sampleable<f64> for Empirical {
     fn draw<R: Rng>(&self, rng: &mut R) -> f64 {
         let n = self.xs.len();
-        let ix: usize = rng.gen_range(0..n);
+        let ix: usize = rng.random_range(0..n);
         self.xs[ix]
     }
 }
@@ -202,8 +211,7 @@ impl Variance<f64> for Empirical {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dist::Gaussian;
-    use crate::misc::linspace;
+    use crate::{dist::Gaussian, misc::linspace};
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
 
@@ -211,17 +219,17 @@ mod tests {
     #[ignore = "This failure is expected, ln_f should not be used."]
     fn gaussian_sample() {
         let mut rng = Xoshiro256Plus::seed_from_u64(0xABCD);
-        let gen = Gaussian::standard();
-        let sample: Vec<f64> = gen.sample(10000, &mut rng);
+        let dist = Gaussian::standard();
+        let sample: Vec<f64> = dist.sample(10000, &mut rng);
         let emp_dist = Empirical::new(sample);
 
         let (f_errs, cdf_errs): (Vec<f64>, Vec<f64>) =
             linspace(emp_dist.range().0, emp_dist.range().1, 1000)
                 .into_iter()
                 .map(|x| {
-                    let ft = gen.f(&x);
+                    let ft = dist.f(&x);
                     let fe = emp_dist.f(&x);
-                    let cdf_t = gen.cdf(&x);
+                    let cdf_t = dist.cdf(&x);
                     let cdf_e = emp_dist.cdf(&x);
                     (fe - ft, cdf_e - cdf_t)
                 })
@@ -245,7 +253,7 @@ mod tests {
 
     #[test]
     fn draw_smoke() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         // create a distribution with only a few bins so that draw hits all the
         // bins.
         let xs = vec![0.0, 1.0, 2.0];
@@ -254,5 +262,12 @@ mod tests {
         for _ in 0..1_000 {
             let _x: f64 = emp_dist.draw(&mut rng);
         }
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Empirical::new(vec![0.0, 0.2, 0.3]);
+        let dist_b = Empirical::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

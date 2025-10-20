@@ -1,10 +1,10 @@
 use rand::Rng;
 
-use crate::data::{extract_stat_then, CategoricalDatum, CategoricalSuffStat};
+use crate::data::{CategoricalDatum, CategoricalSuffStat, extract_stat_then};
 use crate::dist::{Categorical, Dirichlet, SymmetricDirichlet};
 use crate::misc::ln_gammafn;
 use crate::prelude::CategoricalData;
-use crate::traits::*;
+use crate::traits::{ConjugatePrior, HasDensity, HasSuffStat, Sampleable};
 
 impl HasDensity<Categorical> for SymmetricDirichlet {
     fn ln_f(&self, x: &Categorical) -> f64 {
@@ -26,17 +26,17 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     type MCache = f64;
     type PpCache = (Vec<f64>, f64);
 
-    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
-        extract_stat_then(
-            x,
-            || CategoricalSuffStat::new(self.k()),
-            |stat: CategoricalSuffStat| {
-                let alphas: Vec<f64> =
-                    stat.counts().iter().map(|&ct| self.alpha() + ct).collect();
+    fn empty_stat(&self) -> <Categorical as HasSuffStat<X>>::Stat {
+        CategoricalSuffStat::new(self.k())
+    }
 
-                Dirichlet::new(alphas).unwrap()
-            },
-        )
+    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
+        extract_stat_then(self, x, |stat: &CategoricalSuffStat| {
+            let alphas: Vec<f64> =
+                stat.counts().iter().map(|&ct| self.alpha() + ct).collect();
+
+            Dirichlet::new(alphas).unwrap()
+        })
     }
 
     #[inline]
@@ -54,20 +54,15 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     ) -> f64 {
         let sum_alpha = self.alpha() * self.k() as f64;
 
-        extract_stat_then(
-            x,
-            || CategoricalSuffStat::new(self.k()),
-            |stat: CategoricalSuffStat| {
-                // terms
-                let b = ln_gammafn(sum_alpha + stat.n() as f64);
-                let c = stat
-                    .counts()
-                    .iter()
-                    .fold(0.0, |acc, &ct| acc + ln_gammafn(self.alpha() + ct));
+        extract_stat_then(self, x, |stat: &CategoricalSuffStat| {
+            let b = ln_gammafn(sum_alpha + stat.n() as f64);
+            let c = stat
+                .counts()
+                .iter()
+                .fold(0.0, |acc, &ct| acc + ln_gammafn(self.alpha() + ct));
 
-                -b + c + cache
-            },
-        )
+            -b + c + cache
+        })
     }
 
     #[inline]
@@ -101,21 +96,21 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     type MCache = (f64, f64);
     type PpCache = (Vec<f64>, f64);
 
-    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
-        extract_stat_then(
-            x,
-            || CategoricalSuffStat::new(self.k()),
-            |stat: CategoricalSuffStat| {
-                let alphas: Vec<f64> = self
-                    .alphas()
-                    .iter()
-                    .zip(stat.counts().iter())
-                    .map(|(&a, &ct)| a + ct)
-                    .collect();
+    fn empty_stat(&self) -> <Categorical as HasSuffStat<X>>::Stat {
+        CategoricalSuffStat::new(self.k())
+    }
 
-                Dirichlet::new(alphas).unwrap()
-            },
-        )
+    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
+        extract_stat_then(self, x, |stat: &CategoricalSuffStat| {
+            let alphas: Vec<f64> = self
+                .alphas()
+                .iter()
+                .zip(stat.counts().iter())
+                .map(|(&a, &ct)| a + ct)
+                .collect();
+
+            Dirichlet::new(alphas).unwrap()
+        })
     }
 
     #[inline]
@@ -135,22 +130,17 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
         x: &CategoricalData<X>,
     ) -> f64 {
         let (sum_alpha, ln_norm) = cache;
-        extract_stat_then(
-            x,
-            || CategoricalSuffStat::new(self.k()),
-            |stat: CategoricalSuffStat| {
-                // terms
-                let b = ln_gammafn(sum_alpha + stat.n() as f64);
-                let c = self
-                    .alphas()
-                    .iter()
-                    .zip(stat.counts().iter())
-                    .map(|(&a, &ct)| ln_gammafn(a + ct))
-                    .sum::<f64>();
+        extract_stat_then(self, x, |stat: &CategoricalSuffStat| {
+            let b = ln_gammafn(sum_alpha + stat.n() as f64);
+            let c = self
+                .alphas()
+                .iter()
+                .zip(stat.counts().iter())
+                .map(|(&a, &ct)| ln_gammafn(a + ct))
+                .sum::<f64>();
 
-                -b + c + ln_norm
-            },
-        )
+            -b + c + ln_norm
+        })
     }
 
     #[inline]
@@ -252,7 +242,7 @@ mod test {
 
         #[test]
         fn symmetric_prior_draw_log_weights_should_all_be_negative() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let csd = SymmetricDirichlet::new(1.0, 4).unwrap();
             let ctgrl: Categorical = csd.draw(&mut rng);
 
@@ -261,7 +251,7 @@ mod test {
 
         #[test]
         fn symmetric_prior_draw_log_weights_should_be_unique() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let csd = SymmetricDirichlet::new(1.0, 4).unwrap();
             let ctgrl: Categorical = csd.draw(&mut rng);
 
@@ -277,7 +267,7 @@ mod test {
 
         #[test]
         fn symmetric_posterior_draw_log_weights_should_all_be_negative() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
 
             let xs: Vec<u8> = vec![0, 1, 2, 1, 2, 3, 0, 1, 1];
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
@@ -291,7 +281,7 @@ mod test {
 
         #[test]
         fn symmetric_posterior_draw_log_weights_should_be_unique() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
 
             let xs: Vec<u8> = vec![0, 1, 2, 1, 2, 3, 0, 1, 1];
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);

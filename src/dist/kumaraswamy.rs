@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use crate::consts::EULER_MASCERONI;
 use crate::impl_display;
 use crate::misc::gammafn;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Mean, Median, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Support,
+};
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;
@@ -54,6 +57,9 @@ pub struct Kumaraswamy {
     /// Cached log(a*b)
     ab_ln: OnceLock<f64>,
 }
+
+crate::impl_shiftable!(Kumaraswamy);
+crate::impl_scalable!(Kumaraswamy);
 
 pub struct KumaraswamyParameters {
     pub a: f64,
@@ -146,6 +152,7 @@ impl Kumaraswamy {
     /// Creates a new Kumaraswamy without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(a: f64, b: f64) -> Self {
         Kumaraswamy {
             a,
@@ -164,6 +171,7 @@ impl Kumaraswamy {
     /// assert_eq!(kuma, Kumaraswamy::new(1.0, 1.0).unwrap());
     /// ```
     #[inline]
+    #[must_use]
     pub fn uniform() -> Self {
         Kumaraswamy {
             a: 1.0,
@@ -367,7 +375,7 @@ macro_rules! impl_kumaraswamy {
 
         impl Sampleable<$kind> for Kumaraswamy {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                let p: f64 = rng.gen();
+                let p: f64 = rng.random();
                 invcdf(p, self.a, self.b) as $kind
             }
         }
@@ -441,17 +449,18 @@ impl Entropy for Kumaraswamy {
 
 impl std::error::Error for KumaraswamyError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for KumaraswamyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ATooLow { a } => {
-                write!(f, "a ({}) must be greater than zero", a)
+                write!(f, "a ({a}) must be greater than zero")
             }
-            Self::ANotFinite { a } => write!(f, "non-finite a: {}", a),
+            Self::ANotFinite { a } => write!(f, "non-finite a: {a}"),
             Self::BTooLow { b } => {
-                write!(f, "b ({}) must be greater than zero", b)
+                write!(f, "b ({b}) must be greater than zero")
             }
-            Self::BNotFinite { b } => write!(f, "non-finite b: {}", b),
+            Self::BNotFinite { b } => write!(f, "non-finite b: {b}"),
         }
     }
 }
@@ -463,6 +472,7 @@ mod tests {
     use crate::misc::gauss_legendre_quadrature;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
+    use proptest::prelude::*;
 
     const KS_PVAL: f64 = 0.2;
     const N_TRIES: usize = 5;
@@ -477,7 +487,7 @@ mod tests {
 
     #[test]
     fn draw_should_return_values_within_0_to_1() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let kuma = Kumaraswamy::default();
         for _ in 0..100 {
             let x = kuma.draw(&mut rng);
@@ -487,7 +497,7 @@ mod tests {
 
     #[test]
     fn sample_returns_the_correct_number_draws() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let kuma = Kumaraswamy::default();
         let xs: Vec<f64> = kuma.sample(103, &mut rng);
         assert_eq!(xs.len(), 103);
@@ -496,7 +506,7 @@ mod tests {
     #[test]
     fn draws_from_correct_distribution() {
         let lognormal = LogNormal::new(0.0, 0.25).unwrap();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // test is flaky, try a few times
         let passes = (0..N_TRIES).fold(0, |acc, _| {
@@ -508,11 +518,7 @@ mod tests {
             let xs: Vec<f64> = kuma.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
 
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -543,41 +549,27 @@ mod tests {
     #[test]
     fn mean_for_uniform_should_be_one_half() {
         let mean: f64 = Kumaraswamy::uniform().mean().unwrap();
-        assert::close(mean, 0.5, 1E-10)
+        assert::close(mean, 0.5, 1E-10);
     }
 
-    #[test]
-    fn equivalent_mean_to_beta_when_a_or_b_is_1() {
-        let mut rng = rand::thread_rng();
+    proptest! {
+        #[test]
+        fn prop_equivalent_mean_to_beta_when_a_or_b_is_1(p in 0.01..100.0) {
+            // K(a, 1) = B(a, 1) - test a=1, varying b
+            let kuma_m1: f64 = Kumaraswamy::new(1.0, p).unwrap().mean().unwrap();
+            let beta_m1: f64 = Beta::new(1.0, p).unwrap().mean().unwrap();
+            assert::close(kuma_m1, beta_m1, 1E-10);
 
-        // K(a, 1) = B(a, 1) and K(1, b) = B(1, b)
-        fn equiv(p: f64) {
-            {
-                let kuma_m: f64 =
-                    Kumaraswamy::new(1.0, p).unwrap().mean().unwrap();
-                let beta_m: f64 = Beta::new(1.0, p).unwrap().mean().unwrap();
-
-                assert::close(kuma_m, beta_m, 1E-10)
-            }
-            {
-                let kuma_m: f64 =
-                    Kumaraswamy::new(p, 1.0).unwrap().mean().unwrap();
-                let beta_m: f64 = Beta::new(p, 1.0).unwrap().mean().unwrap();
-
-                assert::close(kuma_m, beta_m, 1E-10)
-            }
+            // K(1, b) = B(1, b) - test b=1, varying a
+            let kuma_m2: f64 = Kumaraswamy::new(p, 1.0).unwrap().mean().unwrap();
+            let beta_m2: f64 = Beta::new(p, 1.0).unwrap().mean().unwrap();
+            assert::close(kuma_m2, beta_m2, 1E-10);
         }
-
-        Gamma::new(2.0, 2.0)
-            .unwrap()
-            .sample(100, &mut rng)
-            .iter()
-            .for_each(|&p| equiv(p))
     }
 
     #[test]
     fn equivalent_mode_to_beta_when_a_or_b_is_1() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // K(a, 1) = B(a, 1) and K(1, b) = B(1, b)
         fn equiv(p: f64) {
@@ -586,14 +578,14 @@ mod tests {
                     Kumaraswamy::new(1.0, p).unwrap().mean().unwrap();
                 let beta_m: f64 = Beta::new(1.0, p).unwrap().mean().unwrap();
 
-                assert::close(kuma_m, beta_m, 1E-10)
+                assert::close(kuma_m, beta_m, 1E-10);
             }
             {
                 let kuma_m: f64 =
                     Kumaraswamy::new(p, 1.0).unwrap().mean().unwrap();
                 let beta_m: f64 = Beta::new(p, 1.0).unwrap().mean().unwrap();
 
-                assert::close(kuma_m, beta_m, 1E-10)
+                assert::close(kuma_m, beta_m, 1E-10);
             }
         }
 
@@ -602,7 +594,7 @@ mod tests {
             .unwrap()
             .sample(100, &mut rng)
             .iter()
-            .for_each(|p: &f64| equiv(p + 1_f64))
+            .for_each(|p: &f64| equiv(p + 1_f64));
     }
 
     #[test]
@@ -673,5 +665,12 @@ mod tests {
         let kuma_2 = Kumaraswamy::new(2.0, 3.0).unwrap();
 
         assert::close(kuma_1.f(&0.5_f64), kuma_2.f(&0.5_f64), 1E-12);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = Kumaraswamy::new(3.0, 4.0).unwrap();
+        let dist_b = Kumaraswamy::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }

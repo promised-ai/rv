@@ -1,36 +1,39 @@
 use super::StickSequence;
 use crate::dist::Mixture;
-use crate::misc::sorted_uniforms;
 use crate::misc::ConvergentSequence;
-use crate::traits::*;
-use rand::seq::SliceRandom;
+use crate::misc::sorted_uniforms;
+use crate::traits::{
+    Cdf, DiscreteDistr, Entropy, HasDensity, InverseCdf, Mode, Sampleable,
+    Support,
+};
 use rand::Rng;
+use rand::seq::SliceRandom;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
-/// A "Stick-breaking discrete" distribution parameterized by a StickSequence.
+/// A "Stick-breaking discrete" distribution parameterized by a `StickSequence`.
 pub struct StickBreakingDiscrete {
     sticks: StickSequence,
 }
 
 impl StickBreakingDiscrete {
-    /// Creates a new instance of StickBreakingDiscrete with the specified StickSequence.
+    /// Creates a new instance of `StickBreakingDiscrete` with the specified `StickSequence`.
     ///
     /// # Arguments
     ///
-    /// * `sticks` - The StickSequence used for generating random numbers.
+    /// * `sticks` - The `StickSequence` used for generating random numbers.
     ///
     /// # Returns
     ///
-    /// A new instance of StickBreakingDiscrete.
+    /// A new instance of `StickBreakingDiscrete`.
     pub fn new(sticks: StickSequence) -> StickBreakingDiscrete {
         Self { sticks }
     }
 
     /// Calculates the inverse complementary cumulative distribution function
-    /// (invccdf) for the StickBreakingDiscrete distribution. This method is preferred over the
+    /// (invccdf) for the `StickBreakingDiscrete` distribution. This method is preferred over the
     /// traditional cumulative distribution function (cdf) as it provides higher precision in the
     /// tail regions of the distribution.
     ///
@@ -40,7 +43,7 @@ impl StickBreakingDiscrete {
     ///
     /// # Returns
     ///
-    /// The index of the first element in the StickSequence whose cumulative probability is less
+    /// The index of the first element in the `StickSequence` whose cumulative probability is less
     /// than `p`.
     pub fn invccdf(&self, p: f64) -> usize {
         debug_assert!(p > 0.0 && p < 1.0);
@@ -50,11 +53,11 @@ impl StickBreakingDiscrete {
         )
     }
 
-    /// Provides a reference to the StickSequence used by the StickBreakingDiscrete distribution.
+    /// Provides a reference to the `StickSequence` used by the `StickBreakingDiscrete` distribution.
     ///
     /// # Returns
     ///
-    /// A reference to the StickSequence.
+    /// A reference to the `StickSequence`.
     pub fn stick_sequence(&self) -> &StickSequence {
         &self.sticks
     }
@@ -62,7 +65,7 @@ impl StickBreakingDiscrete {
     /// Calculates the inverse complementary cumulative distribution function (invccdf) for
     /// multiple sorted values. This method is useful for efficiently computing the invccdf for a
     /// sequence of values that are already sorted in ascending order. The returned vector contains
-    /// the indices of the StickSequence elements whose cumulative probabilities are less than the
+    /// the indices of the `StickSequence` elements whose cumulative probabilities are less than the
     /// corresponding values in `ps`.
     ///
     /// # Arguments
@@ -72,7 +75,7 @@ impl StickBreakingDiscrete {
     ///
     /// # Returns
     ///
-    /// A vector containing the indices of the StickSequence elements whose cumulative probabilities
+    /// A vector containing the indices of the `StickSequence` elements whose cumulative probabilities
     /// are less than the corresponding values in `ps`.
     pub fn multi_invccdf_sorted(&self, ps: &[f64]) -> Vec<usize> {
         let n = ps.len();
@@ -89,9 +92,8 @@ impl StickBreakingDiscrete {
                         result.push(q.0);
                         if i == 0 {
                             break;
-                        } else {
-                            i -= 1;
                         }
+                        i -= 1;
                     }
                 }
                 result
@@ -183,7 +185,7 @@ impl Mode<usize> for StickBreakingDiscrete {
         let w0 = self.sticks.weight(0);
         // Once the unallocated mass is less than that of the first stick, the
         // allocated mass is guaranteed to contain the mode.
-        let n = self.sticks.extendmap_ccdf(
+        self.sticks.extendmap_ccdf(
             |ccdf| ccdf.last().unwrap() < &w0,
             |ccdf| {
                 let weights: Vec<f64> =
@@ -194,12 +196,11 @@ impl Mode<usize> for StickBreakingDiscrete {
                     .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
                     .map(|(i, _)| i)
             },
-        );
-        n
+        )
     }
 }
 
-/// Provides density and log-density functions for StickBreakingDiscrete.
+/// Provides density and log-density functions for `StickBreakingDiscrete`.
 impl HasDensity<usize> for StickBreakingDiscrete {
     /// Computes the density of a given stick index.
     ///
@@ -229,7 +230,7 @@ impl HasDensity<usize> for StickBreakingDiscrete {
     }
 }
 
-/// Enables sampling from StickBreakingDiscrete.
+/// Enables sampling from `StickBreakingDiscrete`.
 impl Sampleable<usize> for StickBreakingDiscrete {
     /// Draws a single sample from the distribution.
     ///
@@ -245,7 +246,7 @@ impl Sampleable<usize> for StickBreakingDiscrete {
     ///
     /// A single sample as a usize.
     fn draw<R: Rng>(&self, rng: &mut R) -> usize {
-        let u: f64 = rng.gen();
+        let u: f64 = rng.random();
         self.invccdf(u)
     }
 
@@ -304,16 +305,16 @@ impl Entropy for &Mixture<StickBreakingDiscrete> {
 mod tests {
     use super::*;
     use crate::prelude::*;
-    use rand::thread_rng;
+    use rand::rng;
 
     #[test]
     fn test_multi_invccdf_sorted() {
         let sticks = StickSequence::new(UnitPowerLaw::new(10.0).unwrap(), None);
         let sbd = StickBreakingDiscrete::new(sticks);
-        let ps = sorted_uniforms(5, &mut thread_rng());
+        let ps = sorted_uniforms(5, &mut rng());
         assert_eq!(
             sbd.multi_invccdf_sorted(&ps),
             ps.iter().rev().map(|p| sbd.invccdf(*p)).collect::<Vec<_>>()
-        )
+        );
     }
 }

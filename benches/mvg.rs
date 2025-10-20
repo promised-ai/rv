@@ -1,21 +1,22 @@
-use criterion::black_box;
+use std::hint::black_box;
+
 use criterion::BatchSize;
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use nalgebra::DVector;
 use rv::dist::MvGaussian;
-use rv::traits::*;
+use rv::traits::{ContinuousDistr, Sampleable};
 
 fn bench_mvg_draw(c: &mut Criterion) {
     let mut group = c.benchmark_group("MvGaussian, draw 1");
     for dims in [2, 3, 5, 10] {
-        group.bench_with_input(format!("{} dims", dims), &dims, |b, &dims| {
+        group.bench_with_input(format!("{dims} dims"), &dims, |b, &dims| {
             let mvg = MvGaussian::standard(dims).unwrap();
             b.iter_batched_ref(
-                rand::thread_rng,
+                rand::rng,
                 |mut rng| black_box::<DVector<f64>>(mvg.draw(&mut rng)),
                 BatchSize::SmallInput,
-            )
+            );
         });
     }
 }
@@ -28,7 +29,7 @@ fn bench_mvg_sample(c: &mut Criterion) {
     for n in [1, 10, 50, 100] {
         group.bench_with_input(n.to_string(), &n, |b, &n| {
             b.iter_batched_ref(
-                rand::thread_rng,
+                rand::rng,
                 |mut rng| {
                     black_box::<Vec<DVector<f64>>>(mvg.sample(n, &mut rng))
                 },
@@ -43,8 +44,8 @@ fn bench_mvg_ln_f(c: &mut Criterion) {
     for dims in [2, 3, 5, 10] {
         let mvg = &MvGaussian::standard(dims).unwrap();
         let x = DVector::<f64>::zeros(dims);
-        group.bench_function(format!("{} dims", dims), |b| {
-            b.iter(|| black_box(mvg.ln_pdf(&x)))
+        group.bench_function(format!("{dims} dims"), |b| {
+            b.iter(|| black_box(mvg.ln_pdf(&x)));
         });
     }
 }

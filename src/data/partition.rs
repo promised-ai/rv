@@ -5,6 +5,25 @@ use crate::impl_display;
 use crate::misc::vec_to_string;
 use std::fmt;
 
+/// A Partition of data by index.
+///
+/// # Example
+/// ```rust
+/// use rv::data::Partition;
+///
+/// let part = Partition::new();
+///
+/// // It starts off empty
+/// assert_eq!(part.z(), &[]);
+/// assert_eq!(part.counts(), &[]);
+/// assert!(part.is_empty());
+///
+/// // We can derive the partition from assignments
+/// let part = Partition::from_z(vec![0, 0, 1, 1, 2]).expect("Non-empty assignments are valid");
+/// assert_eq!(part.z(), &[0, 0, 1, 1, 2]);
+/// assert_eq!(part.counts(), &[2, 2, 1]);
+/// assert!(!part.is_empty());
+/// ```
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -58,6 +77,7 @@ pub enum PartitionError {
 
 impl std::error::Error for PartitionError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for PartitionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -67,9 +87,8 @@ impl fmt::Display for PartitionError {
             Self::IndicatorHigherThanNumberOfPartitions { zi, nparts } => {
                 write!(
                     f,
-                    "tried to append z = {0} to a partition with {1} \
-                     partitions.  z must be in 0..n_parts, (or 0..{1}),",
-                    zi, nparts
+                    "tried to append z = {zi} to a partition with {nparts} \
+                     partitions.  z must be in 0..n_parts, (or 0..{nparts}),"
                 )
             }
         }
@@ -78,6 +97,7 @@ impl fmt::Display for PartitionError {
 
 impl Partition {
     /// Empty partition
+    #[must_use]
     pub fn new() -> Partition {
         Partition {
             z: vec![],
@@ -85,10 +105,12 @@ impl Partition {
         }
     }
 
+    #[must_use]
     pub fn new_unchecked(z: Vec<usize>, counts: Vec<usize>) -> Self {
         Partition { z, counts }
     }
 
+    #[must_use]
     pub fn z(&self) -> &Vec<usize> {
         &self.z
     }
@@ -97,6 +119,7 @@ impl Partition {
         &mut self.z
     }
 
+    #[must_use]
     pub fn counts(&self) -> &Vec<usize> {
         &self.counts
     }
@@ -158,7 +181,7 @@ impl Partition {
             // ensure canonical order
             self.z.iter_mut().for_each(|zj| {
                 if *zj > zi {
-                    *zj -= 1
+                    *zj -= 1;
                 }
             });
             Ok(())
@@ -209,15 +232,18 @@ impl Partition {
     /// assert_eq!(part.k(), 3);
     /// assert_eq!(*part.counts(), vec![2, 1, 1]);
     /// ```
+    #[must_use]
     pub fn k(&self) -> usize {
         self.counts.len()
     }
 
     /// Returns the number items
+    #[must_use]
     pub fn len(&self) -> usize {
         self.z.len()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -233,6 +259,7 @@ impl Partition {
     ///
     /// assert_eq!(weights, vec![0.5, 0.25, 0.25]);
     /// ```
+    #[must_use]
     pub fn weights(&self) -> Vec<f64> {
         let n = self.len() as f64;
         self.counts.iter().map(|&ct| (ct as f64) / n).collect()

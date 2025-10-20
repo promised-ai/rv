@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_display;
 use crate::misc::ln_gammafn;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, HasDensity, Kurtosis, Mean, Mode, Parameterized,
+    Sampleable, Scalable, Shiftable, Skewness, Support, Variance,
+};
 
 use rand::Rng;
 use special::Gamma as _;
@@ -34,6 +37,27 @@ pub struct ScaledInvChiSquared {
     // ln (t2*v/2)^(v/2)
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_f_const: OnceLock<f64>,
+}
+
+crate::impl_shiftable!(ScaledInvChiSquared);
+
+impl Scalable for ScaledInvChiSquared {
+    type Output = ScaledInvChiSquared;
+    type Error = ScaledInvChiSquaredError;
+
+    fn scaled(self, scale: f64) -> Result<Self::Output, Self::Error>
+    where
+        Self: Sized,
+    {
+        ScaledInvChiSquared::new(self.v(), self.t2() * scale)
+    }
+
+    fn scaled_unchecked(self, scale: f64) -> Self::Output
+    where
+        Self: Sized,
+    {
+        ScaledInvChiSquared::new_unchecked(self.v(), self.t2() * scale)
+    }
 }
 
 pub struct ScaledInvChiSquaredParameters {
@@ -102,9 +126,10 @@ impl ScaledInvChiSquared {
         }
     }
 
-    /// Create a new ScaledInvChiSquared without checking whether the parameters are
+    /// Create a new `ScaledInvChiSquared` without checking whether the parameters are
     /// valid.
     #[inline(always)]
+    #[must_use]
     pub fn new_unchecked(v: f64, t2: f64) -> Self {
         ScaledInvChiSquared {
             v,
@@ -267,6 +292,8 @@ macro_rules! impl_traits {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
                 let a = 0.5 * self.v;
                 let b = 0.5 * self.v * self.t2;
+                debug_assert!(a.is_finite());
+                debug_assert!(b.is_finite());
                 let ig = crate::dist::InvGamma::new_unchecked(a, b);
                 ig.draw(rng)
             }
@@ -312,8 +339,13 @@ macro_rules! impl_traits {
 
         impl Cdf<$kind> for ScaledInvChiSquared {
             fn cdf(&self, x: &$kind) -> f64 {
-                let x64 = f64::from(*x);
-                1.0 - (self.v * self.t2 / (2.0 * x64)).inc_gamma(self.v / 2.0)
+                if *x <= 0.0 {
+                    0.0
+                } else {
+                    let x64 = f64::from(*x);
+                    1.0 - (self.v * self.t2 / (2.0 * x64))
+                        .inc_gamma(self.v / 2.0)
+                }
             }
         }
     };
@@ -346,17 +378,18 @@ impl_traits!(f32);
 
 impl std::error::Error for ScaledInvChiSquaredError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for ScaledInvChiSquaredError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::VTooLow { v } => {
-                write!(f, "v ({}) must be greater than zero", v)
+                write!(f, "v ({v}) must be greater than zero")
             }
-            Self::VNotFinite { v } => write!(f, "v ({}) must be finite", v),
+            Self::VNotFinite { v } => write!(f, "v ({v}) must be finite"),
             Self::T2TooLow { t2 } => {
-                write!(f, "t2 ({}) must be greater than zero", t2)
+                write!(f, "t2 ({t2}) must be greater than zero")
             }
-            Self::T2NotFinite { t2 } => write!(f, "t2 ({}) must be finite", t2),
+            Self::T2NotFinite { t2 } => write!(f, "t2 ({t2}) must be finite"),
         }
     }
 }
@@ -368,6 +401,7 @@ mod test {
     use crate::dist::{Gamma, InvGamma};
     use crate::misc::ks_test;
     use crate::{test_basic_impls, verify_cache_resets};
+    use rand::SeedableRng;
     use std::f64;
     use std::f64::consts::PI;
 
@@ -481,7 +515,7 @@ mod test {
 
     #[test]
     fn pdf_agrees_with_inv_gamma_special_case() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v_prior = Gamma::new_unchecked(2.0, 1.0);
         let t2_prior = Gamma::new_unchecked(2.0, 1.0);
 
@@ -509,7 +543,7 @@ mod test {
 
     #[test]
     fn cdf_agrees_with_inv_gamma_special_case() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v_prior = Gamma::new_unchecked(2.0, 1.0);
         let t2_prior = Gamma::new_unchecked(2.0, 1.0);
 
@@ -530,7 +564,7 @@ mod test {
 
     #[test]
     fn draw_agrees_with_cdf() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ix2 = ScaledInvChiSquared::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| ix2.cdf(&x);
 
@@ -538,11 +572,7 @@ mod test {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = ix2.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -587,4 +617,44 @@ mod test {
         3.4,
         0.2
     );
+
+    use crate::test_scalable_cdf;
+    use crate::test_scalable_density;
+    use crate::test_scalable_method;
+
+    test_scalable_method!(ScaledInvChiSquared::new(2.0, 4.0).unwrap(), mean);
+    test_scalable_method!(
+        ScaledInvChiSquared::new(2.0, 4.0).unwrap(),
+        variance
+    );
+    test_scalable_method!(
+        ScaledInvChiSquared::new(2.0, 4.0).unwrap(),
+        skewness
+    );
+    test_scalable_method!(
+        ScaledInvChiSquared::new(2.0, 4.0).unwrap(),
+        kurtosis
+    );
+    test_scalable_density!(ScaledInvChiSquared::new(2.0, 4.0).unwrap());
+    test_scalable_cdf!(ScaledInvChiSquared::new(4.0, 1.0).unwrap(), ix2);
+
+    use ::proptest::prelude::*;
+    use rand_xoshiro::Xoshiro256Plus;
+
+    proptest! {
+        #[test]
+        fn draw_always_returns_positive_finite_value(
+            v in -1e-100..1e100_f64,
+            t2 in -1e-100..1e100_f64,
+            seed in 0_u64..1000_u64,
+        ) {
+            if let Ok(ix2) = ScaledInvChiSquared::new(v, t2) {
+                let mut rng = Xoshiro256Plus::seed_from_u64(seed);
+                let value: f64 = ix2.draw(&mut rng);
+
+                prop_assert!(value > 0.0);
+                prop_assert!(value.is_finite());
+            }
+        }
+    }
 }

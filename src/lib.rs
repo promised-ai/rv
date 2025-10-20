@@ -29,7 +29,7 @@
 //! // Beta(0.5, 0.5)
 //! let beta = Beta::jeffreys();
 //!
-//! let mut rng = rand::thread_rng();
+//! let mut rng = rand::rng();
 //!
 //! // 100 f64 weights in (0, 1)
 //! let f64s: Vec<f64> = beta.sample(100, &mut rng);
@@ -53,7 +53,7 @@
 //! ```rust
 //! use rv::prelude::*;
 //!
-//! let mut rng = rand::thread_rng();
+//! let mut rng = rand::rng();
 //!
 //! // A sequence of observations
 //! let flips = vec![true, false, true, true, true, false, true];
@@ -73,6 +73,8 @@
 //! // (true) given the observed flips (posterior predictive)?
 //! let p_heads = prior.pp(&true, &obs);
 //! ```
+
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 #![warn(
     clippy::all,
     clippy::imprecise_flops,
@@ -83,6 +85,7 @@
     clippy::implicit_clone
 )]
 #![deny(clippy::print_stdout)]
+#![cfg_attr(feature = "experimental", feature(f16))]
 
 #[cfg(feature = "serde1")]
 extern crate serde;
@@ -113,6 +116,7 @@ pub use nalgebra;
 #[macro_export]
 macro_rules! impl_display {
     ($kind: ty) => {
+        #[cfg_attr(coverage_nightly, coverage(off))]
         impl ::std::fmt::Display for $kind {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 write!(f, "{}", String::from(self))

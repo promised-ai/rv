@@ -1,11 +1,15 @@
-//! UnitPowerLaw distribution over x in (0, 1)
+//! `UnitPowerLaw` distribution over x in (0, 1)
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
 use crate::data::UnitPowerLawSuffStat;
 use crate::impl_display;
 use crate::prelude::Beta;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, Entropy, HasDensity, HasSuffStat, InverseCdf,
+    Kurtosis, Mean, Mode, Parameterized, Sampleable, Scalable, Shiftable,
+    Skewness, Support, Variance,
+};
 use rand::Rng;
 use special::Gamma as _;
 use std::f64;
@@ -14,11 +18,20 @@ use std::sync::OnceLock;
 
 pub mod bernoulli_prior;
 
+/// Parameters for the `UnitPowerLaw` distribution
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+pub struct UnitPowerLawParameters {
+    /// Shape parameter
+    pub alpha: f64,
+}
+
 /// UnitPowerLaw(α) over x in (0, 1).
 ///
 /// # Examples
 ///
-/// UnitPowerLaw as a conjugate prior for Bernoulli
+/// `UnitPowerLaw` as a conjugate prior for Bernoulli
 ///
 /// ```
 /// use rv::prelude::*;
@@ -42,16 +55,21 @@ pub struct UnitPowerLaw {
 }
 
 impl Parameterized for UnitPowerLaw {
-    type Parameters = f64;
+    type Parameters = UnitPowerLawParameters;
 
     fn emit_params(&self) -> Self::Parameters {
-        self.alpha()
+        Self::Parameters {
+            alpha: self.alpha(),
+        }
     }
 
-    fn from_params(alpha: Self::Parameters) -> Self {
-        Self::new_unchecked(alpha)
+    fn from_params(params: Self::Parameters) -> Self {
+        Self::new_unchecked(params.alpha)
     }
 }
+
+crate::impl_shiftable!(UnitPowerLaw);
+crate::impl_scalable!(UnitPowerLaw);
 
 impl PartialEq for UnitPowerLaw {
     fn eq(&self, other: &UnitPowerLaw) -> bool {
@@ -98,8 +116,9 @@ impl UnitPowerLaw {
         }
     }
 
-    /// Creates a new UnitPowerLaw without checking whether the parameters are valid.
+    /// Creates a new `UnitPowerLaw` without checking whether the parameters are valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(alpha: f64) -> Self {
         UnitPowerLaw {
             alpha,
@@ -118,6 +137,7 @@ impl UnitPowerLaw {
     /// assert_eq!(powlaw, UnitPowerLaw::new(1.0).unwrap());
     /// ```
     #[inline]
+    #[must_use]
     pub fn uniform() -> Self {
         UnitPowerLaw::new_unchecked(1.0)
     }
@@ -222,12 +242,14 @@ macro_rules! impl_traits {
 
         impl Sampleable<$kind> for UnitPowerLaw {
             fn draw<R: Rng>(&self, rng: &mut R) -> $kind {
-                self.invcdf(rng.gen::<f64>())
+                self.invcdf(rng.random::<f64>())
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
                 let alpha_inv = self.alpha_inv() as $kind;
-                (0..n).map(|_| rng.gen::<$kind>().powf(alpha_inv)).collect()
+                (0..n)
+                    .map(|_| rng.random::<$kind>().powf(alpha_inv))
+                    .collect()
             }
         }
 
@@ -260,11 +282,7 @@ macro_rules! impl_traits {
 
         impl Mode<$kind> for UnitPowerLaw {
             fn mode(&self) -> Option<$kind> {
-                if self.alpha > 1.0 {
-                    Some(1.0)
-                } else {
-                    None
-                }
+                if self.alpha > 1.0 { Some(1.0) } else { None }
             }
         }
 
@@ -327,14 +345,15 @@ impl_traits!(f64);
 
 impl std::error::Error for UnitPowerLawError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for UnitPowerLawError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::AlphaTooLow { alpha } => {
-                write!(f, "alpha ({}) must be greater than zero", alpha)
+                write!(f, "alpha ({alpha}) must be greater than zero")
             }
             Self::AlphaNotFinite { alpha } => {
-                write!(f, "alpha ({}) was non finite", alpha)
+                write!(f, "alpha ({alpha}) was non finite")
             }
         }
     }
@@ -412,7 +431,7 @@ mod tests {
         let powlaw = UnitPowerLaw::new(1.5).unwrap();
         let beta: Beta = (&powlaw).into();
         let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
-        for x in xs.iter() {
+        for x in &xs {
             assert::close(powlaw.cdf(x), beta.cdf(x), TOL);
         }
     }
@@ -422,14 +441,14 @@ mod tests {
         let powlaw = UnitPowerLaw::new(0.5).unwrap();
         let beta: Beta = (&powlaw).into();
         let xs: Vec<f64> = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
-        for x in xs.iter() {
+        for x in &xs {
             assert::close(powlaw.cdf(x), beta.cdf(x), TOL);
         }
     }
 
     #[test]
     fn draw_should_return_values_within_0_to_1() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let powlaw = UnitPowerLaw::new(2.0).unwrap();
         for _ in 0..100 {
             let x = powlaw.draw(&mut rng);
@@ -439,7 +458,7 @@ mod tests {
 
     #[test]
     fn sample_returns_the_correct_number_draws() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let powlaw = UnitPowerLaw::new(2.0).unwrap();
         let xs: Vec<f32> = powlaw.sample(103, &mut rng);
         assert_eq!(xs.len(), 103);
@@ -516,7 +535,7 @@ mod tests {
 
     #[test]
     fn draw_test_alpha_powlaw_gt_one() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let powlaw = UnitPowerLaw::new(1.2).unwrap();
         let cdf = |x: f64| powlaw.cdf(&x);
 
@@ -524,11 +543,7 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = powlaw.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -536,7 +551,7 @@ mod tests {
 
     #[test]
     fn draw_test_alpha_powlaw_lt_one() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let powlaw = UnitPowerLaw::new(0.2).unwrap();
         let cdf = |x: f64| powlaw.cdf(&x);
 
@@ -544,11 +559,7 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = powlaw.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -556,6 +567,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+
         let data: Vec<f64> = vec![0.1, 0.23, 0.4, 0.65, 0.22, 0.31];
         let mut stat = UnitPowerLawSuffStat::new();
         stat.observe_many(&data);
@@ -571,20 +584,20 @@ mod tests {
 
     #[test]
     fn set_alpha() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..100 {
-            let a1 = rng.gen::<f64>();
+            let a1 = rng.random::<f64>();
             let mut powlaw1 = UnitPowerLaw::new(a1).unwrap();
 
             // Any value in the unit interval
-            let x: f64 = rng.gen();
+            let x: f64 = rng.random();
 
             // Evaluate the pdf to force computation of `ln_powlaw_ab`
             let _ = powlaw1.pdf(&x);
 
             // Next we'll `set_alpha` to a2, and compare with a fresh UnitPowerLaw
-            let a2 = rng.gen::<f64>();
+            let a2 = rng.random::<f64>();
 
             // Setting the new values
             powlaw1.set_alpha(a2).unwrap();
@@ -597,5 +610,12 @@ mod tests {
 
             assert::close(pdf_1, pdf_2, 1e-14);
         }
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let vm = UnitPowerLaw::new(0.5).unwrap();
+        let vm_b = UnitPowerLaw::from_params(vm.emit_params());
+        assert_eq!(vm, vm_b);
     }
 }

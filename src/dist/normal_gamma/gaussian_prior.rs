@@ -1,86 +1,120 @@
 use std::collections::BTreeMap;
 use std::f64::consts::LN_2;
 
-use crate::consts::*;
-use crate::data::{extract_stat, extract_stat_then, GaussianSuffStat};
+use super::dos_to_post;
+use crate::consts::{HALF_LN_2PI, HALF_LN_PI};
+use crate::data::{GaussianSuffStat, extract_stat_then};
 use crate::dist::{Gaussian, NormalGamma};
 use crate::gaussian_prior_geweke_testable;
 use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
-use crate::traits::*;
+use crate::traits::{
+    ConjugatePrior, DataOrSuffStat, HasSuffStat, Sampleable, SuffStat,
+};
 
 #[inline]
 fn ln_z(r: f64, s: f64, v: f64) -> f64 {
     // This is what is should be in clearer, normal, operations
     // (v + 1.0) / 2.0 * LN_2 + HALF_LN_PI - 0.5 * r.ln() - (v / 2.0) * s.ln()
     //     + ln_gammafn(v / 2.0).0
-    // ... and here is what is is when we use mul_add to reduce rounding errors
+    // ... and here is what it is when we use mul_add to reduce rounding errors
     let half_v = 0.5 * v;
     (half_v + 0.5).mul_add(LN_2, HALF_LN_PI)
         - 0.5_f64.mul_add(r.ln(), half_v.mul_add(s.ln(), -ln_gammafn(half_v)))
 }
 
+pub struct PosteriorParameters {
+    pub m: f64,
+    pub r: f64,
+    pub s: f64,
+    pub v: f64,
+}
+
+impl From<PosteriorParameters> for NormalGamma {
+    fn from(PosteriorParameters { m, r, s, v }: PosteriorParameters) -> Self {
+        NormalGamma::new(m, r, s, v).unwrap()
+    }
+}
+
 fn posterior_from_stat(
     ng: &NormalGamma,
     stat: &GaussianSuffStat,
-) -> NormalGamma {
+) -> PosteriorParameters {
     let nf = stat.n() as f64;
     let r = ng.r() + nf;
     let v = ng.v() + nf;
     let m = ng.m().mul_add(ng.r(), stat.sum_x()) / r;
     let s =
         ng.s() + stat.sum_x_sq() + ng.r().mul_add(ng.m() * ng.m(), -r * m * m);
-    NormalGamma::new(m, r, s, v).expect("Invalid posterior params.")
+
+    PosteriorParameters { m, r, s, v }
 }
 
-impl ConjugatePrior<f64, Gaussian> for NormalGamma {
-    type Posterior = Self;
-    type MCache = f64;
-    type PpCache = (GaussianSuffStat, f64);
+macro_rules! impl_traits {
+    ($kind: ty) => {
+        impl ConjugatePrior<$kind, Gaussian> for NormalGamma {
+            type Posterior = Self;
+            type MCache = f64;
+            type PpCache = (PosteriorParameters, f64);
 
-    fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
-            posterior_from_stat(self, &stat)
-        })
-    }
+            fn empty_stat(&self) -> <Gaussian as HasSuffStat<$kind>>::Stat {
+                GaussianSuffStat::new()
+            }
 
-    #[inline]
-    fn ln_m_cache(&self) -> Self::MCache {
-        ln_z(self.r(), self.s, self.v)
-    }
+            fn posterior(&self, x: &DataOrSuffStat<$kind, Gaussian>) -> Self {
+                dos_to_post!(self, x).into()
+            }
 
-    fn ln_m_with_cache(
-        &self,
-        cache: &Self::MCache,
-        x: &DataOrSuffStat<f64, Gaussian>,
-    ) -> f64 {
-        extract_stat_then(x, GaussianSuffStat::new, |stat: GaussianSuffStat| {
-            let post = posterior_from_stat(self, &stat);
-            let lnz_n = ln_z(post.r, post.s, post.v);
-            (-(stat.n() as f64)).mul_add(HALF_LN_2PI, lnz_n) - cache
-        })
-    }
+            #[inline]
+            fn ln_m_cache(&self) -> Self::MCache {
+                ln_z(self.r(), self.s, self.v)
+            }
 
-    #[inline]
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
-        let stat = extract_stat(x, GaussianSuffStat::new);
-        let post_n = posterior_from_stat(self, &stat);
-        let lnz_n = ln_z(post_n.r, post_n.s, post_n.v);
-        (stat, lnz_n)
-    }
+            fn ln_m_with_cache(
+                &self,
+                cache: &Self::MCache,
+                x: &DataOrSuffStat<$kind, Gaussian>,
+            ) -> f64 {
+                let (n, post) = dos_to_post!(# self, x);
+                let lnz_n = ln_z(post.r, post.s, post.v);
+                (-(n as f64)).mul_add(HALF_LN_2PI, lnz_n) - cache
+            }
 
-    fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &f64) -> f64 {
-        let mut stat = cache.0;
-        let lnz_n = cache.1;
+            fn ln_pp_cache(&self, x: &DataOrSuffStat<$kind, Gaussian>) -> Self::PpCache {
+                extract_stat_then(self, x, |stat| {
+                    let params = posterior_from_stat(self, stat);
+                    let PosteriorParameters { r, s, v, .. } = params;
 
-        stat.observe(y);
-        let post_m = posterior_from_stat(self, &stat);
+                    let half_v = v / 2.0;
+                    let g_ratio = ln_gammafn(half_v + 0.5) - ln_gammafn(half_v);
+                    let term = 0.5_f64.mul_add(LN_2, -HALF_LN_2PI)
+                        + 0.5_f64.mul_add(
+                            (r / (r + 1_f64)).ln(),
+                            half_v.mul_add(s.ln(), g_ratio),
+                        );
 
-        let lnz_m = ln_z(post_m.r(), post_m.s(), post_m.v());
+                    (params, term)
+                })
+            }
 
-        -HALF_LN_2PI + lnz_m - lnz_n
-    }
+            fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &$kind) -> f64 {
+                let PosteriorParameters { m, r, s, v } = cache.0;
+
+                let y = f64::from(*y);
+                let rn = r + 1.0;
+                let mn = r.mul_add(m, y) / rn;
+                let sn = (rn * mn).mul_add(-mn, (r * m).mul_add(m, y.mul_add(y, s)));
+                ((v + 1.0) / 2.0).mul_add(-sn.ln(), cache.1)
+            }
+        }
+
+    };
 }
+
+#[cfg(feature = "experimental")]
+impl_traits!(f16);
+impl_traits!(f32);
+impl_traits!(f64);
 
 gaussian_prior_geweke_testable!(NormalGamma, Gaussian);
 
@@ -103,7 +137,7 @@ mod tests {
     fn geweke() {
         use crate::test::GewekeTester;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let pr = NormalGamma::new(0.1, 1.2, 0.5, 1.8).unwrap();
         let n_passes = (0..5)
             .map(|_| {
@@ -185,6 +219,7 @@ mod tests {
     #[test]
     fn ln_m_vs_monte_carlo() {
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 8_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -194,7 +229,7 @@ mod tests {
         let ln_m = ng.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            ng.sample_stream(&mut rand::thread_rng())
+            ng.sample_stream(&mut rand::rng())
                 .take(n_samples)
                 .map(|gauss: Gaussian| {
                     xs.iter().map(|x| gauss.ln_f(x)).sum::<f64>()
@@ -209,6 +244,7 @@ mod tests {
     #[test]
     fn ln_m_vs_importance() {
         use crate::misc::LogSumExp;
+        use crate::traits::HasDensity;
 
         let n_samples = 2_000_000;
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -219,7 +255,7 @@ mod tests {
         let post = ng.posterior(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             // let pr_p = Gamma::new(1.6, 2.2).unwrap();
             // let pr_m = Gaussian::new(1.0, 2.0).unwrap();
             let ln_fs = (0..n_samples).map(|_| {
@@ -232,7 +268,7 @@ mod tests {
                 // ln_f + ng.ln_f(&gauss) - pr_m.ln_f(&mu) - pr_p.ln_f(&prec)
                 ln_f + ng.ln_f(&gauss) - post.ln_f(&gauss)
             });
-            ln_fs.logsumexp() - (n_samples as f64).ln()
+            ln_fs.logsumexp() - f64::from(n_samples).ln()
         };
         // high error tolerance. MC estimation is not the most accurate...
         assert::close(ln_m, mc_est, 1e-2);

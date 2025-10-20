@@ -7,10 +7,14 @@ use rand_distr::Normal;
 use std::fmt;
 use std::sync::OnceLock;
 
-use crate::consts::*;
+use crate::consts::{HALF_LN_2PI, LN_2PI};
 use crate::data::InvGaussianSuffStat;
 use crate::impl_display;
-use crate::traits::*;
+use crate::traits::{
+    Cdf, ContinuousDistr, HasDensity, HasSuffStat, Kurtosis, Mean, Mode,
+    Parameterized, Sampleable, Scalable, Shiftable, Skewness, Support,
+    Variance,
+};
 
 /// [Inverse Gaussian distribution](https://en.wikipedia.org/wiki/Inverse_Gaussian_distribution),
 /// N<sup>-1</sup>(μ, λ) over real values.
@@ -31,6 +35,9 @@ pub struct InvGaussianParameters {
     pub mu: f64,
     pub lambda: f64,
 }
+
+crate::impl_shiftable!(InvGaussian);
+crate::impl_scalable!(InvGaussian);
 
 impl Parameterized for InvGaussian {
     type Parameters = InvGaussianParameters;
@@ -109,9 +116,10 @@ impl InvGaussian {
         }
     }
 
-    /// Creates a new InvGaussian without checking whether the parameters are
+    /// Creates a new `InvGaussian` without checking whether the parameters are
     /// valid.
     #[inline]
+    #[must_use]
     pub fn new_unchecked(mu: f64, lambda: f64) -> Self {
         InvGaussian {
             mu,
@@ -279,7 +287,7 @@ macro_rules! impl_traits {
                     ),
                     mu,
                 );
-                let z: f64 = rng.gen();
+                let z: f64 = rng.random();
 
                 if z <= mu / (mu + x) {
                     x as $kind
@@ -372,18 +380,19 @@ impl_traits!(f64);
 
 impl std::error::Error for InvGaussianError {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 impl fmt::Display for InvGaussianError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {}", mu),
+            Self::MuNotFinite { mu } => write!(f, "non-finite mu: {mu}"),
             Self::MuTooLow { mu } => {
-                write!(f, "mu ({}) must be greater than zero", mu)
+                write!(f, "mu ({mu}) must be greater than zero")
             }
             Self::LambdaTooLow { lambda } => {
-                write!(f, "lambda ({}) must be greater than zero", lambda)
+                write!(f, "lambda ({lambda}) must be greater than zero")
             }
             Self::LambdaNotFinite { lambda } => {
-                write!(f, "non-finite lambda: {}", lambda)
+                write!(f, "non-finite lambda: {lambda}")
             }
         }
     }
@@ -405,7 +414,7 @@ mod tests {
 
     #[test]
     fn mode_is_highest_point() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mu_prior = crate::dist::InvGamma::new_unchecked(2.0, 2.0);
         let lambda_prior = crate::dist::InvGamma::new_unchecked(2.0, 2.0);
         for _ in 0..100 {
@@ -425,12 +434,12 @@ mod tests {
     #[test]
     fn quad_on_pdf_agrees_with_cdf_x() {
         use peroxide::numerical::integral::{
-            gauss_kronrod_quadrature, Integral,
+            Integral, gauss_kronrod_quadrature,
         };
         let ig = InvGaussian::new(1.1, 2.5).unwrap();
         // use pdf to hit `supports(x)` first
         let pdf = |x: f64| ig.pdf(&x);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..100 {
             let x: f64 = ig.draw(&mut rng);
             let res = gauss_kronrod_quadrature(
@@ -445,7 +454,7 @@ mod tests {
 
     #[test]
     fn draw_vs_kl() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ig = InvGaussian::new(1.2, 3.4).unwrap();
         let cdf = |x: f64| ig.cdf(&x);
 
@@ -453,11 +462,7 @@ mod tests {
         let passes = (0..N_TRIES).fold(0, |acc, _| {
             let xs: Vec<f64> = ig.sample(1000, &mut rng);
             let (_, p) = ks_test(&xs, cdf);
-            if p > KS_PVAL {
-                acc + 1
-            } else {
-                acc
-            }
+            if p > KS_PVAL { acc + 1 } else { acc }
         });
 
         assert!(passes > 0);
@@ -465,6 +470,8 @@ mod tests {
 
     #[test]
     fn ln_f_stat() {
+        use crate::traits::SuffStat;
+
         let data: Vec<f64> = vec![0.1, 0.23, 1.4, 0.65, 0.22, 3.1];
         let mut stat = InvGaussianSuffStat::new();
         stat.observe_many(&data);
@@ -476,5 +483,12 @@ mod tests {
             <InvGaussian as HasSuffStat<f64>>::ln_f_stat(&igauss, &stat);
 
         assert::close(ln_f_base, ln_f_stat, 1e-12);
+    }
+
+    #[test]
+    fn emit_and_from_params_are_identity() {
+        let dist_a = InvGaussian::new(1.5, 3.5).unwrap();
+        let dist_b = InvGaussian::from_params(dist_a.emit_params());
+        assert_eq!(dist_a, dist_b);
     }
 }
