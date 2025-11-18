@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.19.1] - 2025-11-18
+
+### Added
+- Derive `PartialEq` for NIX `PosteriorParameters`
+
 ## [0.19.0] - 2025-10-03
 
 ### Added
@@ -312,6 +317,7 @@
 - Remove dependency on `quadrature` crate in favor of hand-rolled adaptive
     Simpson's rule, which handles multimodal distributions better.
 
+[0.19.1]: https://github.com/promise-ai/rv/compare/v0.19.0...v0.19.1
 [0.19.0]: https://github.com/promise-ai/rv/compare/v0.18.1...v0.19.0
 [0.18.1]: https://github.com/promise-ai/rv/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/promise-ai/rv/compare/v0.17.0...v0.18.0

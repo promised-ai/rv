@@ -9,7 +9,7 @@ use crate::misc::ln_gammafn;
 use crate::test::GewekeTestable;
 use crate::traits::{ConjugatePrior, DataOrSuffStat, HasSuffStat, Sampleable};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PosteriorParameters {
     pub mn: f64,
     pub kn: f64,
