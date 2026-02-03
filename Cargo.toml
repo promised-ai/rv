@@ -45,7 +45,7 @@ serde_json = "1"
 approx = "0.5"
 
 [features]
-serde1 = ["serde", "nalgebra/serde-serialize"]
+serde1 = ["serde", "nalgebra/serde-serialize", "rand_xoshiro/serde"]
 arraydist = ["nalgebra"]
 process = [
   "serde",

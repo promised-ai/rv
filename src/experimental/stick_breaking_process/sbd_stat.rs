@@ -112,38 +112,28 @@ impl HasSuffStat<usize> for StickBreakingDiscrete {
     /// Calculates the log probability density of observed data.
     ///
     /// # Arguments
-    ///
-    /// * `stat` - A reference to the sufficient statistic.
+    /// - `stat`: A reference to the sufficient statistic.
     ///
     /// # Returns
-    ///
     /// The natural logarithm of the probability of the observed data.
     fn ln_f_stat(&self, stat: &Self::Stat) -> f64 {
-        self.stick_sequence()
-            .weights(stat.counts.len())
-            .0
-            .iter()
-            .zip(stat.counts.iter())
-            .map(|(w, c)| (*c as f64) * w.ln())
-            .sum()
+        self.stick_sequence().ensure_breaks(stat.counts.len());
+        self.stick_sequence().with_inner(|inner| {
+            inner
+                .weights
+                .iter()
+                .zip(stat.counts.iter())
+                .map(|(w, &ct)| w.ln() * ct as f64)
+                .sum()
+        })
     }
 }
 
 impl SuffStat<usize> for StickBreakingDiscreteSuffStat {
-    /// Returns the total count of observations.
-    ///
-    /// # Returns
-    ///
-    /// The total count of all observed data.
     fn n(&self) -> usize {
         self.counts.iter().sum()
     }
 
-    /// Updates the statistic with a new observation.
-    ///
-    /// # Arguments
-    ///
-    /// * `i` - The index at which to increment the count.
     fn observe(&mut self, i: &usize) {
         if self.counts.len() < *i + 1 {
             self.counts.resize(*i + 1, 0);
@@ -153,12 +143,7 @@ impl SuffStat<usize> for StickBreakingDiscreteSuffStat {
 
     /// Removes a previously observed data point.
     ///
-    /// # Arguments
-    ///
-    /// * `i` - The index at which to decrement the count.
-    ///
     /// # Panics
-    ///
     /// Panics if there are no observations of the specified category to forget.
     fn forget(&mut self, i: &usize) {
         assert!(self.counts[*i] > 0, "No observations of {i} to forget.");
