@@ -103,9 +103,7 @@ in the end, rv is for us.
 
 If you'd like to offer a contribution:
 
-1. Please create an issue before starting any work. We're far from stable, so
-   we might actually be working on what you want, or we might be working on
-   something that will change the way you might implement it.
+1. Please create an issue before starting any work.
 2. If you plan on implementing a new distribution, implement at least `Rv`,
    `Support`, and either `ContinuousDistr` or `DiscreteDistr`. Of course, more
    is better!
