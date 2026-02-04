@@ -470,8 +470,8 @@ pub trait KlDivergence {
 ///
 /// // If we observe more false than true, the posterior predictive
 /// // probability of true decreases.
-/// let pp_no_obs = prior.pp(&true, &(&vec![]).into());
-/// let pp_obs = prior.pp(&true, &(&flips).into());
+/// let pp_no_obs = prior.pp(&true, (&vec![]).into());
+/// let pp_obs = prior.pp(&true, (&flips).into());
 ///
 /// assert!(pp_obs < pp_no_obs);
 /// ```
@@ -671,8 +671,8 @@ pub trait HasSuffStat<X> {
 ///
 /// // If we observe more false than true, the posterior predictive
 /// // probability of true decreases.
-/// let pp_no_obs = prior.pp(&true, &(&BernoulliSuffStat::new()).into());
-/// let pp_obs = prior.pp(&true, &(&flips).into());
+/// let pp_no_obs = prior.pp(&true, (&BernoulliSuffStat::new()).into());
+/// let pp_obs = prior.pp(&true, (&flips).into());
 ///
 /// assert!(pp_obs < pp_no_obs);
 /// ```

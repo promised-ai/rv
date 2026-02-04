@@ -1,13 +1,14 @@
-use crate::experimental::stick_breaking_process::StickBreakingDiscrete;
-use crate::experimental::stick_breaking_process::StickBreakingDiscreteSuffStat;
-use crate::experimental::stick_breaking_process::StickSequence;
-use crate::prelude::*;
+use crate::data::DataOrSuffStat;
+use crate::dist::Beta;
+use crate::dist::BetaError;
+use crate::dist::UnitPowerLawError;
+use crate::experimental::stick::HalfBeta;
+use crate::experimental::stick::StickBreakingDiscrete;
+use crate::experimental::stick::StickBreakingDiscreteSuffStat;
+use crate::experimental::stick::StickSequence;
 use crate::traits::{
     ConjugatePrior, HasDensity, HasSuffStat, Sampleable, SuffStat,
 };
-use itertools::Either;
-use itertools::EitherOrBoth::{Both, Left, Right};
-use itertools::Itertools;
 use rand::Rng;
 use special::Beta as BetaFn;
 
@@ -20,30 +21,28 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq)]
 pub struct StickBreaking {
     break_prefix: Vec<Beta>,
-    break_tail: UnitPowerLaw,
+    break_tail: HalfBeta,
+}
+
+#[derive(Debug, Clone)]
+pub enum PrefixOrTail<'a> {
+    Prefix(&'a Beta),
+    Tail(&'a HalfBeta),
 }
 
 /// Implementation of the `StickBreaking` struct.
 impl StickBreaking {
     /// Creates a new instance of `StickBreaking` with the given `breaker`.
     ///
-    /// # Arguments
-    ///
-    /// * `breaker` - The `UnitPowerLaw` used for stick breaking.
-    ///
-    /// # Returns
-    ///
-    /// A new instance of `StickBreaking`.
-    ///
     /// # Example
     /// ```
-    /// use rv::prelude::*;
-    /// use rv::experimental::stick_breaking_process::StickBreaking;
+    /// use rv::experimental::stick::StickBreaking;
+    /// use rv::experimental::stick::HalfBeta;
     ///
     /// let alpha = 5.0;
-    /// let stick_breaking = StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
+    /// let stick_breaking = StickBreaking::new(HalfBeta::new(alpha).unwrap());
     /// ```
-    pub fn new(breaker: UnitPowerLaw) -> Self {
+    pub fn new(breaker: HalfBeta) -> Self {
         let break_prefix = Vec::new();
         Self {
             break_prefix,
@@ -53,7 +52,7 @@ impl StickBreaking {
 
     pub fn new_with_prefix(
         break_prefix: Vec<Beta>,
-        break_tail: UnitPowerLaw,
+        break_tail: HalfBeta,
     ) -> Self {
         Self {
             break_prefix,
@@ -62,20 +61,12 @@ impl StickBreaking {
     }
 
     pub fn from_alpha(alpha: f64) -> Result<Self, UnitPowerLawError> {
-        let breaker = UnitPowerLaw::new(alpha)?;
+        let breaker = HalfBeta::new(alpha)?;
         Ok(Self::new(breaker))
     }
 
-    /// Sets the alpha parameter for both the `break_tail` and all Beta distributions in `break_prefix`.
-    ///
-    /// # Arguments
-    ///
-    /// * `alpha` - The new alpha value to set.
-    ///
-    /// # Returns
-    ///
-    /// A result indicating success or containing a `UnitPowerLawError` if setting alpha on `break_tail` fails,
-    /// or a `BetaError` if setting alpha on any `Beta` distribution in `break_prefix` fails.
+    /// Sets the alpha parameter for both the `break_tail` and all Beta
+    /// distributions in `break_prefix`.
     pub fn set_alpha(&mut self, alpha: f64) -> Result<(), BetaError> {
         let old_alpha = self.alpha();
         self.break_tail.set_alpha(alpha).map_err(|e| match e {
@@ -97,17 +88,15 @@ impl StickBreaking {
         &self.break_prefix
     }
 
-    pub fn break_tail(&self) -> &UnitPowerLaw {
+    pub fn break_tail(&self) -> &HalfBeta {
         &self.break_tail
     }
 
-    pub fn break_dists(
-        &self,
-    ) -> impl Iterator<Item = Either<&Beta, &UnitPowerLaw>> {
+    pub fn break_dists(&self) -> impl Iterator<Item = PrefixOrTail<'_>> {
         self.break_prefix
             .iter()
-            .map(Either::Left)
-            .chain(std::iter::repeat(Either::Right(&self.break_tail)))
+            .map(PrefixOrTail::Prefix)
+            .chain(std::iter::repeat(PrefixOrTail::Tail(&self.break_tail)))
     }
 
     pub fn alpha(&self) -> f64 {
@@ -115,10 +104,10 @@ impl StickBreaking {
     }
 }
 
-pub struct PartialWeights(pub Vec<f64>);
+pub struct StickWeights(pub Vec<f64>);
 pub struct BreakSequence(pub Vec<f64>);
 
-impl From<&BreakSequence> for PartialWeights {
+impl From<&BreakSequence> for StickWeights {
     fn from(bs: &BreakSequence) -> Self {
         let mut remaining = 1.0;
         let ws =
@@ -132,12 +121,12 @@ impl From<&BreakSequence> for PartialWeights {
                     w
                 })
                 .collect();
-        PartialWeights(ws)
+        StickWeights(ws)
     }
 }
 
-impl From<&PartialWeights> for BreakSequence {
-    fn from(ws: &PartialWeights) -> Self {
+impl From<&StickWeights> for BreakSequence {
+    fn from(ws: &StickWeights) -> Self {
         let mut r_new = 1.0;
         let mut r_old = 1.0;
         let mut b = f64::NAN;
@@ -161,44 +150,34 @@ impl From<&PartialWeights> for BreakSequence {
     }
 }
 
-/// Implements the `HasDensity` trait for `StickBreaking`.
-impl HasDensity<PartialWeights> for StickBreaking {
-    /// Calculates the natural logarithm of the density function for the given input `x`.
-    ///
-    /// # Arguments
-    ///
-    /// * `x` - A reference to a slice of `f64` values.
-    ///
-    /// # Returns
-    ///
-    /// The natural logarithm of the density function.
-    fn ln_f(&self, w: &PartialWeights) -> f64 {
-        self.break_dists()
-            .zip(BreakSequence::from(w).0.iter())
-            .map(|(b, p)| match b {
-                Either::Left(beta) => beta.ln_f(p),
-                Either::Right(unit_powlaw) => unit_powlaw.ln_f(p),
+impl HasDensity<StickWeights> for StickBreaking {
+    fn ln_f(&self, w: &StickWeights) -> f64 {
+        let mut mass = 1.0;
+        w.0.iter()
+            .zip(self.break_dists())
+            .map(|(w_i, beta)| {
+                let p = w_i / mass;
+                mass -= w_i;
+                let ln_f = match beta {
+                    PrefixOrTail::Prefix(beta) => beta.ln_f(&p),
+                    PrefixOrTail::Tail(unit_powlaw) => unit_powlaw.ln_f(&p),
+                };
+                ln_f
             })
             .sum()
     }
 }
 
 impl Sampleable<StickSequence> for StickBreaking {
-    /// Draws a sample from the `StickBreaking` distribution.
-    ///
-    /// # Arguments
-    ///
-    /// * `rng` - A mutable reference to the random number generator.
-    ///
-    /// # Returns
-    ///
-    /// A `StickSequence` representing the drawn sample.
     fn draw<R: Rng>(&self, rng: &mut R) -> StickSequence {
         let seed: u64 = rng.random();
 
         let seq = StickSequence::new(self.break_tail.clone(), Some(seed));
+        // In the event that this is a posterior distribution with a
+        // break_prefix, we need to construct the initial weights from the break
+        // prefix.
         for beta in &self.break_prefix {
-            let p = beta.draw(rng);
+            let p: f64 = beta.draw(rng);
             seq.push_break(p);
         }
         seq
@@ -222,23 +201,12 @@ fn rising_beta_prod(x: f64, a: usize, y: f64, b: usize) -> f64 {
     r
 }
 
-/// Implements the `Sampleable` trait for `StickBreaking`.
 impl Sampleable<StickBreakingDiscrete> for StickBreaking {
-    /// Draws a sample from the `StickBreaking` distribution.
-    ///
-    /// # Arguments
-    ///
-    /// * `rng` - A mutable reference to the random number generator.
-    ///
-    /// # Returns
-    ///
-    /// A sample from the `StickBreaking` distribution.
     fn draw<R: Rng>(&self, rng: &mut R) -> StickBreakingDiscrete {
         StickBreakingDiscrete::new(self.draw(rng))
     }
 }
 
-/// Implementation of the `ConjugatePrior` trait for the `StickBreaking` struct.
 impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
     type Posterior = StickBreaking;
     type MCache = ();
@@ -250,22 +218,21 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
         StickBreakingDiscreteSuffStat::new()
     }
 
-    /// Computes the logarithm of the marginal likelihood cache.
     fn ln_m_cache(&self) -> Self::MCache {}
 
-    /// Computes the logarithm of the predictive probability cache.
     fn ln_pp_cache(
         &self,
-        x: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+        x: DataOrSuffStat<usize, StickBreakingDiscrete>,
     ) -> Self::PpCache {
         self.posterior(x)
     }
 
-    /// Computes the posterior distribution from the sufficient statistic.
     fn posterior_from_suffstat(
         &self,
         stat: &StickBreakingDiscreteSuffStat,
     ) -> Self::Posterior {
+        use itertools::EitherOrBoth::{Both, Left, Right};
+        use itertools::Itertools;
         let pairs = stat.break_pairs();
         let new_prefix = self
             .break_prefix
@@ -273,25 +240,28 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
             .zip_longest(pairs)
             .map(|pair| match pair {
                 Left(beta) => beta.clone(),
-                Right((a, b)) => Beta::new(
-                    self.break_tail.alpha() + a as f64,
-                    1.0 + b as f64,
+                Right((t, f)) => Beta::new(
+                    1.0 + f as f64,
+                    self.break_tail.alpha() + t as f64,
                 )
                 .unwrap(),
-                Both(beta, (a, b)) => {
-                    Beta::new(beta.alpha() + a as f64, beta.beta() + b as f64)
+                Both(beta, (t, f)) => {
+                    Beta::new(beta.alpha() + f as f64, beta.beta() + t as f64)
                         .unwrap()
                 }
             })
             .collect();
+
         StickBreaking {
             break_prefix: new_prefix,
             break_tail: self.break_tail.clone(),
         }
     }
 
-    /// Computes the logarithm of the marginal likelihood.
-    fn ln_m(&self, x: &DataOrSuffStat<usize, StickBreakingDiscrete>) -> f64 {
+    fn ln_m(&self, x: DataOrSuffStat<usize, StickBreakingDiscrete>) -> f64 {
+        use itertools::EitherOrBoth::{Both, Left, Right};
+        use itertools::Itertools;
+
         let count_pairs = match x {
             DataOrSuffStat::Data(xs) => {
                 let mut stat = StickBreakingDiscreteSuffStat::new();
@@ -300,6 +270,7 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
             }
             DataOrSuffStat::SuffStat(stat) => stat.break_pairs(),
         };
+
         let alpha = self.break_tail.alpha();
         let params = self.break_prefix.iter().map(|b| (b.alpha(), b.beta()));
         count_pairs
@@ -310,53 +281,48 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for StickBreaking {
                     let (num_pass, num_fail) =
                         (*num_pass as f64, *num_fail as f64);
 
+                    // Γ(α)/Γ(α+n) Γ(c+1) α/(α+gk)
                     // TODO: Simplify this after everything is working
                     (num_pass + alpha).ln_beta(num_fail + 1.0)
                         - alpha.ln_beta(1.0)
-                    // num_pass * alpha.ln() - (num_pass + num_fail) * (alpha + 1.0).ln()
                 }
                 Right((_a, _b)) => 0.0,
                 Both((num_pass, num_fail), (a, b)) => {
-                    // let (num_pass, num_fail) = (*num_pass as f64, *num_fail as f64);
-                    // num_pass * a.ln() + num_fail * b.ln() - (num_pass + num_fail) * (a + b).ln()
-                    // (num_pass + a).ln_beta(num_fail + b) - a.ln_beta(b)
-
-                    // rising_pow(a, *num_pass).ln() + rising_pow(b, *num_fail).ln()
-                    // - rising_pow(a + b, num_pass + num_fail).ln()
-
-                    rising_beta_prod(a, *num_pass, b, *num_fail).ln()
+                    rising_beta_prod(b, *num_pass, a, *num_fail).ln()
                 }
             })
             .sum()
     }
 
-    /// Computes the logarithm of the marginal likelihood with cache.
     fn ln_m_with_cache(
         &self,
         _cache: &Self::MCache,
-        x: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+        x: DataOrSuffStat<usize, StickBreakingDiscrete>,
     ) -> f64 {
         self.ln_m(x)
     }
 
     /// Computes the logarithm of the predictive probability with cache.
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &usize) -> f64 {
-        cache.ln_m(&DataOrSuffStat::Data(&[*y]))
+        cache.ln_m(DataOrSuffStat::Data(&[*y]))
     }
 
     /// Computes the predictive probability.
     fn pp(
         &self,
         y: &usize,
-        x: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+        x: DataOrSuffStat<usize, StickBreakingDiscrete>,
     ) -> f64 {
         let post = self.posterior(x);
-        post.m(&DataOrSuffStat::Data(&[*y]))
+        post.m(DataOrSuffStat::Data(&[*y]))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::dist::Bernoulli;
+    use crate::dist::ChiSquared;
+    use crate::traits::Cdf;
     use proptest::prelude::*;
 
     use super::*;
@@ -366,9 +332,9 @@ mod tests {
         fn partial_weights_to_break_sequence(v in prop::collection::vec(0.0..=1.0, 1..100), m in 0.0..=1.0) {
             // we want the sum of ws to be in the range [0, 1]
             let multiplier: f64 = m / v.iter().sum::<f64>();
-            let ws = PartialWeights(v.iter().map(|w| w * multiplier).collect());
+            let ws = StickWeights(v.iter().map(|w| w * multiplier).collect());
             let bs = BreakSequence::from(&ws);
-            assert::close(ws.0, PartialWeights::from(&bs).0, 1e-10);
+            assert::close(ws.0, StickWeights::from(&bs).0, 1e-10);
         }
     }
 
@@ -376,7 +342,7 @@ mod tests {
         #[test]
         fn break_sequence_to_partial_weights(v in prop::collection::vec(0.0..=1.0, 1..100)) {
             let bs = BreakSequence(v);
-            let ws = PartialWeights::from(&bs);
+            let ws = StickWeights::from(&bs);
             let bs2 = BreakSequence::from(&ws);
             assert::close(bs.0, bs2.0, 1e-10);
         }
@@ -389,9 +355,9 @@ mod tests {
         let n_samples = 1_000_000;
         let xs: Vec<usize> = vec![1, 2, 3];
 
-        let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
+        let sb = StickBreaking::new(HalfBeta::new(5.0).unwrap());
         let obs = DataOrSuffStat::Data(&xs);
-        let ln_m = sb.ln_m(&obs);
+        let ln_m = sb.ln_m(obs);
 
         let mc_est = {
             sb.sample_stream(&mut rand::rng())
@@ -408,72 +374,75 @@ mod tests {
 
     #[test]
     fn sb_pp_posterior() {
-        let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
-        let sb_pp = sb.pp(&3, &DataOrSuffStat::Data(&[1, 2]));
-        let post = sb.posterior(&DataOrSuffStat::Data(&[1, 2]));
+        let sb = StickBreaking::new(HalfBeta::new(5.0).unwrap());
+        let sb_pp = sb.pp(&3, DataOrSuffStat::Data(&[1, 2]));
+
+        let post = sb.posterior(DataOrSuffStat::Data(&[1, 2]));
         let post_f = post.pp(
             &3,
-            &DataOrSuffStat::SuffStat(&StickBreakingDiscreteSuffStat::new()),
+            DataOrSuffStat::SuffStat(&StickBreakingDiscreteSuffStat::new()),
         );
         assert::close(sb_pp, post_f, 1e-10);
     }
 
     #[test]
     fn sb_repeated_obs_more_likely() {
-        let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
-        let sb_m = sb.ln_m(&DataOrSuffStat::Data(&[10]));
-        let post = sb.posterior(&DataOrSuffStat::Data(&[10]));
-        let post_m = post.ln_m(&DataOrSuffStat::Data(&[10]));
+        let sb = StickBreaking::new(HalfBeta::new(5.0).unwrap());
+        let sb_m = sb.ln_m(DataOrSuffStat::Data(&[10]));
+        let post = sb.posterior(DataOrSuffStat::Data(&[10]));
+        let post_m = post.ln_m(DataOrSuffStat::Data(&[10]));
         assert!(post_m > sb_m);
     }
 
     #[test]
     fn sb_bayes_law() {
         let mut rng = rand::rng();
+        let alpha = 5.0;
 
         // Prior
-        let prior = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
+        let prior = StickBreaking::from_alpha(alpha).unwrap();
         let par: StickSequence = prior.draw(&mut rng);
-        let par_data = par.weights(7);
-        let prior_lnf = prior.ln_f(&par_data);
+        let weights = par.weights(Some(7));
+        // p(weights)
+        let log_prior = prior.ln_f(&weights);
 
-        // Likelihood
+        // Likelihood p(x|weights)
         let lik = StickBreakingDiscrete::new(par);
-        let lik_data: &usize = &5;
-        let lik_lnf = lik.ln_f(lik_data);
+        let x = 5_usize;
+        let log_like = lik.ln_f(&x);
 
-        // Evidence
-        let ln_ev = prior.ln_m(&DataOrSuffStat::Data(&[*lik_data]));
+        // Evidence p(x)
+        let log_marg = prior.ln_m(DataOrSuffStat::Data(&[x]));
 
-        // Posterior
-        let post = prior.posterior(&DataOrSuffStat::Data(&[*lik_data]));
-        let post_lnf = post.ln_f(&par_data);
+        // Posterior p(weights | x)
+        let post = prior.posterior(DataOrSuffStat::Data(&[x]));
+        let log_post = post.ln_f(&weights);
 
         // Bayes' law
-        assert::close(post_lnf, prior_lnf + lik_lnf - ln_ev, 1e-12);
+        assert::close(log_post, log_like + log_prior - log_marg, 1e-12);
     }
 
     #[test]
     fn sb_pp_is_quotient_of_marginals() {
         // pp(x|y) = m({x, y})/m(x)
-        let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
-        let sb_pp = sb.pp(&1, &DataOrSuffStat::Data(&[0]));
+        let sb = StickBreaking::new(HalfBeta::new(5.0).unwrap());
+        let sb_pp = sb.pp(&1, DataOrSuffStat::Data(&[0]));
 
-        let m_1 = sb.m(&DataOrSuffStat::Data(&[0]));
-        let m_1_2 = sb.m(&DataOrSuffStat::Data(&[0, 1]));
+        let m_1 = sb.m(DataOrSuffStat::Data(&[0]));
+        let m_1_2 = sb.m(DataOrSuffStat::Data(&[0, 1]));
 
         assert::close(sb_pp, m_1_2 / m_1, 1e-12);
     }
 
     #[test]
     fn sb_big_alpha_heavy_tails() {
-        let sb_5 = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
-        let sb_2 = StickBreaking::new(UnitPowerLaw::new(2.0).unwrap());
-        let sb_pt5 = StickBreaking::new(UnitPowerLaw::new(0.5).unwrap());
+        let sb_5 = StickBreaking::new(HalfBeta::new(5.0).unwrap());
+        let sb_2 = StickBreaking::new(HalfBeta::new(2.0).unwrap());
+        let sb_pt5 = StickBreaking::new(HalfBeta::new(0.5).unwrap());
 
-        let m_pt5_10 = sb_pt5.m(&DataOrSuffStat::Data(&[10]));
-        let m_2_10 = sb_2.m(&DataOrSuffStat::Data(&[10]));
-        let m_5_10 = sb_5.m(&DataOrSuffStat::Data(&[10]));
+        let m_pt5_10 = sb_pt5.m(DataOrSuffStat::Data(&[10]));
+        let m_2_10 = sb_2.m(DataOrSuffStat::Data(&[10]));
+        let m_5_10 = sb_5.m(DataOrSuffStat::Data(&[10]));
 
         assert!(m_pt5_10 < m_2_10);
         assert!(m_2_10 < m_5_10);
@@ -481,16 +450,22 @@ mod tests {
 
     #[test]
     fn sb_marginal_zero() {
-        let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
-        let m_0 = sb.m(&DataOrSuffStat::Data(&[0]));
+        let sb = StickBreaking::new(HalfBeta::new(3.0).unwrap());
+        let m_0 = sb.m(DataOrSuffStat::Data(&[0]));
         let bern = Bernoulli::new(3.0 / 4.0).unwrap();
         assert::close(m_0, bern.f(&0), 1e-12);
     }
 
     #[test]
     fn sb_postpred_zero() {
-        let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
-        let pp_0 = sb.pp(&0, &DataOrSuffStat::Data(&[0]));
+        // Γ(α)/Γ(α+1) * Γ(2) * α/(α+1)
+        // Γ(3)/Γ(4) * Γ(2) * 3/4
+        use DataOrSuffStat::Data;
+        let sb = StickBreaking::new(HalfBeta::new(3.0).unwrap());
+        let post = sb.posterior(Data(&[0]));
+        let pp = post.m(Data(&[0]));
+        eprintln!("{post:?}: {pp}");
+        let pp_0 = sb.pp(&0, Data(&[0]));
         let bern = Bernoulli::new(3.0 / 5.0).unwrap();
         assert::close(pp_0, bern.f(&0), 1e-12);
     }
@@ -498,23 +473,23 @@ mod tests {
     #[test]
     fn sb_pp_zero_marginals() {
         // pp(x|y) = m({x, y})/m(x)
-        let sb = StickBreaking::new(UnitPowerLaw::new(5.0).unwrap());
-        let sb_pp = sb.pp(&0, &DataOrSuffStat::Data(&[0]));
+        let sb = StickBreaking::new(HalfBeta::new(5.0).unwrap());
+        let sb_pp = sb.pp(&0, DataOrSuffStat::Data(&[0]));
 
-        let m_1 = sb.m(&DataOrSuffStat::Data(&[0]));
-        let m_1_2 = sb.m(&DataOrSuffStat::Data(&[0, 0]));
+        let m_1 = sb.m(DataOrSuffStat::Data(&[0]));
+        let m_1_2 = sb.m(DataOrSuffStat::Data(&[0, 0]));
 
         assert::close(sb_pp, m_1_2 / m_1, 1e-12);
     }
 
     #[test]
     fn sb_posterior_obs_one() {
-        let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
-        let post = sb.posterior(&DataOrSuffStat::Data(&[2]));
+        let sb = StickBreaking::new(HalfBeta::new(3.0).unwrap());
+        let post = sb.posterior(DataOrSuffStat::Data(&[2]));
 
-        assert_eq!(post.break_prefix[0], Beta::new(4.0, 1.0).unwrap());
-        assert_eq!(post.break_prefix[1], Beta::new(4.0, 1.0).unwrap());
-        assert_eq!(post.break_prefix[2], Beta::new(3.0, 2.0).unwrap());
+        assert_eq!(post.break_prefix[0], Beta::new(1.0, 4.0).unwrap());
+        assert_eq!(post.break_prefix[1], Beta::new(1.0, 4.0).unwrap());
+        assert_eq!(post.break_prefix[2], Beta::new(2.0, 3.0).unwrap());
     }
 
     #[test]
@@ -522,18 +497,18 @@ mod tests {
         // Like Bayes Law, but takes a quotient to cancel evidence
 
         let mut rng = rand::rng();
-        let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
+        let sb = StickBreaking::new(HalfBeta::new(3.0).unwrap());
         let seq1: StickSequence = sb.draw(&mut rng);
         let seq2: StickSequence = sb.draw(&mut rng);
 
-        let w1 = seq1.weights(3);
-        let w2 = seq2.weights(3);
+        let w1 = seq1.weights(Some(3));
+        let w2 = seq2.weights(Some(3));
 
         let logprior_diff = sb.ln_f(&w1) - sb.ln_f(&w2);
 
         let data = [1, 2];
         let stat = StickBreakingDiscreteSuffStat::from(&data[..]);
-        let post = sb.posterior(&DataOrSuffStat::SuffStat(&stat));
+        let post = sb.posterior(DataOrSuffStat::SuffStat(&stat));
         let logpost_diff = post.ln_f(&w1) - post.ln_f(&w2);
 
         let sbd1 = StickBreakingDiscrete::new(seq1);
@@ -546,13 +521,13 @@ mod tests {
     #[test]
     fn sb_posterior_rejection_sampling() {
         let mut rng = rand::rng();
-        let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
+        let sb = StickBreaking::new(HalfBeta::new(3.0).unwrap());
 
         let num_samples = 1000;
 
         // Our computed posterior
         let data = [10];
-        let post = sb.posterior(&DataOrSuffStat::Data(&data[..]));
+        let post = sb.posterior(DataOrSuffStat::Data(&data[..]));
 
         // An approximation using rejection sampling
         let mut stat = StickBreakingDiscreteSuffStat::new();
@@ -576,7 +551,7 @@ mod tests {
         // where expected count is at least 5.
         let expected_counts = (0..)
             .map(|j| {
-                post.m(&DataOrSuffStat::Data(&[j])) * f64::from(num_samples)
+                post.m(DataOrSuffStat::Data(&[j])) * f64::from(num_samples)
             })
             .take_while(|x| *x > 5.0);
 
@@ -594,7 +569,7 @@ mod tests {
     #[test]
     fn test_set_alpha() {
         // Step 1: Generate a new StickBreaking instance with alpha=3
-        let mut sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
+        let mut sb = StickBreaking::new(HalfBeta::new(3.0).unwrap());
 
         // Step 2: Set the prefix to [Beta(4, 3), Beta(3, 2), Beta(2, 1)]
         sb.break_prefix = vec![
@@ -610,6 +585,6 @@ mod tests {
         assert_eq!(sb.break_prefix[0], Beta::new(3.0, 2.0).unwrap());
         assert_eq!(sb.break_prefix[1], Beta::new(2.0, 2.0).unwrap());
         assert_eq!(sb.break_prefix[2], Beta::new(1.0, 2.0).unwrap());
-        assert_eq!(sb.break_tail, UnitPowerLaw::new(2.0).unwrap());
+        assert_eq!(sb.break_tail, HalfBeta::new(2.0).unwrap());
     }
-} // mod tests
+}

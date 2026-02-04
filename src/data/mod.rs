@@ -143,7 +143,7 @@ impl_booleable!(i64);
 impl_booleable!(isize);
 
 /// Holds either a sufficient statistic of a vector of data.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum DataOrSuffStat<'a, X, Fx>
 where
     X: 'a,
@@ -153,6 +153,26 @@ where
     Data(&'a [X]),
     /// A sufficient statistic
     SuffStat(&'a Fx::Stat),
+}
+
+impl<'a, X, Fx> Clone for DataOrSuffStat<'a, X, Fx>
+where
+    X: 'a,
+    Fx: 'a + HasSuffStat<X>,
+{
+    fn clone(&self) -> Self {
+        match self {
+            Self::Data(xs) => Self::Data(xs),
+            Self::SuffStat(stat) => Self::SuffStat(stat),
+        }
+    }
+}
+
+impl<'a, X, Fx> Copy for DataOrSuffStat<'a, X, Fx>
+where
+    X: 'a,
+    Fx: 'a + HasSuffStat<X>,
+{
 }
 
 impl<'a, X, Fx> DataOrSuffStat<'a, X, Fx>

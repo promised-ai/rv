@@ -36,7 +36,6 @@ impl From<UnitPowerLawParameters> for UnitPowerLaw {
     fn from(value: UnitPowerLawParameters) -> Self {
         Self {
             alpha: value.alpha,
-            alpha_recip: value.alpha.recip(),
             alpha_ln: value.alpha.ln(),
         }
     }
@@ -63,8 +62,6 @@ impl From<UnitPowerLawParameters> for UnitPowerLaw {
 )]
 pub struct UnitPowerLaw {
     alpha: f64,
-    // Cached alpha.recip()
-    alpha_recip: f64,
     // Cached alpha.ln()
     alpha_ln: f64,
 }
@@ -125,7 +122,6 @@ impl UnitPowerLaw {
         } else {
             Ok(UnitPowerLaw {
                 alpha,
-                alpha_recip: alpha.recip(),
                 alpha_ln: alpha.ln(),
             })
         }
@@ -136,7 +132,6 @@ impl UnitPowerLaw {
     pub fn new_unchecked(alpha: f64) -> Self {
         UnitPowerLaw {
             alpha,
-            alpha_recip: alpha.recip(),
             alpha_ln: alpha.ln(),
         }
     }
@@ -205,13 +200,7 @@ impl UnitPowerLaw {
     /// Set alpha without input validation
     pub fn set_alpha_unchecked(&mut self, alpha: f64) {
         self.alpha = alpha;
-        self.alpha_recip = alpha.recip();
         self.alpha_ln = alpha.ln();
-    }
-
-    /// Return 1/alpha
-    pub fn alpha_recip(&self) -> f64 {
-        self.alpha_recip
     }
 
     /// Return ln(alpha)
@@ -254,7 +243,7 @@ macro_rules! impl_traits {
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let alpha_inv = self.alpha_recip() as $kind;
+                let alpha_inv = self.alpha.recip() as $kind;
                 (0..n)
                     .map(|_| rng.random::<$kind>().powf(alpha_inv))
                     .collect()
@@ -278,7 +267,7 @@ macro_rules! impl_traits {
 
         impl InverseCdf<$kind> for UnitPowerLaw {
             fn invcdf(&self, p: f64) -> $kind {
-                p.powf(self.alpha_recip()) as $kind
+                p.powf(self.alpha.recip()) as $kind
             }
         }
 

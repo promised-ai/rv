@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.20.0] - 2026-02-05
+
+### Changed
+- `DataOrSuffStat` is `Copy`
+- `DataOrSuffStat` is now passed by value to `ConjugatePrior` methods
+- Overhauled experimental stick breaking distribution
+- `StickBreakingDiscrete` now serializes its underlying `Rng` to maintain seed
+  control after a write-read.
+
 ## [0.19.1] - 2025-11-18
 
 ### Added

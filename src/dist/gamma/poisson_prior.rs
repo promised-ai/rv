@@ -53,14 +53,14 @@ macro_rules! impl_traits {
                 PoissonSuffStat::new()
             }
 
-            fn posterior(&self, x: &DataOrSuffStat<$kind, Poisson>) -> Self {
+            fn posterior(&self, x: DataOrSuffStat<$kind, Poisson>) -> Self {
                 let (n, sum) = match x {
-                    &DataOrSuffStat::Data(ref xs) => {
+                    DataOrSuffStat::Data(ref xs) => {
                         let mut stat = PoissonSuffStat::new();
                         xs.iter().for_each(|x| stat.observe(x));
                         (stat.n(), stat.sum())
                     }
-                    &DataOrSuffStat::SuffStat(ref stat) => (
+                    DataOrSuffStat::SuffStat(ref stat) => (
                         <PoissonSuffStat as SuffStat<$kind>>::n(stat),
                         stat.sum(),
                     ),
@@ -82,20 +82,20 @@ macro_rules! impl_traits {
             fn ln_m_with_cache(
                 &self,
                 cache: &Self::MCache,
-                x: &DataOrSuffStat<$kind, Poisson>,
+                x: DataOrSuffStat<$kind, Poisson>,
             ) -> f64 {
                 let stat: PoissonSuffStat = match x {
-                    &DataOrSuffStat::Data(ref xs) => {
+                    DataOrSuffStat::Data(ref xs) => {
                         let mut stat = PoissonSuffStat::new();
                         xs.iter().for_each(|x| stat.observe(x));
                         stat
                     }
-                    &DataOrSuffStat::SuffStat(ref stat) => (*stat).clone(),
+                    DataOrSuffStat::SuffStat(ref stat) => (*stat).clone(),
                 };
 
                 let data_or_suff: DataOrSuffStat<$kind, Poisson> =
                     DataOrSuffStat::SuffStat(&stat);
-                let post = self.posterior(&data_or_suff);
+                let post = self.posterior(data_or_suff);
 
                 let zn = post
                     .shape()
@@ -107,7 +107,7 @@ macro_rules! impl_traits {
             #[inline]
             fn ln_pp_cache(
                 &self,
-                x: &DataOrSuffStat<$kind, Poisson>,
+                x: DataOrSuffStat<$kind, Poisson>,
             ) -> Self::PpCache {
                 let post = self.posterior(x);
                 let r = post.shape();
@@ -150,7 +150,7 @@ mod tests {
     fn posterior_from_data() {
         let data: Vec<u8> = vec![1, 2, 3, 4, 5];
         let xs = DataOrSuffStat::Data::<u8, Poisson>(&data);
-        let posterior = Gamma::new(1.0, 1.0).unwrap().posterior(&xs);
+        let posterior = Gamma::new(1.0, 1.0).unwrap().posterior(xs);
 
         assert::close(posterior.shape(), 16.0, TOL);
         assert::close(posterior.rate(), 6.0, TOL);
@@ -161,7 +161,7 @@ mod tests {
         let dist = Gamma::new(1.0, 1.0).unwrap();
         let new_vec = Vec::new();
         let data: DataOrSuffStat<u8, Poisson> = DataOrSuffStat::from(&new_vec);
-        assert::close(dist.ln_m(&data), 0.0, TOL);
+        assert::close(dist.ln_m(data), 0.0, TOL);
     }
 
     #[test]
@@ -191,7 +191,7 @@ mod tests {
             .for_each(|(ss, exp)| {
                 let data: DataOrSuffStat<u8, Poisson> =
                     DataOrSuffStat::SuffStat(ss);
-                let r = dist.ln_m(&data);
+                let r = dist.ln_m(data);
                 assert::close(r, *exp, TOL);
             });
     }
@@ -210,7 +210,7 @@ mod tests {
 
         for i in 0..inputs.len() {
             assert::close(
-                dist.ln_pp(&inputs[i], &DataOrSuffStat::from(&vec![])),
+                dist.ln_pp(&inputs[i], DataOrSuffStat::from(&vec![])),
                 expected[i],
                 TOL,
             );
@@ -236,7 +236,7 @@ mod tests {
         ];
 
         for (i, e) in inputs.iter().zip(expected.iter()) {
-            assert::close(dist.ln_pp(i, &doss), *e, TOL);
+            assert::close(dist.ln_pp(i, doss), *e, TOL);
         }
     }
 

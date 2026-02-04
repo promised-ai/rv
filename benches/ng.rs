@@ -28,7 +28,7 @@ fn bench_ng_postpred(c: &mut Criterion) {
                 (y, stat)
             },
             |(y, stat)| {
-                black_box(ng.ln_pp(&y, &DataOrSuffStat::SuffStat(&stat)))
+                black_box(ng.ln_pp(&y, DataOrSuffStat::SuffStat(&stat)))
             },
             BatchSize::SmallInput,
         );
@@ -48,7 +48,7 @@ fn bench_ng_postpred(c: &mut Criterion) {
 
                 let stat: DataOrSuffStat<f64, _> =
                     DataOrSuffStat::SuffStat(&stat);
-                let cache = ng.ln_pp_cache(&stat);
+                let cache = ng.ln_pp_cache(stat);
                 (y, cache)
             },
             |(y, cache)| black_box(ng.ln_pp_with_cache(&cache, &y)),

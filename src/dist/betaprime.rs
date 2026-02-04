@@ -14,7 +14,7 @@ use std::fmt;
 use std::sync::OnceLock;
 
 #[cfg(feature = "experimental")]
-use super::UnitPowerLaw;
+use crate::experimental::stick::HalfBeta;
 
 #[cfg(feature = "experimental")]
 use crate::traits::{ConjugatePrior, DataOrSuffStat, HasSuffStat};
@@ -288,12 +288,12 @@ impl Sampleable<f64> for BetaPrime {
 }
 
 #[cfg(feature = "experimental")]
-use crate::experimental::stick_breaking_process::{
+use crate::experimental::stick::{
     StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
 };
 
 #[cfg(feature = "experimental")]
-use crate::experimental::stick_breaking_process::StickBreaking;
+use crate::experimental::stick::StickBreaking;
 
 #[cfg(feature = "experimental")]
 impl Sampleable<StickBreakingDiscrete> for BetaPrime {
@@ -302,8 +302,7 @@ impl Sampleable<StickBreakingDiscrete> for BetaPrime {
         let alpha: f64 = self.draw(rng);
 
         // Use the alpha to construct and draw from a StickBreakingProcess
-        let stick_breaking =
-            StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
+        let stick_breaking = StickBreaking::new(HalfBeta::new(alpha).unwrap());
         stick_breaking.draw(rng)
     }
 }
@@ -393,13 +392,13 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
 
     fn posterior(
         &self,
-        data: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+        data: DataOrSuffStat<usize, StickBreakingDiscrete>,
     ) -> Self {
         match data {
             DataOrSuffStat::Data(xs) => {
                 #[allow(clippy::useless_asref)]
                 let stat = StickBreakingDiscreteSuffStat::from(xs.as_ref());
-                self.posterior(&DataOrSuffStat::SuffStat(&stat))
+                self.posterior(DataOrSuffStat::SuffStat(&stat))
             }
             DataOrSuffStat::SuffStat(stat) => {
                 let mut alpha = self.alpha;
@@ -422,7 +421,7 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
     fn ln_m_with_cache(
         &self,
         cache: &Self::MCache,
-        data: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+        data: DataOrSuffStat<usize, StickBreakingDiscrete>,
     ) -> f64 {
         let post = self.posterior(data);
         post.ln_beta_ab() + cache
@@ -430,7 +429,7 @@ impl ConjugatePrior<usize, StickBreakingDiscrete> for BetaPrime {
 
     fn ln_pp_cache(
         &self,
-        data: &DataOrSuffStat<usize, StickBreakingDiscrete>,
+        data: DataOrSuffStat<usize, StickBreakingDiscrete>,
     ) -> Self::PpCache {
         let post = self.posterior(data);
         post.alpha / post.beta
@@ -604,8 +603,8 @@ mod tests {
 
         // Using the cache with empty data should give same result
         let ln_m =
-            prior.ln_m_with_cache(&cache, &DataOrSuffStat::SuffStat(&data));
-        let post = prior.posterior(&DataOrSuffStat::SuffStat(&data));
+            prior.ln_m_with_cache(&cache, DataOrSuffStat::SuffStat(&data));
+        let post = prior.posterior(DataOrSuffStat::SuffStat(&data));
         assert_eq!(ln_m, post.ln_beta_ab() - prior.ln_beta_ab());
     }
 
@@ -614,7 +613,7 @@ mod tests {
     fn test_posterior() {
         let prior = BetaPrime::new(2.0, 1.0).unwrap();
         let data = vec![0, 1, 1, 2, 2, 2]; // This gives counts [2, 2, 3]
-        let posterior = prior.posterior(&DataOrSuffStat::Data(&data));
+        let posterior = prior.posterior(DataOrSuffStat::Data(&data));
         // Our observation is [C₀, C₁, C₂] = [1, 2, 3]
         // So
         //   ∑ j Cⱼ = 0 * 1 + 1 * 2 + 2 * 3 = 8
@@ -641,7 +640,7 @@ mod tests {
             stat.observe(x);
         }
 
-        let posterior = prior.posterior(&DataOrSuffStat::SuffStat(&stat));
+        let posterior = prior.posterior(DataOrSuffStat::SuffStat(&stat));
 
         // Alpha should increase by sum(j * count[j])
         // Beta should increase by sum(count[j])
@@ -655,11 +654,11 @@ mod tests {
         let prior = BetaPrime::new(2.0, 3.0).unwrap();
         let data = StickBreakingDiscreteSuffStat::new();
 
-        let cache = prior.ln_pp_cache(&DataOrSuffStat::SuffStat(&data));
+        let cache = prior.ln_pp_cache(DataOrSuffStat::SuffStat(&data));
         let ln_pp = prior.ln_pp_with_cache(&cache, &0);
 
         // Cache should be posterior alpha/beta ratio
-        let post = prior.posterior(&DataOrSuffStat::SuffStat(&data));
+        let post = prior.posterior(DataOrSuffStat::SuffStat(&data));
         assert_eq!(cache, post.alpha() / post.beta());
 
         // ln_pp should be log of the cache

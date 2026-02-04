@@ -4,7 +4,8 @@ use rand_xoshiro::Xoshiro256Plus;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
-use crate::prelude::UnitPowerLaw;
+use super::HalfBeta;
+use crate::experimental::stick::StickWeights;
 use crate::traits::Rv;
 
 // We'd like to be able to serialize and deserialize StickSequence, but serde can't handle
@@ -13,7 +14,7 @@ use crate::traits::Rv;
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 struct StickSequenceFmt {
-    breaker: UnitPowerLaw,
+    breaker: HalfBeta,
     inner: _Inner,
 }
 
@@ -58,7 +59,7 @@ impl _Inner {
                 Xoshiro256Plus::from_os_rng,
                 Xoshiro256Plus::seed_from_u64,
             ),
-            weights: vec![0.0],
+            weights: vec![],
             rm_mass: 1.0,
         }
     }
@@ -74,13 +75,16 @@ impl _Inner {
         &self.weights
     }
 
+    fn push_break(&mut self, p: f64) -> f64 {
+        let w = self.rm_mass * p;
+        self.rm_mass -= w;
+        self.weights.push(w);
+        self.rm_mass
+    }
+
     fn extend_once<B: Rv<f64> + Clone>(&mut self, breaker: &B) -> f64 {
         let p: f64 = breaker.draw(&mut self.rng);
-        let weight = self.rm_mass * p;
-
-        self.rm_mass -= weight;
-        self.weights.push(weight);
-        self.rm_mass
+        self.push_break(p)
     }
 
     /// Extend the stick sequence until the predicate, `p`, is satisfied.
@@ -110,7 +114,7 @@ impl _Inner {
 )]
 #[derive(Clone, Debug)]
 pub struct StickSequence {
-    breaker: UnitPowerLaw,
+    breaker: HalfBeta,
     inner: Arc<RwLock<_Inner>>,
 }
 
@@ -132,12 +136,12 @@ impl StickSequence {
     /// Creates a new `StickSequence` with the given breaker and optional seed.
     ///
     /// # Arguments
-    /// - `breaker`: A `UnitPowerLaw` instance used as the breaker.
+    /// - `breaker`: A `HalfBeta` instance used as the breaker.
     /// - `seed`: An optional seed for the random number generator.
     ///
     /// # Returns
     /// A new instance of `StickSequence`.
-    pub fn new(breaker: UnitPowerLaw, seed: Option<u64>) -> Self {
+    pub fn new(breaker: HalfBeta, seed: Option<u64>) -> Self {
         Self {
             breaker,
             inner: Arc::new(RwLock::new(_Inner::new(seed))),
@@ -174,9 +178,7 @@ impl StickSequence {
     /// - `p`: The new break probability
     pub fn push_break(&self, p: f64) {
         self.with_inner_mut(|inner| {
-            let w = inner.rm_mass * p;
-            inner.rm_mass -= w;
-            inner.weights.push(w);
+            inner.push_break(p);
         });
     }
 
@@ -240,15 +242,22 @@ impl StickSequence {
         self.with_inner(|inner| inner.weights[n])
     }
 
-    /// Returns the instantiated stick weights in a cloned `Vec`
+    /// Returns stick weights in a cloned `Vec`
     ///
-    /// If you don't want to clone the weights, use `with_inner`
-    pub fn weights(&self) -> Vec<f64> {
-        self.with_inner(|inner| inner.weights.clone())
+    /// If the number of instantiated weights is less than `min_weights`, the
+    /// weights will be extended.
+    ///
+    /// If you don't want to clone the weights, use `with_inner` and get the
+    /// slice.
+    pub fn weights(&self, min_weights: Option<usize>) -> StickWeights {
+        if let Some(n) = min_weights {
+            self.ensure_breaks(n);
+        }
+        self.with_inner(|inner| StickWeights(inner.weights.clone()))
     }
 
     /// Returns a reference of the breaker used in this `StickSequence`.
-    pub fn breaker(&self) -> &UnitPowerLaw {
+    pub fn breaker(&self) -> &HalfBeta {
         &self.breaker
     }
 

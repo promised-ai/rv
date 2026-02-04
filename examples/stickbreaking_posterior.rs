@@ -1,21 +1,22 @@
 fn main() {
     #[cfg(feature = "experimental")]
     {
-        use itertools::Either;
         use peroxide::fuga::Statistics;
-        use rv::experimental::stick_breaking_process::{
-            BreakSequence, StickBreaking, StickBreakingDiscrete, StickSequence,
+        use rv::experimental::stick::sb::PrefixOrTail;
+        use rv::experimental::stick::{
+            BreakSequence, HalfBeta, StickBreaking, StickBreakingDiscrete,
+            StickSequence,
         };
         use rv::prelude::*;
 
         let mut rng = rand::rng();
-        let sb = StickBreaking::new(UnitPowerLaw::new(3.0).unwrap());
+        let sb = StickBreaking::new(HalfBeta::new(3.0).unwrap());
 
         let num_samples = 1_000_000;
 
         // Our computed posterior
         let data = [10];
-        let dist = sb.posterior(&DataOrSuffStat::Data(&data[..]));
+        let dist = sb.posterior(DataOrSuffStat::Data(&data[..]));
         // let dist = sb.clone();
 
         // An approximation using rejection sampling
@@ -24,7 +25,7 @@ fn main() {
             let seq: StickSequence = sb.draw(&mut rng);
             let sbd = StickBreakingDiscrete::new(seq.clone());
             if sbd.draw(&mut rng) == 10 {
-                approx.push(BreakSequence::from(&seq.weights(20)).0);
+                approx.push(BreakSequence::from(&seq.weights(Some(20))).0);
             }
         }
 
@@ -42,8 +43,8 @@ fn main() {
             .break_dists()
             .take(20)
             .map(|x| match x {
-                Either::Left(p) => p.clone(),
-                Either::Right(p) => Beta::new_unchecked(p.alpha(), 1.0),
+                PrefixOrTail::Prefix(p) => p.clone(),
+                PrefixOrTail::Tail(p) => Beta::new_unchecked(1.0, p.alpha()),
             })
             .collect();
 

@@ -4,7 +4,7 @@
 fn main() {
     use rand::SeedableRng;
     use rand_xoshiro::Xoshiro256Plus;
-    use rv::experimental::stick_breaking_process::{
+    use rv::experimental::stick::{
         StickBreaking, StickBreakingDiscrete, StickBreakingDiscreteSuffStat,
     };
     use rv::prelude::*;
@@ -25,14 +25,16 @@ fn main() {
         // Draw a simulated data set, ỹ ∼ π(y | θ̃)
         let mut stat = StickBreakingDiscreteSuffStat::new();
         for _ in 0..n_obs {
+            use rv::experimental::stick::HalfBeta;
+
             let stick_breaking =
-                StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
+                StickBreaking::new(HalfBeta::new(alpha).unwrap());
             let sbd: StickBreakingDiscrete = stick_breaking.draw(&mut rng);
             let x = sbd.draw(&mut rng);
             stat.observe(&x);
         }
 
-        let posterior = alpha_prior.posterior(&DataOrSuffStat::SuffStat(&stat));
+        let posterior = alpha_prior.posterior(DataOrSuffStat::SuffStat(&stat));
 
         let mut q = 0;
         for _ in 0..n_bins {

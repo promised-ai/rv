@@ -58,12 +58,12 @@ where
 
     /// Log marginal likelihood, *f(obs)*
     pub fn ln_m(&self) -> f64 {
-        self.prior.ln_m(&self.obs())
+        self.prior.ln_m(self.obs())
     }
 
     /// Log posterior predictive, *f(y|obs)*
     pub fn ln_pp(&self, y: &X) -> f64 {
-        self.prior.ln_pp(y, &self.obs())
+        self.prior.ln_pp(y, self.obs())
     }
 
     /// Return the posterior distribution
@@ -87,7 +87,7 @@ where
     /// assert_eq!(post, Beta::new(3.0, 5.0).unwrap());
     /// ```
     pub fn posterior(&self) -> Pr::Posterior {
-        self.prior.posterior(&self.obs())
+        self.prior.posterior(self.obs())
     }
 
     /// Return the observations
@@ -124,7 +124,7 @@ where
     Pr: ConjugatePrior<X, Fx>,
 {
     fn ln_f(&self, x: &X) -> f64 {
-        self.prior.ln_pp(x, &self.obs())
+        self.prior.ln_pp(x, self.obs())
     }
 }
 

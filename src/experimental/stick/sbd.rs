@@ -1,6 +1,6 @@
+use super::HalfBeta;
 use super::StickSequence;
 use crate::dist::Mixture;
-use crate::dist::UnitPowerLaw;
 use crate::dist::UnitPowerLawError;
 use crate::misc::ConvergentSequence;
 use crate::traits::{
@@ -18,14 +18,13 @@ pub struct StickBreakingDiscrete {
 }
 
 impl StickBreakingDiscrete {
-    /// Creates a new instance of `StickBreakingDiscrete` with the specified `StickSequence`.
+    /// Creates a new instance of `StickBreakingDiscrete` with the specified
+    /// `StickSequence`.
     ///
     /// # Arguments
-    ///
     /// - `sticks` - The `StickSequence` used for generating random numbers.
     ///
     /// # Returns
-    ///
     /// A new instance of `StickBreakingDiscrete`.
     pub fn new(sticks: StickSequence) -> Self {
         Self { sticks }
@@ -35,7 +34,7 @@ impl StickBreakingDiscrete {
         alpha: f64,
         seed: Option<u64>,
     ) -> Result<Self, UnitPowerLawError> {
-        let breaker = UnitPowerLaw::new(alpha)?;
+        let breaker = HalfBeta::new(alpha)?;
 
         Ok(Self {
             sticks: StickSequence::new(breaker, seed),
@@ -58,7 +57,7 @@ impl DiscreteDistr<usize> for StickBreakingDiscrete {}
 
 impl HasDensity<usize> for StickBreakingDiscrete {
     fn f(&self, n: &usize) -> f64 {
-        self.stick_sequence().ensure_breaks(*n);
+        self.stick_sequence().ensure_breaks(*n + 1);
         self.sticks.weight(*n)
     }
 
