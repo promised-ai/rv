@@ -115,3 +115,35 @@ impl Entropy for &Mixture<StickBreakingDiscrete> {
             .limit(1e-10)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[cfg(feature = "serde1")]
+    #[test]
+    fn seed_control_after_write_read() {
+        let sbd0 = StickBreakingDiscrete::from_alpha(2.0, Some(1337)).unwrap();
+        let json = serde_json::to_string(&sbd0).unwrap();
+        let sbd1: StickBreakingDiscrete = serde_json::from_str(&json).unwrap();
+        let sbd2 =
+            StickBreakingDiscrete::from_alpha(2.0, Some(8675309)).unwrap();
+
+        // At this point each stick sequence should have zero instantiated
+        // weights, so when a z comes in that is greater than the number of
+        // instantiated weights, the sequence will break the stick using the
+        // internal RNG. If the RNG states are the same, the `ln_f` values
+        // should be the same. Otherwise, they will not
+        for z in 0..20 {
+            let ln_f0 = sbd0.ln_f(&z);
+            let ln_f1 = sbd1.ln_f(&z);
+            let ln_f2 = sbd2.ln_f(&z);
+
+            // Same seed
+            assert::close(ln_f0, ln_f1, 1e-12);
+
+            // Different seed should fail (testing that the test holds)
+            assert!((1.0 - ln_f2 / ln_f0).abs() > 0.01);
+        }
+    }
+}
