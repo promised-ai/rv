@@ -326,6 +326,7 @@
 - Remove dependency on `quadrature` crate in favor of hand-rolled adaptive
     Simpson's rule, which handles multimodal distributions better.
 
+[0.20.0]: https://github.com/promise-ai/rv/compare/v0.19.1...v0.20.0
 [0.19.1]: https://github.com/promise-ai/rv/compare/v0.19.0...v0.19.1
 [0.19.0]: https://github.com/promise-ai/rv/compare/v0.18.1...v0.19.0
 [0.18.1]: https://github.com/promise-ai/rv/compare/v0.18.0...v0.18.1
