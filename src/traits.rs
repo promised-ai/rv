@@ -470,8 +470,8 @@ pub trait KlDivergence {
 ///
 /// // If we observe more false than true, the posterior predictive
 /// // probability of true decreases.
-/// let pp_no_obs = prior.pp(&true, &(&vec![]).into());
-/// let pp_obs = prior.pp(&true, &(&flips).into());
+/// let pp_no_obs = prior.pp(&true, (&vec![]).into());
+/// let pp_obs = prior.pp(&true, (&flips).into());
 ///
 /// assert!(pp_obs < pp_no_obs);
 /// ```
@@ -502,7 +502,7 @@ pub trait KlDivergence {
 ///
 /// // Get predictions from predictive distribution using the cache
 /// let t_cache = {
-///     let cache = symdir.ln_pp_cache(&stat);
+///     let cache = symdir.ln_pp_cache(stat);
 ///     let t_start = Instant::now();
 ///     // Argmax
 ///     let k_max = (0..ncats).fold((0, f64::NEG_INFINITY), |(ix, f), y| {
@@ -524,7 +524,7 @@ pub trait KlDivergence {
 ///     let t_start = Instant::now();
 ///     // Argmax
 ///     let k_max = (0..ncats).fold((0, f64::NEG_INFINITY), |(ix, f), y| {
-///             let f_r = symdir.ln_pp(&y, &stat);
+///             let f_r = symdir.ln_pp(&y, stat);
 ///             if f_r > f {
 ///                 (y, f_r)
 ///             } else {
@@ -556,10 +556,10 @@ where
 
     /// Computes the posterior distribution from the data
     fn posterior_from_suffstat(&self, stat: &Fx::Stat) -> Self::Posterior {
-        self.posterior(&DataOrSuffStat::SuffStat(stat))
+        self.posterior(DataOrSuffStat::SuffStat(stat))
     }
 
-    fn posterior(&self, x: &DataOrSuffStat<X, Fx>) -> Self::Posterior {
+    fn posterior(&self, x: DataOrSuffStat<X, Fx>) -> Self::Posterior {
         extract_stat_then(self, x, |stat| self.posterior_from_suffstat(stat))
     }
 
@@ -570,11 +570,11 @@ where
     fn ln_m_with_cache(
         &self,
         cache: &Self::MCache,
-        x: &DataOrSuffStat<X, Fx>,
+        x: DataOrSuffStat<X, Fx>,
     ) -> f64;
 
     /// The log marginal likelihood
-    fn ln_m(&self, x: &DataOrSuffStat<X, Fx>) -> f64 {
+    fn ln_m(&self, x: DataOrSuffStat<X, Fx>) -> f64 {
         let cache = self.ln_m_cache();
         self.ln_m_with_cache(&cache, x)
     }
@@ -582,19 +582,19 @@ where
     /// Compute the cache for the Log posterior predictive of y given x.
     ///
     /// The cache should encompass all information about `x`.
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<X, Fx>) -> Self::PpCache;
+    fn ln_pp_cache(&self, x: DataOrSuffStat<X, Fx>) -> Self::PpCache;
 
     /// Log posterior predictive of y given x with supplied ln(norm)
     fn ln_pp_with_cache(&self, cache: &Self::PpCache, y: &X) -> f64;
 
     /// Log posterior predictive of y given x
-    fn ln_pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64 {
+    fn ln_pp(&self, y: &X, x: DataOrSuffStat<X, Fx>) -> f64 {
         let cache = self.ln_pp_cache(x);
         self.ln_pp_with_cache(&cache, y)
     }
 
     /// Marginal likelihood of x
-    fn m(&self, x: &DataOrSuffStat<X, Fx>) -> f64 {
+    fn m(&self, x: DataOrSuffStat<X, Fx>) -> f64 {
         self.ln_m(x).exp()
     }
 
@@ -603,7 +603,7 @@ where
     }
 
     /// Posterior Predictive distribution
-    fn pp(&self, y: &X, x: &DataOrSuffStat<X, Fx>) -> f64 {
+    fn pp(&self, y: &X, x: DataOrSuffStat<X, Fx>) -> f64 {
         self.ln_pp(y, x).exp()
     }
 }
@@ -671,8 +671,8 @@ pub trait HasSuffStat<X> {
 ///
 /// // If we observe more false than true, the posterior predictive
 /// // probability of true decreases.
-/// let pp_no_obs = prior.pp(&true, &(&BernoulliSuffStat::new()).into());
-/// let pp_obs = prior.pp(&true, &(&flips).into());
+/// let pp_no_obs = prior.pp(&true, (&BernoulliSuffStat::new()).into());
+/// let pp_obs = prior.pp(&true, (&flips).into());
 ///
 /// assert!(pp_obs < pp_no_obs);
 /// ```

@@ -1,1 +1,1 @@
-pub mod stick_breaking_process;
+pub mod stick;

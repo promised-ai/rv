@@ -319,7 +319,7 @@ macro_rules! gaussian_prior_geweke_testable {
             ) -> Gaussian {
                 let post = <$prior as ConjugatePrior<f64, $fx>>::posterior(
                     &self,
-                    &DataOrSuffStat::from(data),
+                    DataOrSuffStat::from(data),
                 );
                 post.draw(rng)
             }
@@ -416,18 +416,18 @@ macro_rules! test_conjugate_prior {
                 let ln_pp = <$Pr as ConjugatePrior<$X, $Fx>>::ln_pp(
                     &pr,
                     &y,
-                    &DataOrSuffStat::SuffStat(&stat),
+                    DataOrSuffStat::SuffStat(&stat),
                 );
                 let ln_m_lower = <$Pr as ConjugatePrior<$X, $Fx>>::ln_m(
                     &pr,
-                    &DataOrSuffStat::SuffStat(&stat),
+                    DataOrSuffStat::SuffStat(&stat),
                 );
 
                 stat.observe(&y);
 
                 let ln_m_upper = <$Pr as ConjugatePrior<$X, $Fx>>::ln_m(
                     &pr,
-                    &DataOrSuffStat::SuffStat(&stat),
+                    DataOrSuffStat::SuffStat(&stat),
                 );
 
                 assert::close(ln_pp, ln_m_upper - ln_m_lower, 1e-12);
@@ -455,12 +455,12 @@ macro_rules! test_conjugate_prior {
                 let ln_prior = pr.ln_f(&fx);
                 let ln_m = <$Pr as ConjugatePrior<$X, $Fx>>::ln_m(
                     &pr,
-                    &DataOrSuffStat::SuffStat(&stat),
+                    DataOrSuffStat::SuffStat(&stat),
                 );
 
                 let posterior = <$Pr as ConjugatePrior<$X, $Fx>>::posterior(
                     &pr,
-                    &DataOrSuffStat::SuffStat(&stat),
+                    DataOrSuffStat::SuffStat(&stat),
                 );
                 let ln_post = posterior.ln_f(&fx);
 
@@ -492,7 +492,7 @@ macro_rules! test_conjugate_prior {
 
                 let m = <$Pr as ConjugatePrior<$X, $Fx>>::m(
                     &pr,
-                    &DataOrSuffStat::SuffStat(&stat),
+                    DataOrSuffStat::SuffStat(&stat),
                 );
 
                 let mut min_err = f64::INFINITY;

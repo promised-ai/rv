@@ -143,7 +143,7 @@ impl_booleable!(i64);
 impl_booleable!(isize);
 
 /// Holds either a sufficient statistic of a vector of data.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum DataOrSuffStat<'a, X, Fx>
 where
     X: 'a,
@@ -153,6 +153,26 @@ where
     Data(&'a [X]),
     /// A sufficient statistic
     SuffStat(&'a Fx::Stat),
+}
+
+impl<'a, X, Fx> Clone for DataOrSuffStat<'a, X, Fx>
+where
+    X: 'a,
+    Fx: 'a + HasSuffStat<X>,
+{
+    fn clone(&self) -> Self {
+        match self {
+            Self::Data(xs) => Self::Data(xs),
+            Self::SuffStat(stat) => Self::SuffStat(stat),
+        }
+    }
+}
+
+impl<'a, X, Fx> Copy for DataOrSuffStat<'a, X, Fx>
+where
+    X: 'a,
+    Fx: 'a + HasSuffStat<X>,
+{
 }
 
 impl<'a, X, Fx> DataOrSuffStat<'a, X, Fx>
@@ -219,7 +239,7 @@ where
 }
 
 #[inline]
-pub fn extract_stat<X, Fx, Pr>(pr: &Pr, x: &DataOrSuffStat<X, Fx>) -> Fx::Stat
+pub fn extract_stat<X, Fx, Pr>(pr: &Pr, x: DataOrSuffStat<X, Fx>) -> Fx::Stat
 where
     Fx: HasSuffStat<X> + HasDensity<X>,
     Fx::Stat: Clone,
@@ -232,7 +252,7 @@ where
 #[inline]
 pub fn extract_stat_then<X, Fx, Pr, Fnx, Y>(
     pr: &Pr,
-    x: &DataOrSuffStat<X, Fx>,
+    x: DataOrSuffStat<X, Fx>,
     f_stat: Fnx,
 ) -> Y
 where
@@ -550,12 +570,12 @@ mod tests {
 
             fn posterior(
                 &self,
-                _x: &crate::data::GaussianData<f64>,
+                _x: crate::data::GaussianData<f64>,
             ) -> Self::Posterior {
                 MockPosterior(Gaussian::standard())
             }
 
-            fn ln_m(&self, _x: &crate::data::GaussianData<f64>) -> f64 {
+            fn ln_m(&self, _x: crate::data::GaussianData<f64>) -> f64 {
                 0.0
             }
 
@@ -564,7 +584,7 @@ mod tests {
             fn ln_m_with_cache(
                 &self,
                 _cache: &Self::MCache,
-                _x: &crate::data::GaussianData<f64>,
+                _x: crate::data::GaussianData<f64>,
             ) -> f64 {
                 0.0
             }
@@ -572,14 +592,14 @@ mod tests {
             fn ln_pp(
                 &self,
                 _y: &f64,
-                _x: &crate::data::GaussianData<f64>,
+                _x: crate::data::GaussianData<f64>,
             ) -> f64 {
                 0.0
             }
 
             fn ln_pp_cache(
                 &self,
-                _x: &crate::data::GaussianData<f64>,
+                _x: crate::data::GaussianData<f64>,
             ) -> Self::PpCache {
             }
 
@@ -606,7 +626,7 @@ mod tests {
             let data: DataOrSuffStat<f64, Gaussian> =
                 DataOrSuffStat::SuffStat(&stats);
 
-            let extracted = extract_stat(&pr, &data);
+            let extracted = extract_stat(&pr, data);
             assert_eq!(extracted.n(), 2);
             assert_eq!(extracted.sum_x(), 3.0);
         }
@@ -619,7 +639,7 @@ mod tests {
             let data: DataOrSuffStat<f64, Gaussian> =
                 DataOrSuffStat::Data(&data_vec);
 
-            let extracted = extract_stat(&pr, &data);
+            let extracted = extract_stat(&pr, data);
             assert_eq!(extracted.n(), 3);
             assert_eq!(extracted.sum_x(), 6.0);
         }
@@ -634,7 +654,7 @@ mod tests {
             let data: DataOrSuffStat<f64, Gaussian> =
                 DataOrSuffStat::SuffStat(&stats);
 
-            let result = extract_stat_then(&pr, &data, |stat| {
+            let result = extract_stat_then(&pr, data, |stat| {
                 stat.n() * 10 + (stat.sum_x() as usize)
             });
 
@@ -650,7 +670,7 @@ mod tests {
                 DataOrSuffStat::Data(&data_vec);
 
             let result =
-                extract_stat_then(&pr, &data, |stat: &GaussianSuffStat| {
+                extract_stat_then(&pr, data, |stat: &GaussianSuffStat| {
                     stat.n() * 10 + (stat.sum_x() as usize)
                 });
 

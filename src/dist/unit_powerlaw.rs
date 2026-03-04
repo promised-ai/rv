@@ -14,7 +14,6 @@ use rand::Rng;
 use special::Gamma as _;
 use std::f64;
 use std::fmt;
-use std::sync::OnceLock;
 
 pub mod bernoulli_prior;
 
@@ -25,6 +24,21 @@ pub mod bernoulli_prior;
 pub struct UnitPowerLawParameters {
     /// Shape parameter
     pub alpha: f64,
+}
+
+impl From<UnitPowerLaw> for UnitPowerLawParameters {
+    fn from(value: UnitPowerLaw) -> Self {
+        Self { alpha: value.alpha }
+    }
+}
+
+impl From<UnitPowerLawParameters> for UnitPowerLaw {
+    fn from(value: UnitPowerLawParameters) -> Self {
+        Self {
+            alpha: value.alpha,
+            alpha_ln: value.alpha.ln(),
+        }
+    }
 }
 
 /// UnitPowerLaw(α) over x in (0, 1).
@@ -42,16 +56,14 @@ pub struct UnitPowerLawParameters {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
+#[cfg_attr(
+    feature = "serde1",
+    serde(from = "UnitPowerLawParameters", into = "UnitPowerLawParameters")
+)]
 pub struct UnitPowerLaw {
     alpha: f64,
-
-    // Cached alpha..recip()
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    alpha_inv: OnceLock<f64>,
-
     // Cached alpha.ln()
-    #[cfg_attr(feature = "serde1", serde(skip))]
-    alpha_ln: OnceLock<f64>,
+    alpha_ln: f64,
 }
 
 impl Parameterized for UnitPowerLaw {
@@ -110,20 +122,17 @@ impl UnitPowerLaw {
         } else {
             Ok(UnitPowerLaw {
                 alpha,
-                alpha_inv: OnceLock::new(),
-                alpha_ln: OnceLock::new(),
+                alpha_ln: alpha.ln(),
             })
         }
     }
 
     /// Creates a new `UnitPowerLaw` without checking whether the parameters are valid.
-    #[inline]
     #[must_use]
     pub fn new_unchecked(alpha: f64) -> Self {
         UnitPowerLaw {
             alpha,
-            alpha_inv: OnceLock::new(),
-            alpha_ln: OnceLock::new(),
+            alpha_ln: alpha.ln(),
         }
     }
 
@@ -136,7 +145,6 @@ impl UnitPowerLaw {
     /// let powlaw = UnitPowerLaw::uniform();
     /// assert_eq!(powlaw, UnitPowerLaw::new(1.0).unwrap());
     /// ```
-    #[inline]
     #[must_use]
     pub fn uniform() -> Self {
         UnitPowerLaw::new_unchecked(1.0)
@@ -151,7 +159,6 @@ impl UnitPowerLaw {
     /// let powlaw = UnitPowerLaw::new(5.0).unwrap();
     /// assert_eq!(powlaw.alpha(), 5.0);
     /// ```
-    #[inline]
     pub fn alpha(&self) -> f64 {
         self.alpha
     }
@@ -179,7 +186,6 @@ impl UnitPowerLaw {
     /// assert!(powlaw.set_alpha(f64::INFINITY).is_err());
     /// assert!(powlaw.set_alpha(f64::NAN).is_err());
     /// ```
-    #[inline]
     pub fn set_alpha(&mut self, alpha: f64) -> Result<(), UnitPowerLawError> {
         if alpha <= 0.0 {
             Err(UnitPowerLawError::AlphaTooLow { alpha })
@@ -192,23 +198,14 @@ impl UnitPowerLaw {
     }
 
     /// Set alpha without input validation
-    #[inline]
     pub fn set_alpha_unchecked(&mut self, alpha: f64) {
         self.alpha = alpha;
-        self.alpha_inv = OnceLock::new();
-        self.alpha_ln = OnceLock::new();
+        self.alpha_ln = alpha.ln();
     }
 
-    /// Evaluate or fetch cached ln(a*b)
-    #[inline]
-    pub fn alpha_inv(&self) -> f64 {
-        *self.alpha_inv.get_or_init(|| self.alpha.recip())
-    }
-
-    /// Evaluate or fetch cached ln(a*b)
-    #[inline]
+    /// Return ln(alpha)
     pub fn alpha_ln(&self) -> f64 {
-        *self.alpha_ln.get_or_init(|| self.alpha.ln())
+        self.alpha_ln
     }
 }
 
@@ -246,7 +243,7 @@ macro_rules! impl_traits {
             }
 
             fn sample<R: Rng>(&self, n: usize, rng: &mut R) -> Vec<$kind> {
-                let alpha_inv = self.alpha_inv() as $kind;
+                let alpha_inv = self.alpha.recip() as $kind;
                 (0..n)
                     .map(|_| rng.random::<$kind>().powf(alpha_inv))
                     .collect()
@@ -270,7 +267,7 @@ macro_rules! impl_traits {
 
         impl InverseCdf<$kind> for UnitPowerLaw {
             fn invcdf(&self, p: f64) -> $kind {
-                p.powf(self.alpha_inv()) as $kind
+                p.powf(self.alpha.recip()) as $kind
             }
         }
 

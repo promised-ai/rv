@@ -86,7 +86,7 @@ macro_rules! impl_traits {
             fn ln_m_with_cache(
                 &self,
                 cache: &Self::MCache,
-                x: &DataOrSuffStat<$kind, Gaussian>,
+                x: DataOrSuffStat<$kind, Gaussian>,
             ) -> f64 {
                 extract_stat_then(self, x, |stat: &GaussianSuffStat| {
                     let n = stat.n() as f64;
@@ -98,7 +98,7 @@ macro_rules! impl_traits {
 
             fn ln_pp_cache(
                 &self,
-                x: &DataOrSuffStat<$kind, Gaussian>,
+                x: DataOrSuffStat<$kind, Gaussian>,
             ) -> Self::PpCache {
                 extract_stat_then(self, x, |stat: &GaussianSuffStat| {
                     let post = posterior_from_stat(self, stat);
@@ -231,7 +231,7 @@ mod test {
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let reference = alternate_ln_marginal(&xs, m, k, v, s2);
         let nix = NormalInvChiSquared::new(m, k, v, s2).unwrap();
-        let ln_m = nix.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let ln_m = nix.ln_m(DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         assert::close(reference, ln_m, TOL);
     }
@@ -242,7 +242,7 @@ mod test {
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let (mn, kn, vn, s2n) = post_params(&xs, m, k, v, s2);
         let nix = NormalInvChiSquared::new(m, k, v, s2).unwrap();
-        let post = nix.posterior(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let post = nix.posterior(DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         assert::close(mn, post.m(), TOL);
         assert::close(vn, post.v(), TOL);
@@ -255,7 +255,7 @@ mod test {
         let prior = NormalInvChiSquared::new_unchecked(1.2, 2.3, 3.4, 4.5);
         let post = <NormalInvChiSquared as ConjugatePrior<f64, _>>::posterior(
             &prior,
-            &DataOrSuffStat::from(&vec![]),
+            DataOrSuffStat::from(&vec![]),
         );
         assert_eq!(prior.m(), post.m());
         assert_eq!(prior.k(), post.k());
@@ -274,7 +274,7 @@ mod test {
 
         let (m, k, v, s2) = (1.0, 2.2, 3.3, 4.4);
         let nix = NormalInvChiSquared::new(m, k, v, s2).unwrap();
-        let ln_m = nix.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let ln_m = nix.ln_m(DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
             nix.sample_stream(&mut rand::rng())
@@ -297,7 +297,7 @@ mod test {
 
         let (m, k, v, s2) = (1.0, 2.2, 3.3, 4.4);
         let nix = NormalInvChiSquared::new(m, k, v, s2).unwrap();
-        let ln_m = nix.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let ln_m = nix.ln_m(DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
             nix.sample_stream(&mut rand::rng())
@@ -323,8 +323,8 @@ mod test {
         let y: f64 = -0.3;
         let (m, k, v, s2) = (1.0, 2.2, 3.3, 4.4);
         let nix = NormalInvChiSquared::new(m, k, v, s2).unwrap();
-        let post = nix.posterior(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
-        let ln_pp = nix.ln_pp(&y, &DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let post = nix.posterior(DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let ln_pp = nix.ln_pp(&y, DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
             post.sample_stream(&mut rand::rng())
@@ -348,7 +348,7 @@ mod test {
         let (m, k, v, s2) = (1.0, 2.2, 3.3, 4.4);
         let nix = NormalInvChiSquared::new(m, k, v, s2).unwrap();
         let ln_pp =
-            nix.ln_pp(&x, &DataOrSuffStat::<f64, Gaussian>::from(&vec![]));
+            nix.ln_pp(&x, DataOrSuffStat::<f64, Gaussian>::from(&vec![]));
 
         let mc_est = {
             nix.sample_stream(&mut rand::rng())
@@ -376,7 +376,7 @@ mod test {
             let new_vec = Vec::new();
             let data = DataOrSuffStat::<f64, Gaussian>::from(&new_vec);
             let y_data = DataOrSuffStat::<f64, Gaussian>::from(&ys);
-            (nix.ln_pp(&y, &data), nix.ln_m(&y_data))
+            (nix.ln_pp(&y, data), nix.ln_m(y_data))
         };
         assert::close(ln_m, ln_pp, TOL);
     }
@@ -394,7 +394,7 @@ mod test {
         let nix = NormalInvChiSquared::new(m, k, v, s2).unwrap();
 
         let data = DataOrSuffStat::<f64, Gaussian>::from(&xs);
-        let (mn, kn, vn, s2n) = nix.posterior(&data).params();
+        let (mn, kn, vn, s2n) = nix.posterior(data).params();
 
         let ln_f_t = {
             // fit into non-shifted-and-scaled T using the parameterization in
@@ -407,7 +407,7 @@ mod test {
             0.5_f64.mul_add(-t_scale.ln(), t.ln_f(&y_adj))
         };
 
-        let ln_pp = nix.ln_pp(&y, &data);
+        let ln_pp = nix.ln_pp(&y, data);
         assert::close(ln_f_t, ln_pp, TOL);
     }
 }

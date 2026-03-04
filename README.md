@@ -32,15 +32,15 @@ let data_fixed: BernoulliData<_> = DataOrSuffStat::Data(&obs_fixed);
 
 // Let's compute the posterior predictive probability (pp) of a heads given
 // the observations from each coin.
-let postpred_fair = prior.pp(&1u8, &data_fair);
-let postpred_fixed = prior.pp(&true, &data_fixed);
+let postpred_fair = prior.pp(&1u8, data_fair);
+let postpred_fixed = prior.pp(&true, data_fixed);
 
 // The probability of heads should be greater under the all heads data
 assert!(postpred_fixed > postpred_fair);
 
 // We can also get the posteriors
-let post_fair: Beta = prior.posterior(&data_fair);
-let post_fixed: Beta = prior.posterior(&data_fixed);
+let post_fair: Beta = prior.posterior(data_fair);
+let post_fixed: Beta = prior.posterior(data_fixed);
 
 // And compare their means
 let post_mean_fair: f64 = post_fair.mean().unwrap();
@@ -103,9 +103,7 @@ in the end, rv is for us.
 
 If you'd like to offer a contribution:
 
-1. Please create an issue before starting any work. We're far from stable, so
-   we might actually be working on what you want, or we might be working on
-   something that will change the way you might implement it.
+1. Please create an issue before starting any work.
 2. If you plan on implementing a new distribution, implement at least `Rv`,
    `Support`, and either `ContinuousDistr` or `DiscreteDistr`. Of course, more
    is better!

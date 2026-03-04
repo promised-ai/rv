@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.20.0] - 2026-02-05
+
+### Changed
+- Updated `lru` crate to 0.6.3 in response to [RUSTSEC-2026-0002](https://rustsec.org/advisories/RUSTSEC-2026-0002.html)
+- `DataOrSuffStat` is `Copy`
+- `DataOrSuffStat` is now passed by value to `ConjugatePrior` methods
+- Overhauled experimental stick breaking distribution
+- `StickBreakingDiscrete` now serializes its underlying `Rng` to maintain seed
+  control after a write-read.
+
 ## [0.19.1] - 2025-11-18
 
 ### Added
@@ -317,6 +327,7 @@
 - Remove dependency on `quadrature` crate in favor of hand-rolled adaptive
     Simpson's rule, which handles multimodal distributions better.
 
+[0.20.0]: https://github.com/promise-ai/rv/compare/v0.19.1...v0.20.0
 [0.19.1]: https://github.com/promise-ai/rv/compare/v0.19.0...v0.19.1
 [0.19.0]: https://github.com/promise-ai/rv/compare/v0.18.1...v0.19.0
 [0.18.1]: https://github.com/promise-ai/rv/compare/v0.18.0...v0.18.1
