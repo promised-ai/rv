@@ -162,7 +162,7 @@ impl StickSequence {
     /// Panics if `p` is not less than the last element of the ccdf vector.
     pub fn push_to_ccdf(&self, p: f64) {
         self.with_inner_mut(|inner| {
-            assert!(p < *inner.ccdf.last().unwrap());
+            assert!(p <= *inner.ccdf.last().unwrap());
             inner.ccdf.push(p);
         });
     }

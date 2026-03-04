@@ -4,6 +4,7 @@
 
 ### Changed
 - Updated `lru` crate to 0.16.3 in response to [RUSTSEC-2026-0002](https://rustsec.org/advisories/RUSTSEC-2026-0002.html)
+- Relaxed assertion about appending to CCDF in stick sequence
 
 ## [0.19.1] - 2025-11-18
 
