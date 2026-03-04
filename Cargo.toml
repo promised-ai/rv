@@ -22,7 +22,7 @@ argmin-math = { version = "0.5", optional = true, features = [
   "nalgebra_latest",
 ] }
 doc-comment = "0.3"
-lru = "0.16"
+lru = "0.16.3"
 nalgebra = { version = "0.34", optional = true }
 num = "0.4"
 rand = { version = "0.9", features = ["small_rng"] }
