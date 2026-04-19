@@ -32,6 +32,7 @@ mod invgaussian;
 mod ks;
 mod kumaraswamy;
 mod laplace;
+mod logistic;
 mod lognormal;
 mod mixture;
 #[cfg(feature = "arraydist")]
@@ -89,6 +90,7 @@ pub use invgaussian::{InvGaussian, InvGaussianError, InvGaussianParameters};
 pub use ks::KsTwoAsymptotic;
 pub use kumaraswamy::{Kumaraswamy, KumaraswamyError, KumaraswamyParameters};
 pub use laplace::{Laplace, LaplaceError, LaplaceParameters};
+pub use logistic::{Logistic, LogisticError, LogisticParameters};
 pub use lognormal::{LogNormal, LogNormalError, LogNormalParameters};
 pub use mixture::{Mixture, MixtureError, MixtureParameters};
 #[cfg(feature = "arraydist")]
