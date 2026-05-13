@@ -45,6 +45,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "arc-swap"
+version = "1.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a3a1fd6f75306b68087b831f025c712524bcb19aad54e557b1129cfa0a2b207"
+dependencies = [
+ "rustversion",
+]
+
+[[package]]
 name = "argmin"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -906,9 +915,9 @@ checksum = "60a357793950651c4ed0f3f52338f53b2f809f32d83a07f72909fa13e4c6c1e3"
 
 [[package]]
 name = "rayon"
-version = "1.11.0"
+version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "368f01d005bf8fd9b1206fb6fa653e6c4a81ceb1466406b81792d87c5677a58f"
+checksum = "fb39b166781f92d482534ef4b4b1b2568f42613b53e5b6c160e24cfbfa30926d"
 dependencies = [
  "either",
  "rayon-core",
@@ -989,6 +998,7 @@ name = "rv"
 version = "0.20.0"
 dependencies = [
  "approx",
+ "arc-swap",
  "argmin",
  "argmin-math",
  "assert",
@@ -1006,6 +1016,7 @@ dependencies = [
  "rand",
  "rand_distr",
  "rand_xoshiro",
+ "rayon",
  "serde",
  "serde_json",
  "serde_yaml",

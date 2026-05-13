@@ -6,9 +6,17 @@
 - Updated `lru` crate to 0.6.3 in response to [RUSTSEC-2026-0002](https://rustsec.org/advisories/RUSTSEC-2026-0002.html)
 - `DataOrSuffStat` is `Copy`
 - `DataOrSuffStat` is now passed by value to `ConjugatePrior` methods
-- Overhauled experimental stick breaking distribution
-- `StickBreakingDiscrete` now serializes its underlying `Rng` to maintain seed
-  control after a write-read.
+- Overhauled experimental stick breaking distribution. Of note:
+    + Replaced `Arc<RwLock<_>>` with `ArcSwap`-based data structure. Which makes
+      the plots of `ln_f` / seconds as a function of number of cores go up and
+      to the right instead of down and to the right. Check
+      [this video](https://www.youtube.com/watch?v=tND-wBBZ8RY&t=2183s) out. If
+      you want to see what I mean, port the `sbd_bench` example over to v0.19.
+    + Made the names to modules shorter.
+    + Using `HalfBeta` instead of `UnitPowerlLaw` because it aligns better with
+      how the math in written out.
+    + `StickBreakingDiscrete` now serializes its underlying `Rng` to maintain
+      seed control after a write-read.
 
 ## [0.19.1] - 2025-11-18
 

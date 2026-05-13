@@ -1,15 +1,15 @@
+use arc_swap::ArcSwap;
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256Plus;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex};
 
 use super::HalfBeta;
 use crate::experimental::stick::StickWeights;
 use crate::traits::Rv;
 
-// We'd like to be able to serialize and deserialize StickSequence, but serde can't handle
-// `Arc` or `RwLock`. So we use `StickSequenceFmt` as an intermediate type.
+// This allows us to searlize around all the ArcSwap stuff
 #[cfg(feature = "serde1")]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -23,7 +23,7 @@ impl From<StickSequenceFmt> for StickSequence {
     fn from(fmt: StickSequenceFmt) -> Self {
         Self {
             breaker: fmt.breaker,
-            inner: Arc::new(RwLock::new(fmt.inner)),
+            shared: Arc::new(SharedState::from_pointee(fmt.inner)),
         }
     }
 }
@@ -32,8 +32,8 @@ impl From<StickSequenceFmt> for StickSequence {
 impl From<StickSequence> for StickSequenceFmt {
     fn from(sticks: StickSequence) -> Self {
         Self {
-            breaker: sticks.breaker,
-            inner: sticks.inner.read().map(|inner| inner.clone()).unwrap(),
+            breaker: sticks.breaker.clone(),
+            inner: (**sticks.shared.inner.load()).clone(),
         }
     }
 }
@@ -103,6 +103,21 @@ impl _Inner {
     }
 }
 
+#[derive(Debug)]
+struct SharedState {
+    inner: ArcSwap<_Inner>,
+    write_lock: Mutex<()>,
+}
+
+impl SharedState {
+    fn from_pointee(inner: _Inner) -> Self {
+        Self {
+            inner: ArcSwap::from_pointee(inner),
+            write_lock: Mutex::new(()),
+        }
+    }
+}
+
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(
     feature = "serde1",
@@ -115,7 +130,7 @@ impl _Inner {
 #[derive(Clone, Debug)]
 pub struct StickSequence {
     breaker: HalfBeta,
-    inner: Arc<RwLock<_Inner>>,
+    shared: Arc<SharedState>,
 }
 
 impl PartialEq<StickSequence> for StickSequence {
@@ -144,7 +159,7 @@ impl StickSequence {
     pub fn new(breaker: HalfBeta, seed: Option<u64>) -> Self {
         Self {
             breaker,
-            inner: Arc::new(RwLock::new(_Inner::new(seed))),
+            shared: Arc::new(SharedState::from_pointee(_Inner::new(seed))),
         }
     }
 
@@ -198,7 +213,8 @@ impl StickSequence {
     where
         F: FnOnce(&_Inner) -> Ans,
     {
-        self.inner.read().map(|inner| f(&inner)).unwrap()
+        // lock-free, wait-free read.
+        f(&self.shared.inner.load())
     }
 
     /// Provides write access to the inner `_Inner` structure.
@@ -217,19 +233,53 @@ impl StickSequence {
     where
         F: FnOnce(&mut _Inner) -> Ans,
     {
-        self.inner.write().map(|mut inner| f(&mut inner)).unwrap()
+        let _guard = self.shared.write_lock.lock().unwrap();
+        let mut new_inner = (**self.shared.inner.load()).clone();
+
+        let ans = f(&mut new_inner);
+
+        self.shared.inner.store(Arc::new(new_inner));
+        ans
     }
 
     /// Extend until the remaining mass is less than p and return the number of
     /// extensions.
     pub fn ensure_rm_mass(&self, p: f64) -> usize {
-        self.extend_until(|inner| inner.rm_mass < p)
+        if self.shared.inner.load().rm_mass < p {
+            return 0;
+        }
+
+        let _guard = self.shared.write_lock.lock().unwrap();
+        let current = self.shared.inner.load();
+        if current.rm_mass < p {
+            return 0;
+        }
+
+        let mut new_inner = (**current).clone();
+        let extensions =
+            new_inner.extend_until(&self.breaker, |inner| inner.rm_mass < p);
+        self.shared.inner.store(std::sync::Arc::new(new_inner));
+        extensions
     }
 
-    /// Ensures that the weights vector is extended to at least `n` elements and
-    /// return the number of extensions.
     pub fn ensure_breaks(&self, n: usize) {
-        self.extend_until(|inner| inner.weights.len() > n);
+        // FAST PATH: Truly lock-free check. 99.9% of calls will exit here instantly.
+        if self.shared.inner.load().weights.len() > n {
+            return;
+        }
+
+        // SLOW PATH: We need to extend. Serialize writers.
+        let _guard = self.shared.write_lock.lock().unwrap();
+
+        // DOUBLE-CHECK: Another thread might have extended the sequence while we waited for the lock.
+        let current = self.shared.inner.load();
+        if current.weights.len() > n {
+            return;
+        }
+
+        let mut new_inner = (**current).clone();
+        new_inner.extend_until(&self.breaker, |inner| inner.weights.len() > n);
+        self.shared.inner.store(std::sync::Arc::new(new_inner));
     }
 
     /// Returns the number of weights instantiated so far.
