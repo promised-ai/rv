@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.20.0] - 2026-02-05
+## [0.20.0] - 2026-05-14
 
 ### Changed
 - Updated `lru` crate to 0.6.3 in response to [RUSTSEC-2026-0002](https://rustsec.org/advisories/RUSTSEC-2026-0002.html)
@@ -17,6 +17,12 @@
       how the math in written out.
     + `StickBreakingDiscrete` now serializes its underlying `Rng` to maintain
       seed control after a write-read.
+
+## [0.19.2] - 2026-03-04
+
+### Changed
+- Updated `lru` crate to 0.16.3 in response to [RUSTSEC-2026-0002](https://rustsec.org/advisories/RUSTSEC-2026-0002.html)
+- Relaxed assertion about appending to CCDF in stick sequence
 
 ## [0.19.1] - 2025-11-18
 
@@ -336,6 +342,7 @@
     Simpson's rule, which handles multimodal distributions better.
 
 [0.20.0]: https://github.com/promise-ai/rv/compare/v0.19.1...v0.20.0
+[0.19.2]: https://github.com/promise-ai/rv/compare/v0.19.1...v0.19.2
 [0.19.1]: https://github.com/promise-ai/rv/compare/v0.19.0...v0.19.1
 [0.19.0]: https://github.com/promise-ai/rv/compare/v0.18.1...v0.19.0
 [0.18.1]: https://github.com/promise-ai/rv/compare/v0.18.0...v0.18.1
