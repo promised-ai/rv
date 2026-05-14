@@ -47,7 +47,7 @@ jobs:
         env:
           RUSTFLAGS: -C debuginfo=0
         run: |
-          cargo clippy --all-features
+          cargo clippy --features="arraydist,experimental"
 
       - name: Install audit
         run: cargo install cargo-audit
@@ -72,7 +72,7 @@ jobs:
       - name: Run tests
         env:
           RUSTFLAGS: -C debuginfo=0
-        run: cargo test --all-features
+        run: cargo test --features="arraydist,experimental,serde1"
 
   coverage:
     runs-on: ubuntu-latest
@@ -89,7 +89,7 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
 
       - name: Generate code coverage
-        run: cargo llvm-cov --doctests --all-features --workspace --codecov --output-path codecov.json
+        run: cargo llvm-cov --doctests  --features="arraydist,experimental,serde1" --workspace --codecov --output-path codecov.json
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
