@@ -108,7 +108,6 @@ impl _Inner {
 }
 
 #[derive(Debug)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 struct SharedState {
     #[cfg_attr(feature="rkyv", rkyv(with = rkyv_support::ArcSwapRkyvWrapper))]
