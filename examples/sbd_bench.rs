@@ -3,6 +3,7 @@ use rv::traits::{HasDensity, Sampleable};
 use std::hint::black_box;
 use std::time::Instant;
 
+#[cfg(feature = "experimental")]
 use rv::experimental::stick::StickBreakingDiscrete;
 
 pub fn format_with_commas(val: f64) -> String {
@@ -42,6 +43,7 @@ pub fn format_with_commas(val: f64) -> String {
     result
 }
 
+#[cfg(feature = "experimental")]
 fn main() {
     let n_reps = 4_u64;
     let n_evals = 1_000_000_usize;
@@ -80,4 +82,9 @@ fn main() {
             });
         }
     }
+}
+
+#[cfg(not(feature = "experimental"))]
+fn main() {
+    eprintln!("This example requires the `experimental` feature")
 }

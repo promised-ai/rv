@@ -1,4 +1,6 @@
 //! Skellam distribution on signed integers
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -30,6 +32,7 @@ use std::{cell::RefCell, num::NonZeroUsize};
 /// assert_eq!(xs.len(), 100)
 /// ```
 #[derive(Debug)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Skellam {
@@ -40,6 +43,7 @@ pub struct Skellam {
     /// Cached values of `bessel_iv`. Note that the cache is not invalidated when
     /// the values of `mu_1` or `mu_2` change.
     #[cfg_attr(feature = "serde1", serde(skip, default = "cache_default"))]
+    #[cfg_attr(feature = "rkyv", rkyv(with=rkyv::with::Skip))]
     bessel_iv_cache: RefCell<LruCache<i32, f64>>,
 }
 
@@ -69,6 +73,7 @@ impl Parameterized for Skellam {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum SkellamError {

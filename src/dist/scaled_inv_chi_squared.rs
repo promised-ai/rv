@@ -1,4 +1,6 @@
 //! Χ<sup>-2</sup> over x in (0, ∞)
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -25,6 +27,7 @@ use std::sync::OnceLock;
 /// let ix2 = ScaledInvChiSquared::new(2.0, 1.0).unwrap();
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct ScaledInvChiSquared {
@@ -33,9 +36,11 @@ pub struct ScaledInvChiSquared {
     t2: f64,
     // ln Gamma(v/2)
     #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     ln_gamma_v_2: OnceLock<f64>,
     // ln (t2*v/2)^(v/2)
     #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     ln_f_const: OnceLock<f64>,
 }
 
@@ -60,6 +65,10 @@ impl Scalable for ScaledInvChiSquared {
     }
 }
 
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct ScaledInvChiSquaredParameters {
     pub v: f64,
     pub t2: f64,
@@ -87,6 +96,7 @@ impl PartialEq for ScaledInvChiSquared {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum ScaledInvChiSquaredError {

@@ -1,4 +1,6 @@
 //! Χ<sup>-2</sup> over x in (0, ∞)
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -27,6 +29,7 @@ use std::sync::OnceLock;
 ///
 /// Parameters for the Inverse Chi-squared distribution
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct InvChiSquaredParameters {
@@ -35,6 +38,7 @@ pub struct InvChiSquaredParameters {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct InvChiSquared {
@@ -42,6 +46,7 @@ pub struct InvChiSquared {
     v: f64,
     // ln( 2^{-v/2} / gamma(v/2))
     #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     ln_f_const: OnceLock<f64>,
 }
 
@@ -67,6 +72,7 @@ crate::impl_shiftable!(InvChiSquared);
 crate::impl_scalable!(InvChiSquared);
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum InvChiSquaredError {

@@ -1,4 +1,6 @@
 //! Gamma distribution over x in (0, ∞)
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -28,6 +30,7 @@ mod poisson_prior;
 ///             Γ(α)
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Gamma {
@@ -35,9 +38,11 @@ pub struct Gamma {
     rate: f64,
     // ln(gamma(shape))
     #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     ln_gamma_shape: OnceLock<f64>,
     // ln(rate)
     #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     ln_rate: OnceLock<f64>,
 }
 
@@ -68,6 +73,7 @@ impl PartialEq for Gamma {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GammaError {

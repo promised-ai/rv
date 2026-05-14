@@ -1,4 +1,6 @@
 //! Beta distribution over x in (0, 1)
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -46,16 +48,21 @@ pub mod bernoulli_prior;
 /// assert!((p_pred_heads - 3.0/5.0).abs() < 1E-12);
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Beta {
     alpha: f64,
     beta: f64,
-    #[cfg_attr(feature = "serde1", serde(skip))]
     /// Cached ln(Beta(a, b))
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     ln_beta_ab: OnceLock<f64>,
 }
 
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct BetaParameters {
     pub alpha: f64,
     pub beta: f64,
@@ -83,6 +90,7 @@ impl PartialEq for Beta {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum BetaError {

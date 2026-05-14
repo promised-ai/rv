@@ -8,11 +8,14 @@ use rand::Rng;
 use std::fmt;
 use std::sync::OnceLock;
 
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
 /// Negative Binomial distribution errors
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NegBinomialError {
@@ -37,6 +40,7 @@ pub enum NegBinomialError {
 /// - r: The number of successes before the trials are stopped
 /// - p: The success probability
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NegBinomial {
@@ -44,9 +48,11 @@ pub struct NegBinomial {
     p: f64,
     // ln(1-p)
     #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     ln_1mp: OnceLock<f64>,
     // r*ln(p)
     #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     r_ln_p: OnceLock<f64>,
 }
 

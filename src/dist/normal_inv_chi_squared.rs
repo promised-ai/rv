@@ -2,6 +2,8 @@
 //!
 //! For a reference see section 6 of [Kevin Murphy's
 //! whitepaper](https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf).
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -19,6 +21,7 @@ use std::sync::OnceLock;
 /// Given `x ~ N(μ, σ)`, the Normal Inverse Chi Squared prior implies that
 /// `μ ~ N(m, σ/√k)` and `σ² ~ ScaledInvChiSquared(v, s2)`.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalInvChiSquared {
@@ -28,9 +31,14 @@ pub struct NormalInvChiSquared {
     s2: f64,
     /// Cached scaled inv X^2
     #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     scaled_inv_x2: OnceLock<ScaledInvChiSquared>,
 }
 
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalInvChiSquaredParameters {
     pub m: f64,
     pub k: f64,
@@ -65,6 +73,7 @@ impl PartialEq for NormalInvChiSquared {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NormalInvChiSquaredError {

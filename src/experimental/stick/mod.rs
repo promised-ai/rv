@@ -13,15 +13,17 @@ use crate::{
     traits::{HasDensity, InverseCdf, Sampleable, Support},
 };
 
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct HalfBeta {
     pub alpha: f64,
-    #[cfg_attr(feature = "serde1", serde(skip))]
     alpha_ln: f64,
 }
 

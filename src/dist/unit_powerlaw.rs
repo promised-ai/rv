@@ -1,4 +1,6 @@
 //! `UnitPowerLaw` distribution over x in (0, 1)
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -19,6 +21,7 @@ pub mod bernoulli_prior;
 
 /// Parameters for the `UnitPowerLaw` distribution
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct UnitPowerLawParameters {
@@ -54,6 +57,7 @@ impl From<UnitPowerLawParameters> for UnitPowerLaw {
 /// let powlaw = UnitPowerLaw::new(5.0).unwrap();
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[cfg_attr(
@@ -90,6 +94,7 @@ impl PartialEq for UnitPowerLaw {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum UnitPowerLawError {

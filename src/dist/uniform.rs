@@ -1,4 +1,6 @@
 //! Continuous uniform distribution, U(a, b) on the interval x in [a, b]
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -34,6 +36,7 @@ use std::sync::OnceLock;
 ///
 /// Parameters for the Uniform distribution
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct UniformParameters {
@@ -44,6 +47,7 @@ pub struct UniformParameters {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Uniform {
@@ -51,6 +55,7 @@ pub struct Uniform {
     b: f64,
     /// Cached value of the ln(PDF)
     #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with=rkyv::with::Skip))]
     lnf: OnceLock<f64>,
 }
 
@@ -108,6 +113,7 @@ impl PartialEq for Uniform {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum UniformError {

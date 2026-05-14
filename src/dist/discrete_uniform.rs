@@ -9,6 +9,8 @@ use rand_distr::uniform::SampleUniform;
 use std::f64;
 use std::fmt;
 
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -18,6 +20,7 @@ impl<T> DuParam for T where T: Integer + Copy {}
 /// [Discrete uniform distribution](https://en.wikipedia.org/wiki/Discrete_uniform_distribution),
 /// U(a, b) on the interval x in [a, b]
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct DiscreteUniform<T: DuParam> {
@@ -26,6 +29,7 @@ pub struct DiscreteUniform<T: DuParam> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum DiscreteUniformError {

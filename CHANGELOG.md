@@ -3,7 +3,7 @@
 ## [0.20.0] - 2026-05-14
 
 ### Changed
-- Updated `lru` crate to 0.6.3 in response to [RUSTSEC-2026-0002](https://rustsec.org/advisories/RUSTSEC-2026-0002.html)
+- Added `rkyv` feature. Supports most distributions.
 - `DataOrSuffStat` is `Copy`
 - `DataOrSuffStat` is now passed by value to `ConjugatePrior` methods
 - Overhauled experimental stick breaking distribution. Of note:

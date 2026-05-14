@@ -1,4 +1,6 @@
 //! Inverse Gaussian distribution over x in (0, ∞)
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -19,6 +21,7 @@ use crate::traits::{
 /// [Inverse Gaussian distribution](https://en.wikipedia.org/wiki/Inverse_Gaussian_distribution),
 /// N<sup>-1</sup>(μ, λ) over real values.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct InvGaussian {
@@ -28,6 +31,7 @@ pub struct InvGaussian {
     lambda: f64,
     /// Cached log(lambda)
     #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     ln_lambda: OnceLock<f64>,
 }
 
@@ -61,6 +65,7 @@ impl PartialEq for InvGaussian {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum InvGaussianError {

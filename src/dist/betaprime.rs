@@ -1,4 +1,6 @@
 //! Beta prime distribution over x in (0, ∞)
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -34,12 +36,14 @@ use crate::traits::{ConjugatePrior, DataOrSuffStat, HasSuffStat};
 /// let variance = betaprime.variance().unwrap();
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct BetaPrime {
     alpha: f64,
     beta: f64,
     #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     /// Cached ln(Beta(a, b))
     ln_beta_ab: OnceLock<f64>,
 }
@@ -71,6 +75,7 @@ impl PartialEq for BetaPrime {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum BetaPrimeError {

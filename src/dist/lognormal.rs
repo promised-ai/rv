@@ -1,4 +1,6 @@
 //! Log Normal Distribution over x in (0, ∞)
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +19,7 @@ use std::fmt;
 /// [LogNormal Distribution](https://en.wikipedia.org/wiki/Log-normal_distribution)
 /// If x ~ Normal(μ, σ), then e^x ~ LogNormal(μ, σ).
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct LogNormal {
     /// log scale mean
@@ -67,6 +70,7 @@ impl Parameterized for LogNormal {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum LogNormalError {

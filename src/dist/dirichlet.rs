@@ -1,4 +1,6 @@
 //! Dirichlet and Symmetric Dirichlet distributions over simplexes
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +24,7 @@ mod categorical_prior;
 /// `Dirichlet { alphas: vec![alpha; k] }`. This version has some extra
 /// optimizations to seep up computing the PDF and drawing random vectors.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct SymmetricDirichlet {
@@ -29,6 +32,7 @@ pub struct SymmetricDirichlet {
     k: usize,
     /// Cached `ln_gamma(alpha)`
     #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     ln_gamma_alpha: OnceLock<f64>,
 }
 
@@ -59,6 +63,7 @@ impl PartialEq for SymmetricDirichlet {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum SymmetricDirichletError {
@@ -240,6 +245,7 @@ impl HasDensity<Vec<f64>> for SymmetricDirichlet {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum DirichletError {
@@ -256,6 +262,7 @@ pub enum DirichletError {
 /// [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution)
 /// over points on the k-simplex.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Dirichlet {

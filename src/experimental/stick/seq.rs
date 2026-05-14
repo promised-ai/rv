@@ -1,6 +1,8 @@
 use arc_swap::ArcSwap;
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256Plus;
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -9,7 +11,7 @@ use super::HalfBeta;
 use crate::experimental::stick::StickWeights;
 use crate::traits::Rv;
 
-// This allows us to searlize around all the ArcSwap stuff
+// This allows us to searlize around all the ArcSwap stuff (in serde)
 #[cfg(feature = "serde1")]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
@@ -40,10 +42,12 @@ impl From<StickSequence> for StickSequenceFmt {
 
 // NOTE: We currently derive PartialEq, but this (we think) compares the
 // internal state of the RNGs, which is probably not what we want.
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
-#[derive(Clone, Debug, PartialEq)]
 pub struct _Inner {
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv_support::XoshiroRkyvWrapper))]
     rng: Xoshiro256Plus,
     // Remaining mass
     pub rm_mass: f64,
@@ -104,8 +108,12 @@ impl _Inner {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 struct SharedState {
+    #[cfg_attr(feature="rkyv", rkyv(with = rkyv_support::ArcSwapRkyvWrapper))]
     inner: ArcSwap<_Inner>,
+    #[cfg_attr(feature="rkyv", rkyv(with = rkyv::with::Lock))]
     write_lock: Mutex<()>,
 }
 
@@ -119,6 +127,7 @@ impl SharedState {
 }
 
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(
     feature = "serde1",
     serde(
@@ -328,5 +337,117 @@ impl StickSequence {
         F: Fn(&_Inner) -> bool,
     {
         self.with_inner_mut(|inner| inner.extend_until(&self.breaker, p))
+    }
+}
+
+#[cfg(feature = "rkyv")]
+mod rkyv_support {
+    use super::*;
+    use rkyv::Place;
+    use rkyv::rancor::Fallible;
+    use rkyv::with::{ArchiveWith, DeserializeWith, SerializeWith};
+
+    pub struct XoshiroRkyvWrapper;
+
+    impl ArchiveWith<Xoshiro256Plus> for XoshiroRkyvWrapper {
+        type Archived = <[u64; 4] as Archive>::Archived;
+        type Resolver = <[u64; 4] as Archive>::Resolver;
+
+        #[inline]
+        fn resolve_with(
+            field: &Xoshiro256Plus,
+            resolver: Self::Resolver,
+            out: Place<Self::Archived>,
+        ) {
+            // Safe: Xoshiro256Plus memory layout is a single [u64; 4]
+            let state: &[u64; 4] = unsafe { core::mem::transmute(field) };
+            state.resolve(resolver, out);
+        }
+    }
+
+    impl<S: Fallible + ?Sized> SerializeWith<Xoshiro256Plus, S>
+        for XoshiroRkyvWrapper
+    where
+        [u64; 4]: Serialize<S>,
+    {
+        #[inline]
+        fn serialize_with(
+            field: &Xoshiro256Plus,
+            serializer: &mut S,
+        ) -> Result<Self::Resolver, S::Error> {
+            let state: &[u64; 4] = unsafe { core::mem::transmute(field) };
+            state.serialize(serializer)
+        }
+    }
+
+    impl<D: Fallible + ?Sized>
+        DeserializeWith<<[u64; 4] as Archive>::Archived, Xoshiro256Plus, D>
+        for XoshiroRkyvWrapper
+    where
+        <[u64; 4] as Archive>::Archived: Deserialize<[u64; 4], D>,
+    {
+        #[inline]
+        fn deserialize_with(
+            archived: &<[u64; 4] as Archive>::Archived,
+            deserializer: &mut D,
+        ) -> Result<Xoshiro256Plus, D::Error> {
+            // Deserialize the array, then transmute back to the RNG state
+            let state: [u64; 4] = archived.deserialize(deserializer)?;
+            Ok(unsafe { core::mem::transmute(state) })
+        }
+    }
+
+    pub struct ArcSwapRkyvWrapper;
+
+    impl<T> ArchiveWith<ArcSwap<T>> for ArcSwapRkyvWrapper
+    where
+        Arc<T>: Archive,
+    {
+        type Archived = <Arc<T> as Archive>::Archived;
+        type Resolver = <Arc<T> as Archive>::Resolver;
+
+        #[inline]
+        fn resolve_with(
+            field: &ArcSwap<T>,
+            resolver: Self::Resolver,
+            out: Place<Self::Archived>,
+        ) {
+            // Grab a clone of the underlying Arc<T>
+            let arc = field.load_full();
+            arc.resolve(resolver, out);
+        }
+    }
+
+    impl<T, S> SerializeWith<ArcSwap<T>, S> for ArcSwapRkyvWrapper
+    where
+        S: Fallible + ?Sized,
+        Arc<T>: Serialize<S>,
+    {
+        #[inline]
+        fn serialize_with(
+            field: &ArcSwap<T>,
+            serializer: &mut S,
+        ) -> Result<Self::Resolver, S::Error> {
+            let arc = field.load_full();
+            arc.serialize(serializer)
+        }
+    }
+
+    impl<T: Archive, D>
+        DeserializeWith<<Arc<T> as Archive>::Archived, ArcSwap<T>, D>
+        for ArcSwapRkyvWrapper
+    where
+        D: Fallible + ?Sized,
+        <Arc<T> as Archive>::Archived: Deserialize<Arc<T>, D>,
+    {
+        #[inline]
+        fn deserialize_with(
+            archived: &<Arc<T> as Archive>::Archived,
+            deserializer: &mut D,
+        ) -> Result<ArcSwap<T>, D::Error> {
+            // Deserialize the Arc<T>, then wrap it in a new ArcSwap
+            let arc: Arc<T> = archived.deserialize(deserializer)?;
+            Ok(ArcSwap::new(arc))
+        }
     }
 }

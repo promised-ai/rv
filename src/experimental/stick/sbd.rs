@@ -7,11 +7,14 @@ use crate::traits::{
     DiscreteDistr, Entropy, HasDensity, InverseCdf, Sampleable, Support,
 };
 use rand::Rng;
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
 /// A "Stick-breaking discrete" distribution parameterized by a `StickSequence`.
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct StickBreakingDiscrete {
     sticks: StickSequence,
@@ -144,6 +147,39 @@ mod test {
 
             // Different seed should fail (testing that the test holds)
             assert!((1.0 - ln_f2 / ln_f0).abs() > 0.01);
+        }
+    }
+
+    #[cfg(feature = "rkyv")]
+    #[test]
+    fn rkyv_seed_control() {
+        use rand::SeedableRng;
+        use rkyv::rancor::Error;
+
+        let mut rng = rand::rng();
+
+        let sbd_orig =
+            StickBreakingDiscrete::from_alpha(2.0, Some(1337)).unwrap();
+        sbd_orig.sample(5, &mut rng);
+
+        let bytes = rkyv::to_bytes::<Error>(&sbd_orig).unwrap();
+        let archived = rkyv::access::<
+            <StickBreakingDiscrete as rkyv::Archive>::Archived,
+            Error,
+        >(&bytes)
+        .unwrap();
+        let sbd_recr: StickBreakingDiscrete =
+            rkyv::deserialize::<StickBreakingDiscrete, Error>(archived)
+                .unwrap();
+
+        let mut rng = rand_xoshiro::Xoshiro256Plus::seed_from_u64(1337);
+        let draws_orig = sbd_orig.sample(100, &mut rng);
+
+        let mut rng = rand_xoshiro::Xoshiro256Plus::seed_from_u64(1337);
+        let draws_recr = sbd_recr.sample(100, &mut rng);
+
+        for (orig, recr) in draws_orig.into_iter().zip(draws_recr) {
+            assert_eq!(orig, recr);
         }
     }
 }

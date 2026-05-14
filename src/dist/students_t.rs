@@ -1,3 +1,5 @@
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -13,6 +15,7 @@ use std::fmt;
 
 /// Parameters for Student's T distribution
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct StudentsTParameters {
@@ -23,6 +26,7 @@ pub struct StudentsTParameters {
 /// [Student's T distribution](https://en.wikipedia.org/wiki/Student%27s_t-distribution)
 /// over x in (-∞, ∞).
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct StudentsT {
@@ -46,6 +50,7 @@ crate::impl_shiftable!(StudentsT);
 crate::impl_scalable!(StudentsT);
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum StudentsTError {

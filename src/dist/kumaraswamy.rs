@@ -1,4 +1,6 @@
 //! Kumaraswamy distribution over x in (0, 1)
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -48,13 +50,15 @@ use std::sync::OnceLock;
 /// }
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Kumaraswamy {
     a: f64,
     b: f64,
-    #[cfg_attr(feature = "serde1", serde(skip))]
     /// Cached log(a*b)
+    #[cfg_attr(feature = "serde1", serde(skip))]
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     ab_ln: OnceLock<f64>,
 }
 
@@ -88,6 +92,7 @@ impl PartialEq for Kumaraswamy {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum KumaraswamyError {
