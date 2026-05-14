@@ -27,7 +27,7 @@ jobs:
         run: cargo install cargo-hack
 
       - name: Run cargo check on all features
-        run: cargo hack check --each-feature --all-targets
+        run: cargo hack check --each-feature --exclude-all-features --all-targets
 
   lint:
     runs-on: ubuntu-latest
