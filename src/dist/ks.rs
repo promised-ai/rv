@@ -1,6 +1,8 @@
 //! Kolmogorow-Smirnov two-sided test for large values of N.
 //! Heavily inspired by `SciPy`'s implementation which can be found here:
 //! <https://github.com/scipy/scipy/blob/a767030252ba3f7c8e2924847dffa7024171657b/scipy/special/cephes/kolmogorov.c#L153>
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -40,6 +42,7 @@ fn within_tol(x: f64, y: f64, atol: f64, rtol: f64) -> bool {
 /// assert!((sf - EXPECTED).abs() < 1E-15);
 /// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct KsTwoAsymptotic {}

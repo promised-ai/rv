@@ -30,7 +30,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
         CategoricalSuffStat::new(self.k())
     }
 
-    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
+    fn posterior(&self, x: CategoricalData<X>) -> Self::Posterior {
         extract_stat_then(self, x, |stat: &CategoricalSuffStat| {
             let alphas: Vec<f64> =
                 stat.counts().iter().map(|&ct| self.alpha() + ct).collect();
@@ -50,7 +50,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     fn ln_m_with_cache(
         &self,
         cache: &Self::MCache,
-        x: &CategoricalData<X>,
+        x: CategoricalData<X>,
     ) -> f64 {
         let sum_alpha = self.alpha() * self.k() as f64;
 
@@ -66,7 +66,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical>
     }
 
     #[inline]
-    fn ln_pp_cache(&self, x: &CategoricalData<X>) -> Self::PpCache {
+    fn ln_pp_cache(&self, x: CategoricalData<X>) -> Self::PpCache {
         let post = self.posterior(x);
         let norm = post.alphas().iter().fold(0.0, |acc, &a| acc + a);
         (post.alphas, norm.ln())
@@ -100,7 +100,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
         CategoricalSuffStat::new(self.k())
     }
 
-    fn posterior(&self, x: &CategoricalData<X>) -> Self::Posterior {
+    fn posterior(&self, x: CategoricalData<X>) -> Self::Posterior {
         extract_stat_then(self, x, |stat: &CategoricalSuffStat| {
             let alphas: Vec<f64> = self
                 .alphas()
@@ -127,7 +127,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     fn ln_m_with_cache(
         &self,
         cache: &Self::MCache,
-        x: &CategoricalData<X>,
+        x: CategoricalData<X>,
     ) -> f64 {
         let (sum_alpha, ln_norm) = cache;
         extract_stat_then(self, x, |stat: &CategoricalSuffStat| {
@@ -144,7 +144,7 @@ impl<X: CategoricalDatum> ConjugatePrior<X, Categorical> for Dirichlet {
     }
 
     #[inline]
-    fn ln_pp_cache(&self, x: &CategoricalData<X>) -> Self::PpCache {
+    fn ln_pp_cache(&self, x: CategoricalData<X>) -> Self::PpCache {
         let post = self.posterior(x);
         let norm = post.alphas().iter().fold(0.0, |acc, &a| acc + a);
         (post.alphas, norm.ln())
@@ -197,7 +197,7 @@ mod test {
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
             let csd = SymmetricDirichlet::new(alpha, k).unwrap();
-            let m = csd.ln_m(&data);
+            let m = csd.ln_m(data);
 
             assert::close(-11.328_521_741_971_9, m, TOL);
         }
@@ -216,7 +216,7 @@ mod test {
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
             let csd = SymmetricDirichlet::new(alpha, k).unwrap();
-            let m = csd.ln_m(&data);
+            let m = csd.ln_m(data);
 
             assert::close(-22.437_719_300_855_2, m, TOL);
         }
@@ -235,7 +235,7 @@ mod test {
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
             let csd = SymmetricDirichlet::new(alpha, k).unwrap();
-            let m = csd.ln_m(&data);
+            let m = csd.ln_m(data);
 
             assert::close(-22.420_386_389_729_3, m, TOL);
         }
@@ -273,7 +273,7 @@ mod test {
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
             let csd = SymmetricDirichlet::new(1.0, 4).unwrap();
-            let cd = csd.posterior(&data);
+            let cd = csd.posterior(data);
             let ctgrl: Categorical = cd.draw(&mut rng);
 
             assert!(ctgrl.ln_weights().iter().all(|lw| *lw < 0.0));
@@ -287,7 +287,7 @@ mod test {
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
             let csd = SymmetricDirichlet::new(1.0, 4).unwrap();
-            let cd = csd.posterior(&data);
+            let cd = csd.posterior(data);
             let ctgrl: Categorical = cd.draw(&mut rng);
 
             let ln_weights = ctgrl.ln_weights();
@@ -307,7 +307,7 @@ mod test {
             let xs: Vec<u8> = vec![0, 1, 1, 1, 1, 2, 2, 2, 2, 2];
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
-            let lp = csd.ln_pp(&0, &data);
+            let lp = csd.ln_pp(&0, data);
             assert::close(lp, -1.871_802_176_901_59, TOL);
         }
 
@@ -318,7 +318,7 @@ mod test {
             let xs: Vec<u8> = vec![0, 1, 1, 1, 1, 2, 2, 2, 2, 2];
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
-            let lp = csd.ln_pp(&1, &data);
+            let lp = csd.ln_pp(&1, data);
             assert::close(lp, -0.955_511_445_027_44, TOL);
         }
 
@@ -328,7 +328,7 @@ mod test {
             let xs: Vec<u8> = vec![0, 1, 1, 1, 1, 2, 2, 2, 2, 2];
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
-            let lp = csd.ln_pp(&0, &data);
+            let lp = csd.ln_pp(&0, data);
             assert::close(lp, -1.609_437_912_434_1, TOL);
         }
 
@@ -341,7 +341,7 @@ mod test {
             ];
             let data: CategoricalData<u8> = DataOrSuffStat::Data(&xs);
 
-            let lp = csd.ln_pp(&0, &data);
+            let lp = csd.ln_pp(&0, data);
             assert::close(lp, -2.313_634_929_180_62, TOL);
         }
 

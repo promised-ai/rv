@@ -39,7 +39,7 @@ impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
     }
 
     #[allow(clippy::many_single_char_names)]
-    fn posterior(&self, x: &DataOrSuffStat<X, Bernoulli>) -> Self {
+    fn posterior(&self, x: DataOrSuffStat<X, Bernoulli>) -> Self {
         let (n, k) = match x {
             DataOrSuffStat::Data(xs) => {
                 let mut stat = BernoulliSuffStat::new();
@@ -65,14 +65,14 @@ impl<X: Booleable> ConjugatePrior<X, Bernoulli> for Beta {
     fn ln_m_with_cache(
         &self,
         cache: &Self::MCache,
-        x: &DataOrSuffStat<X, Bernoulli>,
+        x: DataOrSuffStat<X, Bernoulli>,
     ) -> f64 {
         let post = self.posterior(x);
         post.alpha().ln_beta(post.beta()) - cache
     }
 
     #[inline]
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<X, Bernoulli>) -> Self::PpCache {
+    fn ln_pp_cache(&self, x: DataOrSuffStat<X, Bernoulli>) -> Self::PpCache {
         //  P(y=1 | xs) happens to be the posterior mean
         let post = self.posterior(x);
         let p: f64 = post.mean().expect("Mean undefined");
@@ -99,7 +99,7 @@ mod tests {
         let data = vec![false, true, false, true, true];
         let xs = DataOrSuffStat::Data::<bool, Bernoulli>(&data);
 
-        let posterior = Beta::new(1.0, 1.0).unwrap().posterior(&xs);
+        let posterior = Beta::new(1.0, 1.0).unwrap().posterior(xs);
 
         assert::close(posterior.alpha(), 4.0, TOL);
         assert::close(posterior.beta(), 3.0, TOL);
@@ -110,7 +110,7 @@ mod tests {
         let data: Vec<u16> = vec![0, 1, 0, 1, 1];
         let xs = DataOrSuffStat::Data::<u16, Bernoulli>(&data);
 
-        let posterior = Beta::new(1.0, 1.0).unwrap().posterior(&xs);
+        let posterior = Beta::new(1.0, 1.0).unwrap().posterior(xs);
 
         assert::close(posterior.alpha(), 4.0, TOL);
         assert::close(posterior.beta(), 3.0, TOL);

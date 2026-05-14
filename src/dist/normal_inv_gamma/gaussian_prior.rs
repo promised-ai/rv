@@ -68,7 +68,7 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
         GaussianSuffStat::new()
     }
 
-    fn posterior(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self {
+    fn posterior(&self, x: DataOrSuffStat<f64, Gaussian>) -> Self {
         dos_to_post!(self, x).into()
     }
 
@@ -80,14 +80,14 @@ impl ConjugatePrior<f64, Gaussian> for NormalInvGamma {
     fn ln_m_with_cache(
         &self,
         cache: &Self::MCache,
-        x: &DataOrSuffStat<f64, Gaussian>,
+        x: DataOrSuffStat<f64, Gaussian>,
     ) -> f64 {
         let (n, post) = dos_to_post!(# self, x);
         let lnz_n = ln_z(post.v, post.a, post.b);
         (n as f64).mul_add(-HALF_LN_2PI, lnz_n - cache)
     }
 
-    fn ln_pp_cache(&self, x: &DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
+    fn ln_pp_cache(&self, x: DataOrSuffStat<f64, Gaussian>) -> Self::PpCache {
         let params = dos_to_post!(self, x);
         let PosteriorParameters { v, a, b, .. } = params;
 
@@ -236,7 +236,7 @@ mod test {
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let reference = alternate_ln_marginal(&xs, m, v, a, b);
         let nig = NormalInvGamma::new(m, v, a, b).unwrap();
-        let ln_m = nig.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let ln_m = nig.ln_m(DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         assert::close(reference, ln_m, TOL);
     }
@@ -251,8 +251,7 @@ mod test {
 
         let (m, v, a, b) = (1.0, 2.2, 3.3, 4.4);
         let nig = NormalInvGamma::new(m, v, a, b).unwrap();
-        let ln_m = nig.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
-        // let ln_m = alternate_ln_marginal(&xs, m, v, a, b);
+        let ln_m = nig.ln_m(DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
             nig.sample_stream(&mut rand::rng())
@@ -278,7 +277,7 @@ mod test {
 
         let (m, v, a, b) = (1.0, 2.2, 3.3, 4.4);
         let nig = NormalInvGamma::new(m, v, a, b).unwrap();
-        let ln_m = nig.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let ln_m = nig.ln_m(DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
             let mut rng = rand::rng();
@@ -308,8 +307,8 @@ mod test {
         let y: f64 = -0.3;
         let (m, v, a, b) = (1.0, 2.2, 3.3, 4.4);
         let nig = NormalInvGamma::new(m, v, a, b).unwrap();
-        let post = nig.posterior(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
-        let ln_pp = nig.ln_pp(&y, &DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let post = nig.posterior(DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let ln_pp = nig.ln_pp(&y, DataOrSuffStat::<f64, Gaussian>::from(&xs));
         // let ln_m = alternate_ln_marginal(&xs, m, v, a, b);
 
         let mc_est = {
@@ -328,8 +327,8 @@ mod test {
         let y: f64 = -0.3;
         let (m, v, a, b) = (0.0, 1.2, 2.3, 3.4);
         let nig = NormalInvGamma::new(m, v, a, b).unwrap();
-        let ln_pp = nig.ln_pp(&y, &DataOrSuffStat::from(&vec![]));
-        let ln_m = nig.ln_m(&DataOrSuffStat::from(&vec![y]));
+        let ln_pp = nig.ln_pp(&y, DataOrSuffStat::from(&vec![]));
+        let ln_m = nig.ln_m(DataOrSuffStat::from(&vec![y]));
         assert::close(ln_pp, ln_m, TOL);
     }
 
@@ -341,7 +340,6 @@ mod test {
         let xs = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let y: f64 = -0.3;
         let (m, v, a, b) = (0.0, 1.2, 2.3, 3.4);
-        // let (m, v, a, b) = (0.0, 1.0, 1.0, 1.0);
         let (mn, vn, an, bn) = post_params(&xs, m, v, a, b);
 
         let ln_f_t = {
@@ -358,7 +356,7 @@ mod test {
         let ln_pp = {
             let nig = NormalInvGamma::new(m, v, a, b).unwrap();
 
-            nig.ln_pp(&y, &DataOrSuffStat::<f64, Gaussian>::from(&xs))
+            nig.ln_pp(&y, DataOrSuffStat::<f64, Gaussian>::from(&xs))
         };
         assert::close(ln_f_t, ln_pp, TOL);
     }

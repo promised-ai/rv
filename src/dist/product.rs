@@ -246,14 +246,14 @@ macro_rules! tuple_conjugate_prior {
                 fn ln_m_with_cache(
                     &self,
                     cache: &Self::MCache,
-                    x: &DataOrSuffStat<($($x,)*), ($($f,)*)>,
+                    x: DataOrSuffStat<($($x,)*), ($($f,)*)>,
                 ) -> f64 {
                     match x {
                         DataOrSuffStat::Data(items) => {
-                            0.0 $(+ self.$n.ln_m_with_cache(&cache.$n, &DataOrSuffStat::Data(&items.iter().map(|x| x.$n).collect::<Vec<_>>())))*
+                            0.0 $(+ self.$n.ln_m_with_cache(&cache.$n, DataOrSuffStat::Data(&items.iter().map(|x| x.$n).collect::<Vec<_>>())))*
                         }
                         DataOrSuffStat::SuffStat(stats) => {
-                            0.0 $(+ self.$n.ln_m_with_cache(&cache.$n, &DataOrSuffStat::SuffStat(&stats.$n)))*
+                            0.0 $(+ self.$n.ln_m_with_cache(&cache.$n, DataOrSuffStat::SuffStat(&stats.$n)))*
                         }
                     }
                 }
@@ -262,14 +262,14 @@ macro_rules! tuple_conjugate_prior {
                 #[allow(clippy::unused_unit)]
                 fn ln_pp_cache(
                     &self,
-                    x: &DataOrSuffStat<($($x,)*), ($($f,)*)>,
+                    x: DataOrSuffStat<($($x,)*), ($($f,)*)>,
                 ) -> Self::PpCache {
                     match x {
                         DataOrSuffStat::Data(items) => {
-                            ($(self.$n.ln_pp_cache(&DataOrSuffStat::Data(&items.iter().map(|x| x.$n).collect::<Vec<_>>())),)*)
+                            ($(self.$n.ln_pp_cache(DataOrSuffStat::Data(&items.iter().map(|x| x.$n).collect::<Vec<_>>())),)*)
                         }
                         DataOrSuffStat::SuffStat(stats) => {
-                            ($(self.$n.ln_pp_cache(&DataOrSuffStat::SuffStat(&stats.$n)),)*)
+                            ($(self.$n.ln_pp_cache(DataOrSuffStat::SuffStat(&stats.$n)),)*)
                         }
                     }
                 }
@@ -627,15 +627,14 @@ mod tests {
         assert_eq!(stat.0.sum_sq_diff(), 2.0);
         assert_eq!(stat.1.sum_sq_diff(), 2.0);
 
-        let posterior =
-            h.posterior(&crate::data::DataOrSuffStat::SuffStat(&stat));
+        let posterior = h.posterior(DataOrSuffStat::SuffStat(&stat));
 
         assert_eq!(
-            h.0.posterior(&DataOrSuffStat::SuffStat(&stat.0)),
+            h.0.posterior(DataOrSuffStat::SuffStat(&stat.0)),
             posterior.0
         );
         assert_eq!(
-            h.1.posterior(&DataOrSuffStat::SuffStat(&stat.1)),
+            h.1.posterior(DataOrSuffStat::SuffStat(&stat.1)),
             posterior.1
         );
     }

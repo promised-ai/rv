@@ -2,6 +2,8 @@
 //!
 //! For a reference see section 6 of [Kevin Murphy's
 //! whitepaper](https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf).
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -19,6 +21,7 @@ use crate::traits::{HasDensity, Parameterized, Sampleable};
 /// Given `x ~ N(μ, σ)`, the Normal Inverse Gamma prior implies that
 /// `μ ~ N(m, sqrt(v)σ)` and `ρ ~ InvGamma(a, b)`.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalInvGamma {
@@ -28,6 +31,10 @@ pub struct NormalInvGamma {
     b: f64,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalInvGammaParameters {
     pub m: f64,
     pub v: f64,
@@ -53,6 +60,7 @@ impl Parameterized for NormalInvGamma {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NormalInvGammaError {

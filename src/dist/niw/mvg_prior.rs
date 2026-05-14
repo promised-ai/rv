@@ -31,7 +31,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         MvGaussianSuffStat::new(self.ndims())
     }
 
-    fn posterior(&self, x: &MvgData) -> NormalInvWishart {
+    fn posterior(&self, x: MvgData) -> NormalInvWishart {
         if x.n() == 0 {
             return self.clone();
         }
@@ -66,16 +66,17 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         ln_z(self.k(), self.df(), self.scale())
     }
 
-    fn ln_m_with_cache(&self, cache: &Self::MCache, x: &MvgData) -> f64 {
+    fn ln_m_with_cache(&self, cache: &Self::MCache, x: MvgData) -> f64 {
         let z0 = cache;
+        let n = x.n() as f64;
         let post = self.posterior(x);
         let zn = ln_z(post.k(), post.df(), post.scale());
-        let nd: f64 = (self.ndims() as f64) * (x.n() as f64);
+        let nd: f64 = (self.ndims() as f64) * n;
 
         (nd / 2.0).mul_add(-LN_2PI, zn - z0)
     }
 
-    fn ln_pp_cache(&self, x: &MvgData) -> Self::PpCache {
+    fn ln_pp_cache(&self, x: MvgData) -> Self::PpCache {
         let post = self.posterior(x);
         let zn = ln_z(post.k(), post.df(), post.scale());
         (post, zn)
@@ -89,7 +90,7 @@ impl ConjugatePrior<DVector<f64>, MvGaussian> for NormalInvWishart {
         y_stat.observe(y);
         let y_packed = DataOrSuffStat::SuffStat(&y_stat);
 
-        let pred = post.posterior(&y_packed);
+        let pred = post.posterior(y_packed);
 
         let zm = ln_z(pred.k(), pred.df(), pred.scale());
 
@@ -160,7 +161,7 @@ mod tests {
         let obs = obs_fxtr();
         let data: MvgData = DataOrSuffStat::SuffStat(&obs);
 
-        let pp = niw.ln_m(&data);
+        let pp = niw.ln_m(data);
 
         assert::close(pp, -16.392_377_722_027_5, TOL);
     }
@@ -190,7 +191,7 @@ mod tests {
         let mut suff_stat = MvGaussianSuffStat::new(2);
         suff_stat.observe_many(&data);
 
-        let posterior = niw.posterior(&MvgData::SuffStat(&suff_stat));
+        let posterior = niw.posterior(MvgData::SuffStat(&suff_stat));
         assert!(posterior.mu.relative_eq(
             &dvector![8.950_249, 9.955_224],
             1e-6,

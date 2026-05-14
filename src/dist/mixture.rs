@@ -1,3 +1,5 @@
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize, with::Skip};
 #[cfg(feature = "serde1")]
 use serde::de::{self, Deserializer, MapAccess, SeqAccess, Visitor};
 #[cfg(feature = "serde1")]
@@ -34,6 +36,7 @@ use std::sync::OnceLock;
 /// let mm = Mixture::new(vec![0.6, 0.4], vec![g1, g2]).unwrap();
 /// ```
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 pub struct Mixture<Fx> {
     /// The weights for each component distribution. All entries must be
     /// positive and sum to 1.
@@ -41,6 +44,7 @@ pub struct Mixture<Fx> {
     /// The component distributions.
     components: Vec<Fx>,
     // Cached ln(weights)
+    #[cfg_attr(feature = "rkyv", rkyv(with = Skip))]
     ln_weights: OnceLock<Vec<f64>>,
 }
 
@@ -76,6 +80,7 @@ impl<Fx: Parameterized> Parameterized for Mixture<Fx> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum MixtureError {

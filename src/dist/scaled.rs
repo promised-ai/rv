@@ -5,6 +5,8 @@ use crate::traits::{
     Variance,
 };
 use rand::Rng;
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -22,6 +24,7 @@ use std::fmt;
 /// assert_eq!(scaled.variance(), Some(25.0));
 /// ```
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Scaled<D> {
@@ -32,6 +35,9 @@ pub struct Scaled<D> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum ScaledError {
     /// The scale parameter must be a normal (finite, non-zero, non-subnormal) number
     NonNormalScale(f64),

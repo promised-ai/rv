@@ -61,7 +61,7 @@ macro_rules! impl_traits {
                 GaussianSuffStat::new()
             }
 
-            fn posterior(&self, x: &DataOrSuffStat<$kind, Gaussian>) -> Self {
+            fn posterior(&self, x: DataOrSuffStat<$kind, Gaussian>) -> Self {
                 dos_to_post!(self, x).into()
             }
 
@@ -73,14 +73,14 @@ macro_rules! impl_traits {
             fn ln_m_with_cache(
                 &self,
                 cache: &Self::MCache,
-                x: &DataOrSuffStat<$kind, Gaussian>,
+                x: DataOrSuffStat<$kind, Gaussian>,
             ) -> f64 {
                 let (n, post) = dos_to_post!(# self, x);
                 let lnz_n = ln_z(post.r, post.s, post.v);
                 (-(n as f64)).mul_add(HALF_LN_2PI, lnz_n) - cache
             }
 
-            fn ln_pp_cache(&self, x: &DataOrSuffStat<$kind, Gaussian>) -> Self::PpCache {
+            fn ln_pp_cache(&self, x: DataOrSuffStat<$kind, Gaussian>) -> Self::PpCache {
                 extract_stat_then(self, x, |stat| {
                     let params = posterior_from_stat(self, stat);
                     let PosteriorParameters { r, s, v, .. } = params;
@@ -166,7 +166,7 @@ mod tests {
         let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4).unwrap();
         let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
         let x = GaussianData::<f64>::Data(&data);
-        let m = ng.ln_m(&x);
+        let m = ng.ln_m(x);
         assert::close(m, -7.697_070_183_440_38, TOL);
     }
 
@@ -179,7 +179,7 @@ mod tests {
         stat.observe(&3.0);
         stat.observe(&4.0);
         let x = GaussianData::<f64>::SuffStat(&stat);
-        let m = ng.ln_m(&x);
+        let m = ng.ln_m(x);
         assert::close(m, -7.697_070_183_440_38, TOL);
     }
 
@@ -194,7 +194,7 @@ mod tests {
         stat.observe(&5.0);
         stat.forget(&5.0);
         let x = GaussianData::<f64>::SuffStat(&stat);
-        let m = ng.ln_m(&x);
+        let m = ng.ln_m(x);
         assert::close(m, -7.697_070_183_440_38, TOL);
     }
 
@@ -203,7 +203,7 @@ mod tests {
         let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4).unwrap();
         let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
         let x = GaussianData::<f64>::Data(&data);
-        let pp = ng.ln_pp(&3.0, &x);
+        let pp = ng.ln_pp(&3.0, x);
         assert::close(pp, -1.284_386_384_996_11, TOL);
     }
 
@@ -212,7 +212,7 @@ mod tests {
         let ng = NormalGamma::new(2.1, 1.2, 1.3, 1.4).unwrap();
         let data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
         let x = GaussianData::<f64>::Data(&data);
-        let pp = ng.ln_pp(&-3.0, &x);
+        let pp = ng.ln_pp(&-3.0, x);
         assert::close(pp, -6.163_769_886_218_6, TOL);
     }
 
@@ -226,7 +226,7 @@ mod tests {
 
         let (m, r, s, v) = (0.0, 1.2, 2.3, 3.4);
         let ng = NormalGamma::new(m, r, s, v).unwrap();
-        let ln_m = ng.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let ln_m = ng.ln_m(DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
             ng.sample_stream(&mut rand::rng())
@@ -251,21 +251,15 @@ mod tests {
 
         let (m, r, s, v) = (1.0, 2.2, 3.3, 4.4);
         let ng = NormalGamma::new(m, r, s, v).unwrap();
-        let ln_m = ng.ln_m(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
-        let post = ng.posterior(&DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let ln_m = ng.ln_m(DataOrSuffStat::<f64, Gaussian>::from(&xs));
+        let post = ng.posterior(DataOrSuffStat::<f64, Gaussian>::from(&xs));
 
         let mc_est = {
             let mut rng = rand::rng();
-            // let pr_p = Gamma::new(1.6, 2.2).unwrap();
-            // let pr_m = Gaussian::new(1.0, 2.0).unwrap();
             let ln_fs = (0..n_samples).map(|_| {
-                // let mu: f64 = pr_m.draw(&mut rng);
-                // let prec: f64 = pr_p.draw(&mut rng);
-                // let gauss = Gaussian::new(mu, prec.sqrt().recip()).unwrap();
                 let gauss: Gaussian = post.draw(&mut rng);
                 let ln_f = xs.iter().map(|x| gauss.ln_f(x)).sum::<f64>();
 
-                // ln_f + ng.ln_f(&gauss) - pr_m.ln_f(&mu) - pr_p.ln_f(&prec)
                 ln_f + ng.ln_f(&gauss) - post.ln_f(&gauss)
             });
             ln_fs.logsumexp() - f64::from(n_samples).ln()

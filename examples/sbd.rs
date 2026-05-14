@@ -2,14 +2,14 @@ fn main() {
     #[cfg(feature = "experimental")]
     {
         use rand_xoshiro::rand_core::SeedableRng;
-        use rv::experimental::stick_breaking_process::{
-            StickBreaking, StickBreakingDiscrete, StickSequence,
+        use rv::experimental::stick::{
+            HalfBeta, StickBreaking, StickBreakingDiscrete, StickSequence,
         };
         use rv::prelude::*;
 
         // Instantiate a stick-breaking process
         let alpha = 10.0;
-        let sbp = StickBreaking::new(UnitPowerLaw::new(alpha).unwrap());
+        let sbp = StickBreaking::new(HalfBeta::new(alpha).unwrap());
 
         // Sample from it to get a StickSequence
         let mut rng = rand_xoshiro::Xoshiro256PlusPlus::seed_from_u64(42);

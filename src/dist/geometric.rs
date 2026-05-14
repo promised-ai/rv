@@ -1,4 +1,6 @@
 //! Poisson distribution on unsigned integers
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -32,6 +34,7 @@ use std::sync::OnceLock;
 ///
 /// Parameters for the Geometric distribution
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct GeometricParameters {
@@ -40,14 +43,17 @@ pub struct GeometricParameters {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Geometric {
     p: f64,
     // ln_(p)
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_p: OnceLock<f64>,
     // ln_(1-p)
+    #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
     #[cfg_attr(feature = "serde1", serde(skip))]
     ln_1mp: OnceLock<f64>,
 }
@@ -65,6 +71,7 @@ impl Parameterized for Geometric {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GeometricError {

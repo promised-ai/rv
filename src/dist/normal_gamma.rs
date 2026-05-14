@@ -1,4 +1,6 @@
 //! A common conjugate prior for Gaussians with unknown mean and variance
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +19,7 @@ mod gaussian_prior;
 /// Given `x ~ N(μ, σ)`, the Normal Gamma prior implies that `μ ~ N(m, 1/(rρ))`
 /// and `ρ ~ Gamma(ν/2, s/2)`.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalGamma {
@@ -26,6 +29,10 @@ pub struct NormalGamma {
     v: f64,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalGammaParameters {
     pub m: f64,
     pub r: f64,
@@ -51,6 +58,7 @@ impl Parameterized for NormalGamma {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NormalGammaError {
@@ -423,7 +431,7 @@ macro_rules! dos_to_post {
                 <GaussianSuffStat as SuffStat<f64>>::n(stat),
                 posterior_from_stat($self, &stat),
             ),
-            &DataOrSuffStat::Data(ref xs) => {
+            DataOrSuffStat::Data(xs) => {
                 let mut stat = GaussianSuffStat::new();
                 stat.observe_many(xs);
                 (stat.n(), posterior_from_stat($self, &stat))
@@ -433,7 +441,7 @@ macro_rules! dos_to_post {
     ($self: ident, $stat: ident) => {{
         match $stat {
             DataOrSuffStat::SuffStat(stat) => posterior_from_stat($self, &stat),
-            &DataOrSuffStat::Data(ref xs) => {
+            DataOrSuffStat::Data(xs) => {
                 let mut stat = GaussianSuffStat::new();
                 stat.observe_many(xs);
                 posterior_from_stat($self, &stat)

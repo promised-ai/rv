@@ -25,7 +25,7 @@ fn main() {
     let xs: BernoulliData<bool> = DataOrSuffStat::Data(&flips);
 
     // Generate the posterior distribution P(θ|x)
-    let posterior = prior.posterior(&xs);
+    let posterior = prior.posterior(xs);
 
     // Print the mean. The posterior mean for Bernoulli likelihood with Beta
     // prior.

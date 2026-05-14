@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.20.0] - 2026-05-14
+
+### Changed
+- Added `rkyv` feature. Supports most distributions.
+- `DataOrSuffStat` is `Copy`
+- `DataOrSuffStat` is now passed by value to `ConjugatePrior` methods
+- Overhauled experimental stick breaking distribution. Of note:
+    + Replaced `Arc<RwLock<_>>` with `ArcSwap`-based data structure. Which makes
+      the plots of `ln_f` / seconds as a function of number of cores go up and
+      to the right instead of down and to the right. Check
+      [this video](https://www.youtube.com/watch?v=tND-wBBZ8RY&t=2183s) out. If
+      you want to see what I mean, port the `sbd_bench` example over to v0.19.
+    + Made the names to modules shorter.
+    + Using `HalfBeta` instead of `UnitPowerlLaw` because it aligns better with
+      how the math in written out.
+    + `StickBreakingDiscrete` now serializes its underlying `Rng` to maintain
+      seed control after a write-read.
+
 ## [0.19.2] - 2026-03-04
 
 ### Changed
@@ -323,6 +341,7 @@
 - Remove dependency on `quadrature` crate in favor of hand-rolled adaptive
     Simpson's rule, which handles multimodal distributions better.
 
+[0.20.0]: https://github.com/promise-ai/rv/compare/v0.19.1...v0.20.0
 [0.19.2]: https://github.com/promise-ai/rv/compare/v0.19.1...v0.19.2
 [0.19.1]: https://github.com/promise-ai/rv/compare/v0.19.0...v0.19.1
 [0.19.0]: https://github.com/promise-ai/rv/compare/v0.18.1...v0.19.0

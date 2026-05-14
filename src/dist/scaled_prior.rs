@@ -6,6 +6,8 @@ use crate::traits::{
     Scalable,
 };
 use rand::Rng;
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -16,6 +18,7 @@ use std::marker::PhantomData;
 /// If drawing a `Pr` gives a distribution `Fx`, then drawing `ScaledPrior<Pr>`
 /// will produce a `Scaled<Fx>`.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct ScaledPrior<Pr, Fx>
@@ -31,6 +34,9 @@ where
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum ScaledPriorError {
     /// The scale parameter must be a normal (finite, non-zero, non-subnormal) number
     NonNormalScale(f64),
@@ -187,7 +193,7 @@ where
     fn ln_m_with_cache(
         &self,
         cache: &Self::MCache,
-        x: &DataOrSuffStat<f64, Scaled<Fx>>,
+        x: DataOrSuffStat<f64, Scaled<Fx>>,
     ) -> f64 {
         // For now, we'll just compute from data
         let data: Vec<f64> = match x {
@@ -198,16 +204,13 @@ where
         };
 
         self.parent
-            .ln_m_with_cache(cache, &DataOrSuffStat::Data(&data))
+            .ln_m_with_cache(cache, DataOrSuffStat::Data(&data))
     }
 
-    fn ln_pp_cache(
-        &self,
-        x: &DataOrSuffStat<f64, Scaled<Fx>>,
-    ) -> Self::PpCache {
+    fn ln_pp_cache(&self, x: DataOrSuffStat<f64, Scaled<Fx>>) -> Self::PpCache {
         extract_stat_then(self, x, |stat| {
             self.parent
-                .ln_pp_cache(&DataOrSuffStat::SuffStat(stat.parent()))
+                .ln_pp_cache(DataOrSuffStat::SuffStat(stat.parent()))
         })
     }
 
@@ -252,7 +255,7 @@ mod tests {
         let data: Vec<f64> = Vec::new();
         // Manually create DataOrSuffStat instead of using .into()
         let dos = DataOrSuffStat::Data(&data);
-        let posterior = scaled_prior.posterior(&dos);
+        let posterior = scaled_prior.posterior(dos);
 
         // Scale should persist through posterior computation
         assert_eq!(posterior.scale(), 2.0);
@@ -270,14 +273,14 @@ mod tests {
         let dos = DataOrSuffStat::Data(&data);
 
         // Compute posterior
-        let posterior = scaled_prior.posterior(&dos);
+        let posterior = scaled_prior.posterior(dos);
 
         // Scale should persist through posterior computation
         assert_eq!(posterior.scale(), 2.0);
 
         // Verify ln_m and ln_pp work
-        let ln_m = scaled_prior.ln_m(&dos);
-        let ln_pp = scaled_prior.ln_pp(&2.0, &dos);
+        let ln_m = scaled_prior.ln_m(dos);
+        let ln_pp = scaled_prior.ln_pp(&2.0, dos);
 
         // Values should be finite (actual values will depend on implementation)
         assert!(ln_m.is_finite());
