@@ -119,7 +119,7 @@ jobs:
         run: cargo install cargo-semver-checks --locked
 
       - name: Check for semver-incompatibilities
-        run: cargo semver-checks check-release --manifest-path branch/Cargo.toml --baseline-root master/ --verbose
+        run: cargo semver-checks check-release --manifest-path branch/Cargo.toml --baseline-root master/ --verbose --only-explicit-features --features="arraydist,experimental"
 
   release:
     name: release
