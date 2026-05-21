@@ -97,7 +97,7 @@ impl Entropy for StickBreakingDiscrete {
     fn entropy(&self) -> f64 {
         let probs = (0..).map(|n| self.f(&n));
         probs
-            .map(|p| p * p.ln())
+            .filter_map(|p| if p > 0.0 { Some(p * p.ln()) } else { None })
             .scan(0.0, |state, x| {
                 *state -= x;
                 Some(*state)
@@ -110,7 +110,7 @@ impl Entropy for &Mixture<StickBreakingDiscrete> {
     fn entropy(&self) -> f64 {
         let probs = (0..).map(|n| self.f(&n));
         probs
-            .map(|p| p * p.ln())
+            .filter_map(|p| if p > 0.0 { Some(p * p.ln()) } else { None })
             .scan(0.0, |state, x| {
                 *state -= x;
                 Some(*state)

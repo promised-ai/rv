@@ -99,9 +99,17 @@ impl _Inner {
         F: Fn(&_Inner) -> bool,
     {
         let mut n_extended = 0;
+        let mut last_rm_mass = self.rm_mass;
+
         while !p(self) {
             self.extend_once(breaker);
             n_extended += 1;
+
+            // Safety valve: stop if underflow causes rm_mass to stop shrinking
+            if self.rm_mass == last_rm_mass {
+                break;
+            }
+            last_rm_mass = self.rm_mass;
         }
         n_extended
     }
@@ -271,22 +279,23 @@ impl StickSequence {
     }
 
     pub fn ensure_breaks(&self, n: usize) {
-        // FAST PATH: Truly lock-free check. 99.9% of calls will exit here instantly.
-        if self.shared.inner.load().weights.len() > n {
+        // FAST PATH: Lock-free check. Hopefully most call will hit this
+        if self.shared.inner.load().weights.len() >= n {
             return;
         }
 
         // SLOW PATH: We need to extend. Serialize writers.
         let _guard = self.shared.write_lock.lock().unwrap();
 
-        // DOUBLE-CHECK: Another thread might have extended the sequence while we waited for the lock.
+        // DOUBLE-CHECK: Another thread might have extended the sequence while
+        // we waited for the lock.
         let current = self.shared.inner.load();
-        if current.weights.len() > n {
+        if current.weights.len() >= n {
             return;
         }
 
         let mut new_inner = (**current).clone();
-        new_inner.extend_until(&self.breaker, |inner| inner.weights.len() > n);
+        new_inner.extend_until(&self.breaker, |inner| inner.weights.len() >= n);
         self.shared.inner.store(std::sync::Arc::new(new_inner));
     }
 
