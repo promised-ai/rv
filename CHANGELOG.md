@@ -4,7 +4,7 @@
 
 ### Fixed
 - Occasional overflow issue in `StickBreakingDiscrete`.
-- Some internal `StickBreakingDiscrete` function would extend the weights one
+- Some internal `StickBreakingDiscrete` functions would extend the weights one
   too many times. This would not cause bugs but it's not efficient either.
 
 ## [0.20.0] - 2026-05-14
