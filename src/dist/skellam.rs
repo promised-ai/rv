@@ -324,7 +324,8 @@ impl Skewness for Skellam {
 
 impl Kurtosis for Skellam {
     fn kurtosis(&self) -> Option<f64> {
-        Some(3.0 + (self.mu_1 + self.mu_2).recip())
+        // Excess (Fisher) kurtosis, matching every other distribution.
+        Some((self.mu_1 + self.mu_2).recip())
     }
 }
 
@@ -434,8 +435,9 @@ mod tests {
 
     #[test]
     fn kurtosis() {
+        // Excess kurtosis of Skellam is 1 / (mu_1 + mu_2) = 1 / 9.8.
         let k = Skellam::new(5.3, 4.5).unwrap().kurtosis().unwrap();
-        assert::close(k, 3.102_040_816_326_530_5, TOL);
+        assert::close(k, 0.102_040_816_326_530_5, TOL);
     }
 
     #[test]

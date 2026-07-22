@@ -370,7 +370,7 @@ impl Variance<f64> for InvGaussian {
 
 impl Skewness for InvGaussian {
     fn skewness(&self) -> Option<f64> {
-        Some(2.0 * (self.mu / self.lambda).sqrt())
+        Some(3.0 * (self.mu / self.lambda).sqrt())
     }
 }
 
@@ -416,6 +416,22 @@ mod tests {
         InvGaussian,
         InvGaussian::new(1.0, 2.3).unwrap()
     );
+
+    #[test]
+    fn skewness_and_kurtosis() {
+        // skewness = 3 * sqrt(mu / lambda), excess kurtosis = 15 * mu / lambda
+        let ig = InvGaussian::new(1.0, 1.0).unwrap();
+        assert::close(ig.skewness().unwrap(), 3.0, 1e-12);
+        assert::close(ig.kurtosis().unwrap(), 15.0, 1e-12);
+
+        let ig = InvGaussian::new(2.0, 1.5).unwrap();
+        assert::close(ig.skewness().unwrap(), 3.464_101_615_137_754_4, 1e-12);
+        assert::close(ig.kurtosis().unwrap(), 20.0, 1e-12);
+
+        let ig = InvGaussian::new(0.5, 4.0).unwrap();
+        assert::close(ig.skewness().unwrap(), 1.060_660_171_779_821_2, 1e-12);
+        assert::close(ig.kurtosis().unwrap(), 1.875, 1e-12);
+    }
 
     #[test]
     fn mode_is_highest_point() {

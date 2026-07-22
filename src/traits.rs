@@ -404,6 +404,7 @@ pub trait Skewness {
 }
 
 pub trait Kurtosis {
+    /// The excess (Fisher) kurtosis, or `None` if undefined
     fn kurtosis(&self) -> Option<f64>;
 }
 
