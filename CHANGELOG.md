@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- `InvGaussian::skewness` now returns `3 * sqrt(mu / lambda)` instead of
+  `2 * sqrt(mu / lambda)`.
+- `Skellam::kurtosis` now returns the excess (Fisher) kurtosis
+  `1 / (mu_1 + mu_2)` rather than the full kurtosis `3 + 1 / (mu_1 + mu_2)`,
+  matching the excess-kurtosis convention used by every other distribution.
+
 ## [0.20.1] - 2026-05-18
 
 ### Fixed
