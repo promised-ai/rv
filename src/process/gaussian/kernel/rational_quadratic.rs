@@ -5,10 +5,6 @@ use nalgebra::{
     Norm,
     base::constraint::{SameNumberOfColumns, ShapeConstraint},
 };
-use std::f64;
-
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 
 /// Rational Quadratic Kernel
 ///
@@ -16,7 +12,7 @@ use serde::{Deserialize, Serialize};
 /// `scale` -- Length scale
 /// `mixture` -- Mixture Scale
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct RationalQuadratic {
     scale: f64,

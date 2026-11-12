@@ -6,16 +6,12 @@ use nalgebra::{
     dvector,
 };
 use nalgebra::{Norm, base::storage::Storage};
-use std::f64;
 use std::f64::consts::PI;
-
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 
 /// Exp Sine^2 Kernel
 /// `k(x_i`, `x_j`) = exp(-2 (sin(pi / periodicity * `d(x_i`, `x_j`)) / `length_scale`) ^ 2)
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct ExpSineSquaredKernel {
     length_scale: f64,

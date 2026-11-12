@@ -2,10 +2,6 @@ use super::{CovGrad, CovGradError, Kernel, KernelError, e2_norm};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix, dvector};
-use std::f64;
-
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 
 /// Radial-basis function (RBF) kernel
 /// The distance metric here is L2 (Euclidean).
@@ -18,7 +14,7 @@ use serde::{Deserialize, Serialize};
 /// * `l` - Length scale.
 ///
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct RBFKernel {
     length_scale: f64,

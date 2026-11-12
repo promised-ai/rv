@@ -2,9 +2,6 @@ use crate::experimental::stick::sb::StickBreaking;
 use crate::experimental::stick::sbd::StickBreakingDiscrete;
 use crate::traits::{HasSuffStat, SuffStat};
 
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
-
 /// Represents the sufficient statistics for a stick-breaking process.
 ///
 /// This struct is used to accumulate statistics from a stick-breaking process,
@@ -15,7 +12,11 @@ use serde::{Deserialize, Serialize};
 /// * `n` - The total number of observations.
 /// * `num_breaks` - The number of breaks observed.
 /// * `sum_log_q` - The sum of the logarithms of the remaining stick lengths after each break.
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct StickBreakingSuffStat {
@@ -224,7 +225,11 @@ impl SuffStat<&[f64]> for StickBreakingSuffStat {
 ///
 /// This struct encapsulates the sufficient statistics for a Stick-Breaking Discrete distribution,
 /// primarily involving a vector of counts representing the observed data.
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct StickBreakingDiscreteSuffStat {

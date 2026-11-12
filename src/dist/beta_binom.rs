@@ -1,12 +1,6 @@
 //! Beta Binomial distribution of x in {0, ..., n}
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
-
 use rand::Rng;
 use special::Beta as _;
-use std::f64;
 use std::fmt;
 use std::sync::OnceLock;
 
@@ -58,8 +52,11 @@ use crate::traits::{
 /// ```
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct BetaBinomial {
     /// Total number of trials
@@ -105,8 +102,11 @@ impl PartialEq for BetaBinomial {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum BetaBinomialError {
     /// The alpha parameter is less than zero

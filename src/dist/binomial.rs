@@ -1,9 +1,4 @@
 //! Binomial distribution
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
-
 use crate::impl_display;
 use crate::misc::ln_binom;
 use crate::traits::{
@@ -11,7 +6,6 @@ use crate::traits::{
     Skewness, Support, Variance,
 };
 use rand::Rng;
-use std::f64;
 use std::fmt;
 
 /// [Binomial distribution](https://en.wikipedia.org/wiki/Beta-binomial_distribution)
@@ -47,8 +41,11 @@ use std::fmt;
 /// assert_eq!(f, 0.0);
 /// ```
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Binomial {
     /// Total number of trials
@@ -78,8 +75,11 @@ impl Parameterized for Binomial {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum BinomialError {
     /// The number of trials is zero

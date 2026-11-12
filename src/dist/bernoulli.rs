@@ -1,9 +1,4 @@
 //! Bernoulli distribution of x in {0, 1}
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
-
 use crate::data::{BernoulliSuffStat, Booleable};
 use crate::impl_display;
 use crate::traits::{
@@ -12,7 +7,6 @@ use crate::traits::{
     Variance,
 };
 use rand::Rng;
-use std::f64;
 use std::fmt;
 
 /// [Bernoulli distribution](https://en.wikipedia.org/wiki/Bernoulli_distribution)
@@ -39,8 +33,11 @@ use std::fmt;
 ///
 /// Parameters struct for Bernoulli distribution
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct BernoulliParameters {
     /// Probability of a success (x=1)
@@ -48,8 +45,11 @@ pub struct BernoulliParameters {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Bernoulli {
     /// Probability of a success (x=1)
@@ -69,8 +69,11 @@ impl Parameterized for Bernoulli {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum BernoulliError {
     /// Bernoulli p is less than zero
@@ -687,7 +690,7 @@ mod tests {
     #[test]
     fn uniform_entropy() {
         let b = Bernoulli::uniform();
-        assert::close(b.entropy(), f64::consts::LN_2, TOL);
+        assert::close(b.entropy(), std::f64::consts::LN_2, TOL);
     }
 
     #[test]

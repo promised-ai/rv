@@ -2,14 +2,10 @@ use super::{CovGrad, CovGradError, Kernel, KernelError};
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix, dvector};
-use std::f64;
-
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 
 /// White Noise Kernel
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct WhiteKernel {
     /// Level of the noise

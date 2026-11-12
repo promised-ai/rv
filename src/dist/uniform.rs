@@ -1,9 +1,4 @@
 //! Continuous uniform distribution, U(a, b) on the interval x in [a, b]
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
-
 use crate::impl_display;
 use crate::traits::{
     Cdf, ContinuousDistr, Entropy, HasDensity, InverseCdf, Kurtosis, Mean,
@@ -11,7 +6,6 @@ use crate::traits::{
     Variance,
 };
 use rand::Rng;
-use std::f64;
 use std::fmt;
 use std::sync::OnceLock;
 
@@ -36,8 +30,11 @@ use std::sync::OnceLock;
 ///
 /// Parameters for the Uniform distribution
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct UniformParameters {
     /// Lower bound
@@ -47,8 +44,11 @@ pub struct UniformParameters {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Uniform {
     a: f64,
@@ -113,8 +113,11 @@ impl PartialEq for Uniform {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum UniformError {
     /// A >= B

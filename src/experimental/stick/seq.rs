@@ -1,10 +1,6 @@
 use arc_swap::ArcSwap;
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256Plus;
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
 use super::HalfBeta;
@@ -13,7 +9,7 @@ use crate::traits::Rv;
 
 // This allows us to searlize around all the ArcSwap stuff (in serde)
 #[cfg(feature = "serde1")]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 struct StickSequenceFmt {
     breaker: HalfBeta,
@@ -43,8 +39,11 @@ impl From<StickSequence> for StickSequenceFmt {
 // NOTE: We currently derive PartialEq, but this (we think) compares the
 // internal state of the RNGs, which is probably not what we want.
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct _Inner {
     #[cfg_attr(feature = "rkyv", rkyv(with = rkyv_support::XoshiroRkyvWrapper))]
@@ -116,7 +115,10 @@ impl _Inner {
 }
 
 #[derive(Debug)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
 struct SharedState {
     #[cfg_attr(feature="rkyv", rkyv(with = rkyv_support::ArcSwapRkyvWrapper))]
     inner: ArcSwap<_Inner>,
@@ -133,8 +135,11 @@ impl SharedState {
     }
 }
 
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
 #[cfg_attr(
     feature = "serde1",
     serde(
@@ -351,7 +356,11 @@ impl StickSequence {
 #[cfg(feature = "rkyv")]
 mod rkyv_support {
     use super::*;
+
+    use rkyv::Archive;
+    use rkyv::Deserialize as _;
     use rkyv::Place;
+    use rkyv::Serialize as _;
     use rkyv::rancor::Fallible;
     use rkyv::with::{ArchiveWith, DeserializeWith, SerializeWith};
 
@@ -376,7 +385,7 @@ mod rkyv_support {
     impl<S: Fallible + ?Sized> SerializeWith<Xoshiro256Plus, S>
         for XoshiroRkyvWrapper
     where
-        [u64; 4]: Serialize<S>,
+        [u64; 4]: rkyv::Serialize<S>,
     {
         #[inline]
         fn serialize_with(
@@ -392,7 +401,7 @@ mod rkyv_support {
         DeserializeWith<<[u64; 4] as Archive>::Archived, Xoshiro256Plus, D>
         for XoshiroRkyvWrapper
     where
-        <[u64; 4] as Archive>::Archived: Deserialize<[u64; 4], D>,
+        <[u64; 4] as Archive>::Archived: rkyv::Deserialize<[u64; 4], D>,
     {
         #[inline]
         fn deserialize_with(
@@ -429,7 +438,7 @@ mod rkyv_support {
     impl<T, S> SerializeWith<ArcSwap<T>, S> for ArcSwapRkyvWrapper
     where
         S: Fallible + ?Sized,
-        Arc<T>: Serialize<S>,
+        Arc<T>: rkyv::Serialize<S>,
     {
         #[inline]
         fn serialize_with(
@@ -446,7 +455,7 @@ mod rkyv_support {
         for ArcSwapRkyvWrapper
     where
         D: Fallible + ?Sized,
-        <Arc<T> as Archive>::Archived: Deserialize<Arc<T>, D>,
+        <Arc<T> as Archive>::Archived: rkyv::Deserialize<Arc<T>, D>,
     {
         #[inline]
         fn deserialize_with(

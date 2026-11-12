@@ -1,5 +1,3 @@
-use std::f64;
-
 use criterion::Criterion;
 use criterion::{criterion_group, criterion_main};
 use rv::traits::{HasDensity, Sampleable};

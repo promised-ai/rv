@@ -1,11 +1,9 @@
 #[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize, with::Skip};
+use rkyv::with::Skip;
 #[cfg(feature = "serde1")]
 use serde::de::{self, Deserializer, MapAccess, SeqAccess, Visitor};
 #[cfg(feature = "serde1")]
 use serde::ser::{SerializeStruct, Serializer};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 
 use crate::dist::{Categorical, Gaussian, Poisson};
 use crate::misc::{LogSumExp, pflips};
@@ -36,7 +34,10 @@ use std::sync::OnceLock;
 /// let mm = Mixture::new(vec![0.6, 0.4], vec![g1, g2]).unwrap();
 /// ```
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
 pub struct Mixture<Fx> {
     /// The weights for each component distribution. All entries must be
     /// positive and sum to 1.
@@ -80,8 +81,11 @@ impl<Fx: Parameterized> Parameterized for Mixture<Fx> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum MixtureError {
     /// The weights vector is empty
@@ -547,9 +551,9 @@ uv_mean_and_var!(f32);
 uv_mean_and_var!(f64);
 
 #[cfg(feature = "serde1")]
-impl<Fx> Serialize for Mixture<Fx>
+impl<Fx> serde::Serialize for Mixture<Fx>
 where
-    Fx: Serialize,
+    Fx: serde::Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -563,9 +567,9 @@ where
 }
 
 #[cfg(feature = "serde1")]
-impl<'de, Fx> Deserialize<'de> for Mixture<Fx>
+impl<'de, Fx> serde::Deserialize<'de> for Mixture<Fx>
 where
-    Fx: Deserialize<'de>,
+    Fx: serde::Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -573,7 +577,7 @@ where
     {
         use std::marker::PhantomData;
 
-        #[derive(Deserialize)]
+        #[derive(serde::Deserialize)]
         #[serde(field_identifier, rename_all = "lowercase")]
         enum Field {
             Weights,
@@ -592,7 +596,7 @@ where
 
         impl<'de, Fx> Visitor<'de> for MixtureVisitor<Fx>
         where
-            Fx: Deserialize<'de>,
+            Fx: serde::Deserialize<'de>,
         {
             type Value = Mixture<Fx>;
 

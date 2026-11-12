@@ -5,10 +5,6 @@ use crate::misc::gammafn;
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix, dvector};
-use std::f64;
-
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 
 /// Matérn Kernel
 /// The Matérn kernel is given by
@@ -22,7 +18,7 @@ use serde::{Deserialize, Serialize};
 /// * `nu` -
 /// * `length_scale` -
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 pub struct MaternKernel {
     nu: f64,
     length_scale: f64,
