@@ -717,7 +717,7 @@ pub trait Shiftable {
 /// Macro to implement Shiftable for a distribution type
 ///
 /// This macro automatically implements the Shiftable trait for a given type,
-/// using the default Shifted<T> as the Output type.
+/// using the default `Shifted<T>` as the Output type.
 #[macro_export]
 macro_rules! impl_shiftable {
     // Simple case for non-generic types
@@ -763,7 +763,7 @@ pub trait Scalable {
 /// Macro to implement Scalable for a distribution type
 ///
 /// This macro automatically implements the Scalable trait for a given type,
-/// using the default Scaled<T> as the Output type.
+/// using the default `Scaled<T>` as the Output type.
 #[macro_export]
 macro_rules! impl_scalable {
     // Simple case for non-generic types

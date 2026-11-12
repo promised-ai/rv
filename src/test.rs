@@ -541,7 +541,7 @@ use crate::traits::Cdf;
 /// * `normalized` - Whether the given density is normalized
 ///
 /// # Returns
-/// * Result<f64, Box<dyn std::error::Error>>
+/// * `Result<f64, Box<dyn std::error::Error>>`
 pub fn density_histogram_test<F>(
     samples: &[f64],
     num_bins: usize,

@@ -7,14 +7,13 @@ use crate::traits::{
     DiscreteDistr, Entropy, HasDensity, InverseCdf, Sampleable, Support,
 };
 use rand::Rng;
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 
 /// A "Stick-breaking discrete" distribution parameterized by a `StickSequence`.
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct StickBreakingDiscrete {
     sticks: StickSequence,

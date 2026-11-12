@@ -1,10 +1,8 @@
 use crate::traits::SuffStat;
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 
 /// A wrapper for sufficient statistics that accounts for a scale parameter
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct ScaledSuffStat<S> {
     parent: S,

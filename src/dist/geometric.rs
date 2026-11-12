@@ -1,9 +1,4 @@
-//! Poisson distribution on unsigned integers
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
-
+//! Geometric distribution on unsigned integers
 use crate::dist::Uniform;
 use crate::impl_display;
 use crate::traits::{
@@ -34,8 +29,11 @@ use std::sync::OnceLock;
 ///
 /// Parameters for the Geometric distribution
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct GeometricParameters {
     /// Success probability
@@ -43,8 +41,11 @@ pub struct GeometricParameters {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Geometric {
     p: f64,
@@ -71,8 +72,11 @@ impl Parameterized for Geometric {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GeometricError {
     /// The p parameter is infinite or NaN
@@ -342,7 +346,6 @@ mod tests {
     use super::*;
     use crate::misc::x2_test;
     use crate::{test_basic_impls, verify_cache_resets};
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
@@ -374,7 +377,7 @@ mod tests {
     #[test]
     fn ln_pdf() {
         let geom = Geometric::new(0.5).unwrap();
-        assert::close(geom.ln_pmf(&0_u32), -f64::consts::LN_2, TOL);
+        assert::close(geom.ln_pmf(&0_u32), -std::f64::consts::LN_2, TOL);
         assert::close(geom.ln_pmf(&1_u32), -1.386_294_361_119_890_6, TOL);
         assert::close(geom.ln_pmf(&5_u32), -4.158_883_083_359_671_5, TOL);
         assert::close(geom.ln_pmf(&11_u32), -8.317_766_166_719_343, TOL);

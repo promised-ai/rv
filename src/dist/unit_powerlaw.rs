@@ -1,9 +1,4 @@
 //! `UnitPowerLaw` distribution over x in (0, 1)
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
-
 use crate::data::UnitPowerLawSuffStat;
 use crate::impl_display;
 use crate::prelude::Beta;
@@ -14,15 +9,17 @@ use crate::traits::{
 };
 use rand::Rng;
 use special::Gamma as _;
-use std::f64;
 use std::fmt;
 
 pub mod bernoulli_prior;
 
 /// Parameters for the `UnitPowerLaw` distribution
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct UnitPowerLawParameters {
     /// Shape parameter
@@ -57,8 +54,11 @@ impl From<UnitPowerLawParameters> for UnitPowerLaw {
 /// let powlaw = UnitPowerLaw::new(5.0).unwrap();
 /// ```
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 #[cfg_attr(
     feature = "serde1",
@@ -94,8 +94,11 @@ impl PartialEq for UnitPowerLaw {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum UnitPowerLawError {
     /// The alpha parameter is less than or equal to zero

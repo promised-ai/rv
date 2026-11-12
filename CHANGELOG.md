@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.20.2] - 2026-11-12
+
+### Fixed
+- Cleared up feature conflict between `rkyv` and `serde1`, which caused the docs.rs build to fail
+
 ## [0.20.1] - 2026-05-18
 
 ### Fixed
@@ -348,6 +353,7 @@
 - Remove dependency on `quadrature` crate in favor of hand-rolled adaptive
     Simpson's rule, which handles multimodal distributions better.
 
+[0.20.2]: https://github.com/promise-ai/rv/compare/v0.20.1...v0.20.2
 [0.20.1]: https://github.com/promise-ai/rv/compare/v0.20.0...v0.20.1
 [0.20.0]: https://github.com/promise-ai/rv/compare/v0.19.2...v0.20.0
 [0.19.2]: https://github.com/promise-ai/rv/compare/v0.19.1...v0.19.2

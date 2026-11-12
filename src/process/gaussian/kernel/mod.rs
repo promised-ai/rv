@@ -3,10 +3,6 @@
 use nalgebra::base::constraint::{SameNumberOfColumns, ShapeConstraint};
 use nalgebra::base::storage::Storage;
 use nalgebra::{DMatrix, DVector, Dim, Matrix};
-use std::f64;
-
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 
 mod covgrad;
 pub use covgrad::*;
@@ -113,7 +109,7 @@ pub trait Kernel: std::fmt::Debug + Clone + PartialEq {
 
 /// Errors from Kernel construction
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum KernelError {
     /// Lower bounds must be lower that upper bounds

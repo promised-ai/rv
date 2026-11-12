@@ -1,6 +1,3 @@
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
-
 use crate::consts::HALF_LN_2PI_E;
 use crate::consts::LN_2PI;
 use crate::data::MvGaussianSuffStat;
@@ -91,7 +88,7 @@ impl MvgCache {
 /// assert!(mat.cholesky().is_some());
 /// ```
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct MvGaussian {
     // Mean vector
@@ -140,7 +137,7 @@ impl PartialEq for MvGaussian {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum MvGaussianError {
     /// The mu and cov parameters have incompatible dimensions

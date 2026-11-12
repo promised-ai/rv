@@ -1,11 +1,8 @@
 //! Gaussian Processes
-
 use argmin::solver::{linesearch::MoreThuenteLineSearch, quasinewton::LBFGS};
 use nalgebra::linalg::Cholesky;
 use nalgebra::{DMatrix, DVector, Dyn};
 use rand::Rng;
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 use std::cell::OnceCell;
 
 use crate::consts::HALF_LN_2PI;
@@ -28,7 +25,7 @@ fn outer_product_self(col: &DVector<f64>) -> DMatrix<f64> {
 
 /// Errors from `GaussianProcess`
 #[derive(Debug)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum GaussianProcessError {
     /// The kernel is not returning a positive-definite matrix. Try adding a small, constant noise parameter as `y_train_sigma`.
@@ -63,7 +60,7 @@ impl From<KernelError> for GaussianProcessError {
 }
 
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct GaussianProcess<K>
 where

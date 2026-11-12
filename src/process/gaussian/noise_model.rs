@@ -1,11 +1,8 @@
 use nalgebra::{DMatrix, DVector};
 
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
-
 /// Model of noise to use in Gaussian Process
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NoiseModel {
     /// The same noise is applied to all values

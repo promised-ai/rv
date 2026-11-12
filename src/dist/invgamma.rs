@@ -1,9 +1,4 @@
 //! Inverse Gamma distribution over x in (0, ∞)
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
-
 use crate::data::InvGammaSuffStat;
 use crate::impl_display;
 use crate::misc::ln_gammafn;
@@ -25,8 +20,11 @@ use std::fmt;
 ///             Γ(α)
 /// ```
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct InvGamma {
     // shape parameter, α
@@ -76,8 +74,11 @@ impl Parameterized for InvGamma {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum InvGammaError {
     /// Shape parameter is less than or equal to zero
@@ -426,7 +427,6 @@ mod tests {
     use super::*;
     use crate::misc::ks_test;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const KS_PVAL: f64 = 0.2;

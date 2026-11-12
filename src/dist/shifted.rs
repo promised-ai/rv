@@ -5,14 +5,10 @@ use crate::traits::{
     Skewness, Support, Variance,
 };
 use rand::Rng;
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 
 /// Parameters for the Shifted distribution
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct ShiftedParameters<D: Parameterized> {
     /// The parent distribution's parameters
@@ -34,8 +30,11 @@ pub struct ShiftedParameters<D: Parameterized> {
 /// assert_eq!(shifted.variance(), Some(1.0));
 /// ```
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Shifted<D> {
     parent: D,

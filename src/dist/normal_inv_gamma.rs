@@ -2,10 +2,6 @@
 //!
 //! For a reference see section 6 of [Kevin Murphy's
 //! whitepaper](https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf).
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 
 mod gaussian_prior;
 
@@ -21,8 +17,11 @@ use crate::traits::{HasDensity, Parameterized, Sampleable};
 /// Given `x ~ N(μ, σ)`, the Normal Inverse Gamma prior implies that
 /// `μ ~ N(m, sqrt(v)σ)` and `ρ ~ InvGamma(a, b)`.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalInvGamma {
     m: f64,
@@ -32,8 +31,11 @@ pub struct NormalInvGamma {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct NormalInvGammaParameters {
     pub m: f64,
@@ -60,8 +62,11 @@ impl Parameterized for NormalInvGamma {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum NormalInvGammaError {
     /// The m parameter is infinite or NaN

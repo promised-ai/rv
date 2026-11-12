@@ -6,13 +6,7 @@ use crate::traits::{
 use num::{FromPrimitive, Integer, ToPrimitive};
 use rand::Rng;
 use rand_distr::uniform::SampleUniform;
-use std::f64;
 use std::fmt;
-
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
 
 pub trait DuParam: Integer + Copy {}
 impl<T> DuParam for T where T: Integer + Copy {}
@@ -20,8 +14,11 @@ impl<T> DuParam for T where T: Integer + Copy {}
 /// [Discrete uniform distribution](https://en.wikipedia.org/wiki/Discrete_uniform_distribution),
 /// U(a, b) on the interval x in [a, b]
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct DiscreteUniform<T: DuParam> {
     a: T,
@@ -29,8 +26,11 @@ pub struct DiscreteUniform<T: DuParam> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum DiscreteUniformError {
     /// a is greater than or equal to b
@@ -328,7 +328,7 @@ mod tests {
     #[test]
     fn entropy() {
         let h: f64 = DiscreteUniform::new(2, 4).unwrap().entropy();
-        assert::close(h, f64::consts::LN_2, TOL);
+        assert::close(h, std::f64::consts::LN_2, TOL);
     }
 
     #[test]

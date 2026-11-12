@@ -1,8 +1,3 @@
-#[cfg(feature = "rkyv")]
-use rkyv::{Archive, Deserialize, Serialize};
-#[cfg(feature = "serde1")]
-use serde::{Deserialize, Serialize};
-
 use crate::consts::LN_2PI_E;
 use crate::data::PoissonSuffStat;
 use crate::impl_display;
@@ -72,8 +67,11 @@ use std::sync::OnceLock;
 ///
 /// Parameters for the Poisson distribution
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct PoissonParameters {
     /// Rate parameter
@@ -81,8 +79,11 @@ pub struct PoissonParameters {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "rkyv", derive(Serialize, Deserialize, Archive))]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)
+)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub struct Poisson {
     rate: f64,
@@ -111,7 +112,7 @@ impl PartialEq for Poisson {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde1", serde(rename_all = "snake_case"))]
 pub enum PoissonError {
     /// The rate parameter is less than or equal to zero
@@ -368,7 +369,6 @@ mod tests {
     use super::*;
     use crate::misc::x2_test;
     use crate::test_basic_impls;
-    use std::f64;
 
     const TOL: f64 = 1E-12;
     const N_TRIES: usize = 5;
