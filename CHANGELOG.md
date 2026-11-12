@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.20.1] - 2026-11-12
+## [0.20.2] - 2026-11-12
 
 ### Fixed
 - Cleared up feature conflict between `rkyv` and `serde1`, which caused the docs.rs build to fail
